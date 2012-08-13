@@ -2,22 +2,33 @@
 <zk>
     <window  id="mainWindow" contentStyle="background:white;" height="100%" apply="clarind.fcs.Aggregator"> 
         <borderlayout sclass="complex-layout"  width="1000px">
-        <!-- Kopf -->
+            <!-- Kopf -->
             <north height="100px">
                 
             </north>
             
-        <!-- Linke Sidebar -->
+            <!-- Linke Sidebar -->
             <west width="200px"  flex="true" splittable="true" margins="0,5,0,0">
  
             </west>
       
-       <!-- Center - Inhalt -->
+            <!-- Center - Inhalt -->
             <center autoscroll="true">
                 <panel >
                     <panelchildren style="margin-top:10px;margin-left:10px;margin-right:10px;border:0;">                   
                         <textbox id="searchString" value="Elefant" />
                         <button id="searchButton" forward ="onExecuteSearch" label="Search" />     
+                        
+                        <separator />
+                        <label>Language:</label>
+                        <combobox id="languageSelect" width="150px">
+                            <!--<template name="model"> -->
+                            <comboitem label="German" />
+                            <comboitem label="English" />
+                            <comboitem label="Dutch" />
+                            <comboitem label="-More to come-" />
+                            <!-- </template> -->
+                        </combobox>
                         
                         <separator />
                         
@@ -37,22 +48,22 @@
                                         <checkbox id="ids2" label="Corpus 2" />
                                     </row>
                                     
-                                     <row>
+                                    <row>
                                         <checkbox id="ids3" label="Corpus 3" />
                                         <checkbox id="ids4" label="Corpus 4" />
                                     </row>
                                     
-                                     <row>
+                                    <row>
                                         <checkbox id="ids5" label="Corpus 5" />
                                         <checkbox id="ids6" label="Corpus 6" />
                                     </row>
                                     
-                                     <row>
+                                    <row>
                                         <checkbox id="ids7" label="Corpus 7" />
                                         <checkbox id="ids8" label="Corpus 8" />
                                     </row>
                                     
-                                     <row>
+                                    <row>
                                         <checkbox id="ids9" label="Corpus 9" />
                                         <checkbox id="ids10" label="Corpus 10" />
                                     </row>
@@ -78,22 +89,22 @@
                                         <checkbox id="tue2" label="Corpus 2" />
                                     </row>
                                     
-                                     <row>
+                                    <row>
                                         <checkbox id="tue3" label="Corpus 3" />
                                         <checkbox id="tue4" label="Corpus 4" />
                                     </row>
                                     
-                                     <row>
+                                    <row>
                                         <checkbox id="tue5" label="Corpus 5" />
                                         <checkbox id="tue6" label="Corpus 6" />
                                     </row>
                                     
-                                     <row>
+                                    <row>
                                         <checkbox id="tue7" label="Corpus 7" />
                                         <checkbox id="tue8" label="Corpus 8" />
                                     </row>
                                     
-                                     <row>
+                                    <row>
                                         <checkbox id="tue9" label="Corpus 9" />
                                         <checkbox id="tue10" label="Corpus 10" />
                                     </row>
@@ -106,12 +117,12 @@
                 </panel>
             </center>
             
-        <!-- Rechte Sidebar -->  
+            <!-- Rechte Sidebar -->  
             <east width="200px" flex="true" splittable="true" margins="0,5,0,0">
             
             </east>
             
-         <!-- Fusszeile -->   
+            <!-- Fusszeile -->   
             <south height="100px">
                 
             </south>
