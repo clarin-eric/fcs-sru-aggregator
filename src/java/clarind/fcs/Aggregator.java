@@ -1,21 +1,44 @@
 package clarind.fcs;
 
+import org.zkoss.zk.ui.Component;
 import org.zkoss.zk.ui.event.Event;
-import org.zkoss.zk.ui.util.GenericAutowireComposer;
+import org.zkoss.zk.ui.select.SelectorComposer;
+import org.zkoss.zk.ui.select.annotation.Listen;
+import org.zkoss.zk.ui.select.annotation.Wire;
 import org.zkoss.zul.Textbox;
 import org.zkoss.zul.Messagebox;
 import org.zkoss.zul.Rows;
 import org.zkoss.zul.Row;
 import org.zkoss.zul.Checkbox;
 import org.zkoss.zul.Combobox;
+import org.zkoss.zul.Button;
 
-public class Aggregator extends GenericAutowireComposer {
+public class Aggregator extends SelectorComposer<Component> {
 
+    @Wire
     private Textbox searchString;
+    @Wire
     private Rows rowsIds;
+    @Wire
     private Rows rowsTue;
+    @Wire
     private Combobox languageSelect;
+    @Wire
+    private Button searchButton;
+    @Wire 
+    private Checkbox ids1;
+    
 
+    @Listen("onSelect = #languageSelect")
+    public void onSelectLanguage(Event ev){
+        try {
+            ids1.setDisabled(true);
+        } catch (Exception ex){
+            
+        }
+    }
+    
+    @Listen("onClick = #searchButton")
     public void onExecuteSearch(Event ev) {
         try {
             String display = "SearchString: " + searchString.getText() + "\n";

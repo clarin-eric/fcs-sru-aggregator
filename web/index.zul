@@ -17,8 +17,8 @@
                 <panel >
                     <panelchildren style="margin-top:10px;margin-left:10px;margin-right:10px;border:0;">                   
                         <textbox id="searchString" value="Elefant" />
-                        <button id="searchButton" forward ="onExecuteSearch" label="Search" />     
-                        
+                        <button id="searchButton"  label="Search" />     
+                        <!-- forward ="onExecuteSearch"-->
                         <separator />
                         <label>Language:</label>
                         <combobox id="languageSelect" width="150px">
