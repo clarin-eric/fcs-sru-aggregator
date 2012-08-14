@@ -32,86 +32,12 @@
                         
                         <separator />
                         
-                        <groupbox mold="3d">
-                            <caption>
-                                IDS Mannheim
-                            </caption>
-                            <grid>
-                                <columns>
-                                    <column></column>
-                                    <column></column>                        
-            
-                                </columns>
-                                <rows id="rowsIds">
-                                    <row>
-                                        <checkbox id="ids1" label="Corpus 1" />
-                                        <checkbox id="ids2" label="Corpus 2" />
-                                    </row>
-                                    
-                                    <row>
-                                        <checkbox id="ids3" label="Corpus 3" />
-                                        <checkbox id="ids4" label="Corpus 4" />
-                                    </row>
-                                    
-                                    <row>
-                                        <checkbox id="ids5" label="Corpus 5" />
-                                        <checkbox id="ids6" label="Corpus 6" />
-                                    </row>
-                                    
-                                    <row>
-                                        <checkbox id="ids7" label="Corpus 7" />
-                                        <checkbox id="ids8" label="Corpus 8" />
-                                    </row>
-                                    
-                                    <row>
-                                        <checkbox id="ids9" label="Corpus 9" />
-                                        <checkbox id="ids10" label="Corpus 10" />
-                                    </row>
-                                </rows>
-                
-                            </grid>
+                        <groupbox mold="3d" id="allCorpora">
+
+                           
                         </groupbox>
                         
-                        <separator />
-                        <groupbox mold="3d" >
-                            <caption>
-                                Tübingen
-                            </caption>
-                            <grid>
-                                <columns>
-                                    <column></column>
-                                    <column></column>                        
-            
-                                </columns>
-                                <rows id="rowsTue">
-                                    <row>
-                                        <checkbox id="tue1" label="Corpus 1" />
-                                        <checkbox id="tue2" label="Corpus 2" />
-                                    </row>
-                                    
-                                    <row>
-                                        <checkbox id="tue3" label="Corpus 3" />
-                                        <checkbox id="tue4" label="Corpus 4" />
-                                    </row>
-                                    
-                                    <row>
-                                        <checkbox id="tue5" label="Corpus 5" />
-                                        <checkbox id="tue6" label="Corpus 6" />
-                                    </row>
-                                    
-                                    <row>
-                                        <checkbox id="tue7" label="Corpus 7" />
-                                        <checkbox id="tue8" label="Corpus 8" />
-                                    </row>
-                                    
-                                    <row>
-                                        <checkbox id="tue9" label="Corpus 9" />
-                                        <checkbox id="tue10" label="Corpus 10" />
-                                    </row>
-                                </rows>
-                
-                            </grid>
-                        </groupbox>
+                       
                         
                     </panelchildren>
                 </panel>
