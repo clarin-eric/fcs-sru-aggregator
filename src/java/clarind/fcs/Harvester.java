@@ -9,9 +9,10 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
+import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-public class CenterRegistry {
+public class Harvester {
 
     final String crStartpoint = "http://130.183.206.32/restxml/";
 
@@ -69,7 +70,7 @@ public class CenterRegistry {
              
              for(i2=0; i2<endpointsUrls.getLength();i2++){
                  String epUrl = endpointsUrls.item(i2).getTextContent();                 
-                 ep.add(new Endpoint(instituteName, epUrl));
+                 ep.add(new Endpoint(epUrl, instituteName));
              } // for i2
                           
         } // for i ...
@@ -78,8 +79,36 @@ public class CenterRegistry {
         return ep;
     } //getEndpoints
     
+    
+    public ArrayList<String> getCorporaOfAnEndpoint(String endpointUrl) throws Exception {
+        System.out.println("getCorporaOfAnEndpoint: " + endpointUrl);
+        ArrayList<String> corpora = new ArrayList<String>();
+        
+        URL u = new URL(endpointUrl + "?operation=scan&scanClause=fcs.resource");
+        InputStream is = u.openStream();
+        
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        DocumentBuilder builder = factory.newDocumentBuilder();
+        org.w3c.dom.Document document = builder.parse(is);
+
+        is.close();
+        
+        //http://clarinws.informatik.uni-leipzig.de:8080/CQL?
+        
+        NodeList corporaNodes = evaluateXPath("//*[local-name()='term']/*[local-name()='value']", document);
+      
+        int i, i2;
+        
+        for(i=0; i<corporaNodes.getLength();i++){
+          corpora.add(corporaNodes.item(i).getTextContent());
+            
+        } // for i ...
+        return corpora;
+    }  // getCorporaOfAnEndpoint
+    
+    
     public static void main (String[] args) throws Exception {
-        CenterRegistry cr = new CenterRegistry();
+        Harvester cr = new Harvester();
         ArrayList<Endpoint> ep = cr.getEndpoints();
         
         int i;
@@ -90,4 +119,8 @@ public class CenterRegistry {
         
         
     }
+    
+    
+    
+    
 }

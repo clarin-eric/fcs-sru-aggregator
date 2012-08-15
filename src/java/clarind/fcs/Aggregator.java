@@ -15,6 +15,7 @@ import org.zkoss.zul.Combobox;
 import org.zkoss.zul.Button;
 import org.zkoss.zul.Groupbox;
 import org.zkoss.zul.Separator;
+import org.zkoss.zul.Label;
 
 public class Aggregator extends SelectorComposer<Component> {
 
@@ -26,27 +27,41 @@ public class Aggregator extends SelectorComposer<Component> {
     private Button searchButton;
     @Wire
     private Checkbox ids1;
-     @Wire
+    @Wire
     private Groupbox allCorpora;
-    
 
     @Override
     public void doAfterCompose(Component comp) throws Exception {
         super.doAfterCompose(comp); //wire variables and event listners
         //do whatever you want (you could access wired variables here)
-        CenterRegistry cr = new CenterRegistry();
-        ArrayList<Endpoint> ep = cr.getEndpoints();
+        Harvester harv = new Harvester();
+        ArrayList<Endpoint> ep = harv.getEndpoints();
 
-        int i;
+        int i, i2;
 
         for (i = 0; i < ep.size(); i++) {
-            Checkbox cb = new Checkbox();
-            cb.setLabel("LABEL: " +  ep.get(i).getInstitution());
-            Row r = new Row();
-            
-            System.out.println(ep.get(i).getInstitution() + " " + ep.get(i).getUrl());
-            allCorpora.getChildren().add(cb);
-            allCorpora.getChildren().add(new Separator());
+
+            System.out.println("Calling corpora ...: " + ep.get(i).getUrl());
+            ArrayList<String> corpora = harv.getCorporaOfAnEndpoint(ep.get(i).getUrl());
+
+            if (corpora.size() == 0) {
+                Checkbox cb = new Checkbox();
+                cb.setLabel(ep.get(i).getUrl());
+                allCorpora.getChildren().add(cb);
+                allCorpora.getChildren().add(new Separator());
+            } else {
+                Label l = new Label(ep.get(i).getUrl() + ":");
+
+                allCorpora.getChildren().add(l);
+                allCorpora.getChildren().add(new Separator());
+                for (i2 = 0; i2 < corpora.size(); i2++) {
+                    Checkbox cb = new Checkbox();
+                    cb.setLabel(corpora.get(i2));
+                    
+                    allCorpora.getChildren().add(cb);
+                    allCorpora.getChildren().add(new Separator());
+                } // for i2 ...
+            } // if corpora.size else
         } // for i ...
     }
 
@@ -72,16 +87,14 @@ public class Aggregator extends SelectorComposer<Component> {
             display = display + "Corpora:\n";
 
             for (i = 0; i < allCorpora.getChildren().size(); i++) {
-                    if(allCorpora.getChildren().get(i) instanceof Checkbox){
+                if (allCorpora.getChildren().get(i) instanceof Checkbox) {
                     Checkbox cb = (Checkbox) allCorpora.getChildren().get(i);
                     if (cb.isChecked()) {
+                        // now execute the search:
                         display = display + cb.getLabel() + "\n";
                     }
-                    }
+                }
             } // for i ...
-
-
-          
 
             Messagebox.show(display);
 
