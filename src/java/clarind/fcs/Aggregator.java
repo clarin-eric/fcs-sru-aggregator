@@ -16,6 +16,7 @@ import org.zkoss.zul.Button;
 import org.zkoss.zul.Groupbox;
 import org.zkoss.zul.Separator;
 import org.zkoss.zul.Label;
+import org.zkoss.zul.Comboitem;
 
 public class Aggregator extends SelectorComposer<Component> {
 
@@ -29,11 +30,16 @@ public class Aggregator extends SelectorComposer<Component> {
     private Checkbox ids1;
     @Wire
     private Groupbox allCorpora;
+     @Wire
+    private Comboitem german;
 
     @Override
     public void doAfterCompose(Component comp) throws Exception {
         super.doAfterCompose(comp); //wire variables and event listners
         //do whatever you want (you could access wired variables here)
+        
+        languageSelect.setSelectedItem(german);
+        
         Harvester harv = new Harvester();
         ArrayList<Endpoint> ep = harv.getEndpoints();
 
@@ -42,11 +48,13 @@ public class Aggregator extends SelectorComposer<Component> {
         for (i = 0; i < ep.size(); i++) {
 
             System.out.println("Calling corpora ...: " + ep.get(i).getUrl());
-            ArrayList<String> corpora = harv.getCorporaOfAnEndpoint(ep.get(i).getUrl());
+            ArrayList<Corpus> corpora = harv.getCorporaOfAnEndpoint(ep.get(i).getUrl());
 
             if (corpora.size() == 0) {
                 Checkbox cb = new Checkbox();
+                 cb.setId(ep.get(i).getUrl() + "?operation=searchRetrieve&version=1.2");
                 cb.setLabel(ep.get(i).getUrl());
+                
                 allCorpora.getChildren().add(cb);
                 allCorpora.getChildren().add(new Separator());
             } else {
@@ -56,7 +64,11 @@ public class Aggregator extends SelectorComposer<Component> {
                 allCorpora.getChildren().add(new Separator());
                 for (i2 = 0; i2 < corpora.size(); i2++) {
                     Checkbox cb = new Checkbox();
-                    cb.setLabel(corpora.get(i2));
+                    
+                    //http://clarinws.informatik.uni-leipzig.de:8080/CQL?operation=searchRetrieve&version=1.2&query=Boppard&x-context=11858/00-229C-0000-0003-174F-D&maximumRecords=2
+
+                    cb.setId(ep.get(i).getUrl() + "?operation=searchRetrieve&version=1.2&x-context=" + corpora.get(i2).getValue());
+                    cb.setLabel(corpora.get(i2).getDisplayTerm());
                     
                     allCorpora.getChildren().add(cb);
                     allCorpora.getChildren().add(new Separator());
@@ -76,6 +88,12 @@ public class Aggregator extends SelectorComposer<Component> {
     @Listen("onClick = #searchButton")
     public void onExecuteSearch(Event ev) {
         try {
+            
+            if (languageSelect.getText().trim().equals("")){
+                  Messagebox.show("Please select a language.");
+                  return;
+            }
+            
             String display = "SearchString: " + searchString.getText() + "\n";
 
             display = display + "Language: " + languageSelect.getSelectedItem().getLabel() + "\n";
@@ -91,13 +109,14 @@ public class Aggregator extends SelectorComposer<Component> {
                     Checkbox cb = (Checkbox) allCorpora.getChildren().get(i);
                     if (cb.isChecked()) {
                         // now execute the search:
-                        display = display + cb.getLabel() + "\n";
+                        String query = cb.getId() + "&maximumRecords=10&query=" + searchString.getText();
+                        display = display + query + "\n";
                     }
                 }
             } // for i ...
 
             Messagebox.show(display);
-
+            System.out.println(display);
         } catch (Exception ex) {
             System.out.println(ex.getMessage());
         }

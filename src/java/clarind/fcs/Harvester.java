@@ -16,7 +16,7 @@ public class Harvester {
 
     final String crStartpoint = "http://130.183.206.32/restxml/";
 
-     private NodeList evaluateXPath(String statement, org.w3c.dom.Document domtree){
+    private NodeList evaluateXPath(String statement, org.w3c.dom.Document domtree) {
         NodeList result = null;
 
         XPath xpath = XPathFactory.newInstance().newXPath();
@@ -27,8 +27,8 @@ public class Harvester {
         }
         return result;
     }
-     
-     public String evaluateXPathToString(String statement, org.w3c.dom.Document domtree) {
+
+    public String evaluateXPathToString(String statement, org.w3c.dom.Document domtree) {
         String result = null;
 
         XPath xpath = XPathFactory.newInstance().newXPath();
@@ -39,88 +39,114 @@ public class Harvester {
         }
         return result;
     }
-    
-    
-    public  ArrayList<Endpoint> getEndpoints() throws Exception {
+
+    public ArrayList<Endpoint> getEndpoints() throws Exception {
         ArrayList<Endpoint> ep = new ArrayList<Endpoint>();
 
         URL u = new URL(crStartpoint);
         InputStream is = u.openStream();
-        
+
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         DocumentBuilder builder = factory.newDocumentBuilder();
         org.w3c.dom.Document document = builder.parse(is);
 
         is.close();
         String instituteName = evaluateXPathToString("//Name", document);
-        
+
         NodeList institutionsUrls = evaluateXPath("//Center_id_link", document);
-        
+
         int i, i2;
-        
-        for(i=0; i<institutionsUrls.getLength();i++){             
-             u = new URL(institutionsUrls.item(i).getTextContent());
-             is = u.openStream();
-             
-             org.w3c.dom.Document doc = builder.parse(is);
-             is.close();
-             ////WebReference[./Description[text()="CQL"]]/Website                         
-             
-             NodeList endpointsUrls = evaluateXPath("//WebReference[./Description[text()=\"CQL\"]]/Website", doc);
-             
-             for(i2=0; i2<endpointsUrls.getLength();i2++){
-                 String epUrl = endpointsUrls.item(i2).getTextContent();                 
-                 ep.add(new Endpoint(epUrl, instituteName));
-             } // for i2
-                          
+
+        for (i = 0; i < institutionsUrls.getLength(); i++) {
+            u = new URL(institutionsUrls.item(i).getTextContent());
+            is = u.openStream();
+
+            org.w3c.dom.Document doc = builder.parse(is);
+            is.close();
+            ////WebReference[./Description[text()="CQL"]]/Website                         
+
+            NodeList endpointsUrls = evaluateXPath("//WebReference[./Description[text()=\"CQL\"]]/Website", doc);
+
+            for (i2 = 0; i2 < endpointsUrls.getLength(); i2++) {
+                String epUrl = endpointsUrls.item(i2).getTextContent();
+                ep.add(new Endpoint(epUrl, instituteName));
+            } // for i2
+
         } // for i ...
-        
+
 
         return ep;
     } //getEndpoints
-    
-    
-    public ArrayList<String> getCorporaOfAnEndpoint(String endpointUrl) throws Exception {
-        System.out.println("getCorporaOfAnEndpoint: " + endpointUrl);
-        ArrayList<String> corpora = new ArrayList<String>();
-        
-        URL u = new URL(endpointUrl + "?operation=scan&scanClause=fcs.resource");
+
+    public ArrayList<Corpus> getCorporaOfAnEndpoint(String endpointUrl) throws Exception {
+
+        ArrayList<Corpus> corpora = new ArrayList<Corpus>();
+        String urlToCall = endpointUrl + "?operation=scan&scanClause=fcs.resource&version=1.2";
+        URL u = new URL(urlToCall);
+
+        System.out.println("getCorporaOfAnEndpoint: " + urlToCall);
+
         InputStream is = u.openStream();
-        
+
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         DocumentBuilder builder = factory.newDocumentBuilder();
         org.w3c.dom.Document document = builder.parse(is);
 
         is.close();
-        
+
         //http://clarinws.informatik.uni-leipzig.de:8080/CQL?
-        
-        NodeList corporaNodes = evaluateXPath("//*[local-name()='term']/*[local-name()='value']", document);
-      
+
+        //NodeList corporaNodes = evaluateXPath("//*[local-name()='term']/*[local-name()='value']", document);
+        NodeList corporaNodes = evaluateXPath("//*[local-name()='terms']/*[local-name()='term']", document);
+
         int i, i2;
-        
-        for(i=0; i<corporaNodes.getLength();i++){
-          corpora.add(corporaNodes.item(i).getTextContent());
+        if (corporaNodes.getLength() > 0) {
             
-        } // for i ...
+            System.out.println("Length of corpora: " + corporaNodes.getLength());
+            
+            for (i = 0; i < corporaNodes.getLength(); i++) {
+                Node n = corporaNodes.item(i);
+                
+                System.out.println("NODENAEM: " + n.getNodeName());
+                
+                Corpus c = new Corpus();
+
+                for (i2 = 0; i2 < n.getChildNodes().getLength(); i2++) {
+                    Node child = n.getChildNodes().item(i2);
+
+                    if (child.getNodeName().endsWith("value")) {
+                        c.setValue(child.getTextContent());
+                    }
+
+                    if (child.getNodeName().endsWith("displayTerm")) {
+                        c.setDisplayTerm(child.getTextContent());
+                    }
+
+                    if (child.getNodeName().endsWith("numberOfRecords")) {
+                        c.setNumberOfRecords(child.getTextContent());
+                    }
+
+                } //for i2
+
+                corpora.add(c);
+
+            } // for i ...
+        } // if coporaNodes ...
+        
+        System.out.println("------------");
         return corpora;
     }  // getCorporaOfAnEndpoint
-    
-    
-    public static void main (String[] args) throws Exception {
+
+    public static void main(String[] args) throws Exception {
         Harvester cr = new Harvester();
         ArrayList<Endpoint> ep = cr.getEndpoints();
-        
+
         int i;
-        
-        for(i=0; i<ep.size();i++){
+
+        for (i = 0; i < ep.size(); i++) {
             System.out.println(ep.get(i).getInstitution() + " " + ep.get(i).getUrl());
         } // for i ...
-        
-        
+
+
     }
-    
-    
-    
-    
 }

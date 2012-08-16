@@ -21,11 +21,11 @@
                         <!-- forward ="onExecuteSearch"-->
                         <separator />
                         <label>Language:</label>
-                        <combobox id="languageSelect" width="150px">                            
+                        <combobox id="languageSelect" width="150px" value="German">                                                                                                                   
                             <!--<template name="model"> -->
-                            <comboitem label="German" />
-                            <comboitem label="English" />
-                            <comboitem label="Dutch" />
+                            <comboitem label="German" id="german"/>
+                            <comboitem label="English" id="english"/>
+                            <comboitem label="Dutch" id="dutch" />
                             <comboitem label="-More to come-" />
                             <!-- </template> -->
                         </combobox>
@@ -33,7 +33,7 @@
                         <separator />
                         
                         <groupbox mold="3d" id="allCorpora">
-                        <caption>All Corpora</caption>
+                            <caption>All Corpora</caption>
                            
                         </groupbox>
                         
