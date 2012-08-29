@@ -4,24 +4,20 @@ import eu.clarin.sru.client.*;
 
 import eu.clarin.sru.fcs.ClarinFederatedContentSearchRecordData;
 import eu.clarin.sru.fcs.ClarinFederatedContentSearchRecordParser;
-import org.xml.sax.helpers.DefaultHandler;
+//import org.xml.sax.helpers.DefaultHandler;
 
-import org.zkoss.zul.Html;
-import org.zkoss.zul.Grid;
-import org.zkoss.zul.Rows;
 import org.zkoss.zul.Row;
 import org.zkoss.zul.Label;
 
+import java.util.*;
 
 public class SRUSearch {
-    private StringBuilder sb;
-    
-    public  StringBuilder execute(String query, String endpointURL, String corpus, int maximumRecords, Html results, final Grid grid) throws Exception {
-        sb = new StringBuilder();
-        sb.append("URL: "+ endpointURL + "<br>");
-        sb.append("CORPUS: " + corpus + "<br><hr>");
-        
-        
+
+    private ArrayList<Row> zeilen;
+
+    public ArrayList<Row> execute(String query, String endpointURL, String corpus, int maximumRecords) throws Exception {
+        zeilen  = new ArrayList<Row>();
+
         SRUClient client = new SRUClient();
         client.registerRecordParser(new ClarinFederatedContentSearchRecordParser());
 
@@ -35,7 +31,7 @@ public class SRUSearch {
             System.out.println("I'm setting the x-context");
 
         }
-
+        try {
         client.searchRetrieve(request, new SRUDefaultHandlerAdapter() {
             @Override
             public void onRecord(String identifier, int position, SRURecordData data) throws SRUClientException {
@@ -44,38 +40,30 @@ public class SRUSearch {
                     String left = record.getLeft();
                     String hit = record.getKeyword();
                     String right = record.getRight();
-                    
-                    System.out.print("LEFT: " + left);
-                    System.out.println("HIT: " + hit);
-                    System.out.println("RIGHT: " + right);
-                    
-                    sb.append(left);
-                    sb.append("<font color='red'>");
-                    sb.append(" " + hit + " ");
-                    sb.append("</font>");
-                    sb.append(right);
-                    sb.append("<br><br>");
-                    
-//                    Rows rows = grid.getRows();
-//                    Row r = new Row();
-//                    r.appendChild(new Label(left));
-//                    r.appendChild(new Label(hit));
-//                    r.appendChild(new Label(right));
-//                    
-//                    rows.appendChild(r);
-                    
-                    
+
+//                    System.out.print("LEFT: " + left);
+//                    System.out.println("HIT: " + hit);
+//                    System.out.println("RIGHT: " + right);
+
+                    Row r = new Row();
+                    r.appendChild(new Label(left));
+                    r.appendChild(new Label(hit));
+                    r.appendChild(new Label(right));
+
+                    zeilen.add(r);
                 }
             }
         });
-        sb.append("<hr>");
-        return sb;
+        } catch (Exception ex){
+            System.out.println(ex.getMessage());
+        }
+
+        
+//        System.out.println("NUMBER of LINES: " + zeilen.size());
+        
+        return zeilen;
     }
 
     public static void main(String[] args) throws Exception {
-
-    
-
-
     } // main
 }

@@ -1,14 +1,15 @@
 package clarind.fcs;
 
-import eu.clarin.sru.client.SRUClient;
-import eu.clarin.sru.client.SRUClientException;
-import eu.clarin.sru.client.SRUDefaultHandlerAdapter;
-import eu.clarin.sru.client.SRURecordData;
-import eu.clarin.sru.client.SRUSearchRetrieveRequest;
-import eu.clarin.sru.client.SRUVersion;
-import eu.clarin.sru.fcs.ClarinFederatedContentSearchRecordData;
-import eu.clarin.sru.fcs.ClarinFederatedContentSearchRecordParser;
+//import eu.clarin.sru.client.SRUClient;
+//import eu.clarin.sru.client.SRUClientException;
+//import eu.clarin.sru.client.SRUDefaultHandlerAdapter;
+//import eu.clarin.sru.client.SRURecordData;
+//import eu.clarin.sru.client.SRUSearchRetrieveRequest;
+//import eu.clarin.sru.client.SRUVersion;
+//import eu.clarin.sru.fcs.ClarinFederatedContentSearchRecordData;
+//import eu.clarin.sru.fcs.ClarinFederatedContentSearchRecordParser;
 import java.util.ArrayList;
+import org.zkoss.zhtml.Filedownload;
 import org.zkoss.zk.ui.Component;
 import org.zkoss.zk.ui.event.Event;
 import org.zkoss.zk.ui.select.SelectorComposer;
@@ -24,9 +25,13 @@ import org.zkoss.zul.Button;
 import org.zkoss.zul.Groupbox;
 import org.zkoss.zul.Separator;
 import org.zkoss.zul.Label;
-import org.zkoss.zul.Html;
+//import org.zkoss.zul.Html;
 import org.zkoss.zul.Comboitem;
 import org.zkoss.zul.Grid;
+//import org.zkoss.zul.Panelchildren;
+import org.zkoss.zul.Columns;
+import org.zkoss.zul.Column;
+import org.zkoss.zul.Vbox;
 
 public class Aggregator extends SelectorComposer<Component> {
 
@@ -45,7 +50,11 @@ public class Aggregator extends SelectorComposer<Component> {
     @Wire
     private Comboitem german;
     @Wire
-    private Html anzeigeResults;
+    private Vbox resultsVbox;
+    @Wire
+    private Button selectAll;
+    @Wire
+    private Button deselectAll;
 
     @Override
     public void doAfterCompose(Component comp) throws Exception {
@@ -78,12 +87,12 @@ public class Aggregator extends SelectorComposer<Component> {
             } else {
                 Label l = new Label(ep.get(i).getUrl() + ":");
 
+                l.setStyle("font-weight:bold");
+
                 allCorpora.getChildren().add(l);
                 allCorpora.getChildren().add(new Separator());
                 for (i2 = 0; i2 < corpora.size(); i2++) {
                     Checkbox cb = new Checkbox();
-
-                    //http://clarinws.informatik.uni-leipzig.de:8080/CQL?operation=searchRetrieve&version=1.2&query=Boppard&x-context=11858/00-229C-0000-0003-174F-D&maximumRecords=2
 
                     cb.setId(ep.get(i).getUrl() + "\t" + corpora.get(i2).getValue());
                     cb.setLabel(corpora.get(i2).getDisplayTerm());
@@ -94,8 +103,39 @@ public class Aggregator extends SelectorComposer<Component> {
                     System.out.println("CHECKBOX: " + cb.getId());
                 } // for i2 ...
             } // if corpora.size else
+
+            Separator sep = new Separator();
+
+            sep.setBar(true);
+            allCorpora.getChildren().add(sep);
+
         } // for i ...
+
     }
+
+    @Listen("onClick = #selectAll")
+    public void onSelectAll(Event ev) {
+        int i;
+
+        for (i = 0; i < allCorpora.getChildren().size(); i++) {
+            if (allCorpora.getChildren().get(i) instanceof Checkbox) {
+                Checkbox cb = (Checkbox) allCorpora.getChildren().get(i);
+                cb.setChecked(true);
+            }
+        }
+    } //onSelectAll
+
+    @Listen("onClick = #deselectAll")
+    public void onDeselectAll(Event ev) {
+        int i;
+
+        for (i = 0; i < allCorpora.getChildren().size(); i++) {
+            if (allCorpora.getChildren().get(i) instanceof Checkbox) {
+                Checkbox cb = (Checkbox) allCorpora.getChildren().get(i);
+                cb.setChecked(false);
+            }
+        }
+    } //onDeselectAll
 
     @Listen("onSelect = #languageSelect")
     public void onSelectLanguage(Event ev) {
@@ -105,15 +145,42 @@ public class Aggregator extends SelectorComposer<Component> {
         }
     }
 
+    @Listen("onClick=#clearResults")
+    public void onClearResults(Event ev) {
+        resultsVbox.getChildren().clear();
+    }
+
+    @Listen("onClick=#exportResults")
+    public void onExportResults(Event ev) {
+
+        int i, i2, i3;
+        String temp = "";
+
+        for (i = 0; i < resultsVbox.getChildren().size(); i++) {
+            if (resultsVbox.getChildren().get(i) instanceof Grid) {
+                Grid aGrid = (Grid) resultsVbox.getChildren().get(i);
+                Rows rows = aGrid.getRows();
+
+                for (i2 = 0; i2 < rows.getChildren().size(); i2++) {
+                    Row r = (Row) rows.getChildren().get(i2);
+
+                    for (i3 = 0; i3 < r.getChildren().size(); i3++) {
+                        Label l = (Label) r.getChildren().get(i3);
+                        temp = temp + l.getValue();
+                        if (i3 < r.getChildren().size() - 1) {
+                            temp = temp + "\t";
+                        } //if i3
+                    } //for i3
+                    temp = temp + "\n";
+                } // for i2
+            } // if grid
+
+        } // for i ...
+        Filedownload.save(temp, "text/plain", "table.csv");
+    }
+
     @Listen("onClick = #searchButton")
     public void onExecuteSearch(Event ev) {
-//        try {
-//            ExecuteSRUSearch.execute();
-//        } catch (Exception ex){
-//            System.out.println(ex.getMessage());
-//        }
-
-
 
         try {
 
@@ -122,17 +189,20 @@ public class Aggregator extends SelectorComposer<Component> {
                 return;
             }
 
-            anzeigeResults.setContent("");
-            
             int i, i2;
+
+
+            resultsVbox.getChildren().clear();
+
+
+
 
             for (i = 0; i < allCorpora.getChildren().size(); i++) {
                 if (allCorpora.getChildren().get(i) instanceof Checkbox) {
                     Checkbox cb = (Checkbox) allCorpora.getChildren().get(i);
                     if (cb.isChecked()) {
                         // now execute the search:
-//                        String query = cb.getId() + "&maximumRecords=10&query=" + searchString.getText();
-//                        display = display + query + "\n";
+
                         System.out.println("---- THE SEARCH ----");
 
                         String endpointURL = null;
@@ -148,15 +218,63 @@ public class Aggregator extends SelectorComposer<Component> {
                         System.out.println("enddpointURL: " + endpointURL);
                         System.out.println("corpus: " + corpus);
                         SRUSearch srusearch = new SRUSearch();
-                        anzeigeResults.setContent(anzeigeResults.getContent() + srusearch.execute(searchString.getText(), endpointURL, corpus, 10, anzeigeResults, anzeigeGrid).toString());
+                        System.out.println("Calling the client ");
+
+                        resultsVbox.appendChild(new Label("Query: " + searchString.getText()));
+                        resultsVbox.appendChild(new Label("Endpoint: " + endpointURL));
+                        resultsVbox.appendChild(new Label("Corpus: " + corpus));
 
 
+                        ArrayList<Row> zeilen = srusearch.execute(searchString.getText(), endpointURL, corpus, 10);
 
+                        if (zeilen.size() > 0) {
+
+                            Grid g = new Grid();
+
+                            g.setMold("paging");
+                            g.setPageSize(10);
+
+                            Columns columns = new Columns();
+
+                            Column c = new Column();
+                            c.setLabel("Left");
+
+                            columns.appendChild(c);
+
+                            c = new Column();
+                            c.setLabel("Hit");
+                            c.setHflex("min");
+                            columns.appendChild(c);
+
+                            c = new Column();
+                            c.setLabel("Right");
+                            columns.appendChild(c);
+
+                            g.appendChild(columns);
+
+                            Rows rows = new Rows();
+
+                            for (i2 = 0; i2 < zeilen.size(); i2++) {
+                                System.out.println("Adding row " + i2);
+                                System.out.println("ROW: " + zeilen.get(i2));
+                                rows.appendChild(zeilen.get(i2));
+                            } // for i2 ...
+
+                            g.appendChild(rows);
+
+                            resultsVbox.appendChild(g);
+                        } else {
+                            resultsVbox.appendChild(new Label("Sorry there were no results!"));
+
+                        } // if zeilen > 0
+
+                        Separator sep = new Separator();
+                        sep.setSpacing("20px");
+                        resultsVbox.appendChild(sep);
                     }
                 }
             } // for i ...
             System.out.println("Done");
-            //Messagebox.show(display);
 
         } catch (Exception ex) {
             System.out.println(ex.getMessage());

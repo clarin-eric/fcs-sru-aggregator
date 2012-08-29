@@ -3,8 +3,8 @@
     <window  id="mainWindow" contentStyle="background:white;" height="100%" apply="clarind.fcs.Aggregator"> 
         <borderlayout sclass="complex-layout"  >
             <!-- Kopf -->
-            <north height="100px">
-                
+            <north height="65px">
+                <image src="clarindLogo.png"/>
             </north>
             
             <!-- Linke Sidebar -->
@@ -17,10 +17,14 @@
                 <panel >
                     <panelchildren style="margin-top:10px;margin-left:10px;margin-right:10px;border:0;">                   
                         <textbox id="searchString" value="Elefant" />
-                        <button id="searchButton"  label="Search" />     
+                        <button id="searchButton"  label="Search" image="buttonSearch.png"/>     
                         <!-- forward ="onExecuteSearch"-->
                         <separator />
-                        <label>Language:</label>
+                       
+                        
+                        <groupbox mold="3d" id="allCorpora">
+                            <caption>All Corpora</caption>   
+                             <label>Select by Language:</label>
                         <combobox id="languageSelect" width="150px" value="German">                                                                                                                   
                             <!--<template name="model"> -->
                             <comboitem label="German" id="german"/>
@@ -30,10 +34,16 @@
                             <!-- </template> -->
                         </combobox>
                         
-                        <separator />
+                         <separator />
                         
-                        <groupbox mold="3d" id="allCorpora">
-                            <caption>All Corpora</caption>                           
+                        <button id="selectAll" label="Select All" image="buttonSelectAll.png"/>                                           
+                        
+                        <button id="deselectAll" label="Deselect All" image="buttonDeselectAll.png"/>
+                        
+                        <separator />
+                                                    
+                                                                            
+                                                                                                                            
                         </groupbox>
                     </panelchildren>
                 </panel>
@@ -42,15 +52,23 @@
             <!-- Rechte Sidebar -->  
             <center  flex="true"  margins="0,5,0,0" autoscroll="true" >
                 <panel>
-                    <panelchildren style="overflow: auto">
+                    <panelchildren  id="resultsPanel" style="overflow: auto">
+                        <toolbar id="resultsToolbar"  height="20px">
+                            <toolbarbutton id="clearResults" label="Clear Results" image="buttonDelete.png"/>
+                            <toolbarbutton id="exportResults" label="Export Results" image="buttonExport.png"/>
+                                
+                        </toolbar>
+                        <vbox id="resultsVbox">
                         <grid id="anzeigeGrid">
                             <columns>
                                 <column></column>
                                 <column></column>  
                                 <column></column>                                       
                             </columns>
+                            <rows></rows>
                         </grid>
                         <html id="anzeigeResults" />
+                        </vbox>
                     </panelchildren>
                     
                 </panel>
