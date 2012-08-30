@@ -1,5 +1,6 @@
 
 <zk>
+<!--title="CLARIN-D Federated Content Search"-->
     <window  id="mainWindow" contentStyle="background:white;" height="100%" apply="clarind.fcs.Aggregator"> 
         <borderlayout sclass="complex-layout"  >
             <!-- Kopf -->
@@ -18,7 +19,7 @@
                     <panelchildren style="margin-top:10px;margin-left:10px;margin-right:10px;border:0;">                   
                         <textbox id="searchString" value="Elefant" />
                         <button id="searchButton"  label="Search" image="buttonSearch.png"/>     
-                        <!-- forward ="onExecuteSearch"-->
+
                         <separator />
                        
                         
@@ -26,24 +27,19 @@
                             <caption>All Corpora</caption>   
                              <label>Select by Language:</label>
                         <combobox id="languageSelect" width="150px" value="German">                                                                                                                   
-                            <!--<template name="model"> -->
                             <comboitem label="German" id="german"/>
                             <comboitem label="English" id="english"/>
                             <comboitem label="Dutch" id="dutch" />
                             <comboitem label="-More to come-" />
-                            <!-- </template> -->
                         </combobox>
                         
                          <separator />
                         
-                        <button id="selectAll" label="Select All" image="buttonSelectAll.png"/>                                           
-                        
-                        <button id="deselectAll" label="Deselect All" image="buttonDeselectAll.png"/>
-                        
+                        <button id="selectAll" label="Select All" image="buttonSelectAll.png"/>                                                                  
+                        <button id="deselectAll" label="Deselect All" image="buttonDeselectAll.png"/>                      
+                      
                         <separator />
-                                                    
-                                                                            
-                                                                                                                            
+                                                                                       
                         </groupbox>
                     </panelchildren>
                 </panel>
@@ -53,27 +49,43 @@
             <center  flex="true"  margins="0,5,0,0" autoscroll="true" >
                 <panel>
                     <panelchildren  id="resultsPanel" style="overflow: auto">
-                        <toolbar id="resultsToolbar"  height="20px">
-                            <toolbarbutton id="clearResults" label="Clear Results" image="buttonDelete.png"/>
+                        <menubar id="menubar" width="100%">
+                            <menu label="Actions" image="buttonActions.png">
+                                <menupopup>
+                                    <menuitem label="Clear Results" id="clearResults" image="buttonDelete.png" />
+                                  <menuitem label="Export Results to CSV" id="exportResultsCSV" image="buttonExport.png" />
+                                  <menuitem label="Export Results to TCF" id="exportResultsTCF" image="buttonExport.png" />                           
+                             </menupopup>                                
+                            </menu>                            
+                            <menu label="Help" image="buttonHelp.png">
+                                <menupopup>
+                                     <menuitem label="Show Help" id="showHelp" image="buttonHelp.png" />
+                                </menupopup>   
+                            </menu>
+                                                                                 
+                        </menubar>
+<!--                         <toolbar id="resultsToolbar"  height="20px">
+                           <toolbarbutton id="clearResults" label="Clear Results" image="buttonDelete.png"/>
                             <toolbarbutton id="exportResults" label="Export Results" image="buttonExport.png"/>
+                            <toolbarbutton id="showHelp" label="Show Help" image="buttonHelp.png"/>
                                 
                         </toolbar>
+                        -->
                         <vbox id="resultsVbox">
-                        <grid id="anzeigeGrid">
-                            <columns>
-                                <column></column>
-                                <column></column>  
-                                <column></column>                                       
-                            </columns>
-                            <rows></rows>
-                        </grid>
-                        <html id="anzeigeResults" />
+                            <iframe src="help.html" width="100%" height="100%"/>
+                            <grid id="anzeigeGrid">
+                                <columns>
+                                    <column></column>
+                                    <column></column>  
+                                    <column></column>                                       
+                                </columns>
+                                <rows></rows>
+                            </grid>
+                            <html id="anzeigeResults" />
                         </vbox>
                     </panelchildren>
                     
                 </panel>
-
-                
             </center>
             
             <!-- Fusszeile -->   

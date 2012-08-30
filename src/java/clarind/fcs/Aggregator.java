@@ -32,9 +32,11 @@ import org.zkoss.zul.Grid;
 import org.zkoss.zul.Columns;
 import org.zkoss.zul.Column;
 import org.zkoss.zul.Vbox;
+import org.zkoss.zul.Iframe;
+import org.zkoss.zul.Window;
 
 public class Aggregator extends SelectorComposer<Component> {
-
+    
     @Wire
     private Grid anzeigeGrid;
     @Wire
@@ -55,68 +57,71 @@ public class Aggregator extends SelectorComposer<Component> {
     private Button selectAll;
     @Wire
     private Button deselectAll;
-
+    @Wire
+    private Window mainWindow;
+    
+    
     @Override
     public void doAfterCompose(Component comp) throws Exception {
         super.doAfterCompose(comp); //wire variables and event listners
         //do whatever you want (you could access wired variables here)
 
         languageSelect.setSelectedItem(german);
-
+        
         Harvester harv = new Harvester();
         ArrayList<Endpoint> ep = harv.getEndpoints();
-
+        
         int i, i2;
-
+        
         for (i = 0; i < ep.size(); i++) {
-
+            
             System.out.println("Calling corpora ...: " + ep.get(i).getUrl());
             ArrayList<Corpus> corpora = harv.getCorporaOfAnEndpoint(ep.get(i).getUrl());
-
+            
             if (corpora.size() == 0) {
                 Checkbox cb = new Checkbox();
                 cb.setId(ep.get(i).getUrl());
 
                 //"?operation=searchRetrieve&version=1.2"
                 cb.setLabel(ep.get(i).getUrl());
-
+                
                 allCorpora.getChildren().add(cb);
                 allCorpora.getChildren().add(new Separator());
-
+                
                 System.out.println("CHECKBOX: " + cb.getId());
             } else {
                 Label l = new Label(ep.get(i).getUrl() + ":");
-
+                
                 l.setStyle("font-weight:bold");
-
+                
                 allCorpora.getChildren().add(l);
                 allCorpora.getChildren().add(new Separator());
                 for (i2 = 0; i2 < corpora.size(); i2++) {
                     Checkbox cb = new Checkbox();
-
+                    
                     cb.setId(ep.get(i).getUrl() + "\t" + corpora.get(i2).getValue());
                     cb.setLabel(corpora.get(i2).getDisplayTerm());
-
+                    
                     allCorpora.getChildren().add(cb);
                     allCorpora.getChildren().add(new Separator());
-
+                    
                     System.out.println("CHECKBOX: " + cb.getId());
                 } // for i2 ...
             } // if corpora.size else
 
             Separator sep = new Separator();
-
+            
             sep.setBar(true);
             allCorpora.getChildren().add(sep);
-
+            
         } // for i ...
 
     }
-
+    
     @Listen("onClick = #selectAll")
     public void onSelectAll(Event ev) {
         int i;
-
+        
         for (i = 0; i < allCorpora.getChildren().size(); i++) {
             if (allCorpora.getChildren().get(i) instanceof Checkbox) {
                 Checkbox cb = (Checkbox) allCorpora.getChildren().get(i);
@@ -128,7 +133,7 @@ public class Aggregator extends SelectorComposer<Component> {
     @Listen("onClick = #deselectAll")
     public void onDeselectAll(Event ev) {
         int i;
-
+        
         for (i = 0; i < allCorpora.getChildren().size(); i++) {
             if (allCorpora.getChildren().get(i) instanceof Checkbox) {
                 Checkbox cb = (Checkbox) allCorpora.getChildren().get(i);
@@ -144,26 +149,38 @@ public class Aggregator extends SelectorComposer<Component> {
         } catch (Exception ex) {
         }
     }
-
+    
     @Listen("onClick=#clearResults")
     public void onClearResults(Event ev) {
         resultsVbox.getChildren().clear();
     }
-
-    @Listen("onClick=#exportResults")
-    public void onExportResults(Event ev) {
-
+    
+    @Listen("onClick=#showHelp")
+    public void onShowHelp(Event ev) {
+        resultsVbox.getChildren().clear();
+        Iframe help = new Iframe();
+        help.setWidth("100%");
+        help.setHeight("100%");
+        help.setSrc("help.html");
+        resultsVbox.appendChild(help);        
+    }
+    
+    @Listen("onClick=#exportResultsCSV")
+    public void onExportResultsCSV(Event ev) {
+        
         int i, i2, i3;
         String temp = "";
-
+        boolean somethingToExport = false;
+        
         for (i = 0; i < resultsVbox.getChildren().size(); i++) {
             if (resultsVbox.getChildren().get(i) instanceof Grid) {
+                somethingToExport = true;
                 Grid aGrid = (Grid) resultsVbox.getChildren().get(i);
                 Rows rows = aGrid.getRows();
-
+                
                 for (i2 = 0; i2 < rows.getChildren().size(); i2++) {
                     Row r = (Row) rows.getChildren().get(i2);
-
+                    
                     for (i3 = 0; i3 < r.getChildren().size(); i3++) {
                         Label l = (Label) r.getChildren().get(i3);
                         temp = temp + l.getValue();
@@ -176,84 +193,132 @@ public class Aggregator extends SelectorComposer<Component> {
             } // if grid
 
         } // for i ...
-        Filedownload.save(temp, "text/plain", "table.csv");
+        
+        if (somethingToExport) {
+            
+            Filedownload.save(temp, "text/plain", "ClarinDFederatedContentSearch.csv");
+        } else {
+            Messagebox.show("Nothing to export!");
+        }
     }
+    
+    
+     @Listen("onClick=#exportResultsTCF")
+    public void onExportResultsTCF(Event ev) {
+        
+        int i, i2, i3;
+        String temp = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><D-Spin xmlns=\"http://www.dspin.de/data\" version=\"0.4\">\n<MetaData xmlns=\"http://www.dspin.de/data/metadata\">\n";
+        temp = temp  + "<source>CLARIN-D Federated Content Search</source>\n</MetaData>\n  <TextCorpus xmlns=\"http://www.dspin.de/data/textcorpus\">\n<text>";
+        
+        
+        boolean somethingToExport = false;
+        
+        for (i = 0; i < resultsVbox.getChildren().size(); i++) {
+            if (resultsVbox.getChildren().get(i) instanceof Grid) {
+                somethingToExport = true;
+                Grid aGrid = (Grid) resultsVbox.getChildren().get(i);
+                Rows rows = aGrid.getRows();
+                
+                for (i2 = 0; i2 < rows.getChildren().size(); i2++) {
+                    Row r = (Row) rows.getChildren().get(i2);
+                    
+                    for (i3 = 0; i3 < r.getChildren().size(); i3++) {
+                        Label l = (Label) r.getChildren().get(i3);
+                        temp = temp + l.getValue() + " ";
+                    } //for i3
+                    temp = temp + "\n";
+                } // for i2
+            } // if grid
 
+        } // for i ...
+        
+        if (somethingToExport) {
+            temp = temp + "</text>\n</TextCorpus>\n</D-Spin>";
+            Filedownload.save(temp, "text/tcf+xml", "ClarinDFederatedContentSearch.xml");
+        } else {
+            Messagebox.show("Nothing to export!");
+        }
+    }
+     
+   
+    
     @Listen("onClick = #searchButton")
     public void onExecuteSearch(Event ev) {
-
+        
         try {
-
+            
             if (languageSelect.getText().trim().equals("")) {
                 Messagebox.show("Please select a language.");
                 return;
             }
-
+            
             int i, i2;
-
-
+            
+            
             resultsVbox.getChildren().clear();
-
-
-
-
+            
+            
+            boolean isACorpusSelected = false;
+            
             for (i = 0; i < allCorpora.getChildren().size(); i++) {
                 if (allCorpora.getChildren().get(i) instanceof Checkbox) {
                     Checkbox cb = (Checkbox) allCorpora.getChildren().get(i);
                     if (cb.isChecked()) {
                         // now execute the search:
-
+                        
+                        isACorpusSelected = true;
+                        
                         System.out.println("---- THE SEARCH ----");
-
+                        
                         String endpointURL = null;
                         String corpus = null;
-
+                        
                         if (cb.getId().contains("\t")) {
                             endpointURL = cb.getId().split("\t")[0];
                             corpus = cb.getId().split("\t")[1];
                         } else {
                             endpointURL = cb.getId();
                         }
-
+                        
                         System.out.println("enddpointURL: " + endpointURL);
                         System.out.println("corpus: " + corpus);
                         SRUSearch srusearch = new SRUSearch();
                         System.out.println("Calling the client ");
-
+                        
                         resultsVbox.appendChild(new Label("Query: " + searchString.getText()));
                         resultsVbox.appendChild(new Label("Endpoint: " + endpointURL));
                         resultsVbox.appendChild(new Label("Corpus: " + corpus));
-
-
+                        
+                        
                         ArrayList<Row> zeilen = srusearch.execute(searchString.getText(), endpointURL, corpus, 10);
-
+                        
                         if (zeilen.size() > 0) {
-
+                            
                             Grid g = new Grid();
-
+                            
                             g.setMold("paging");
                             g.setPageSize(10);
-
+                            
                             Columns columns = new Columns();
-
+                            
                             Column c = new Column();
                             c.setLabel("Left");
-
+                            
                             columns.appendChild(c);
-
+                            
                             c = new Column();
                             c.setLabel("Hit");
                             c.setHflex("min");
                             columns.appendChild(c);
-
+                            
                             c = new Column();
                             c.setLabel("Right");
                             columns.appendChild(c);
-
+                            
                             g.appendChild(columns);
-
+                            
                             Rows rows = new Rows();
-
+                            
                             for (i2 = 0; i2 < zeilen.size(); i2++) {
                                 System.out.println("Adding row " + i2);
                                 System.out.println("ROW: " + zeilen.get(i2));
@@ -261,11 +326,11 @@ public class Aggregator extends SelectorComposer<Component> {
                             } // for i2 ...
 
                             g.appendChild(rows);
-
+                            
                             resultsVbox.appendChild(g);
                         } else {
                             resultsVbox.appendChild(new Label("Sorry there were no results!"));
-
+                            
                         } // if zeilen > 0
 
                         Separator sep = new Separator();
@@ -274,11 +339,18 @@ public class Aggregator extends SelectorComposer<Component> {
                     }
                 }
             } // for i ...
-            System.out.println("Done");
-
+            
+            if (!isACorpusSelected) {
+                
+                Messagebox.show("Please select at least one corpus!", "CLARIN-D FCS Aggregator", 0, Messagebox.EXCLAMATION);
+            }
+            
+            
+            System.out.println("Search is done.");
+            
         } catch (Exception ex) {
             System.out.println(ex.getMessage());
         }
-
+        
     }
 }
