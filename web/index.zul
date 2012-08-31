@@ -25,6 +25,7 @@
                         
                         <groupbox mold="3d" id="allCorpora">
                             <caption>All Corpora</caption>   
+                           
                              <label>Select by Language:</label>
                         <combobox id="languageSelect" width="150px" value="German">                                                                                                                   
                             <comboitem label="German" id="german"/>
@@ -60,6 +61,7 @@
                             <menu label="Help" image="buttonHelp.png">
                                 <menupopup>
                                      <menuitem label="Show Help" id="showHelp" image="buttonHelp.png" />
+                                     <menuitem label="About" id="showAbout" image="buttonShowAbout.png" />
                                 </menupopup>   
                             </menu>
                                                                                  
@@ -89,9 +91,9 @@
             </center>
             
             <!-- Fusszeile -->   
-            <south height="100px">
+<!--            <south height="100px">
                 
-            </south>
+            </south>-->
         </borderlayout>
     </window>
 </zk>
