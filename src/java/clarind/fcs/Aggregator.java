@@ -1,13 +1,5 @@
 package clarind.fcs;
 
-//import eu.clarin.sru.client.SRUClient;
-//import eu.clarin.sru.client.SRUClientException;
-//import eu.clarin.sru.client.SRUDefaultHandlerAdapter;
-//import eu.clarin.sru.client.SRURecordData;
-//import eu.clarin.sru.client.SRUSearchRetrieveRequest;
-//import eu.clarin.sru.client.SRUVersion;
-//import eu.clarin.sru.fcs.ClarinFederatedContentSearchRecordData;
-//import eu.clarin.sru.fcs.ClarinFederatedContentSearchRecordParser;
 import java.util.ArrayList;
 import org.zkoss.zhtml.Filedownload;
 import org.zkoss.zk.ui.Component;
@@ -25,17 +17,19 @@ import org.zkoss.zul.Button;
 import org.zkoss.zul.Groupbox;
 import org.zkoss.zul.Separator;
 import org.zkoss.zul.Label;
-//import org.zkoss.zul.Html;
 import org.zkoss.zul.Comboitem;
 import org.zkoss.zul.Grid;
-//import org.zkoss.zul.Panelchildren;
 import org.zkoss.zul.Columns;
 import org.zkoss.zul.Column;
 import org.zkoss.zul.Vbox;
 import org.zkoss.zul.Iframe;
 import org.zkoss.zul.Window;
+import java.util.logging.*;
+
 
 public class Aggregator extends SelectorComposer<Component> {
+    
+    private static Logger logger = Logger.getLogger("FCS-AGGREGATOR");
 
     @Wire
     private Grid anzeigeGrid;
@@ -62,8 +56,7 @@ public class Aggregator extends SelectorComposer<Component> {
 
     @Override
     public void doAfterCompose(Component comp) throws Exception {
-        super.doAfterCompose(comp); //wire variables and event listners
-        //do whatever you want (you could access wired variables here)
+        super.doAfterCompose(comp); 
 
         languageSelect.setSelectedItem(german);
 
@@ -74,10 +67,10 @@ public class Aggregator extends SelectorComposer<Component> {
 
         for (i = 0; i < ep.size(); i++) {
 
-            System.out.println("Calling corpora ...: " + ep.get(i).getUrl());
+            logger.info("Calling corpora ...: " + ep.get(i).getUrl());
             ArrayList<Corpus> corpora = harv.getCorporaOfAnEndpoint(ep.get(i).getUrl());
 
-            if (corpora.size() == 0) {
+            if (corpora.isEmpty()) {
                 Checkbox cb = new Checkbox();
                 cb.setId(ep.get(i).getUrl());
 
@@ -87,7 +80,7 @@ public class Aggregator extends SelectorComposer<Component> {
                 allCorpora.getChildren().add(cb);
                 allCorpora.getChildren().add(new Separator());
 
-                System.out.println("CHECKBOX: " + cb.getId());
+                logger.info("Created Checkbox for endpoint" + cb.getId());
             } else {
                 Label l = new Label(ep.get(i).getUrl() + ":");
 
@@ -104,7 +97,7 @@ public class Aggregator extends SelectorComposer<Component> {
                     allCorpora.getChildren().add(cb);
                     allCorpora.getChildren().add(new Separator());
 
-                    System.out.println("CHECKBOX: " + cb.getId());
+                    logger.info("Created Checkbox for corpus " + cb.getId());
                 } // for i2 ...
             } // if corpora.size else
 
@@ -269,9 +262,7 @@ public class Aggregator extends SelectorComposer<Component> {
                         // now execute the search:
 
                         isACorpusSelected = true;
-
-                        System.out.println("---- THE SEARCH ----");
-
+                        
                         String endpointURL = null;
                         String corpus = null;
 
@@ -282,10 +273,7 @@ public class Aggregator extends SelectorComposer<Component> {
                             endpointURL = cb.getId();
                         }
 
-                        System.out.println("enddpointURL: " + endpointURL);
-                        System.out.println("corpus: " + corpus);
                         SRUSearch srusearch = new SRUSearch();
-                        System.out.println("Calling the client ");
 
                         resultsVbox.appendChild(new Label("Query: " + searchString.getText()));
                         resultsVbox.appendChild(new Label("Endpoint: " + endpointURL));
@@ -294,7 +282,7 @@ public class Aggregator extends SelectorComposer<Component> {
                         }
 
 
-
+                        logger.info("Now executing search: " + searchString.getText() + " " + endpointURL + " " +  corpus + " " + 10);
                         ArrayList<Row> zeilen = srusearch.execute(searchString.getText(), endpointURL, corpus, 10);
 
                         if (zeilen.size() > 0) {
@@ -350,7 +338,7 @@ public class Aggregator extends SelectorComposer<Component> {
             }
 
 
-            System.out.println("Search is done.");
+           logger.info("Search done.");
 
         } catch (Exception ex) {
             System.out.println(ex.getMessage());
