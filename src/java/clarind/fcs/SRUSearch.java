@@ -35,7 +35,7 @@ public class SRUSearch {
         client.searchRetrieve(request, new SRUDefaultHandlerAdapter() {
             @Override
             public void onRecord(String identifier, int position, SRURecordData data) throws SRUClientException {
-                if (ClarinFederatedContentSearchRecordParser.FCS_NS.equals(data.getRecordSchema())) {
+               // if (ClarinFederatedContentSearchRecordParser.FCS_NS.equals(data.getRecordSchema())) {
                     ClarinFederatedContentSearchRecordData record = (ClarinFederatedContentSearchRecordData) data;
                     String left = record.getLeft();
                     String hit = record.getKeyword();
@@ -49,7 +49,7 @@ public class SRUSearch {
                     r.appendChild(new Label(right));
 
                     zeilen.add(r);
-                }
+                //}
             }
         });
         } catch (Exception ex){

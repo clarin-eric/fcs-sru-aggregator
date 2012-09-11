@@ -249,11 +249,13 @@ public class Aggregator extends SelectorComposer<Component> {
 
             int i, i2;
 
-
             resultsVbox.getChildren().clear();
 
-
             boolean isACorpusSelected = false;
+                     
+            //SRUSearch srusearch = new SRUSearch();
+                        
+            SRUSearchThreaded srusearch =  SRUSearchThreaded.getInstance();
 
             for (i = 0; i < allCorpora.getChildren().size(); i++) {
                 if (allCorpora.getChildren().get(i) instanceof Checkbox) {
@@ -273,17 +275,21 @@ public class Aggregator extends SelectorComposer<Component> {
                             endpointURL = cb.getId();
                         }
 
-                        SRUSearch srusearch = new SRUSearch();
-
                         resultsVbox.appendChild(new Label("Query: " + searchString.getText()));
                         resultsVbox.appendChild(new Label("Endpoint: " + endpointURL));
                         if (corpus != null) {
                             resultsVbox.appendChild(new Label("Corpus: " + corpus));
                         }
 
-
                         logger.info("Now executing search: " + searchString.getText() + " " + endpointURL + " " +  corpus + " " + 10);
-                        ArrayList<Row> zeilen = srusearch.execute(searchString.getText(), endpointURL, corpus, 10);
+                      
+                        ArrayList<Row> zeilen = new ArrayList<Row>();
+                        
+                        try {
+                            zeilen = srusearch.execute(searchString.getText(), endpointURL, corpus, 10);
+                        } catch (Exception ex) {
+                            System.out.println(ex.getMessage());
+                        }
 
                         if (zeilen.size() > 0) {
 
@@ -331,7 +337,10 @@ public class Aggregator extends SelectorComposer<Component> {
                     }
                 }
             } // for i ...
-
+            
+           
+            
+            
             if (!isACorpusSelected) {
 
                 Messagebox.show("Please select at least one corpus!", "CLARIN-D FCS Aggregator", 0, Messagebox.EXCLAMATION);

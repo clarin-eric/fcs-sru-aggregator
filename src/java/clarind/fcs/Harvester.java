@@ -2,6 +2,7 @@ package clarind.fcs;
 
 import java.io.InputStream;
 import java.net.URL;
+import java.net.URLConnection;
 import java.util.*;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -43,37 +44,49 @@ public class Harvester {
     public ArrayList<Endpoint> getEndpoints() throws Exception {
         ArrayList<Endpoint> ep = new ArrayList<Endpoint>();
 
-        URL u = new URL(crStartpoint);
-        InputStream is = u.openStream();
+        try {
+            URL u = new URL(crStartpoint);
+            URLConnection urlConn = u.openConnection();
 
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        DocumentBuilder builder = factory.newDocumentBuilder();
-        org.w3c.dom.Document document = builder.parse(is);
+            urlConn.setConnectTimeout(5000);                                    
+            urlConn.setReadTimeout(15000);
+            urlConn.setAllowUserInteraction(false);
+                                    
+            InputStream is = urlConn.getInputStream();
 
-        is.close();
-        String instituteName = evaluateXPathToString("//Name", document);
 
-        NodeList institutionsUrls = evaluateXPath("//Center_id_link", document);
+            //InputStream is = u.openStream();
 
-        int i, i2;
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder builder = factory.newDocumentBuilder();
+            org.w3c.dom.Document document = builder.parse(is);
 
-        for (i = 0; i < institutionsUrls.getLength(); i++) {
-            u = new URL(institutionsUrls.item(i).getTextContent());
-            is = u.openStream();
-
-            org.w3c.dom.Document doc = builder.parse(is);
             is.close();
-            ////WebReference[./Description[text()="CQL"]]/Website                         
+            String instituteName = evaluateXPathToString("//Name", document);
 
-            NodeList endpointsUrls = evaluateXPath("//WebReference[./Description[text()=\"CQL\"]]/Website", doc);
+            NodeList institutionsUrls = evaluateXPath("//Center_id_link", document);
 
-            for (i2 = 0; i2 < endpointsUrls.getLength(); i2++) {
-                String epUrl = endpointsUrls.item(i2).getTextContent();
-                ep.add(new Endpoint(epUrl, instituteName));
-            } // for i2
+            int i, i2;
 
-        } // for i ...
+            for (i = 0; i < institutionsUrls.getLength(); i++) {
+                u = new URL(institutionsUrls.item(i).getTextContent());
+                is = u.openStream();
 
+                org.w3c.dom.Document doc = builder.parse(is);
+                is.close();
+                ////WebReference[./Description[text()="CQL"]]/Website                         
+
+                NodeList endpointsUrls = evaluateXPath("//WebReference[./Description[text()=\"CQL\"]]/Website", doc);
+
+                for (i2 = 0; i2 < endpointsUrls.getLength(); i2++) {
+                    String epUrl = endpointsUrls.item(i2).getTextContent();
+                    ep.add(new Endpoint(epUrl, instituteName));
+                } // for i2
+
+            } // for i ...
+        } catch (Exception ex) {
+            System.out.println(ex.getMessage());
+        }
 
         return ep;
     } //getEndpoints
@@ -81,59 +94,71 @@ public class Harvester {
     public ArrayList<Corpus> getCorporaOfAnEndpoint(String endpointUrl) throws Exception {
 
         ArrayList<Corpus> corpora = new ArrayList<Corpus>();
-        String urlToCall = endpointUrl + "?operation=scan&scanClause=fcs.resource&version=1.2";
-        URL u = new URL(urlToCall);
-
-        System.out.println("getCorporaOfAnEndpoint: " + urlToCall);
-
-        InputStream is = u.openStream();
-
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        DocumentBuilder builder = factory.newDocumentBuilder();
-        org.w3c.dom.Document document = builder.parse(is);
-
-        is.close();
-
-        //http://clarinws.informatik.uni-leipzig.de:8080/CQL?
-
-        //NodeList corporaNodes = evaluateXPath("//*[local-name()='term']/*[local-name()='value']", document);
-        NodeList corporaNodes = evaluateXPath("//*[local-name()='terms']/*[local-name()='term']", document);
-
-        int i, i2;
-        if (corporaNodes.getLength() > 0) {
+        try {
+            String urlToCall = endpointUrl + "?operation=scan&scanClause=fcs.resource&version=1.2";
+            URL u = new URL(urlToCall);
             
-            System.out.println("Length of corpora: " + corporaNodes.getLength());
-            
-            for (i = 0; i < corporaNodes.getLength(); i++) {
-                Node n = corporaNodes.item(i);
-                
-                System.out.println("NODENAEM: " + n.getNodeName());
-                
-                Corpus c = new Corpus();
+            URLConnection urlConn = u.openConnection();
 
-                for (i2 = 0; i2 < n.getChildNodes().getLength(); i2++) {
-                    Node child = n.getChildNodes().item(i2);
+            urlConn.setConnectTimeout(5000);                                    
+            urlConn.setReadTimeout(15000);
+            urlConn.setAllowUserInteraction(false);
+                                    
+            InputStream is = urlConn.getInputStream();
 
-                    if (child.getNodeName().endsWith("value")) {
-                        c.setValue(child.getTextContent());
-                    }
+            System.out.println("getCorporaOfAnEndpoint: " + urlToCall);
 
-                    if (child.getNodeName().endsWith("displayTerm")) {
-                        c.setDisplayTerm(child.getTextContent());
-                    }
+            //InputStream is = u.openStream();
 
-                    if (child.getNodeName().endsWith("numberOfRecords")) {
-                        c.setNumberOfRecords(child.getTextContent());
-                    }
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder builder = factory.newDocumentBuilder();
+            org.w3c.dom.Document document = builder.parse(is);
 
-                } //for i2
+            is.close();
 
-                corpora.add(c);
+            //http://clarinws.informatik.uni-leipzig.de:8080/CQL?
 
-            } // for i ...
-        } // if coporaNodes ...
-        
-        System.out.println("------------");
+            //NodeList corporaNodes = evaluateXPath("//*[local-name()='term']/*[local-name()='value']", document);
+            NodeList corporaNodes = evaluateXPath("//*[local-name()='terms']/*[local-name()='term']", document);
+
+            int i, i2;
+            if (corporaNodes.getLength() > 0) {
+
+                System.out.println("Length of corpora: " + corporaNodes.getLength());
+
+                for (i = 0; i < corporaNodes.getLength(); i++) {
+                    Node n = corporaNodes.item(i);
+
+                    System.out.println("NODENAEM: " + n.getNodeName());
+
+                    Corpus c = new Corpus();
+
+                    for (i2 = 0; i2 < n.getChildNodes().getLength(); i2++) {
+                        Node child = n.getChildNodes().item(i2);
+
+                        if (child.getNodeName().endsWith("value")) {
+                            c.setValue(child.getTextContent());
+                        }
+
+                        if (child.getNodeName().endsWith("displayTerm")) {
+                            c.setDisplayTerm(child.getTextContent());
+                        }
+
+                        if (child.getNodeName().endsWith("numberOfRecords")) {
+                            c.setNumberOfRecords(child.getTextContent());
+                        }
+
+                    } //for i2
+
+                    corpora.add(c);
+
+                } // for i ...
+            } // if coporaNodes ...
+
+            System.out.println("------------");
+        } catch (Exception ex) {
+            System.out.println(ex.getMessage());
+        }
         return corpora;
     }  // getCorporaOfAnEndpoint
 
