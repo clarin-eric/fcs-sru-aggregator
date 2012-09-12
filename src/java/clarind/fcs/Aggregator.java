@@ -53,6 +53,8 @@ public class Aggregator extends SelectorComposer<Component> {
     private Button deselectAll;
     @Wire
     private Window mainWindow;
+    @Wire
+    private Combobox maximumRecordsSelect;
 
     @Override
     public void doAfterCompose(Component comp) throws Exception {
@@ -181,9 +183,9 @@ public class Aggregator extends SelectorComposer<Component> {
 
                     for (i3 = 0; i3 < r.getChildren().size(); i3++) {
                         Label l = (Label) r.getChildren().get(i3);
-                        temp = temp + l.getValue();
+                        temp = temp + "\"" + l.getValue().replace("\"", "QUOTE")  + "\"";
                         if (i3 < r.getChildren().size() - 1) {
-                            temp = temp + "\t";
+                            temp = temp + ",";
                         } //if i3
                     } //for i3
                     temp = temp + "\n";
@@ -281,12 +283,20 @@ public class Aggregator extends SelectorComposer<Component> {
                             resultsVbox.appendChild(new Label("Corpus: " + corpus));
                         }
 
-                        logger.info("Now executing search: " + searchString.getText() + " " + endpointURL + " " +  corpus + " " + 10);
+                        int maximumRecords = Integer.parseInt(maximumRecordsSelect.getValue());
+                        
+                        if(maximumRecords > 30){
+                            Messagebox.show("The allowed maximum of hits is 30! Please don't specify a higher value!");
+                            break;
+                        }
+                        
+                        
+                        logger.info("Now executing search: " + searchString.getText() + " " + endpointURL + " " +  corpus + " " + maximumRecords);
                       
                         ArrayList<Row> zeilen = new ArrayList<Row>();
                         
                         try {
-                            zeilen = srusearch.execute(searchString.getText(), endpointURL, corpus, 10);
+                            zeilen = srusearch.execute(searchString.getText(), endpointURL, corpus, maximumRecords);
                         } catch (Exception ex) {
                             System.out.println(ex.getMessage());
                         }

@@ -11,16 +11,37 @@ import eu.clarin.sru.fcs.ClarinFederatedContentSearchRecordParser;
 import java.util.ArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
+
+import org.apache.log4j.Level;
 import org.zkoss.zul.Label;
 import org.zkoss.zul.Row;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class SRUSearchThreaded {
 
     private static volatile SRUSearchThreaded instance = null;
     private SRUThreadedClient client;
     private ArrayList<Row> zeilen;
+    private static final Logger logger = LoggerFactory.getLogger("FCS-SRUSEARCH");
 
     private SRUSearchThreaded() {
+
+
+        org.apache.log4j.BasicConfigurator.configure(
+                new org.apache.log4j.ConsoleAppender(
+                new org.apache.log4j.PatternLayout("%-5p [%t] %m%n"),
+                org.apache.log4j.ConsoleAppender.SYSTEM_ERR));
+        org.apache.log4j.Logger logger =
+                org.apache.log4j.Logger.getRootLogger();
+        logger.setLevel(org.apache.log4j.Level.INFO);
+        logger.getLoggerRepository().getLogger("FCS-SRUSEARCH").setLevel(
+                org.apache.log4j.Level.INFO);
+
+
+
+
         this.client = new SRUThreadedClient();
         System.out.println("GOT A CLIENT");
         try {
@@ -30,10 +51,10 @@ public class SRUSearchThreaded {
         }
     }
 
-    public void shutdown(){
+    public void shutdown() {
         client.shutdown();
     }
-    
+
     public static SRUSearchThreaded getInstance() {
         if (instance == null) {
             synchronized (SRUSearchThreaded.class) {
@@ -48,14 +69,12 @@ public class SRUSearchThreaded {
     public ArrayList<Row> execute(String query, String endpointURL, String corpus, int maximumRecords) throws Exception {
         zeilen = new ArrayList<Row>();
         System.out.println("EXECUTING SEARCH");
-
+    
         SRUSearchRetrieveRequest request = new SRUSearchRetrieveRequest(endpointURL);
         request.setMaximumRecords(maximumRecords);
         request.setRecordSchema(ClarinFederatedContentSearchRecordData.RECORD_SCHEMA);
         request.setQuery(query);
 
-        
-        
         if (corpus != null) {
             request.setExtraRequestData("x-context", corpus);
         }
