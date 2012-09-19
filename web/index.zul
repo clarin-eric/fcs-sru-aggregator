@@ -48,6 +48,25 @@
                         <separator />
                                                                                        
                         </groupbox>
+                        
+                        <separator />
+                        
+                        <groupbox mold="3d" id="gbForeignEndpoints">
+                            <caption>Foreign Endpoints</caption>
+                            <combobox id="foreignEndpointSelect" width="150px" value="Select an endpoint">
+                                <comboitem label="Mimore;http://www.meertens.knaw.nl/mimore/srucql/"/>
+                                <comboitem label="INL;http://gysseling.corpus.taalbanknederlands.inl.nl/cqlwebapp/cql"/>                                
+                                <comboitem label="DANS;http://srucql.dans.knaw.nl"/>
+                                <comboitem label="ICLTT;http://corpus3.aac.ac.at/ddconsru"/>
+                                <comboitem label="UPF;http://gilmere.upf.edu/pais_sru"/>
+                            </combobox>
+                            
+                           
+                            
+                            <button id="addForeignEndpoint" label="Add" />
+                            
+                        </groupbox>
+                        
                     </panelchildren>
                 </panel>
             </west>
