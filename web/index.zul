@@ -1,22 +1,24 @@
-
-<zk>
+    <?page title="CLARIN-D Federated Content Search"?>
+<zk title="CLARIN-D Federated Content Search">
 <!--title="CLARIN-D Federated Content Search"-->
-    <window  id="mainWindow" contentStyle="background:white;" height="100%" apply="clarind.fcs.Aggregator"> 
+
+    <window  id="mainWindow" contentStyle="background:white;" height="100%" apply="clarind.fcs.Aggregator" > 
+        
         <borderlayout sclass="complex-layout"  >
             <!-- Kopf -->
             <north height="65px">
                 <image src="clarindLogo.png"/>
             </north>
-            
+                 
             <!-- Linke Sidebar -->
-<!--            <west width="0px"  flex="true" splittable="true" margins="0,5,0,0">
- 
-            </west>-->
-      
-            <!-- Center - Inhalt -->
             <west autoscroll="true" splittable="true">
                 <panel >
-                    <panelchildren style="margin-top:10px;margin-left:10px;margin-right:10px;border:0;">                   
+                    <panelchildren style="margin-top:10px;margin-left:10px;margin-right:10px;border:0;">    
+                    
+                        
+                                       
+                        <separator />
+                        
                         <textbox id="searchString" value="Elefant" />
                         <button id="searchButton"  label="Search" image="buttonSearch.png"/>     
                         <separator />
@@ -60,19 +62,17 @@
                                 <comboitem label="ICLTT;http://corpus3.aac.ac.at/ddconsru"/>
                                 <comboitem label="UPF;http://gilmere.upf.edu/pais_sru"/>
                             </combobox>
-                            
-                           
-                            
-                            <button id="addForeignEndpoint" label="Add" />
-                            
+
+                            <button id="addForeignEndpoint" label="Add" image="buttonAddForeignEndpoint.png"/>                          
                         </groupbox>
                         
                     </panelchildren>
                 </panel>
             </west>
             
-            <!-- Rechte Sidebar -->  
+            <!-- Mittlerer Bereich-->  
             <center  flex="true"  margins="0,5,0,0" autoscroll="true" >
+               
                 <panel>
                     <panelchildren  id="resultsPanel" style="overflow: auto">
                         <menubar id="menubar" width="100%">
@@ -81,34 +81,21 @@
                                     <menuitem label="Clear Results" id="clearResults" image="buttonDelete.png" />
                                   <menuitem label="Export Results to CSV" id="exportResultsCSV" image="buttonExport.png" />
                                   <menuitem label="Export Results to TCF" id="exportResultsTCF" image="buttonExport.png" />                           
-                             </menupopup>                                
+                             </menupopup>    
+                               
+                               
+                               
                             </menu>                            
                             <menu label="Help" image="buttonHelp.png">
                                 <menupopup>
                                      <menuitem label="Show Help" id="showHelp" image="buttonHelp.png" />
                                      <menuitem label="About" id="showAbout" image="buttonShowAbout.png" />
                                 </menupopup>   
-                            </menu>
-                                                                                 
+                            </menu>                                                                                                                 
+                        
                         </menubar>
-<!--                         <toolbar id="resultsToolbar"  height="20px">
-                           <toolbarbutton id="clearResults" label="Clear Results" image="buttonDelete.png"/>
-                            <toolbarbutton id="exportResults" label="Export Results" image="buttonExport.png"/>
-                            <toolbarbutton id="showHelp" label="Show Help" image="buttonHelp.png"/>
-                                
-                        </toolbar>
-                        -->
                         <vbox id="resultsVbox">
-                            <iframe src="help.html" width="100%" height="100%"/>
-                            <grid id="anzeigeGrid">
-                                <columns>
-                                    <column></column>
-                                    <column></column>  
-                                    <column></column>                                       
-                                </columns>
-                                <rows></rows>
-                            </grid>
-                            <html id="anzeigeResults" />
+                            <iframe src="help.html" width="800px" height="400px" />
                         </vbox>
                     </panelchildren>
                     
@@ -121,4 +108,5 @@
             </south>-->
         </borderlayout>
     </window>
+
 </zk>

@@ -24,13 +24,16 @@ import org.zkoss.zul.Column;
 import org.zkoss.zul.Vbox;
 import org.zkoss.zul.Iframe;
 import org.zkoss.zul.Window;
+
+
+
 import java.util.logging.*;
 
 public class Aggregator extends SelectorComposer<Component> {
 
     private static Logger logger = Logger.getLogger("FCS-AGGREGATOR");
-    @Wire
-    private Grid anzeigeGrid;
+//    @Wire
+//    private Grid anzeigeGrid;
     @Wire
     private Textbox searchString;
     @Wire
