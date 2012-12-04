@@ -8,7 +8,11 @@ import eu.clarin.sru.client.SRUSurrogateRecordData;
 import eu.clarin.sru.client.SRUThreadedClient;
 import eu.clarin.sru.fcs.ClarinFCSRecordData;
 import eu.clarin.sru.fcs.ClarinFCSRecordParser;
+import eu.clarin.sru.fcs.DataView;
+import eu.clarin.sru.fcs.KWICDataView;
+import eu.clarin.sru.fcs.Resource;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 
@@ -39,9 +43,6 @@ public class SRUSearchThreaded {
         logger.getLoggerRepository().getLogger("FCS-SRUSEARCH").setLevel(
                 org.apache.log4j.Level.DEBUG);
 
-
-
-
         this.client = new SRUThreadedClient();
         System.out.println("GOT A CLIENT");
         try {
@@ -69,7 +70,7 @@ public class SRUSearchThreaded {
     public ArrayList<Row> execute(String query, String endpointURL, String corpus, int maximumRecords) throws Exception {
         zeilen = new ArrayList<Row>();
         System.out.println("EXECUTING SEARCH");
-    
+
         SRUSearchRetrieveRequest request = new SRUSearchRetrieveRequest(endpointURL);
         request.setMaximumRecords(maximumRecords);
         request.setRecordSchema(ClarinFCSRecordData.RECORD_SCHEMA);
@@ -81,41 +82,119 @@ public class SRUSearchThreaded {
 
         Future<SRUSearchRetrieveResponse> result = client.searchRetrieve(request);
 
-        for (SRURecord record : result.get().getRecords()) {
-            if (record.isRecordSchema(ClarinFCSRecordData.RECORD_SCHEMA)) {
-                ClarinFCSRecordData r =
-                        (ClarinFCSRecordData) record.getRecordData();
+        //  printSearchResponse(result.get());
+
+        if (result.get().hasRecords()) {
+            for (SRURecord record : result.get().getRecords()) {
+                logger.info("schema = {}, identifier = {}, position = {}",
+                        new Object[]{record.getRecordSchema(),
+                            record.getRecordIdentifier(),
+                            record.getRecordPosition()});
+                if (record.isRecordSchema(ClarinFCSRecordData.RECORD_SCHEMA)) {
+                    ClarinFCSRecordData rd =
+                            (ClarinFCSRecordData) record.getRecordData();
+                    // dumpResource(rd.getResource());
+                    Resource resource = rd.getResource();
+                    if (resource.hasDataViews()) {
+                        zeilen = dataViews2Rows(resource.getDataViews());
+                        //dumpDataView("CLARIN-FCS: ", resource.getDataViews());
+                    }
+                    if (resource.hasResourceFragments()) {
+                        for (Resource.ResourceFragment fragment : resource.getResourceFragments()) {
+                            logger.debug("CLARIN-FCS: ResourceFragment: pid={}, ref={}",
+                                    fragment.getPid(), fragment.getRef());
+                            if (fragment.hasDataViews()) {
+                                zeilen.addAll(dataViews2Rows(fragment.getDataViews()));
+                                //dumpDataView("CLARIN-FCS: ResourceFragment/", fragment.getDataViews());
+                            }
+                        }
+                    }
+
+                } else if (record.isRecordSchema(SRUSurrogateRecordData.RECORD_SCHEMA)) {
+                    SRUSurrogateRecordData r =
+                            (SRUSurrogateRecordData) record.getRecordData();
+                    logger.info("SURROGATE DIAGNOSTIC: uri={}, message={}, detail={}",
+                            new Object[]{r.getURI(), r.getMessage(),
+                                r.getDetails()});
+                } else {
+                    logger.info("UNSUPPORTED SCHEMA: {}",
+                            record.getRecordSchema());
+                }
+            }
+        } else {
+            logger.info("no results");
+        }
+
+
+//        for (SRURecord record : result.get().getRecords()) {
+//            if (record.isRecordSchema(ClarinFCSRecordData.RECORD_SCHEMA)) {
+//                ClarinFCSRecordData r =
+//                        (ClarinFCSRecordData) record.getRecordData();
+//                Row row = new Row();
+//                
+//                Label toTheLeft = new Label();
+//                toTheLeft.setMultiline(true);                
+//               // toTheLeft.setValue(r.getLeft());
+//                toTheLeft.setSclass("word-wrap");
+//                
+//                row.appendChild(toTheLeft);
+//                //Label l = new Label(r.getKeyword());
+//                //l.setStyle("color:#8f3337;");
+//                //l.setMultiline(true);
+//               // l.setSclass("word-wrap");
+//                //row.appendChild(l);
+//                
+//                 Label toTheRight = new Label();
+//                toTheRight.setMultiline(true);
+//                toTheRight.setSclass("word-wrap");
+//              //  toTheRight.setValue(r.getRight());
+//                
+//                row.appendChild(toTheRight);
+//
+//                zeilen.add(row);
+//
+//            } else if (record.isRecordSchema(SRUSurrogateRecordData.RECORD_SCHEMA)) {
+//                SRUSurrogateRecordData r =
+//                        (SRUSurrogateRecordData) record.getRecordData();
+//
+//            } else {
+//                System.out.println("Unknown record schema");
+//            }
+//        } // for record
+        return zeilen;
+    }
+
+    private static ArrayList<Row> dataViews2Rows(List<DataView> dataviews) {
+        ArrayList arrayOfRows = new ArrayList<Row>();
+        for (DataView dataview : dataviews) {
+            if (dataview.isMimeType(KWICDataView.MIMETYPE)) {
+                KWICDataView kw = (KWICDataView) dataview;
+
                 Row row = new Row();
-                
+
                 Label toTheLeft = new Label();
-                toTheLeft.setMultiline(true);                
-                toTheLeft.setValue(r.getLeft());
+                toTheLeft.setMultiline(true);
+                toTheLeft.setValue(kw.getLeft());
                 toTheLeft.setSclass("word-wrap");
-                
+
                 row.appendChild(toTheLeft);
-                Label l = new Label(r.getKeyword());
+                Label l = new Label(kw.getKeyword());
                 l.setStyle("color:#8f3337;");
                 l.setMultiline(true);
-               // l.setSclass("word-wrap");
+                l.setSclass("word-wrap");
                 row.appendChild(l);
-                
-                 Label toTheRight = new Label();
+
+                Label toTheRight = new Label();
                 toTheRight.setMultiline(true);
                 toTheRight.setSclass("word-wrap");
-                toTheRight.setValue(r.getRight());
-                
+                toTheRight.setValue(kw.getRight());
+
                 row.appendChild(toTheRight);
 
-                zeilen.add(row);
+                arrayOfRows.add(row);
 
-            } else if (record.isRecordSchema(SRUSurrogateRecordData.RECORD_SCHEMA)) {
-                SRUSurrogateRecordData r =
-                        (SRUSurrogateRecordData) record.getRecordData();
-
-            } else {
-                System.out.println("Unknown record schema");
             }
-        } // for record
-        return zeilen;
+        } // for
+        return arrayOfRows;
     }
 }
