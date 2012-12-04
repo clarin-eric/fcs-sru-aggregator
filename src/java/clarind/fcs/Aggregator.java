@@ -310,6 +310,8 @@ public class Aggregator extends SelectorComposer<Component> {
 
                             Grid g = new Grid();
 
+                            
+                            
                             g.setWidth("100%");
                             g.setMold("paging");
                             g.setPageSize(10);
@@ -318,7 +320,7 @@ public class Aggregator extends SelectorComposer<Component> {
 
                             Column c = new Column();
                             c.setLabel("Left");
-
+                         
                             columns.appendChild(c);
 
                             c = new Column();
@@ -336,6 +338,7 @@ public class Aggregator extends SelectorComposer<Component> {
 
                             for (i2 = 0; i2 < zeilen.size(); i2++) {
                                 rows.appendChild(zeilen.get(i2));
+                                
                             } // for i2 ...
 
                             g.appendChild(rows);

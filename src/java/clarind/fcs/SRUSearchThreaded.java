@@ -6,8 +6,8 @@ import eu.clarin.sru.client.SRUSearchRetrieveRequest;
 import eu.clarin.sru.client.SRUSearchRetrieveResponse;
 import eu.clarin.sru.client.SRUSurrogateRecordData;
 import eu.clarin.sru.client.SRUThreadedClient;
-import eu.clarin.sru.fcs.ClarinFederatedContentSearchRecordData;
-import eu.clarin.sru.fcs.ClarinFederatedContentSearchRecordParser;
+import eu.clarin.sru.fcs.ClarinFCSRecordData;
+import eu.clarin.sru.fcs.ClarinFCSRecordParser;
 import java.util.ArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
@@ -35,9 +35,9 @@ public class SRUSearchThreaded {
                 org.apache.log4j.ConsoleAppender.SYSTEM_ERR));
         org.apache.log4j.Logger logger =
                 org.apache.log4j.Logger.getRootLogger();
-        logger.setLevel(org.apache.log4j.Level.INFO);
+        logger.setLevel(org.apache.log4j.Level.DEBUG);
         logger.getLoggerRepository().getLogger("FCS-SRUSEARCH").setLevel(
-                org.apache.log4j.Level.INFO);
+                org.apache.log4j.Level.DEBUG);
 
 
 
@@ -45,7 +45,7 @@ public class SRUSearchThreaded {
         this.client = new SRUThreadedClient();
         System.out.println("GOT A CLIENT");
         try {
-            client.registerRecordParser(new ClarinFederatedContentSearchRecordParser());
+            client.registerRecordParser(new ClarinFCSRecordParser());
         } catch (SRUClientException e) {
             System.out.println(e.getMessage());
         }
@@ -72,7 +72,7 @@ public class SRUSearchThreaded {
     
         SRUSearchRetrieveRequest request = new SRUSearchRetrieveRequest(endpointURL);
         request.setMaximumRecords(maximumRecords);
-        request.setRecordSchema(ClarinFederatedContentSearchRecordData.RECORD_SCHEMA);
+        request.setRecordSchema(ClarinFCSRecordData.RECORD_SCHEMA);
         request.setQuery(query);
 
         if (corpus != null) {
@@ -82,16 +82,29 @@ public class SRUSearchThreaded {
         Future<SRUSearchRetrieveResponse> result = client.searchRetrieve(request);
 
         for (SRURecord record : result.get().getRecords()) {
-            if (record.isRecordSchema(ClarinFederatedContentSearchRecordData.RECORD_SCHEMA)) {
-                ClarinFederatedContentSearchRecordData r =
-                        (ClarinFederatedContentSearchRecordData) record.getRecordData();
+            if (record.isRecordSchema(ClarinFCSRecordData.RECORD_SCHEMA)) {
+                ClarinFCSRecordData r =
+                        (ClarinFCSRecordData) record.getRecordData();
                 Row row = new Row();
-
-                row.appendChild(new Label(r.getLeft()));
+                
+                Label toTheLeft = new Label();
+                toTheLeft.setMultiline(true);                
+                toTheLeft.setValue(r.getLeft());
+                toTheLeft.setSclass("word-wrap");
+                
+                row.appendChild(toTheLeft);
                 Label l = new Label(r.getKeyword());
                 l.setStyle("color:#8f3337;");
+                l.setMultiline(true);
+               // l.setSclass("word-wrap");
                 row.appendChild(l);
-                row.appendChild(new Label(r.getRight()));
+                
+                 Label toTheRight = new Label();
+                toTheRight.setMultiline(true);
+                toTheRight.setSclass("word-wrap");
+                toTheRight.setValue(r.getRight());
+                
+                row.appendChild(toTheRight);
 
                 zeilen.add(row);
 

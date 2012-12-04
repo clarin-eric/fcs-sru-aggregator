@@ -3,6 +3,7 @@ package clarind.fcs;
 import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
+import javax.net.ssl.HttpsURLConnection;
 import java.util.*;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -17,6 +18,9 @@ public class Harvester {
 
     final String crStartpoint = "http://130.183.206.32/restxml/";
 
+    //https://centerregistry-clarin.esc.rzg.mpg.de/restxml/
+    //http://130.183.206.32/restxml/
+    
     private NodeList evaluateXPath(String statement, org.w3c.dom.Document domtree) {
         NodeList result = null;
 
@@ -48,6 +52,8 @@ public class Harvester {
             URL u = new URL(crStartpoint);
             URLConnection urlConn = u.openConnection();
 
+            //HttpsURLConnection urlConn = (HttpsURLConnection) u.openConnection();
+            
             urlConn.setConnectTimeout(5000);                                    
             urlConn.setReadTimeout(15000);
             urlConn.setAllowUserInteraction(false);
@@ -87,7 +93,7 @@ public class Harvester {
         } catch (Exception ex) {
             System.out.println(ex.getMessage());
         }
-
+        System.out.println("Number of Endpoints: " + ep.size());
         return ep;
     } //getEndpoints
 
@@ -95,7 +101,7 @@ public class Harvester {
 
         ArrayList<Corpus> corpora = new ArrayList<Corpus>();
         try {
-            String urlToCall = endpointUrl + "?operation=scan&scanClause=fcs.resource&version=1.2";
+            String urlToCall = endpointUrl + "/?operation=scan&scanClause=fcs.resource&version=1.2";
             URL u = new URL(urlToCall);
             
             URLConnection urlConn = u.openConnection();

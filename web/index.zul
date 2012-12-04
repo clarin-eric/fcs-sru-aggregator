@@ -3,6 +3,74 @@
 <!--title="CLARIN-D Federated Content Search"-->
 
     <window  id="mainWindow" contentStyle="background:white;" height="100%" apply="clarind.fcs.Aggregator" > 
+        <style>
+           /***** List of colors: **********
+            
+            Dark blue           #0e4071
+            Midle dark blue     #a6b9cb 
+            Light blue          #e2e7ee 
+            Very light blue     #f3f6f9 
+            Dark red            #801418
+            Light grey          #e9e9e9
+            
+       **********************************/
+            
+            a:link { text-decoration:none; font-weight:bold; color:#801418; }
+            a:visited { text-decoration:none; font-weight:bold; color:#801418; }
+            
+             .ccsLightBlue{  
+            color:#0e4071;
+            font:sans-serif;
+            background-color:#f3f6f9;
+            border:1px solid #f3f6f9;
+            -moz-border-radius:3px;-webkit-border-radius:3px;border-radius:3px;
+            border-bottom:1px solid #a6b9cb;
+            -moz-box-shadow:inset 0 1px 0 rgba(255,255,255,0.5);-webkit-box-shadow:inset 0 1px 0 rgba(255,255,255,0.5);box-shadow:inset 0 1px 0 rgba(255,255,255,0.5);
+            cursor:pointer;
+            padding:3px;
+            }
+            
+            .ccsBlue{  
+            color:#0e4071;
+            font:sans-serif;
+            background-color:#e2e7ee;
+            border:1px solid #e2e7ee;
+            -moz-border-radius:3px;-webkit-border-radius:3px;border-radius:3px;
+            border-bottom:1px solid #a6b9cb;
+            -moz-box-shadow:inset 0 1px 0 rgba(255,255,255,0.5);-webkit-box-shadow:inset 0 1px 0 rgba(255,255,255,0.5);box-shadow:inset 0 1px 0 rgba(255,255,255,0.5);
+            cursor:pointer;
+            padding:3px;
+            }
+            
+            .ccsDarkBlue{  
+            color:white;
+            font:sans-serif;
+            background-color:#0e4071;
+            border:1px solid #0e4071;
+            -moz-border-radius:3px;-webkit-border-radius:3px;border-radius:3px;
+            border-bottom:1px solid #0e4071;
+            -moz-box-shadow:inset 0 1px 0 rgba(255,255,255,0.5);-webkit-box-shadow:inset 0 1px 0 rgba(255,255,255,0.5);box-shadow:inset 0 1px 0 rgba(255,255,255,0.5);
+            cursor:pointer;
+            padding:3px;
+            }
+            
+            .ccsDarkRed{  
+            color:white;
+            font:sans-serif;
+            background-color:#801418;
+            border:1px solid #801418;
+            -moz-border-radius:3px;-webkit-border-radius:3px;border-radius:3px;
+            border-bottom:1px solid #801418;
+            -moz-box-shadow:inset 0 1px 0 rgba(255,255,255,0.5);-webkit-box-shadow:inset 0 1px 0 rgba(255,255,255,0.5);box-shadow:inset 0 1px 0 rgba(255,255,255,0.5);
+            cursor:pointer;
+            padding:3px;
+            }
+            
+            .word-wrap {
+            word-wrap: break-word;
+            }
+            
+        </style>
         
         <borderlayout sclass="complex-layout"  >
             <!-- Kopf -->
@@ -20,7 +88,8 @@
                         <separator />
                         
                         <textbox id="searchString" value="Elefant" />
-                        <button id="searchButton"  label="Search" image="buttonSearch.png"/>     
+                        <button id="searchButton"  label="Search" image="buttonSearch.png" sclass="ccsDarkBlue" />   
+                     
                         <separator />
                         <label>Maximum hits:</label>
                         <combobox id="maximumRecordsSelect" width="50px" value="10">
@@ -31,7 +100,7 @@
                         <separator />
                        
                         
-                        <groupbox mold="3d" id="allCorpora">
+                        <groupbox mold="3d" id="allCorpora" sclass="ccsLightBlue">
                             <caption>Available Corpora</caption>   
                            
                              <label>Select by Language:</label>
@@ -44,8 +113,8 @@
                         
                          <separator />
                         
-                        <button id="selectAll" label="Select All" image="buttonSelectAll.png"/>                                                                  
-                        <button id="deselectAll" label="Deselect All" image="buttonDeselectAll.png"/>                      
+                        <button id="selectAll" label="Select All" image="buttonSelectAll.png" sclass="ccsDarkBlue" />                                                                  
+                        <button id="deselectAll" label="Deselect All" image="buttonDeselectAll.png" sclass="ccsDarkBlue" />                      
                       
                         <separator />
                                                                                        
@@ -53,7 +122,7 @@
                         
                         <separator />
                         
-                        <groupbox mold="3d" id="gbForeignEndpoints">
+                        <groupbox mold="3d" id="gbForeignEndpoints" sclass="ccsLightBlue">
                             <caption>Foreign Endpoints</caption>
                             <combobox id="foreignEndpointSelect" width="150px" value="Select an endpoint">
                                 <comboitem label="Mimore;http://www.meertens.knaw.nl/mimore/srucql/"/>
@@ -63,7 +132,7 @@
                                 <comboitem label="UPF;http://gilmere.upf.edu/pais_sru"/>
                             </combobox>
 
-                            <button id="addForeignEndpoint" label="Add" image="buttonAddForeignEndpoint.png"/>                          
+                            <button id="addForeignEndpoint" label="Add" image="buttonAddForeignEndpoint.png" sclass="ccsDarkBlue"/>                          
                         </groupbox>
                         
                     </panelchildren>
