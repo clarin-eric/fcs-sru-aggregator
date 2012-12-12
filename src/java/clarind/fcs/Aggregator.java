@@ -212,7 +212,7 @@ public class Aggregator extends SelectorComposer<Component> {
 
         int i, i2, i3;
         String temp = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><D-Spin xmlns=\"http://www.dspin.de/data\" version=\"0.4\">\n<MetaData xmlns=\"http://www.dspin.de/data/metadata\">\n";
-        temp = temp + "<source>CLARIN-D Federated Content Search</source>\n</MetaData>\n  <TextCorpus xmlns=\"http://www.dspin.de/data/textcorpus\">\n<text>";
+        temp = temp + "<source>CLARIN-D Federated Content Search</source>\n</MetaData>\n  <TextCorpus xmlns=\"http://www.dspin.de/data/textcorpus\" lang=\"de\">\n<text>";
 
 
         boolean somethingToExport = false;
