@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="utf-8"?>
+<?page title="CLARIN-D Federated Content Search"?>
+<zk title="CLARIN-D Federated Content Search">
+
+    <window id="mainWindow" contentStyle="background:white;" height="100%"
+        apply="eu.clarin.sru.fcs.aggregator.app.Aggregator">
+
+        <borderlayout sclass="complex-layout">
+            <!-- Kopf -->
+            <north height="65px" style="border-width:0px 0px 1px 0px;">
+                <image src="clarindLogo.png"/>
+            </north>
+
+            <!-- Linke Sidebar -->
+            <west autoscroll="true" splittable="true" title=" " size="25%"  border="0"
+                collapsible="true">
+
+                <borderlayout sclass="complex-layout">
+                    <north style="border-width:0px 0px 0px 0px;">
+                        <hlayout
+                            style="margin-top:20px;margin-bottom:10px;margin-left:auto;margin-right:auto;width:95%;-moz-border-radius:3px;-webkit-border-radius:3px;border-radius:3px;">
+                            <textbox hflex="1" id="searchString" value="" focus="true"
+                                style="font-size:16px;margin:5px 0px 5px 10px;color:#0e4071;border: 1px solid #801418;"/>
+
+                            <button id="searchButton" label="Search" image="buttonSearch.png"
+                                sclass="ccsDarkBlue" style="margin:5px 10px 5px 0px;"/>
+                        </hlayout>
+                    </north>
+                    <center margins="0,0,0,0" autoscroll="true" border="0">
+                        <panel>
+                            <panelchildren
+                                style="margin-top:10px;margin-left:10px;margin-right:10px;border:0;overflow:auto;">
+
+                                <groupbox mold="3d" id="allCorpora" sclass="ccsLightBlue"
+                                    contentStyle="border:0" title="Corpora">
+                                    <!--<caption label="Corpora" style="border:0;"/>-->
+
+                                    <div style="text-align:right;">
+                                        <button id="selectAll" label="Select All"
+                                            image="buttonSelectAll.png" sclass="ccsDarkBlue"/>
+                                        <button id="deselectAll" label="Deselect All"
+                                            image="buttonDeselectAll.png" sclass="ccsDarkBlue"/>
+                                    </div>
+
+                                    <tree id="tree" style="margin-top:2px;"> </tree>
+                                </groupbox>
+
+                                <separator/>
+                                <separator/>
+
+                                <groupbox mold="3d" id="nHits" sclass="ccsLightBlue"
+                                    contentStyle="border:0" open="false">
+                                    <caption label="Maximum hits" style="border:0;"/>
+                                    <combobox id="maximumRecordsSelect" width="100%" value="10"
+                                        style="margin-top:7px;margin-bottom:7px;">
+                                        <comboitem label="10" id="maximumHits10"/>
+                                        <comboitem label="20" id="maximumHits20"/>
+                                        <comboitem label="30" id="maximumHits30"/>
+                                    </combobox>
+                                </groupbox>
+
+                                <separator/>
+                                <separator/>
+
+                                <groupbox mold="3d" id="sLang" sclass="ccsLightBlue"
+                                    contentStyle="border:0" open="false">
+                                    <caption label="Language" style="border:0;"/>
+                                    <div style="margin-top:7px;margin-bottom:7px;">
+                                        <combobox id="languageSelect" width="100%">
+                                            <comboitem label="Any Language" id="anyLanguage"/>
+                                            <comboitem label="German" id="german"/>
+                                            <comboitem label="English" id="english"/>
+                                            <comboitem label="Dutch" id="dutch"/>
+                                            <comboitem label="-More to come-"/>
+                                        </combobox>
+                                        <div style="margin-top:2px;text-align:right;">
+                                            <button id="addLangButton" label="Add"
+                                                image="buttonSelectAll.png" sclass="ccsDarkBlue"/>
+                                            <button id="removeLangButton" label="Remove"
+                                                image="buttonDeselectAll.png" sclass="ccsDarkBlue"/>
+                                        </div>
+                                    </div>
+                                </groupbox>
+
+                                <separator/>
+                                <separator/>
+
+                                <groupbox mold="3d" id="sTiers" sclass="ccsLightBlue"
+                                    contentStyle="border:0" open="false">
+                                    <caption label="Tier types" style="border:0;"/>
+                                    <div style="margin-top:7px;margin-bottom:7px;">
+                                        <combobox id="tiersSelect" width="100%" value="words">
+                                            <comboitem label="full text"/>
+                                            <comboitem label="words"/>
+                                        </combobox>
+                                        <div style="margin-top:2px;text-align:right;">
+                                            <button id="addTierButton" label="Add"
+                                                image="buttonSelectAll.png" sclass="ccsDarkBlue"/>
+                                            <button id="removeTierButton" label="Remove"
+                                                image="buttonDeselectAll.png" sclass="ccsDarkBlue"/>
+                                        </div>
+                                    </div>
+                                </groupbox>
+
+                                <separator/>
+                                <separator/>
+
+                                <groupbox mold="3d" id="gbForeignEndpoints" sclass="ccsLightBlue"
+                                    contentStyle="border:0" open="false">
+                                    <caption label="Foreign Endpoints" style="border:0;"/>
+                                    <div style="margin-top:7px;margin-bottom:7px;">
+                                        <combobox id="foreignEndpointSelect" width="100%"
+                                            value="Select an endpoint">
+                                            <comboitem
+                                                label="Mimore;http://www.meertens.knaw.nl/mimore/srucql/"/>
+                                            <comboitem
+                                                label="INL;http://gysseling.corpus.taalbanknederlands.inl.nl/cqlwebapp/cql"/>
+                                            <comboitem label="DANS;http://srucql.dans.knaw.nl"/>
+                                            <comboitem
+                                                label="ICLTT;http://corpus3.aac.ac.at/ddconsru"/>
+                                            <comboitem label="UPF;http://gilmere.upf.edu/pais_sru"/>
+                                        </combobox>
+                                        <div style="margin-top:2px;">
+                                            <button id="addFepButton" label="Add"
+                                                image="buttonSelectAll.png" sclass="ccsDarkBlue"/>
+                                            <button id="removeFepButton" label="Remove"
+                                                image="buttonDeselectAll.png" sclass="ccsDarkBlue"/>
+                                        </div>
+                                    </div>
+                                </groupbox>
+                                <separator/>
+                            </panelchildren>
+                        </panel>
+                    </center>
+                </borderlayout>
+            </west>
+
+            <!-- Mittlerer Bereich-->
+            <center margins="0,5,0,0" autoscroll="true" border="0">
+                <borderlayout sclass="complex-layout">
+                    <north style="border-width:0px 0px 1px 0px;">
+                        <menubar id="menubar" width="100%" style="margin-top:2px;border:0;">
+                            <menu label="Actions" image="buttonActions.png">
+                                <menupopup>
+                                    <menuitem label="Clear Results" id="clearResults"
+                                        image="buttonDelete.png"/>
+                                    <menuitem label="Export Results to CSV" id="exportResultsCSV"
+                                        image="buttonExport.png"/>
+                                    <menuitem label="Export Results to TCF" id="exportResultsTCF"
+                                        image="buttonExport.png"/>
+                                </menupopup>
+                            </menu>
+                            <menu label="Help" image="buttonHelp.png">
+                                <menupopup>
+                                    <menuitem label="Show Help" id="showHelp" image="buttonHelp.png"/>
+                                    <menuitem label="About" id="showAbout"
+                                        image="buttonShowAbout.png"/>
+                                </menupopup>
+                            </menu>
+                        </menubar>
+                    </north>
+                    <center  margins="0,5,0,0" autoscroll="true" border="0">
+                        <panel>
+                            <panelchildren id="resultsPanel" style="overflow: auto">
+
+                                <window id="resultsBox" style="overflow:auto;">
+                                    <iframe src="help.html" width="800px" height="400px"/>
+                                </window>
+                            </panelchildren>
+                        </panel>
+                    </center>
+                </borderlayout>
+            </center>
+
+            <!-- Fusszeile -->
+            <south title="Copyright © 2013 Clarin-D"
+                style="border-width:1px 0px 0px 0px;text-align:center;">
+            </south>
+            
+        </borderlayout>
+        
+    </window>
+    
+</zk>
