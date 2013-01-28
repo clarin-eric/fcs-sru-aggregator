@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<zk>
+    <device-config>
+        <device-type>ajax</device-type>
+        <timeout-uri>/timeout.zul</timeout-uri><!-- An empty URL can cause the browser to reload the same URL -->
+    </device-config>
+
+    <desktop-config>
+        <theme-uri>clarind.css</theme-uri>
+    </desktop-config>
+    
+    <listener>
+        <description>Desktop cleanup</description>
+        <listener-class>eu.clarin.sru.fcs.aggregator.app.DesktopDestroyedListener</listener-class>
+    </listener>
+    <listener>
+        <description>WebAppCleanup cleanup</description>
+        <listener-class>eu.clarin.sru.fcs.aggregator.app.WebAppDestroyedListener</listener-class>
+    </listener>
+    
+    <library-property>
+		<name>org.zkoss.zul.progressbox.position</name>
+		<value>mouse</value>
+    </library-property>
+
+</zk>
