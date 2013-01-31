@@ -22,6 +22,8 @@ public class Endpoint implements CorpusTreeNode {
     private Institution institution;
     private List<Corpus> corpora;
     private boolean hasChildrenLoaded = false;
+    
+    private static final Logger logger = Logger.getLogger(Endpoint.class.getName());
 
     public Endpoint(String url, Institution institution) {
         this.url = url;
@@ -62,7 +64,6 @@ public class Endpoint implements CorpusTreeNode {
             return;
         }
         this.hasChildrenLoaded = true;
-        //this.corpora = EndpointY.getCorpora(url);
         loadChildCorpora();
     }
 
@@ -79,44 +80,7 @@ public class Endpoint implements CorpusTreeNode {
             return null;
         }
         return corpora.get(index);
-    }
-
-//    public static ArrayList<CorpusY> getCorpora(String endpointUrl) {
-//        return getCorpora(endpointUrl, ""); //TODO to be changed to 'root'
-//    }
-//
-//    public static ArrayList<CorpusY> getCorpora(String endpointUrl, String resourceHandler) {
-//
-//        ArrayList<CorpusY> corpora = new ArrayList<CorpusY>();
-//        SRUScanResponse corporaResponse = null;
-//        StringBuilder scanClause = new StringBuilder("fcs.resource");
-//        if (resourceHandler.length() > 0) {
-//            scanClause.append("=");
-//        }
-//        scanClause.append(resourceHandler);
-//        try {
-//            SRUClient sruClient = new SRUClient(SRUVersion.VERSION_1_2);
-//            SRUScanRequest corporaRequest = new SRUScanRequest(endpointUrl);
-//            corporaRequest.setScanClause(scanClause.toString());
-//            //TODO extra data?
-//            //corporaRequest.setExtraRequestData("x-cmd-resource-info", "true");
-//            corporaResponse = sruClient.scan(corporaRequest);
-//        } catch (SRUClientException ex) {
-//            Logger.getLogger(EndpointY.class.getName()).log(Level.SEVERE, "Error accessing corpora at " + endpointUrl + " for " + resourceHandler, ex);
-//        }
-//        if (corporaResponse != null && corporaResponse.hasTerms()) {
-//            for (SRUTerm term : corporaResponse.getTerms()) {
-//                CorpusY c = new CorpusY(endpointUrl);
-//                c.setValue(term.getValue());
-//                c.setDisplayTerm(term.getDisplayTerm());
-//                c.setNumberOfRecords(term.getNumberOfRecords());
-//                corpora.add(c);
-//            }
-//        }
-//        return corpora;
-//
-//    }
-    
+    }  
 
     private void loadChildCorpora() {
 
@@ -131,7 +95,7 @@ public class Endpoint implements CorpusTreeNode {
             //corporaRequest.setExtraRequestData("x-cmd-resource-info", "true");
             corporaResponse = sruClient.scan(corporaRequest);
         } catch (SRUClientException ex) {
-            Logger.getLogger(Endpoint.class.getName()).log(Level.SEVERE, "Error accessing corpora at " + url, ex);
+            logger.log(Level.SEVERE, "Error accessing corpora at {0}\n {1}\n {2}", new String[]{url, ex.getClass().getName(), ex.getMessage()});
         }
         if (corporaResponse != null && corporaResponse.hasTerms()) {
             for (SRUTerm term : corporaResponse.getTerms()) {

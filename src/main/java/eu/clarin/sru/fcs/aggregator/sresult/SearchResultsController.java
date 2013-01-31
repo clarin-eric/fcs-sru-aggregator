@@ -8,15 +8,24 @@ import eu.clarin.sru.client.SRUThreadedClient;
 import eu.clarin.sru.client.SRUVersion;
 import eu.clarin.sru.client.fcs.ClarinFCSRecordData;
 import eu.clarin.sru.client.fcs.ClarinFCSRecordParser;
+import eu.clarin.sru.client.fcs.DataViewKWIC;
+import eu.clarin.sru.fcs.aggregator.app.WebAppListener;
 import eu.clarin.sru.fcs.aggregator.data.Institution;
 import eu.clarin.sru.fcs.aggregator.data.SearchResult;
 import eu.clarin.sru.fcs.aggregator.sparam.CorpusTreeNodeRenderer;
+import eu.clarin.weblicht.wlfxb.io.WLDObjector;
+import eu.clarin.weblicht.wlfxb.io.WLFormatException;
+import eu.clarin.weblicht.wlfxb.md.xb.MetaData;
+import eu.clarin.weblicht.wlfxb.tc.xb.TextCorpusStored;
+import eu.clarin.weblicht.wlfxb.xb.WLData;
+import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.zkoss.zhtml.Filedownload;
 import org.zkoss.zk.ui.Component;
 import org.zkoss.zk.ui.Executions;
 import org.zkoss.zk.ui.event.Event;
@@ -27,6 +36,7 @@ import org.zkoss.zul.Grid;
 import org.zkoss.zul.Groupbox;
 import org.zkoss.zul.Label;
 import org.zkoss.zul.ListModel;
+import org.zkoss.zul.Menuitem;
 import org.zkoss.zul.Messagebox;
 import org.zkoss.zul.SimpleListModel;
 import org.zkoss.zul.Treeitem;
@@ -39,20 +49,24 @@ import org.zkoss.zul.Treeitem;
  */
 public class SearchResultsController {
 
-    private static final Logger logger = Logger.getLogger("FCS-AGGREGATOR");
     private List<SearchResult> resultsUnprocessed;
     private List<SearchResult> resultsProcessed;
     private SRUThreadedClient searchClient;
     private Component resultsArea;
     private UpdateResultsThread resultsThread;
     private int currentRequestId = 0;
+    private Label progress;
+    
+    private static final Logger logger = Logger.getLogger(SearchResultsController.class.getName());
 
-    public SearchResultsController(Component resultsArea) {
+    public SearchResultsController(Component resultsArea, Label progress) {
         this.resultsArea = resultsArea;
+        this.progress = progress;
         Executions.getCurrent().getDesktop().enableServerPush(true);
+        searchClient = (SRUThreadedClient) Executions.getCurrent().getDesktop().getWebApp().getAttribute(WebAppListener.SHARED_SRU_CLIENT);
     }
 
-    public void executeSearch(Set<Treeitem> selectedItems, int maxRecords, String searchString) {
+    public void executeSearch(Set<Treeitem> selectedItems, int maxRecords, String searchString, SRUVersion version) {
 
         // execute search only if a user selected at least one endpint/corpus
         if (selectedItems.isEmpty()) {
@@ -71,15 +85,6 @@ public class SearchResultsController {
         // update current search request id
         currentRequestId++;
 
-        // initialize client
-        searchClient = new SRUThreadedClient(SRUVersion.VERSION_1_2);
-        try {
-            searchClient.registerRecordParser(new ClarinFCSRecordParser());
-        } catch (SRUClientException e) {
-            logger.log(Level.SEVERE, "SRU Client parser registration failed", e);
-            //TODO error page...
-        }
-
         // clear are where results are to be displayed
         resultsArea.getChildren().clear();
 
@@ -89,29 +94,34 @@ public class SearchResultsController {
 
         // finally, send search requests to all the selected by user 
         // endpoints/corpora and process the responses
-        sendRequests(selectedItems, maxRecords, searchString);
+        sendRequests(selectedItems, maxRecords, searchString, version);
         processResponses();
     }
 
-    private void sendRequests(Set<Treeitem> selectedItems, int maxRecords, String searchString) {
+    private void sendRequests(Set<Treeitem> selectedItems, int maxRecords, String searchString, SRUVersion version) {
 
+        logger.log(Level.INFO, "Executing query={0} maxRecords={1}", 
+                new Object[]{searchString, maxRecords});
+        
         for (Treeitem selectedItem : selectedItems) {
             Object nodeData = selectedItem.getAttribute(CorpusTreeNodeRenderer.ITEM_DATA);
             if (selectedItem.getParentItem().isSelected() || (nodeData instanceof Institution)) {
                 // don't query institution, and don't query subcorpus separately 
                 // if there whole parent corpus/endpoint will be queried
             } else {
-                SearchResult resultsItem = executeRequest(nodeData, searchString, maxRecords);
+                SearchResult resultsItem = executeRequest(nodeData, searchString, maxRecords, version);
                 resultsUnprocessed.add(resultsItem);
             }
         }
     }
 
-    private SearchResult executeRequest(Object nodeData, String searchString, int maxRecords) {
+    private SearchResult executeRequest(Object nodeData, String searchString, int maxRecords, SRUVersion version) {
 
         SearchResult resultsItem = new SearchResult(nodeData);
-        //Logger.getLogger("FCS-AGGREGATOR").info("Now executing search: " + searchString + " " + endpoint.getUrl() + " " + corpus.getValue() + " " + maxRecords);
+        logger.log(Level.FINE, "Executing search for {0} query={1} maxRecords={2}", 
+                new Object[]{nodeData.toString(), searchString, maxRecords});
         SRUSearchRetrieveRequest searchRequest = new SRUSearchRetrieveRequest(resultsItem.getEndpoint().getUrl());
+        searchRequest.setVersion(version);
         searchRequest.setMaximumRecords(maxRecords);
         searchRequest.setRecordSchema(ClarinFCSRecordData.RECORD_SCHEMA);
         searchRequest.setQuery(searchString);
@@ -122,37 +132,38 @@ public class SearchResultsController {
             Future<SRUSearchRetrieveResponse> futureResponse = searchClient.searchRetrieve(searchRequest);
             resultsItem.setFutureResponse(futureResponse);
         } catch (SRUClientException ex) {
-            Logger.getLogger(SearchResultsController.class.getName()).log(Level.INFO, resultsItem.getEndpoint().getUrl(), ex);
+            logger.log(Level.SEVERE, "SearchRetrieve failed for {0}\n {1}\n {2}", 
+                    new String[]{resultsItem.getEndpoint().getUrl(), ex.getClass().getName(), ex.getMessage()});
         }
         return resultsItem;
 
     }
 
     private void processResponses() {
-        processResponsesAsync();
-        //processResponsesSync();
+        processResponsesWithAsyncResultsWindowUpdate();
+        //processResponsesWithSyncResultsWindowUpdate();
 
     }
 
-    private void processResponsesSync() {
-
-        while (!resultsUnprocessed.isEmpty()) {
-            SearchResult resultsItem = resultsUnprocessed.remove(0);
-            if (!resultsItem.isWaitingForResponse()) {
-                resultsItem.consumeResponse();
-                // create groupbox with search results item
-                Groupbox groupbox = createRecordsGroup(resultsItem);
-                // appand this search result only
-                resultsArea.appendChild(groupbox);
-                resultsProcessed.add(resultsItem);
-            } else {
-                resultsUnprocessed.add(resultsItem);
-            }
-
-        }
-    }
-
-    private void processResponsesAsync() {
+//    private void processResponsesWithSyncResultsWindowUpdate() {
+//
+//        while (!resultsUnprocessed.isEmpty()) {
+//            SearchResult resultsItem = resultsUnprocessed.remove(0);
+//            if (!resultsItem.isWaitingForResponse()) {
+//                resultsItem.consumeResponse();
+//                // create groupbox with search results item
+//                Groupbox groupbox = createRecordsGroup(resultsItem);
+//                // appand this search result only
+//                resultsArea.appendChild(groupbox);
+//                resultsProcessed.add(resultsItem);
+//            } else {
+//                resultsUnprocessed.add(resultsItem);
+//            }
+//
+//        }
+//    }
+    
+    private void processResponsesWithAsyncResultsWindowUpdate() {
         resultsThread = new UpdateResultsThread();
         resultsThread.start();
     }
@@ -162,7 +173,7 @@ public class SearchResultsController {
         @Override
         public void run() {
             while (!resultsUnprocessed.isEmpty() && !Thread.currentThread().isInterrupted()) {
-                //TODO display progress bar...
+                
                 SearchResult resultsItem = resultsUnprocessed.remove(0);
                 if (!resultsItem.isWaitingForResponse()) {
                     resultsItem.consumeResponse();
@@ -181,6 +192,7 @@ public class SearchResultsController {
                     //}
                     resultsProcessed.add(resultsItem);
                     //System.out.println("RECORDS ITEM ADDED");
+                    
                 } else {
                     resultsUnprocessed.add(resultsItem);
                 }
@@ -221,6 +233,12 @@ public class SearchResultsController {
             // this search result is outdated, detach it:
             if (requestId != currentRequestId) {
                 groupbox.detach();
+            }
+            
+            if (resultsUnprocessed.isEmpty()) {
+                progress.setValue("");
+            } else {
+                progress.setValue("waiting for " + resultsUnprocessed.size() + " responses...");
             }
 
         }
@@ -268,19 +286,22 @@ public class SearchResultsController {
             c = new Column();
             //c.setLabel("Left");
             columns.appendChild(c);
+            //c.setHflex("2");
             c = new Column();
             //c.setLabel("Hit");
             c.setHflex("min");
+            //c.setHflex("1");
             columns.appendChild(c);
             c = new Column();
+            //c.setHflex("2");
             //c.setLabel("Right");
             columns.appendChild(c);
             grid.appendChild(columns);
-            
+
             List<SRURecord> sruRecords = resultsItem.getResponse().getRecords();
             ListModel lmodel = new SimpleListModel(sruRecords);
             grid.setModel(lmodel);
-            grid.setRowRenderer(new SearchResultRecordRenderer());
+            grid.setRowRenderer(new SearchResultRecordRenderer(resultsItem));
             recordsGroup.appendChild(grid);
         } else { // the response was fine, but there are no records
             recordsGroup.appendChild(new Label("Sorry, there were no results!"));
@@ -289,15 +310,84 @@ public class SearchResultsController {
         return recordsGroup;
     }
 
+    public void exportCSV() {
+
+        boolean noResult = true;
+        StringBuilder csv = new StringBuilder();
+        if (resultsProcessed != null && !resultsProcessed.isEmpty()) {
+            for (SearchResult result : resultsProcessed) {
+                for (DataViewKWIC kwic : result.getDataKWIC()) {
+                    csv.append("\"");
+                    csv.append(kwic.getLeft().replace("\"", "QUOTE"));
+                    csv.append("\"");
+                    csv.append(",");
+                    csv.append("\"");
+                    csv.append(kwic.getKeyword().replace("\"", "QUOTE"));
+                    csv.append("\"");
+                    csv.append(",");
+                    csv.append("\"");
+                    csv.append(kwic.getRight().replace("\"", "QUOTE"));
+                    csv.append("\"");
+                    csv.append("\n");
+                    noResult = false;
+                }
+            }
+        }
+
+        if (noResult) {
+            Messagebox.show("Nothing to export!");
+        } else {
+            Filedownload.save(csv.toString(), "text/plain", "ClarinDFederatedContentSearch.csv");
+        }
+    }
+
+    public void exportTCF() {
+
+        boolean noResult = true;
+        StringBuilder text = new StringBuilder();
+
+        if (resultsProcessed != null && !resultsProcessed.isEmpty()) {
+            for (SearchResult result : resultsProcessed) {
+                for (DataViewKWIC kwic : result.getDataKWIC()) {
+                    text.append(kwic.getLeft());
+                    text.append(" ");
+                    text.append(kwic.getKeyword());
+                    text.append(" ");
+                    text.append(kwic.getRight());
+                    text.append("\n");
+                    noResult = false;
+                }
+            }
+
+        }
+
+        if (noResult) {
+            Messagebox.show("Nothing to export!");
+        } else {
+            WLData data;
+            MetaData md = new MetaData();
+            //data.metaData.source = "Tuebingen Uni";
+            //md.addMetaDataItem("title", "binding test");
+            //md.addMetaDataItem("author", "Yana");
+            TextCorpusStored tc = new TextCorpusStored("unknown");
+            tc.createTextLayer().addText(text.toString());
+            data = new WLData(md, tc);
+            ByteArrayOutputStream os = new ByteArrayOutputStream();
+            try {
+                WLDObjector.write(data, os);
+                Filedownload.save(os.toByteArray(), "text/tcf+xml", "ClarinDFederatedContentSearch.xml");
+            } catch (WLFormatException ex) {
+                logger.log(Level.SEVERE, "Error exporting TCF {0}\n {1}", new String[]{ex.getClass().getName(), ex.getMessage()});
+                Messagebox.show("Sorry, export error!");
+            }
+        }
+    }
+
     public void shutdown() {
         terminateProcessingRequestsAndResponses();
     }
 
     private void terminateProcessingRequestsAndResponses() {
-
-        if (searchClient != null) {
-            searchClient.shutdown();
-        }
 
         if (resultsThread != null) {
             resultsThread.interrupt();
@@ -307,6 +397,7 @@ public class SearchResultsController {
                 Logger.getLogger(SearchResultsController.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
+
         Logger.getLogger(SearchResultsController.class.getName()).log(Level.INFO, "Search terminated");
     }
 }

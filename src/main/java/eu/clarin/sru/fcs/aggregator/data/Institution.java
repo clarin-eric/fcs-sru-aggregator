@@ -2,6 +2,7 @@ package eu.clarin.sru.fcs.aggregator.data;
 
 import eu.clarin.sru.fcs.aggregator.sparam.CorpusTreeNode;
 import eu.clarin.sru.fcs.aggregator.data.CenterRegistry;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.*;
@@ -23,7 +24,8 @@ public class Institution implements CorpusTreeNode {
     private String link;
     private ArrayList<Endpoint> endpoints;
     private boolean hasChildrenLoaded = false;
-    private static final Logger logger = Logger.getLogger("FCS-AGGREGATOR");
+    
+    private static final Logger logger = Logger.getLogger(Institution.class.getName());
 
     public Institution(String name, String link) {
         this.name = name;
@@ -51,19 +53,17 @@ public class Institution implements CorpusTreeNode {
             return;
         }
         hasChildrenLoaded = true;
-        InputStream is;
-        URL u;
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        DocumentBuilder builder;
-        Document doc;
-
+        InputStream is = null;
+        
         try {
-            builder = factory.newDocumentBuilder();
-            u = new URL(link);
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder builder = factory.newDocumentBuilder();
+            URL u = new URL(link);
             is = u.openStream();
-            doc = builder.parse(is);
+            Document doc = builder.parse(is);
             is.close();
-            NodeList endpointsUrls = CenterRegistry.evaluateXPath("//WebReference[./Description[text()=\"CQL\"]]/Website", doc);
+            NodeList endpointsUrls = CenterRegistry
+                    .evaluateXPath("//WebReference[./Description[text()=\"CQL\"]]/Website", doc);
 
             for (int j = 0; j < endpointsUrls.getLength(); j++) {
                 String epUrl = endpointsUrls.item(j).getTextContent();
@@ -71,7 +71,16 @@ public class Institution implements CorpusTreeNode {
                 endpoints.add(endpoint);
             } 
         } catch (Exception ex) {
-            logger.log(Level.SEVERE, String.format("Error accessing endpoints of %s", link), ex);
+            logger.log(Level.SEVERE, "Error accessing endpoint of {0}\n {1}\n {2}", 
+                    new String[]{link, ex.getClass().getName(), ex.getMessage()});
+        } finally {
+            if (is != null) {
+                try {
+                    is.close();
+                } catch (IOException ex) {
+                    logger.log(Level.SEVERE, null, ex);
+                }
+            }
         }
     }
 

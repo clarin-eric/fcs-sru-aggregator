@@ -26,7 +26,8 @@ public class Corpus implements CorpusTreeNode {
     private List<Corpus> subCorpora = new ArrayList<Corpus>();
     private boolean hasChildrenLoaded = false;
     private Endpoint endpoint;
-    // private String endpointUrl;
+    
+    private static final Logger logger = Logger.getLogger(Corpus.class.getName());
     
     public Corpus(Endpoint endpoint) {
         this.value = null;
@@ -134,7 +135,8 @@ public class Corpus implements CorpusTreeNode {
             //corporaRequest.setExtraRequestData("x-cmd-resource-info", "true");
             corporaResponse = sruClient.scan(corporaRequest);
         } catch (SRUClientException ex) {
-            Logger.getLogger(Endpoint.class.getName()).log(Level.SEVERE, "Error accessing corpora " + value + " at " + endpoint.getUrl(), ex);
+            logger.log(Level.SEVERE, "Error accessing corpora {0} at {1}\n {2} {3}", 
+                    new String[]{value, endpoint.getUrl(), ex.getClass().getName(), ex.getMessage()});
         }
         if (corporaResponse != null && corporaResponse.hasTerms()) {
             for (SRUTerm term : corporaResponse.getTerms()) {
@@ -146,4 +148,5 @@ public class Corpus implements CorpusTreeNode {
             }
         }
     }
+   
 }

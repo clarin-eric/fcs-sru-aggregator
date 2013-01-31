@@ -6,6 +6,7 @@
 package eu.clarin.sru.fcs.aggregator.data;
 
 import eu.clarin.sru.fcs.aggregator.sparam.CorpusTreeNode;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
@@ -28,12 +29,11 @@ import org.w3c.dom.NodeList;
  */
 public class CenterRegistry implements CorpusTreeNode {
     
-    private static final Logger logger = Logger.getLogger("FCS-AGGREGATOR");
+    private static final Logger logger = Logger.getLogger(CenterRegistry.class.getName());
 
     private static final String crStartpoint = "http://130.183.206.32/restxml/";
 
     //https://centerregistry-clarin.esc.rzg.mpg.de/restxml/
-    //http://130.183.206.32/restxml/
     
     private boolean hasChildrenLoaded = false;
     private List<Institution> centers = new ArrayList<Institution>(); 
@@ -50,15 +50,16 @@ public class CenterRegistry implements CorpusTreeNode {
             return;
         }
         hasChildrenLoaded = true;
-        InputStream is;
+        InputStream is = null;
         URL u;
         NodeList instituteNames;
         NodeList institutionsUrls;
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         DocumentBuilder builder;
+        URLConnection urlConn;
         try {
             u = new URL(crStartpoint);
-            URLConnection urlConn = u.openConnection();
+            urlConn = u.openConnection();
 
             //HttpsURLConnection urlConn = (HttpsURLConnection) u.openConnection();
             
@@ -74,7 +75,7 @@ public class CenterRegistry implements CorpusTreeNode {
             builder = factory.newDocumentBuilder();
             org.w3c.dom.Document document = builder.parse(is);
 
-            is.close();
+            
             instituteNames = evaluateXPath("//Centername", document);
             institutionsUrls = evaluateXPath("//Center_id_link", document);
 
@@ -89,9 +90,17 @@ public class CenterRegistry implements CorpusTreeNode {
             }
 
         } catch (Exception ex) {
-            logger.log(Level.SEVERE, "Error accessing central repository information", ex);
+            logger.log(Level.SEVERE, "Error accessing central registry information {0} {1}", new String[]{ex.getClass().getName(), ex.getMessage()});
+        } finally {
+            if (is != null) {
+                try {
+                    is.close();
+                } catch (IOException ex) {
+                    logger.log(Level.SEVERE, ex.getMessage());
+                }
+            }
         }
-        logger.info(String.format("Number of Centers: %s", centers.size()));
+        logger.log(Level.FINE, "Number of Centers: {0}", centers.size());
 
     }
 

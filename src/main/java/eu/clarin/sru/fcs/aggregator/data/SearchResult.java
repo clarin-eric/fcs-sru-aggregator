@@ -5,6 +5,9 @@
 package eu.clarin.sru.fcs.aggregator.data;
 
 import eu.clarin.sru.client.SRUSearchRetrieveResponse;
+import eu.clarin.sru.client.fcs.DataViewKWIC;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Future;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -22,6 +25,18 @@ public class SearchResult {
     private Corpus corpus;
     private Future<SRUSearchRetrieveResponse> futureResponse;
     private SRUSearchRetrieveResponse response;
+    private List<DataViewKWIC> dataKWIC = new ArrayList<DataViewKWIC>();
+    
+    private static final Logger logger = Logger.getLogger(SearchResult.class.getName());
+
+    public List<DataViewKWIC> getDataKWIC() {
+        return dataKWIC;
+    }
+
+    public void addKWIC(DataViewKWIC kw) {
+        this.dataKWIC.add(kw);
+    }
+    
 
     public SearchResult(Object nodeData) {
         if (nodeData instanceof Endpoint) {
@@ -79,7 +94,8 @@ public class SearchResult {
                 response = futureResponse.get();
             }
         } catch (Exception ex) {
-            Logger.getLogger(SearchResult.class.getName()).log(Level.SEVERE, null, ex);
+            logger.log(Level.SEVERE, "Error consuming response from {0} {1}\n {2}\n {3}", 
+                    new Object[]{endpoint.getUrl(), corpus, ex.getClass().getName(), ex.getMessage()});
         }
     }
 }

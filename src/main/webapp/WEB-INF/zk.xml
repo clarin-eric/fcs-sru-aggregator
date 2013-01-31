@@ -14,8 +14,8 @@
         <listener-class>eu.clarin.sru.fcs.aggregator.app.DesktopDestroyedListener</listener-class>
     </listener>
     <listener>
-        <description>WebAppCleanup cleanup</description>
-        <listener-class>eu.clarin.sru.fcs.aggregator.app.WebAppDestroyedListener</listener-class>
+        <description>WebApp initialization and cleanup</description>
+        <listener-class>eu.clarin.sru.fcs.aggregator.app.WebAppListener</listener-class>
     </listener>
     
     <library-property>
