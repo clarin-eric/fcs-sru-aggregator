@@ -94,7 +94,7 @@ public class SearchResult {
                 response = futureResponse.get();
             }
         } catch (Exception ex) {
-            logger.log(Level.SEVERE, "Error consuming response from {0} {1}\n {2}\n {3}", 
+            logger.log(Level.SEVERE, "Error consuming response from {0} {1} {2} {3}", 
                     new Object[]{endpoint.getUrl(), corpus, ex.getClass().getName(), ex.getMessage()});
         }
     }

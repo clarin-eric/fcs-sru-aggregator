@@ -95,7 +95,7 @@ public class Endpoint implements CorpusTreeNode {
             //corporaRequest.setExtraRequestData("x-cmd-resource-info", "true");
             corporaResponse = sruClient.scan(corporaRequest);
         } catch (SRUClientException ex) {
-            logger.log(Level.SEVERE, "Error accessing corpora at {0}\n {1}\n {2}", new String[]{url, ex.getClass().getName(), ex.getMessage()});
+            logger.log(Level.SEVERE, "Error accessing corpora at {0} {1} {2}", new String[]{url, ex.getClass().getName(), ex.getMessage()});
         }
         if (corporaResponse != null && corporaResponse.hasTerms()) {
             for (SRUTerm term : corporaResponse.getTerms()) {

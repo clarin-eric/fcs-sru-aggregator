@@ -181,38 +181,41 @@ public class Aggregator extends SelectorComposer<Component> {
         String[] paramValue;
         String contextJson = null;
 
+        String[] paramsReceived = new String[4];
+
         paramValue = Executions.getCurrent().getParameterMap().get("query");
         if (paramValue != null) {
             searchString.setValue(paramValue[0].trim());
-            logger.log(Level.INFO, "Received parameter: query[{0}]",  searchString.getValue());
+            paramsReceived[0] = searchString.getValue();
         }
         paramValue = Executions.getCurrent().getParameterMap().get("operation");
         if (paramValue != null) {
             String operationString = paramValue[0].trim();
-            logger.log(Level.INFO, "Received parameter: operation[{0}]", operationString);
+            paramsReceived[1] = operationString;
             if (!operationString.equals("searchRetrieve")) {
-                logger.log(Level.SEVERE, "Not supported operation: {0}", operationString);
-                Messagebox.show("CLARIN-D Federated Content Search Aggregator\n\nVersion 0.0.1", "FCS", 0, Messagebox.INFORMATION);
+                Messagebox.show("Not supported operation " + operationString, "FCS", 0, Messagebox.INFORMATION);
             }
         }
         paramValue = Executions.getCurrent().getParameterMap().get("version");
         if (paramValue != null) {
             String versionString = paramValue[0].trim();
-            logger.log(Level.INFO, "Received parameter: version[{0}]", versionString);
+            paramsReceived[2] = versionString;
             if (versionString.equals("1.2")) {
                 version = SRUVersion.VERSION_1_2;
             } else if (versionString.equals("1.1")) {
                 version = SRUVersion.VERSION_1_1;
             } else {
-                logger.log(Level.SEVERE, "Not supported SRU version: {0}", versionString);
                 Messagebox.show("SRU Version " + version + " not supported", "FCS", 0, Messagebox.INFORMATION);
             }
         }
         paramValue = Executions.getCurrent().getParameterMap().get("x-aggregation-context");
         if (paramValue != null) {
             contextJson = paramValue[0].trim();
-            logger.log(Level.INFO, "Received parameter: x-aggregation-context[{0}]", contextJson);
+            paramsReceived[3] = contextJson;
         }
+        logger.log(Level.INFO, "Received parameters: query[{0}], operation[{1}], version[{2}], x-aggregation-context[{3}], ",  paramsReceived);
+        
+        
 
         if (contextJson != null) {
             Gson gson = new Gson();
@@ -221,7 +224,7 @@ public class Aggregator extends SelectorComposer<Component> {
             try {
             this.xAggregationContext = gson.fromJson(contextJson, mapType);
             } catch (Exception ex) {
-                logger.log(Level.SEVERE, "Error parsing JSON from x-aggregation-context:\n {0}\n {1}", new String[]{ex.getMessage(), contextJson});
+                logger.log(Level.SEVERE, "Error parsing JSON from x-aggregation-context: {0} {1}", new String[]{ex.getMessage(), contextJson});
                 Messagebox.show("Error in x-aggregation-context parameter", "FCS", 0, Messagebox.INFORMATION);
             }
         }

@@ -71,7 +71,7 @@ public class Institution implements CorpusTreeNode {
                 endpoints.add(endpoint);
             } 
         } catch (Exception ex) {
-            logger.log(Level.SEVERE, "Error accessing endpoint of {0}\n {1}\n {2}", 
+            logger.log(Level.SEVERE, "Error accessing endpoint of {0} {1} {2}", 
                     new String[]{link, ex.getClass().getName(), ex.getMessage()});
         } finally {
             if (is != null) {

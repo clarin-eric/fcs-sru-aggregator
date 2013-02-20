@@ -132,7 +132,7 @@ public class SearchResultsController {
             Future<SRUSearchRetrieveResponse> futureResponse = searchClient.searchRetrieve(searchRequest);
             resultsItem.setFutureResponse(futureResponse);
         } catch (SRUClientException ex) {
-            logger.log(Level.SEVERE, "SearchRetrieve failed for {0}\n {1}\n {2}", 
+            logger.log(Level.SEVERE, "SearchRetrieve failed for {0} {1} {2}", 
                     new String[]{resultsItem.getEndpoint().getUrl(), ex.getClass().getName(), ex.getMessage()});
         }
         return resultsItem;
@@ -377,7 +377,7 @@ public class SearchResultsController {
                 WLDObjector.write(data, os);
                 Filedownload.save(os.toByteArray(), "text/tcf+xml", "ClarinDFederatedContentSearch.xml");
             } catch (WLFormatException ex) {
-                logger.log(Level.SEVERE, "Error exporting TCF {0}\n {1}", new String[]{ex.getClass().getName(), ex.getMessage()});
+                logger.log(Level.SEVERE, "Error exporting TCF {0} {1}", new String[]{ex.getClass().getName(), ex.getMessage()});
                 Messagebox.show("Sorry, export error!");
             }
         }

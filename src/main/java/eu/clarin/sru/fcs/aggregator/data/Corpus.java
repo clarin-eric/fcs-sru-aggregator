@@ -135,7 +135,7 @@ public class Corpus implements CorpusTreeNode {
             //corporaRequest.setExtraRequestData("x-cmd-resource-info", "true");
             corporaResponse = sruClient.scan(corporaRequest);
         } catch (SRUClientException ex) {
-            logger.log(Level.SEVERE, "Error accessing corpora {0} at {1}\n {2} {3}", 
+            logger.log(Level.SEVERE, "Error accessing corpora {0} at {1} {2} {3}", 
                     new String[]{value, endpoint.getUrl(), ex.getClass().getName(), ex.getMessage()});
         }
         if (corporaResponse != null && corporaResponse.hasTerms()) {
