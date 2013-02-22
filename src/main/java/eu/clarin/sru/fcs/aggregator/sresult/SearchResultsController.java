@@ -68,11 +68,6 @@ public class SearchResultsController {
 
     public void executeSearch(Set<Treeitem> selectedItems, int maxRecords, String searchString, SRUVersion version) {
 
-        // execute search only if a user selected at least one endpint/corpus
-        if (selectedItems.isEmpty()) {
-            Messagebox.show("Please select at least one corpus!", "CLARIN-D FCS Aggregator", 0, Messagebox.EXCLAMATION);
-            return;
-        }
         // execute search only if a user entered a search query
         if (searchString == null || searchString.isEmpty()) {
             Messagebox.show("Please enter a query!", "CLARIN-D FCS Aggregator", 0, Messagebox.EXCLAMATION);
@@ -103,15 +98,24 @@ public class SearchResultsController {
         logger.log(Level.INFO, "Executing query={0} maxRecords={1}", 
                 new Object[]{searchString, maxRecords});
         
+        boolean requestSent = false;
         for (Treeitem selectedItem : selectedItems) {
             Object nodeData = selectedItem.getAttribute(CorpusTreeNodeRenderer.ITEM_DATA);
-            if (selectedItem.getParentItem().isSelected() || (nodeData instanceof Institution)) {
+            if ( (nodeData instanceof Institution) ||
+                    selectedItem.getParentItem().isSelected() ) {
                 // don't query institution, and don't query subcorpus separately 
                 // if there whole parent corpus/endpoint will be queried
             } else {
+                requestSent = true;
                 SearchResult resultsItem = executeRequest(nodeData, searchString, maxRecords, version);
                 resultsUnprocessed.add(resultsItem);
             }
+        }
+        
+        // there were no requests if a user didn't select at least one endpint/corpus
+        if (!requestSent) {
+            logger.log(Level.INFO, "No corpus/endpoint selected");
+            Messagebox.show("Please select at least one corpus or endpoint!", "CLARIN-D FCS Aggregator", 0, Messagebox.EXCLAMATION);
         }
     }
 
