@@ -86,14 +86,23 @@ public class Endpoint implements CorpusTreeNode {
 
         corpora = new ArrayList<Corpus>();
         SRUScanResponse corporaResponse = null;
-        StringBuilder scanClause = new StringBuilder("fcs.resource");
+        
         try {
+            // old specification
+            StringBuilder scanClause = new StringBuilder("fcs.resource");
             SRUClient sruClient = new SRUClient(SRUVersion.VERSION_1_2);
             SRUScanRequest corporaRequest = new SRUScanRequest(url);
             corporaRequest.setScanClause(scanClause.toString());
             //TODO extra data?
             //corporaRequest.setExtraRequestData("x-cmd-resource-info", "true");
             corporaResponse = sruClient.scan(corporaRequest);
+            if (corporaResponse == null || !corporaResponse.hasTerms() ) {
+                corporaRequest = new SRUScanRequest(url);
+                // new specification
+                corporaRequest.setScanClause(scanClause.toString() + "=root");
+                corporaResponse = sruClient.scan(corporaRequest);
+            }
+            
         } catch (SRUClientException ex) {
             logger.log(Level.SEVERE, "Error accessing corpora at {0} {1} {2}", new String[]{url, ex.getClass().getName(), ex.getMessage()});
         }

@@ -2,6 +2,7 @@ package eu.clarin.sru.fcs.aggregator.app;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import com.sun.jersey.api.client.Client;
 import eu.clarin.sru.client.SRUVersion;
 import eu.clarin.sru.fcs.aggregator.data.CenterRegistry;
 import eu.clarin.sru.fcs.aggregator.sparam.CorpusTreeModel;
@@ -14,6 +15,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.*;
+import org.zkoss.util.media.AMedia;
+import org.zkoss.util.media.Media;
 import org.zkoss.zk.ui.Component;
 import org.zkoss.zk.ui.Executions;
 import org.zkoss.zk.ui.event.Event;
@@ -34,6 +37,14 @@ import org.zkoss.zul.Treechildren;
 import org.zkoss.zul.Treeitem;
 import org.zkoss.zul.Window;
 import org.zkoss.zul.event.ZulEvents;
+import com.sun.jersey.api.client.WebResource;
+import com.sun.jersey.api.client.config.ClientConfig;
+import com.sun.jersey.api.client.config.DefaultClientConfig;
+import eu.clarin.weblicht.wlfxb.tc.api.GeoLongLatFormat;
+import eu.clarin.weblicht.wlfxb.tc.api.Token;
+import eu.clarin.weblicht.wlfxb.tc.xb.TextCorpusStored;
+import eu.clarin.weblicht.wlfxb.xb.WLData;
+import javax.ws.rs.core.MediaType;
 
 /**
  * Main window of the Aggregator application.
@@ -76,6 +87,9 @@ public class Aggregator extends SelectorComposer<Component> {
     private Tree tree;
     @Wire
     private Label searchResultsProgress;
+
+    private WebResource mapGenerator;
+    public static final String MAPS_SERVICE_URL = "http://weblicht.sfs.uni-tuebingen.de/rws/service-geolocationconsumer/resources/geoloc/";
     
     private Map<String, List<String>> xAggregationContext;
     private SRUVersion version = SRUVersion.VERSION_1_2;
@@ -104,6 +118,9 @@ public class Aggregator extends SelectorComposer<Component> {
         tree.setModel(corporaModel);
         tree.setItemRenderer(new CorpusTreeNodeRenderer());
         tree.setMultiple(true);
+        
+        
+        //tempMap();
 
     }
 
@@ -138,6 +155,11 @@ public class Aggregator extends SelectorComposer<Component> {
     public void onExecuteSearch(Event ev) {
         int maxRecords = Integer.parseInt(maximumRecordsSelect.getValue());
         searchResultsController.executeSearch(tree.getSelectedItems(), maxRecords, searchString.getText(), version);
+    }
+    
+    @Listen("onOK = #searchString")
+    public void onEnterSearchString(Event ev) {
+        onExecuteSearch(ev);
     }
  
     @Listen("onClick=#clearResults")
@@ -229,5 +251,29 @@ public class Aggregator extends SelectorComposer<Component> {
             }
         }
 
+    }
+
+    private void tempMap() {
+        ClientConfig config = new DefaultClientConfig();
+        Client client = Client.create(config);
+        mapGenerator = client.resource(MAPS_SERVICE_URL);
+        TextCorpusStored tc = new TextCorpusStored("en");
+        Token t1 = tc.createTokensLayer().addToken("Virginia");
+        List<Token> s1 = new ArrayList<Token>(); s1.add(t1);
+        tc.createSentencesLayer().addSentence(s1);
+        tc.createGeoLayer("unknown", GeoLongLatFormat.DegDec);
+        //tc.getGeoLayer().addPoint("138.56027", "-34.6663", 15.0, null, null, null, t1);
+        WLData data = new WLData(tc);
+        
+        Iframe resultsPic = (Iframe) resultsBox.getFellow("resultsPic");
+        
+        try {
+                    String output = mapGenerator.path("3").accept(MediaType.TEXT_HTML).type("text/tcf+xml").post(String.class, data);
+                    Media media = new AMedia("map-" + 4 + ".html", null, "text/html", output);
+                    resultsPic.setContent(media);
+                } catch (Exception e) {
+                    Logger.getLogger(Aggregator.class.getName()).log(Level.SEVERE, "ERROR accessing the maps generator service", e);
+                    Messagebox.show("ERROR accessing the maps generator service \n" + e.getMessage(), "FCS", 0, Messagebox.INFORMATION);
+                }
     }
 }
