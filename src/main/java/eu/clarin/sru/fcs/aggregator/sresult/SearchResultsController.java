@@ -1,5 +1,7 @@
 package eu.clarin.sru.fcs.aggregator.sresult;
 
+import com.googlecode.sardine.Sardine;
+import com.googlecode.sardine.SardineFactory;
 import eu.clarin.sru.client.SRUClientException;
 import eu.clarin.sru.client.SRURecord;
 import eu.clarin.sru.client.SRUSearchRetrieveRequest;
@@ -18,9 +20,16 @@ import eu.clarin.weblicht.wlfxb.io.WLFormatException;
 import eu.clarin.weblicht.wlfxb.md.xb.MetaData;
 import eu.clarin.weblicht.wlfxb.tc.xb.TextCorpusStored;
 import eu.clarin.weblicht.wlfxb.xb.WLData;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.logging.Level;
@@ -56,6 +65,11 @@ public class SearchResultsController {
     private UpdateResultsThread resultsThread;
     private int currentRequestId = 0;
     private Label progress;
+    
+    
+    private static final String WSPACE_SERVER_URL = "http://egi-cloud21.zam.kfa-juelich.de"; 
+    private static final String WSPACE_WEBDAV_DIR = "/owncloud/remote.php/webdav/";
+    private static final String AGGREGATOR_DIR = "aggregator_results/";
     
     private static final Logger logger = Logger.getLogger(SearchResultsController.class.getName());
 
@@ -170,6 +184,25 @@ public class SearchResultsController {
     private void processResponsesWithAsyncResultsWindowUpdate() {
         resultsThread = new UpdateResultsThread();
         resultsThread.start();
+    }
+
+    private String kwcToText() {
+        StringBuilder text = new StringBuilder();
+
+        if (resultsProcessed != null && !resultsProcessed.isEmpty()) {
+            for (SearchResult result : resultsProcessed) {
+                for (DataViewKWIC kwic : result.getDataKWIC()) {
+                    text.append(kwic.getLeft());
+                    text.append(" ");
+                    text.append(kwic.getKeyword());
+                    text.append(" ");
+                    text.append(kwic.getRight());
+                    text.append("\n");
+                }
+            }
+
+        }
+        return text.toString();
     }
 
     private class UpdateResultsThread extends Thread {
@@ -380,6 +413,53 @@ public class SearchResultsController {
             try {
                 WLDObjector.write(data, os);
                 Filedownload.save(os.toByteArray(), "text/tcf+xml", "ClarinDFederatedContentSearch.xml");
+            } catch (WLFormatException ex) {
+                logger.log(Level.SEVERE, "Error exporting TCF {0} {1}", new String[]{ex.getClass().getName(), ex.getMessage()});
+                Messagebox.show("Sorry, export error!");
+            }
+        }
+    }
+    
+    
+    
+    public void exportPWTCF(String user, String pass) {
+        String text = kwcToText();
+
+        if (text.isEmpty()) {
+            Messagebox.show("Nothing to export!");
+        } else {
+            WLData data;
+            MetaData md = new MetaData();
+            //data.metaData.source = "Tuebingen Uni";
+            //md.addMetaDataItem("title", "binding test");
+            //md.addMetaDataItem("author", "Yana");
+            TextCorpusStored tc = new TextCorpusStored("unknown");
+            tc.createTextLayer().addText(text.toString());
+            data = new WLData(md, tc);
+            ByteArrayOutputStream os = new ByteArrayOutputStream();
+            try {
+                WLDObjector.write(data, os);
+                //Filedownload.save(os.toByteArray(), "text/tcf+xml", "ClarinDFederatedContentSearch.xml");
+                Sardine sardine = SardineFactory.begin();
+                sardine.setCredentials(user, pass);
+                String outputDir = WSPACE_SERVER_URL + WSPACE_WEBDAV_DIR + AGGREGATOR_DIR;
+                if (!sardine.exists(outputDir)) {
+                    sardine.createDirectory(outputDir);
+                }
+		Date currentDate = new Date();
+                SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss-SSS");
+                Random generator = new Random();
+                int rn1 = generator.nextInt(1000000000);
+                String createdFilePath = outputDir + format.format(currentDate) + "-" + rn1 + ".tcf";
+                while (sardine.exists(createdFilePath)) {
+                    rn1 = generator.nextInt(1000000000);
+                    createdFilePath = outputDir + format.format(currentDate) + "-" + rn1 + ".tcf";
+                }
+                sardine.put(createdFilePath, os.toByteArray(), "text/tcf+xml");
+                Messagebox.show("Export complete!\nCreated file:\n" + createdFilePath);
+                
+            } catch (IOException ex) {
+                Logger.getLogger(SearchResultsController.class.getName()).log(Level.SEVERE, "Error accessing " + WSPACE_SERVER_URL + WSPACE_WEBDAV_DIR, ex);
             } catch (WLFormatException ex) {
                 logger.log(Level.SEVERE, "Error exporting TCF {0} {1}", new String[]{ex.getClass().getName(), ex.getMessage()});
                 Messagebox.show("Sorry, export error!");

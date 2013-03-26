@@ -150,6 +150,8 @@
                                         image="buttonExport.png"/>
                                     <menuitem label="Export Results to TCF" id="exportResultsTCF"
                                         image="buttonExport.png"/>
+                                    <menuitem label="Export Results as TCF to personal workspace" id="exportResultsPWTCF"
+                                        image="buttonExport.png"/>
                                 </menupopup>
                             </menu>
                             <menu label="Help" image="buttonHelp.png">
@@ -161,11 +163,11 @@
                             </menu>
                         </menubar>
                     </north>
-                    <center  margins="0,5,0,0" autoscroll="true" border="0">
-                        <panel width="100%" height="100%">
-                            <panelchildren id="resultsPanel" style="overflow: auto">
-                                <window id="resultsBox" style="overflow:auto;" width="100%" height="100%">
-                                    <iframe id="resultsPic" src="help.html" width="100%" height="100%"/>
+                    <center  margins="0,5,0,0" autoscroll="true" border="0" >
+                        <panel>
+                            <panelchildren id="resultsPanel"  >
+                                <window id="resultsBox" style="overflow:auto;">
+                                    <iframe id="resultsPic" src="help.html" width="80%" height="80%"/>
                                 </window>
                                 <label value=" " id="searchResultsProgress" style="border-width:0px;margin-left:5px;"/>
                             </panelchildren>
@@ -180,6 +182,43 @@
             </south>
             
         </borderlayout>
+
+
+
+<popup id="wspaceSigninpop" width="400px">
+<label value="Personal Workspace Sign In" style="font-weight:bold;color:#0e4071;"/>
+<grid>
+
+<rows>
+<row>
+<label style="font-weight:bold" value="Username:"/>
+<textbox id="wspaceUserName"  width="150px" value=""/>
+</row>
+<row>
+<label style="font-weight:bold" value="Password:"/>
+<textbox id="wspaceUserPwd" type="password" width="150px" value=""/>
+</row>
+
+<!--
+<row spans="2">
+<div align="center">
+<button id="wspaceSigninBtn" label="Sign in" image="key.png" sclass="ccsDarkBlue" />
+<button id="wspaceCancelBtn" label="Cancel" image="buttonDelete.png" sclass="ccsDarkBlue" style="margin-left:10px;"/>
+</div>
+</row>
+-->
+<row>
+<div>
+</div>
+<div align="center">
+<button id="wspaceSigninBtn" label="Sign in" image="key.png" sclass="ccsDarkBlue" />
+<button id="wspaceCancelBtn" label="Cancel" image="buttonDelete.png" sclass="ccsDarkBlue" style="margin-left:10px;"/>
+</div>
+</row>
+
+</rows>
+</grid>
+</popup>
         
     </window>
     

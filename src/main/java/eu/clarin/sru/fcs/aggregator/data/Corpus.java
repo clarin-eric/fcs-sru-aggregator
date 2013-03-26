@@ -126,7 +126,9 @@ public class Corpus implements CorpusTreeNode {
         SRUScanResponse corporaResponse = null;
         StringBuilder scanClause = new StringBuilder("fcs.resource");
         scanClause.append("=");
+        scanClause.append("");
         scanClause.append(value);
+        scanClause.append("");
         try {
             SRUClient sruClient = new SRUClient(SRUVersion.VERSION_1_2);
             SRUScanRequest corporaRequest = new SRUScanRequest(this.endpoint.getUrl());
