@@ -89,6 +89,7 @@ public class SearchResult {
     }
 
     public void consumeResponse() {
+
         try {
             if (futureResponse != null) {
                 response = futureResponse.get();

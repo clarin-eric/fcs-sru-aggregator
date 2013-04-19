@@ -1,0 +1,40 @@
+<tree>
+		<treechildren>
+			<treeitem open="false" onOpen="replace(self)">
+				<treerow>
+					<treecell label="A" />
+				</treerow>
+				<treechildren>
+					<treeitem>
+						<treerow>
+							<treecell label="temp" />
+						</treerow>
+					</treeitem>
+				</treechildren>
+			</treeitem>
+			<treeitem open="false" onOpen="replace(self)">
+				<treerow>
+					<treecell label="B" />
+				</treerow>
+				<treechildren>
+					<treeitem>
+						<treerow>
+							<treecell label="temp" />
+						</treerow>
+					</treeitem>
+				</treechildren>
+			</treeitem>
+			<treeitem open="false" onOpen="replace(self)">
+				<treerow>
+					<treecell label="C" />
+				</treerow>
+				<treechildren>
+					<treeitem>
+						<treerow>
+							<treecell label="temp" />
+						</treerow>
+					</treeitem>
+				</treechildren>
+			</treeitem>
+		</treechildren>
+	</tree>

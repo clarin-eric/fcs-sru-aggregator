@@ -7,6 +7,7 @@ import eu.clarin.sru.client.SRUScanResponse;
 import eu.clarin.sru.client.SRUTerm;
 import eu.clarin.sru.client.SRUVersion;
 import eu.clarin.sru.fcs.aggregator.sparam.CorpusTreeNode;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -63,6 +64,11 @@ public class Endpoint implements CorpusTreeNode {
         if (hasChildrenLoaded) {
             return;
         }
+        
+        Date currentDate = new Date();
+        SimpleDateFormat format = new SimpleDateFormat("mm-ss");
+        System.out.println("Loading children of " + format.format(currentDate) + " " + this.url);
+        
         this.hasChildrenLoaded = true;
         loadChildCorpora();
     }

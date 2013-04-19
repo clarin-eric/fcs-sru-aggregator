@@ -15,6 +15,7 @@ import eu.clarin.sru.fcs.aggregator.app.WebAppListener;
 import eu.clarin.sru.fcs.aggregator.data.Institution;
 import eu.clarin.sru.fcs.aggregator.data.SearchResult;
 import eu.clarin.sru.fcs.aggregator.sparam.CorpusTreeNodeRenderer;
+import eu.clarin.sru.fcs.aggregator.util.SRUCQLsearchRetrieve;
 import eu.clarin.weblicht.wlfxb.io.WLDObjector;
 import eu.clarin.weblicht.wlfxb.io.WLFormatException;
 import eu.clarin.weblicht.wlfxb.md.xb.MetaData;
@@ -66,10 +67,12 @@ public class SearchResultsController {
     private int currentRequestId = 0;
     private Label progress;
     
+    //public static final String SRUCQL_CORPUS_PARAMETER = "x-cmd-context";
     
     private static final String WSPACE_SERVER_URL = "http://egi-cloud21.zam.kfa-juelich.de"; 
     private static final String WSPACE_WEBDAV_DIR = "/owncloud/remote.php/webdav/";
-    private static final String AGGREGATOR_DIR = "aggregator_results/";
+    private static final String WSPACE_AGGREGATOR_DIR = "aggregator_results/";
+    
     
     private static final Logger logger = Logger.getLogger(SearchResultsController.class.getName());
 
@@ -144,7 +147,7 @@ public class SearchResultsController {
         searchRequest.setRecordSchema(ClarinFCSRecordData.RECORD_SCHEMA);
         searchRequest.setQuery(searchString);
         if (resultsItem.hasCorpusHandler()) {
-            searchRequest.setExtraRequestData("x-context", resultsItem.getCorpus().getValue());
+            searchRequest.setExtraRequestData(SRUCQLsearchRetrieve.CORPUS_HANDLE_PARAMETER, resultsItem.getCorpus().getValue());
         }
         try {
             Future<SRUSearchRetrieveResponse> futureResponse = searchClient.searchRetrieve(searchRequest);
@@ -406,7 +409,8 @@ public class SearchResultsController {
             //data.metaData.source = "Tuebingen Uni";
             //md.addMetaDataItem("title", "binding test");
             //md.addMetaDataItem("author", "Yana");
-            TextCorpusStored tc = new TextCorpusStored("unknown");
+            //TODO when language solution will working add specific languages/unknown...
+            TextCorpusStored tc = new TextCorpusStored("de");
             tc.createTextLayer().addText(text.toString());
             data = new WLData(md, tc);
             ByteArrayOutputStream os = new ByteArrayOutputStream();
@@ -442,7 +446,7 @@ public class SearchResultsController {
                 //Filedownload.save(os.toByteArray(), "text/tcf+xml", "ClarinDFederatedContentSearch.xml");
                 Sardine sardine = SardineFactory.begin();
                 sardine.setCredentials(user, pass);
-                String outputDir = WSPACE_SERVER_URL + WSPACE_WEBDAV_DIR + AGGREGATOR_DIR;
+                String outputDir = WSPACE_SERVER_URL + WSPACE_WEBDAV_DIR + WSPACE_AGGREGATOR_DIR;
                 if (!sardine.exists(outputDir)) {
                     sardine.createDirectory(outputDir);
                 }

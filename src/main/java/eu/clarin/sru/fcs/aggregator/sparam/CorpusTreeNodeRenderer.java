@@ -31,7 +31,7 @@ public class CorpusTreeNodeRenderer implements TreeitemRenderer {
 
     @Override
     public void render(Treeitem item, Object data, int index) throws Exception {
-
+        
         addOnOpenListener(item);
         CorpusTreeNode node = (CorpusTreeNode) data;
         if (data instanceof Institution) {

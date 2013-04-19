@@ -38,6 +38,7 @@ public class CorpusTreeModel extends AbstractTreeModel<CorpusTreeNode> implement
     @Override
     public int getChildCount(CorpusTreeNode parent) {
         int count = 0;
+        
         while (parent.getChild(count) != null) {
             count++;
         }

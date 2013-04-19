@@ -5,6 +5,7 @@ import eu.clarin.sru.fcs.aggregator.data.CenterRegistry;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -52,6 +53,7 @@ public class Institution implements CorpusTreeNode {
         if (hasChildrenLoaded) {
             return;
         }
+        
         hasChildrenLoaded = true;
         InputStream is = null;
         
