@@ -437,7 +437,8 @@ public class SearchResultsController {
             //data.metaData.source = "Tuebingen Uni";
             //md.addMetaDataItem("title", "binding test");
             //md.addMetaDataItem("author", "Yana");
-            TextCorpusStored tc = new TextCorpusStored("unknown");
+            //TODO when language solution will working add specific languages/unknown...
+            TextCorpusStored tc = new TextCorpusStored("de");
             tc.createTextLayer().addText(text.toString());
             data = new WLData(md, tc);
             ByteArrayOutputStream os = new ByteArrayOutputStream();
