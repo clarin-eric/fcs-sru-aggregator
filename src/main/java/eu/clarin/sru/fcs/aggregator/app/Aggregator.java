@@ -40,12 +40,19 @@ import org.zkoss.zul.event.ZulEvents;
 import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.api.client.config.ClientConfig;
 import com.sun.jersey.api.client.config.DefaultClientConfig;
+import eu.clarin.sru.fcs.aggregator.sparam2.Corpus2;
+import eu.clarin.sru.fcs.aggregator.sparam2.Corpus2Renderer;
+import eu.clarin.sru.fcs.aggregator.sparam2.CorpusTreeModel2;
 import eu.clarin.weblicht.wlfxb.tc.api.GeoLongLatFormat;
 import eu.clarin.weblicht.wlfxb.tc.api.Token;
 import eu.clarin.weblicht.wlfxb.tc.xb.TextCorpusStored;
 import eu.clarin.weblicht.wlfxb.xb.WLData;
 import javax.ws.rs.core.MediaType;
+import org.zkoss.zul.Borderlayout;
+import org.zkoss.zul.DefaultTreeNode;
+import org.zkoss.zul.Div;
 import org.zkoss.zul.Popup;
+import org.zkoss.zul.Progressmeter;
 
 /**
  * Main window of the Aggregator application.
@@ -100,33 +107,61 @@ public class Aggregator extends SelectorComposer<Component> {
     private SearchResultsController searchResultsController;
     private CenterRegistry registry;
     private boolean testingMode = false;
+    
+    
+    //TODO
+    @Wire
+    private Div aboutDiv;
+    @Wire
+    private Label aboutLabel;
+    @Wire
+    private Div soDiv;
+    private SearchOptions searchOptionsComposer;
+    @Wire
+    private Label soLabel;
+    @Wire
+    private Div srDiv;
+    private SearchResults searchResultsComposer;
+    @Wire
+    private Label srLabel;
+    @Wire
+    private Div helpDiv;
+    @Wire
+    private Label helpLabel;
+    
+    
+    @Wire
+    Progressmeter pMeter;
 
     @Override
     public void doAfterCompose(Component comp) throws Exception {
 
         super.doAfterCompose(comp);
 
-        processParameters();
-
-        languageSelect.setSelectedItem(anyLanguage);
-
-        searchResultsController = new SearchResultsController(resultsBox, searchResultsProgress);
-        // assign the search controller to desktop, so that it can be accessed to be shutdown when the desktop is destroyed
-        Executions.getCurrent().getDesktop().setAttribute(searchResultsController.getClass().getSimpleName(), searchResultsController);
-        // also add it to the list of actice controllers of the web application, so that they can be shutdown when the application stops
-        Set<SearchResultsController> activeControllers = (Set<SearchResultsController>) Executions.getCurrent().getDesktop().getWebApp().getAttribute(WebAppListener.ACTIVE_SEARCH_CONTROLLERS);
-        activeControllers.add(searchResultsController);
-
-        registry = new CenterRegistry();
-        registry.loadChildren(testingMode);
-        CorpusTreeModel corporaModel = new CorpusTreeModel(registry);
-        tree.setModel(corporaModel);
-        tree.setItemRenderer(new CorpusTreeNodeRenderer());
-        tree.setMultiple(true);
+//        processParameters();
+//
+//        languageSelect.setSelectedItem(anyLanguage);
+//
+//        searchResultsController = new SearchResultsController(resultsBox, searchResultsProgress);
+//        // assign the search controller to desktop, so that it can be accessed to be shutdown when the desktop is destroyed
+//        Executions.getCurrent().getDesktop().setAttribute(searchResultsController.getClass().getSimpleName(), searchResultsController);
+//        // also add it to the list of actice controllers of the web application, so that they can be shutdown when the application stops
+//        Set<SearchResultsController> activeControllers = (Set<SearchResultsController>) Executions.getCurrent().getDesktop().getWebApp().getAttribute(WebAppListener.ACTIVE_SEARCH_CONTROLLERS);
+//        activeControllers.add(searchResultsController);
+//
+//        registry = new CenterRegistry();
+//        registry.loadChildren(testingMode);
+//        CorpusTreeModel corporaModel = new CorpusTreeModel(registry);
+//        tree.setModel(corporaModel);
+//        tree.setItemRenderer(new CorpusTreeNodeRenderer());
+//        tree.setMultiple(true);
 
 
         //tempMap();
-
+        
+        searchOptionsComposer = (SearchOptions) soDiv.getChildren().get(0).getChildren().get(0).getAttribute("$" + SearchOptions.class.getSimpleName());
+        searchResultsComposer = (SearchResults) srDiv.getChildren().get(0).getChildren().get(0).getAttribute("$" + SearchResults.class.getSimpleName());    
+        
     }
 
     @Listen("onSelect = #languageSelect")
@@ -157,8 +192,24 @@ public class Aggregator extends SelectorComposer<Component> {
 
     @Listen("onClick = #searchButton")
     public void onExecuteSearch(Event ev) {
-        int maxRecords = Integer.parseInt(maximumRecordsSelect.getValue());
-        searchResultsController.executeSearch(tree.getSelectedItems(), maxRecords, searchString.getText(), version);
+        //searchResultsController.executeSearch(tree.getSelectedItems(), maxRecords, searchString.getText(), version);
+        Map<String,Set<Corpus2>> selectedCorpora = searchOptionsComposer.getSelectedCorpora();
+        boolean emptyCorpora = true;
+        for (Set<Corpus2> corpora : selectedCorpora.values()) {
+            if (!corpora.isEmpty()) {
+                emptyCorpora = false;
+                break;
+            }
+        }
+        if (emptyCorpora) {
+            Messagebox.show("No corpora is selected. To perform the search, please select corus/corpora of interest by checking the corpora checkboxes.", "FCS", 0, Messagebox.INFORMATION);
+        } else if (searchString.getText().isEmpty()) {
+            Messagebox.show("No query is specified. To perform the search, please enter a keyword of interest in the search input field, e.g. Elefant, and press the 'Search' button.", "FCS", 0, Messagebox.INFORMATION);
+        } else {
+            int maxRecords = searchOptionsComposer.getMaxRecords();
+            searchResultsComposer.executeSearch(selectedCorpora, maxRecords, searchString.getText(), pMeter);
+            onClickSearchResult(null);
+        }
     }
 
     @Listen("onOK = #searchString")
@@ -316,5 +367,54 @@ public class Aggregator extends SelectorComposer<Component> {
             Logger.getLogger(Aggregator.class.getName()).log(Level.SEVERE, "ERROR accessing the maps generator service", e);
             Messagebox.show("ERROR accessing the maps generator service \n" + e.getMessage(), "FCS", 0, Messagebox.INFORMATION);
         }
+    }
+
+
+    @Listen("onClick = #helpLabel")
+    public void onClickHelp(Event ev) {
+        this.helpDiv.setVisible(true);
+        this.helpLabel.setSclass("internalLinkSelected");
+        this.aboutDiv.setVisible(false);
+        this.aboutLabel.setSclass("internalLink");
+        this.soDiv.setVisible(false);
+        this.soLabel.setSclass("internalLink");
+        this.srDiv.setVisible(false);
+        this.srLabel.setSclass("internalLink");
+    }
+    
+    @Listen("onClick = #aboutLabel")
+    public void onClickAbout(Event ev) {
+        this.aboutDiv.setVisible(true);
+        this.aboutLabel.setSclass("internalLinkSelected");
+        this.helpDiv.setVisible(false);
+        this.helpLabel.setSclass("internalLink");
+        this.soDiv.setVisible(false);
+        this.soLabel.setSclass("internalLink");
+        this.srDiv.setVisible(false);
+        this.srLabel.setSclass("internalLink");
+    }
+    
+    @Listen("onClick = #soLabel")
+    public void onClickAdvSearch(Event ev) {
+        this.soDiv.setVisible(true);
+        this.soLabel.setSclass("internalLinkSelected");
+        this.aboutDiv.setVisible(false);
+        this.aboutLabel.setSclass("internalLink");
+        this.helpDiv.setVisible(false);
+        this.helpLabel.setSclass("internalLink");
+        this.srDiv.setVisible(false);
+        this.srLabel.setSclass("internalLink");
+    }
+    
+    @Listen("onClick = #srLabel")
+    public void onClickSearchResult(Event ev) {
+        this.srDiv.setVisible(true);
+        this.srLabel.setSclass("internalLinkSelected");
+        this.aboutDiv.setVisible(false);
+        this.aboutLabel.setSclass("internalLink");
+        this.soDiv.setVisible(false);
+        this.soLabel.setSclass("internalLink");
+        this.helpDiv.setVisible(false);
+        this.helpLabel.setSclass("internalLink");
     }
 }

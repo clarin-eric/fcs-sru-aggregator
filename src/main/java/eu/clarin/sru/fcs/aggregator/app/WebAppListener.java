@@ -3,6 +3,7 @@ package eu.clarin.sru.fcs.aggregator.app;
 import eu.clarin.sru.client.SRUClientException;
 import eu.clarin.sru.client.SRUThreadedClient;
 import eu.clarin.sru.client.fcs.ClarinFCSRecordParser;
+import eu.clarin.sru.fcs.aggregator.sparam2.Languages;
 import eu.clarin.sru.fcs.aggregator.sresult.SearchResultsController;
 import java.util.HashSet;
 import java.util.Set;
@@ -20,6 +21,8 @@ public class WebAppListener implements WebAppInit, WebAppCleanup {
 
     public static String ACTIVE_SEARCH_CONTROLLERS = "ACTIVE_SEARCH_CONTROLLERS";
     public static String SHARED_SRU_CLIENT = "SHARED_SRU_CLIENT";
+    public static String LANGUAGES = "LANG";
+    
     private static final Logger logger = Logger.getLogger(WebAppListener.class.getName());
 
     @Override
@@ -40,6 +43,9 @@ public class WebAppListener implements WebAppInit, WebAppCleanup {
         } catch (SRUClientException e) {
             logger.log(Level.SEVERE, "SRU Client Parser registration failed", e);
         }
+        
+        Languages languages = new Languages();
+        webapp.setAttribute(LANGUAGES, languages);
     }
 
     @Override

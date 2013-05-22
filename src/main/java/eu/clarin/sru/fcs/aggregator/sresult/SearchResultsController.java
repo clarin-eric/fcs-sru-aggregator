@@ -145,7 +145,8 @@ public class SearchResultsController {
         searchRequest.setVersion(version);
         searchRequest.setMaximumRecords(maxRecords);
         searchRequest.setRecordSchema(ClarinFCSRecordData.RECORD_SCHEMA);
-        searchRequest.setQuery(searchString);
+        searchString = searchString.replace(" ", "%20");
+        searchRequest.setQuery("%22" + searchString + "%22");
         if (resultsItem.hasCorpusHandler()) {
             searchRequest.setExtraRequestData(SRUCQLsearchRetrieve.CORPUS_HANDLE_PARAMETER, resultsItem.getCorpus().getValue());
         }

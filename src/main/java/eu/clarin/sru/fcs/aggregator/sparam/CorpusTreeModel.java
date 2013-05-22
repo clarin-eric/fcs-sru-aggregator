@@ -5,6 +5,7 @@
 
 package eu.clarin.sru.fcs.aggregator.sparam;
 
+import eu.clarin.sru.fcs.aggregator.sparam.CorpusTreeNode;
 import org.zkoss.zul.AbstractTreeModel;
 import org.zkoss.zul.ext.TreeSelectableModel;
 

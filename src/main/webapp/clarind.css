@@ -64,3 +64,20 @@
             .word-wrap {
             word-wrap: break-word;
             }
+
+            
+            .internalLinkSelected {
+                color:#801418;
+                text-decoration:none;
+                cursor:pointer;
+                margin:15px;
+                font-size:larger;
+            }
+            
+            .internalLink {
+                color:#0C4F66;
+                text-decoration:underline;
+                cursor:pointer;
+                margin:15px;
+                font-size:larger;
+            }
