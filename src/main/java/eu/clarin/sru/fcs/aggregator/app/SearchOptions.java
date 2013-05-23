@@ -13,6 +13,8 @@ import eu.clarin.sru.fcs.aggregator.sparam2.CorpusByNameComparator;
 import eu.clarin.sru.fcs.aggregator.sparam2.CorpusByNameDComparator;
 import eu.clarin.sru.fcs.aggregator.sparam2.CorpusTreeModel2;
 import eu.clarin.sru.fcs.aggregator.sparam2.Languages;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -61,6 +63,8 @@ public class SearchOptions extends SelectorComposer<Component> {
     
     private Languages languages;
     
+    //private Map<String,List<Corpus2>> corporaByLanguage = new HashMap<String,List<Corpus2>>();
+    
 
     @Override
     public void doAfterCompose(Component comp) throws Exception {
@@ -87,18 +91,45 @@ public class SearchOptions extends SelectorComposer<Component> {
         instCol.setSortAscending(new CorpusByInstitutionComparator());
         instCol.setSortDescending(new CorpusByInstitutionDComparator());
         //tree.setSizedByContent(true);
-        loadLanguages();
+        
+        languageSelect.setSelectedItem(anyLanguage);
         
     }
 
     @Listen("onSelect = #languageSelect")
     public void onSelectLanguage(Event ev) {
-        //TODO
+        Combobox cbox = (Combobox) ev.getTarget();
+        //System.out.println(cbox.getSelectedItem().getValue());
+        String selectedLang = cbox.getSelectedItem().getValue();
+        //if (selectedLang.equals("anylang")) {
+            // do nothing
+        //} else {
+            //List<Treeitem> itemsToRemove = new ArrayList<Treeitem>();
+            for (Component comp : tree.getTreechildren().getChildren()) {
+                Treeitem treeitem = (Treeitem) comp;
+                DefaultTreeNode<Corpus2> node = (DefaultTreeNode<Corpus2>) treeitem.getValue();
+                Corpus2 corpus = node.getData();
+                if (corpus.getLanguages().contains(selectedLang) || selectedLang.equals("anylang")) {
+                    treeitem.setVisible(true);
+                } else {
+                    corpusRenderer.updateItem(treeitem, false);
+                    treeitem.setVisible(false);
+                    //itemsToRemove.add(treeitem);
+                }
+            }
+//            for (Treeitem item : itemsToRemove) {
+//                //item.detach();
+//                //parentItem.getChildren().remove(item);
+//                
+//            }
+        //}
     }
+    
 
     @Listen(ZulEvents.ON_AFTER_RENDER + "=#tree")
     public void onAfterRenderCorporaTree(Event ev) {
         onSelectAll(null);
+        loadLanguages();
     }
 
     @Listen("onClick = #selectAll")
@@ -189,10 +220,41 @@ public class SearchOptions extends SelectorComposer<Component> {
 //    }
 
     private void loadLanguages() {
-        for (String code : this.languages.getCodes()) {
-            Comboitem item = this.languageSelect.appendItem(this.languages.nameForCode(code));
-            item.setValue(code);
+        
+        Set<String> availableLangs = new HashSet<String>();
+//        for (Set<Corpus2> corpora : corpusRenderer.getSelectedCorpora().values()) {
+//            for (Corpus2 corpus : corpora) {
+//                availableLangs.addAll(corpus.getLanguages());
+//            }
+//        }
+        
+        Treechildren treeItems = tree.getTreechildren();
+        for (Treeitem item : treeItems.getItems()) {
+            DefaultTreeNode<Corpus2> node = item.getValue();
+            Corpus2 corpus = node.getData();
+            for (String langCode : corpus.getLanguages()) {
+                availableLangs.add(langCode);
+//                if (!this.corporaByLanguage.containsKey(langCode)) {
+//                    this.corporaByLanguage.put(langCode, new ArrayList<Corpus2>());
+//                }
+//                this.corporaByLanguage.get(langCode).add(corpus);
+            }
         }
+        
+        List<String> sortedAvailableLanguages = new ArrayList<String>(availableLangs.size());
+        sortedAvailableLanguages.addAll(availableLangs);
+        Collections.sort(sortedAvailableLanguages);
+        for (String langCode : sortedAvailableLanguages) {
+            String name = this.languages.nameForCode(langCode);
+            if (name != null) {
+                Comboitem item = this.languageSelect.appendItem(name);
+                item.setValue(langCode);
+            }
+        }
+//        for (String code : this.languages.getCodes()) {
+//            Comboitem item = this.languageSelect.appendItem(this.languages.nameForCode(code));
+//            item.setValue(code);
+//        }
     }
     
 }

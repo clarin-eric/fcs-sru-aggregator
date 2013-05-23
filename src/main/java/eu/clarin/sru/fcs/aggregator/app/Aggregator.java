@@ -159,8 +159,11 @@ public class Aggregator extends SelectorComposer<Component> {
 
         //tempMap();
         
+        
         searchOptionsComposer = (SearchOptions) soDiv.getChildren().get(0).getChildren().get(0).getAttribute("$" + SearchOptions.class.getSimpleName());
-        searchResultsComposer = (SearchResults) srDiv.getChildren().get(0).getChildren().get(0).getAttribute("$" + SearchResults.class.getSimpleName());    
+        searchResultsComposer = (SearchResults) srDiv.getChildren().get(0).getChildren().get(0).getAttribute("$" + SearchResults.class.getSimpleName()); 
+        
+        
         
     }
 

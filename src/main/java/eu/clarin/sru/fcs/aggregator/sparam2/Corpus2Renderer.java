@@ -4,6 +4,7 @@
  */
 package eu.clarin.sru.fcs.aggregator.sparam2;
 
+import eu.clarin.sru.fcs.aggregator.app.WebAppListener;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -11,6 +12,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.zkoss.zk.ui.Component;
+import org.zkoss.zk.ui.Executions;
 import org.zkoss.zk.ui.event.Event;
 import org.zkoss.zk.ui.event.EventListener;
 import org.zkoss.zk.ui.event.Events;
@@ -19,6 +22,7 @@ import org.zkoss.zul.Checkbox;
 import org.zkoss.zul.DefaultTreeNode;
 import org.zkoss.zul.Label;
 import org.zkoss.zul.Treecell;
+import org.zkoss.zul.Treechildren;
 import org.zkoss.zul.Treeitem;
 import org.zkoss.zul.TreeitemRenderer;
 import org.zkoss.zul.Treerow;
@@ -44,7 +48,11 @@ import org.zkoss.zul.Treerow;
 public class Corpus2Renderer implements TreeitemRenderer<DefaultTreeNode<Corpus2>> {
 
     Map<String, Set<Corpus2>> selectedCorpora = new HashMap<String,Set<Corpus2>>();
-
+    Languages languages;
+    
+    public Corpus2Renderer() {
+        languages = (Languages) Executions.getCurrent().getDesktop().getWebApp().getAttribute(WebAppListener.LANGUAGES);
+    }
     
     @Override
     public void render(Treeitem treeItem, DefaultTreeNode<Corpus2> treeNode, int index) throws Exception {
@@ -56,7 +64,7 @@ public class Corpus2Renderer implements TreeitemRenderer<DefaultTreeNode<Corpus2
         Corpus2 data = treeNode.getData();
 
         if (data.isTemporary()) {
-            System.out.println("IN TEMP NODE!!!!");
+            //System.out.println("IN TEMP NODE!!!!");
             return;
         }
 
@@ -127,10 +135,14 @@ public class Corpus2Renderer implements TreeitemRenderer<DefaultTreeNode<Corpus2
                 Treeitem eventItem = (Treeitem) eventRow.getParent();
                 DefaultTreeNode<Corpus2> eventNode = (DefaultTreeNode<Corpus2>) eventItem.getValue();
                 toggleCorpusCheckbox(eventNode.getData(), eventCheckbox, eventRow);
+                for (Treeitem item : eventItem.getTreechildren().getItems()) {
+                    updateItem(item, eventCheckbox.isChecked());
+                }
             }
         });
         return checkbox;
     }
+    
 
     private void toggleCorpusCheckbox(Corpus2 corpus, Checkbox checkbox, Treerow row) {
         if (checkbox.isChecked()) {
@@ -143,11 +155,21 @@ public class Corpus2Renderer implements TreeitemRenderer<DefaultTreeNode<Corpus2
     }
     
     public void updateItem(Treeitem item, boolean select) {
-        Treerow row = (Treerow) item.getFirstChild();
-        Checkbox checkbox = (Checkbox) row.getFirstChild().getFirstChild();
-        DefaultTreeNode<Corpus2> node = (DefaultTreeNode<Corpus2>) item.getValue();
-        checkbox.setChecked(select);
-        toggleCorpusCheckbox(node.getData(), checkbox, row);
+        Treerow row;
+        if (item.getFirstChild() instanceof Treerow) {
+            row = (Treerow) item.getFirstChild();
+            Checkbox checkbox = (Checkbox) row.getFirstChild().getFirstChild();
+            DefaultTreeNode<Corpus2> node = (DefaultTreeNode<Corpus2>) item.getValue();
+            checkbox.setChecked(select);
+            toggleCorpusCheckbox(node.getData(), checkbox, row);
+        } else {
+            Treechildren children = (Treechildren) item.getFirstChild();
+            for (Treeitem childItem : children.getItems()) {
+                updateItem(childItem, select);
+            }
+        }
+        
+        
     }
     
 
@@ -232,8 +254,14 @@ public class Corpus2Renderer implements TreeitemRenderer<DefaultTreeNode<Corpus2
         if (!data.getLanguages().isEmpty()) {
             StringBuilder langs = new StringBuilder();
             for (String lang : data.getLanguages()) {
-                langs.append(lang);
+                String langName = languages.nameForCode(lang);
+                if (langName != null) {
+                    langs.append(langName);
+                } else {
+                    langs.append(lang);
+                }
                 langs.append(" ");
+                
             }
             Label label = new Label(langs.toString());
             label.setParent(cell);

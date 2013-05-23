@@ -52,7 +52,7 @@ public class Languages {
                 line = line.trim();
                 if (line.length() > 0) {
                     String[] splitted = line.split("\\|");
-                    System.out.println(Arrays.toString(splitted));
+                    //System.out.println(Arrays.toString(splitted));
                     String alpha3b = splitted[0];
                     String alpha3t = splitted[1];
                     String alpha2 = splitted[2];

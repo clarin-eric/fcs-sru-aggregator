@@ -45,15 +45,17 @@
                                     contentStyle="border:0" open="false">
                                     <caption label="Language" style="border:0;"/>
                                     <div style="margin-top:7px;margin-bottom:7px;">
-                                        <combobox id="languageSelect" width="100%">
-                                            <comboitem label="Any Language" id="anyLanguage"/>
+                                        <combobox id="languageSelect" readonly="true" width="100%">
+                                            <comboitem label="Any Language" id="anyLanguage" value="anylang"/>
                                         </combobox>
+<!--
                                         <div style="margin-top:2px;text-align:right;">
                                             <button id="addLangButton" label="Add"
                                                 image="buttonSelectAll.png" sclass="ccsDarkBlue"/>
                                             <button id="removeLangButton" label="Remove"
                                                 image="buttonDeselectAll.png" sclass="ccsDarkBlue"/>
                                         </div>
+-->
                                     </div>
                                 </groupbox>
 
@@ -62,18 +64,20 @@
 
                                 <groupbox mold="3d" id="sTiers" sclass="ccsLightBlue"
                                     contentStyle="border:0" open="false">
-                                    <caption label="Tier types" style="border:0;"/>
+                                    <caption label="Tier type" style="border:0;"/>
                                     <div style="margin-top:7px;margin-bottom:7px;">
                                         <combobox id="tiersSelect" width="100%" value="words">
                                             <comboitem label="full text"/>
                                             <comboitem label="words"/>
                                         </combobox>
+<!--
                                         <div style="margin-top:2px;text-align:right;">
                                             <button id="addTierButton" label="Add"
                                                 image="buttonSelectAll.png" sclass="ccsDarkBlue"/>
                                             <button id="removeTierButton" label="Remove"
                                                 image="buttonDeselectAll.png" sclass="ccsDarkBlue"/>
                                         </div>
+-->
                                     </div>
                                 </groupbox>
 

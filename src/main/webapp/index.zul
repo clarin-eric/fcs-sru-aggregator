@@ -6,7 +6,7 @@
 
         <borderlayout sclass="complex-layout">
             
-            <north height="160px" style="border-width:0px 0px 0px 0px;">
+            <north height="140px" style="border-width:0px 0px 0px 0px;">
                 <!--<image src="clarindLogo.png"/>-->
 
                         <vlayout>
@@ -25,14 +25,16 @@
                                 <label id="srLabel" sclass="internalLink">Search results</label>
                                 <label id="helpLabel" sclass="internalLink">Help</label>
                             </hlayout>
-                            <separator height="20px"></separator>
-                            <progressmeter visible="false" id="pMeter" value="0" width="300px" />
+                            
                             </div>
                         </vlayout>
             </north>
 
             <center margins="0,5,0,0" autoscroll="true" border="0">
                         <div>
+                            <div align="center">
+                                <progressmeter visible="false" id="pMeter" value="0" width="300px" />
+                            </div>
                             <div id="aboutDiv"><include src="about.zul"/></div>
                             <div id="soDiv" visible="false"><include src="searchOptions.zul"/></div>
                             <div id="srDiv" visible="false"><include src="searchResults.zul"/></div>

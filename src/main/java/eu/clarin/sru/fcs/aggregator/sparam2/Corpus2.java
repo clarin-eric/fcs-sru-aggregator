@@ -150,9 +150,9 @@ public class Corpus2 {
                 Endpoint endp = (Endpoint) institChild;
                 
                 //TODO: temp for testing, this 3 lines are to be removed:
-                if (!endp.getUrl().startsWith("http://cqlservlet.mpi.nl") && !endp.getUrl().contains("weblicht")) {
-                    continue;
-                }
+                //if (!endp.getUrl().startsWith("http://cqlservlet.mpi.nl") && !endp.getUrl().contains("weblicht")) {
+                //    continue;
+                //}
                 
                 SRUScanResponse corporaResponse = null;
                 try {

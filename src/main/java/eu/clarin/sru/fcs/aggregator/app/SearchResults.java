@@ -307,6 +307,7 @@ public class SearchResults extends SelectorComposer<Component> {
         this.progress.setValue(0);
         this.progress.setVisible(true);
         
+        
         // terminate previous search requests and corresponding response processing
         terminateProcessingRequestsAndResponses();
 
