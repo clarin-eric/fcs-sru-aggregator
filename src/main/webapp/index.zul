@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<?page title="CLARIN-D Federated Content Search"?>
+<?page title="CLARIN-D Federated Content Search" automaticTimeout="false"?>
 <zk>
     <window id="mainWindow" contentStyle="background:white;" height="100%"
         apply="eu.clarin.sru.fcs.aggregator.app.Aggregator">
@@ -29,12 +29,34 @@
                             </div>
                         </vlayout>
             </north>
-
+<!--
             <center margins="0,5,0,0" autoscroll="true" border="0">
                         <div>
                             <div align="center">
                                 <progressmeter visible="false" id="pMeter" value="0" width="300px" />
                             </div>
+                            <menubar id="menubar" visible="true" width="100%" style="margin-top:2px;border:0;">
+                            <menu label="Actions" image="buttonActions.png">
+                                <menupopup>
+                                    <menuitem label="Clear Results" id="clearResults"
+                                        image="buttonDelete.png"/>
+                                    <menuitem label="Export Results to CSV" id="exportResultsCSV"
+                                        image="buttonExport.png"/>
+                                    <menuitem label="Export Results to TCF" id="exportResultsTCF"
+                                        image="buttonExport.png"/>
+                                    <menuitem label="Export Results as TCF to personal workspace" id="exportResultsPWTCF"
+                                        image="buttonExport.png"/>
+                                </menupopup>
+                            </menu>
+                            <menu label="Help" image="buttonHelp.png">
+                                <menupopup>
+                                    <menuitem label="Show Help" id="showHelp" image="buttonHelp.png"/>
+                                    <menuitem label="About" id="showAbout"
+                                        image="buttonShowAbout.png"/>
+                                </menupopup>
+                            </menu>
+                        </menubar>
+                        
                             <div id="aboutDiv"><include src="about.zul"/></div>
                             <div id="soDiv" visible="false"><include src="searchOptions.zul"/></div>
                             <div id="srDiv" visible="false"><include src="searchResults.zul"/></div>
@@ -42,6 +64,70 @@
                        </div>
                 
             </center>
+            -->
+            
+            
+            <center border="0">
+                        <borderlayout sclass="complex-layout">
+            
+            <north id="controls1" size="0px" style="border-width:0px 0px 0px 0px;">
+                
+                <div>
+                                            
+                            
+                <menubar id="menubar" width="100%" style="margin-top:2px;border:0;">
+                            <menuitem label="Clear" id="clearResults"
+                                        image="buttonDelete.png"/>
+                            <menu label="Export to Workspace" image="buttonActions.png">
+                                <menupopup>
+                                    <menuitem label="Export Results as CSV" id="exportResultsPWCSV"
+                                        image="buttonExport.png"/>
+                                    <menuitem label="Export Results as TCF" id="exportResultsPWTCF"
+                                        image="buttonExport.png"/>
+                                </menupopup>
+                            </menu>
+                            <menu label="Download" image="buttonHelp.png">
+                                <menupopup>
+                                    <menuitem label="Download Results as CSV" id="downloadResultsCSV"
+                                        image="buttonExport.png"/>
+                                    <menuitem label="Download Results as TCF" id="downloadResultsTCF"
+                                        image="buttonExport.png"/>
+                                </menupopup>
+                            </menu>
+                        </menubar>
+                        
+                        </div>
+                
+                </north>
+                
+                <center margins="0,5,0,0" autoscroll="true" border="0">
+                        <div>
+                            <div id="aboutDiv"><include src="about.zul"/></div>
+                            <div id="soDiv" visible="false"><include src="searchOptions.zul"/></div>
+                            <div id="srDiv" visible="false"><include src="searchResults.zul"/></div>
+                            <div id="helpDiv" visible="false"><include src="help.zul"/></div>
+                       </div>
+                
+            </center>
+                
+                
+                <south id="controls2" size="0px"
+                style="border-width:0px 0px 0px 0px;text-align:center;">
+                    <div align="center">
+                                <progressmeter visible="false" id="pMeter" value="0" width="300px" />
+                            </div>
+                    
+            </south>
+            
+            
+        </borderlayout>
+            </center>
+            
+            
+            
+            
+            
+            
 
             <!-- Fusszeile -->
             <south title="Copyright © 2013 Clarin-D"

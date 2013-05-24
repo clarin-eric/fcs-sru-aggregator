@@ -1,33 +1,32 @@
 <vlayout apply="eu.clarin.sru.fcs.aggregator.app.SearchResults">
                     
-                        <menubar id="menubar" width="100%" style="margin-top:2px;border:0;">
-                            <menu label="Actions" image="buttonActions.png">
-                                <menupopup>
-                                    <menuitem label="Clear Results" id="clearResults"
-                                        image="buttonDelete.png"/>
-                                    <menuitem label="Export Results to CSV" id="exportResultsCSV"
-                                        image="buttonExport.png"/>
-                                    <menuitem label="Export Results to TCF" id="exportResultsTCF"
-                                        image="buttonExport.png"/>
-                                    <menuitem label="Export Results as TCF to personal workspace" id="exportResultsPWTCF"
-                                        image="buttonExport.png"/>
-                                </menupopup>
-                            </menu>
-                            <menu label="Help" image="buttonHelp.png">
-                                <menupopup>
-                                    <menuitem label="Show Help" id="showHelp" image="buttonHelp.png"/>
-                                    <menuitem label="About" id="showAbout"
-                                        image="buttonShowAbout.png"/>
-                                </menupopup>
-                            </menu>
-                        </menubar>
-                    
+                        
                         <panel>
                             <panelchildren id="resultsPanel"  >
                                 <window id="resultsBox" style="overflow:auto;">
-                                    <div style="margin:30px;">To get the results, please enter a keyword into the search fieled above, e.g. Elephant, and press the search button.</div>
+                                    <!--<div style="margin:30px;">To get the results, please enter a keyword into the search fieled above, e.g. Elephant, and press the search button.</div>-->
                                 </window>
                                 <label value=" " id="searchResultsProgress" style="border-width:0px;margin-left:5px;"/>
                             </panelchildren>
                         </panel>
+                        
+<!--     
+   <borderlayout width="100px" height="100px">
+    <north>
+        <div style="background:#008db7;color:white;">N</div>
+    </north>
+    <south>
+        <div style="background:#112f37;color:white;">S</div>
+    </south>
+    <center>
+        <div>C</div>
+    </center>
+    <east>
+        <div style="background:#f2f2f2;">E</div>
+    </east>
+    <west>
+        <div style="background:#f2f2f2;">W</div>
+    </west>
+</borderlayout>
+-->
 </vlayout>

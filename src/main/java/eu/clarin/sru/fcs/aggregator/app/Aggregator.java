@@ -51,8 +51,11 @@ import javax.ws.rs.core.MediaType;
 import org.zkoss.zul.Borderlayout;
 import org.zkoss.zul.DefaultTreeNode;
 import org.zkoss.zul.Div;
+import org.zkoss.zul.Menubar;
+import org.zkoss.zul.North;
 import org.zkoss.zul.Popup;
 import org.zkoss.zul.Progressmeter;
+import org.zkoss.zul.South;
 
 /**
  * Main window of the Aggregator application.
@@ -132,6 +135,17 @@ public class Aggregator extends SelectorComposer<Component> {
     
     @Wire
     Progressmeter pMeter;
+    
+    @Wire
+    Menubar menubar;
+    @Wire
+    North controls1;
+    @Wire
+    South controls2;
+    
+    
+    
+    private ControlsVisibility controlsVisibility;
 
     @Override
     public void doAfterCompose(Component comp) throws Exception {
@@ -163,7 +177,7 @@ public class Aggregator extends SelectorComposer<Component> {
         searchOptionsComposer = (SearchOptions) soDiv.getChildren().get(0).getChildren().get(0).getAttribute("$" + SearchOptions.class.getSimpleName());
         searchResultsComposer = (SearchResults) srDiv.getChildren().get(0).getChildren().get(0).getAttribute("$" + SearchResults.class.getSimpleName()); 
         
-        
+        controlsVisibility = new ControlsVisibility(controls1, controls2, pMeter, menubar);
         
     }
 
@@ -177,21 +191,21 @@ public class Aggregator extends SelectorComposer<Component> {
         CorpusTreeNodeRenderer.selectEndpoints(this.tree, this.xAggregationContext);
     }
 
-    @Listen("onClick = #selectAll")
-    public void onSelectAll(Event ev) {
-        Treechildren openTreeItems = tree.getTreechildren();
-        for (Treeitem openItem : openTreeItems.getItems()) {
-            CorpusTreeNodeRenderer.selectItem(openItem);
-        }
-    }
-
-    @Listen("onClick = #deselectAll")
-    public void onDeselectAll(Event ev) {
-        Treechildren openTreeItems = tree.getTreechildren();
-        for (Treeitem openItem : openTreeItems.getItems()) {
-            CorpusTreeNodeRenderer.unselectItem(openItem);
-        }
-    }
+//    @Listen("onClick = #selectAll")
+//    public void onSelectAll(Event ev) {
+//        Treechildren openTreeItems = tree.getTreechildren();
+//        for (Treeitem openItem : openTreeItems.getItems()) {
+//            CorpusTreeNodeRenderer.selectItem(openItem);
+//        }
+//    }
+//
+//    @Listen("onClick = #deselectAll")
+//    public void onDeselectAll(Event ev) {
+//        Treechildren openTreeItems = tree.getTreechildren();
+//        for (Treeitem openItem : openTreeItems.getItems()) {
+//            CorpusTreeNodeRenderer.unselectItem(openItem);
+//        }
+//    }
 
     @Listen("onClick = #searchButton")
     public void onExecuteSearch(Event ev) {
@@ -210,7 +224,7 @@ public class Aggregator extends SelectorComposer<Component> {
             Messagebox.show("No query is specified. To perform the search, please enter a keyword of interest in the search input field, e.g. Elefant, and press the 'Search' button.", "FCS", 0, Messagebox.INFORMATION);
         } else {
             int maxRecords = searchOptionsComposer.getMaxRecords();
-            searchResultsComposer.executeSearch(selectedCorpora, maxRecords, searchString.getText(), pMeter);
+            searchResultsComposer.executeSearch(selectedCorpora, maxRecords, searchString.getText(), controlsVisibility);
             onClickSearchResult(null);
         }
     }
@@ -222,24 +236,26 @@ public class Aggregator extends SelectorComposer<Component> {
 
     @Listen("onClick=#clearResults")
     public void onClearResults(Event ev) {
-        resultsBox.getChildren().clear();
+        this.searchResultsComposer.clearResults();
+        
+        
     }
 
-    @Listen("onClick=#showHelp")
-    public void onShowHelp(Event ev) {
-        resultsBox.getChildren().clear();
-        Iframe help = new Iframe();
-        help.setWidth("100%");
-        help.setHeight("100%");
-        help.setSrc("help.html");
-        resultsBox.appendChild(help);
-    }
-
-    @Listen("onClick=#showAbout")
-    public void onShowAbout(Event ev) {
-        Messagebox.show("CLARIN-D Federated Content Search Aggregator\n\nVersion 0.0.1", "FCS", 0, Messagebox.INFORMATION);
-
-    }
+//    @Listen("onClick=#showHelp")
+//    public void onShowHelp(Event ev) {
+//        resultsBox.getChildren().clear();
+//        Iframe help = new Iframe();
+//        help.setWidth("100%");
+//        help.setHeight("100%");
+//        help.setSrc("help.html");
+//        resultsBox.appendChild(help);
+//    }
+//
+//    @Listen("onClick=#showAbout")
+//    public void onShowAbout(Event ev) {
+//        Messagebox.show("CLARIN-D Federated Content Search Aggregator\n\nVersion 0.0.1", "FCS", 0, Messagebox.INFORMATION);
+//
+//    }
 
     @Listen("onClick=#exportResultsCSV")
     public void onExportResultsCSV(Event ev) {
@@ -383,6 +399,8 @@ public class Aggregator extends SelectorComposer<Component> {
         this.soLabel.setSclass("internalLink");
         this.srDiv.setVisible(false);
         this.srLabel.setSclass("internalLink");
+        
+        this.controlsVisibility.disableControls1();
     }
     
     @Listen("onClick = #aboutLabel")
@@ -395,6 +413,8 @@ public class Aggregator extends SelectorComposer<Component> {
         this.soLabel.setSclass("internalLink");
         this.srDiv.setVisible(false);
         this.srLabel.setSclass("internalLink");
+        
+        this.controlsVisibility.disableControls1();
     }
     
     @Listen("onClick = #soLabel")
@@ -407,6 +427,8 @@ public class Aggregator extends SelectorComposer<Component> {
         this.helpLabel.setSclass("internalLink");
         this.srDiv.setVisible(false);
         this.srLabel.setSclass("internalLink");
+        
+        this.controlsVisibility.disableControls1();
     }
     
     @Listen("onClick = #srLabel")
@@ -419,5 +441,10 @@ public class Aggregator extends SelectorComposer<Component> {
         this.soLabel.setSclass("internalLink");
         this.helpDiv.setVisible(false);
         this.helpLabel.setSclass("internalLink");
+        
+        if (this.searchResultsComposer.hasResults()) {
+            this.controlsVisibility.enableControls1();
+        }
     }
+
 }

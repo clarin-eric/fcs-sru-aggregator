@@ -131,8 +131,11 @@ public class SearchResults extends SelectorComposer<Component> {
     private int currentRequestId = 0;
     
     
-    private Progressmeter progress;
+    //private Progressmeter progress;
+    private ControlsVisibility controlsVisibility;
     
+    
+    private boolean hasResults = false;
 
 
     @Override
@@ -194,9 +197,15 @@ public class SearchResults extends SelectorComposer<Component> {
 //        }
 //    }
 
-    @Listen("onClick=#clearResults")
-    public void onClearResults(Event ev) {
+    public void clearResults() {
+        // terminate previous search requests and corresponding response processing
+        terminateProcessingRequestsAndResponses();
+        this.controlsVisibility.disableControls1();
+        this.controlsVisibility.disableControls2();
         resultsBox.getChildren().clear();
+        this.hasResults = false;
+        
+        
     }
 
 //    @Listen("onClick=#exportResultsCSV")
@@ -301,11 +310,13 @@ public class SearchResults extends SelectorComposer<Component> {
     }
 
 
-    void executeSearch(Map<String, Set<Corpus2>> selectedCorpora, int maxRecords, String searchString, Progressmeter pMeter) {
+    void executeSearch(Map<String, Set<Corpus2>> selectedCorpora, int maxRecords, String searchString, ControlsVisibility controlsVisibility) {
         
-        this.progress = pMeter;
-        this.progress.setValue(0);
-        this.progress.setVisible(true);
+        this.controlsVisibility = controlsVisibility;
+        this.controlsVisibility.enableControls1();
+        this.controlsVisibility.enableControls2();
+        this.controlsVisibility.enableProgressMeter(0);
+        this.hasResults = true;
         
         
         // terminate previous search requests and corresponding response processing
@@ -378,6 +389,10 @@ public class SearchResults extends SelectorComposer<Component> {
         resultsThread = new SearchResults.UpdateResultsThread();
         resultsThread.start();
     }
+
+    public boolean hasResults() {
+        return this.hasResults;
+    }
     
     
     private class UpdateResultsThread extends Thread {
@@ -448,10 +463,10 @@ public class SearchResults extends SelectorComposer<Component> {
             }
             
             if (resultsUnprocessed.isEmpty()) {
-                progress.setValue(0);
-                progress.setVisible(false);
+                controlsVisibility.disableProgressMeter();
+                controlsVisibility.disableControls2();
             } else {
-                progress.setValue(100 * resultsProcessed.size() / (resultsUnprocessed.size() + resultsProcessed.size() + 1));
+                controlsVisibility.updateProgressMeter(100 * resultsProcessed.size() / (resultsUnprocessed.size() + resultsProcessed.size() + 1));
             }
 
         }

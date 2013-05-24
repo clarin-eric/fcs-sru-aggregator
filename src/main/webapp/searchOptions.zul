@@ -59,6 +59,7 @@
                                     </div>
                                 </groupbox>
 
+<!--
                                 <separator/>
                                 <separator/>
 
@@ -70,19 +71,19 @@
                                             <comboitem label="full text"/>
                                             <comboitem label="words"/>
                                         </combobox>
-<!--
+
                                         <div style="margin-top:2px;text-align:right;">
                                             <button id="addTierButton" label="Add"
                                                 image="buttonSelectAll.png" sclass="ccsDarkBlue"/>
                                             <button id="removeTierButton" label="Remove"
                                                 image="buttonDeselectAll.png" sclass="ccsDarkBlue"/>
                                         </div>
--->
-                                    </div>
-                                </groupbox>
+
+                                            </div>
+                                        </groupbox>
+        -->
 
 
-
-                                <separator/>
-                            </panelchildren>
-                        </panel>
+        <separator/>
+    </panelchildren>
+</panel>

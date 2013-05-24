@@ -47,13 +47,13 @@ import org.zkoss.zul.Treerow;
  */
 public class Corpus2Renderer implements TreeitemRenderer<DefaultTreeNode<Corpus2>> {
 
-    Map<String, Set<Corpus2>> selectedCorpora = new HashMap<String,Set<Corpus2>>();
+    Map<String, Set<Corpus2>> selectedCorpora = new HashMap<String, Set<Corpus2>>();
     Languages languages;
-    
+
     public Corpus2Renderer() {
         languages = (Languages) Executions.getCurrent().getDesktop().getWebApp().getAttribute(WebAppListener.LANGUAGES);
     }
-    
+
     @Override
     public void render(Treeitem treeItem, DefaultTreeNode<Corpus2> treeNode, int index) throws Exception {
 
@@ -110,6 +110,36 @@ public class Corpus2Renderer implements TreeitemRenderer<DefaultTreeNode<Corpus2
                         openedTreeitem.setOpen(open);
                     }
                 }
+                
+                
+                
+                boolean selectChildren = false;
+                for (Component comp : openedTreeitem.getChildren()) {
+            if (comp instanceof Treerow) {
+                Treerow row = (Treerow) comp;
+                Checkbox checkbox = (Checkbox) row.getFirstChild().getFirstChild();
+                if (checkbox.isChecked()) {
+                    selectChildren = true;
+                }
+                break;
+            }
+            }
+                if (selectChildren) {
+                for (Component comp : openedTreeitem.getChildren()) {
+            if (comp instanceof Treechildren) {
+                Treechildren item = (Treechildren) comp;
+                for (Treeitem childItem : item.getItems()) {
+                    updateItem(childItem, selectChildren);
+                }
+                break;
+            }
+            }
+                }
+                
+            
+                
+                
+                
             }
         });
 
@@ -135,6 +165,7 @@ public class Corpus2Renderer implements TreeitemRenderer<DefaultTreeNode<Corpus2
                 Treeitem eventItem = (Treeitem) eventRow.getParent();
                 DefaultTreeNode<Corpus2> eventNode = (DefaultTreeNode<Corpus2>) eventItem.getValue();
                 toggleCorpusCheckbox(eventNode.getData(), eventCheckbox, eventRow);
+                updateParentItem(eventItem, eventCheckbox.isChecked());
                 for (Treeitem item : eventItem.getTreechildren().getItems()) {
                     updateItem(item, eventCheckbox.isChecked());
                 }
@@ -142,7 +173,29 @@ public class Corpus2Renderer implements TreeitemRenderer<DefaultTreeNode<Corpus2
         });
         return checkbox;
     }
-    
+
+    private void updateParentItem(Treeitem item, boolean checked) {
+        
+        // if item becomes unselected, unselect it parent
+        if (!checked) {
+            Treeitem parent = item.getParentItem();
+            if (parent != null) {
+            for (Component comp : parent.getChildren()) {
+            // update the item row
+            if (comp instanceof Treerow) {
+                Treerow row = (Treerow) comp;
+                Checkbox checkbox = (Checkbox) row.getFirstChild().getFirstChild();
+                DefaultTreeNode<Corpus2> node = (DefaultTreeNode<Corpus2>) parent.getValue();
+                checkbox.setChecked(checked);
+                toggleCorpusCheckbox(node.getData(), checkbox, row);
+                updateParentItem(parent, checked);
+                break;
+            }
+            }
+            
+            }
+        }
+    }
 
     private void toggleCorpusCheckbox(Corpus2 corpus, Checkbox checkbox, Treerow row) {
         if (checkbox.isChecked()) {
@@ -153,25 +206,27 @@ public class Corpus2Renderer implements TreeitemRenderer<DefaultTreeNode<Corpus2
             removeFromSelected(corpus);
         }
     }
-    
+
     public void updateItem(Treeitem item, boolean select) {
-        Treerow row;
-        if (item.getFirstChild() instanceof Treerow) {
-            row = (Treerow) item.getFirstChild();
-            Checkbox checkbox = (Checkbox) row.getFirstChild().getFirstChild();
-            DefaultTreeNode<Corpus2> node = (DefaultTreeNode<Corpus2>) item.getValue();
-            checkbox.setChecked(select);
-            toggleCorpusCheckbox(node.getData(), checkbox, row);
-        } else {
-            Treechildren children = (Treechildren) item.getFirstChild();
-            for (Treeitem childItem : children.getItems()) {
-                updateItem(childItem, select);
+
+        for (Component comp : item.getChildren()) {
+            // update the item row
+            if (comp instanceof Treerow) {
+                Treerow row = (Treerow) comp;
+                Checkbox checkbox = (Checkbox) row.getFirstChild().getFirstChild();
+                DefaultTreeNode<Corpus2> node = (DefaultTreeNode<Corpus2>) item.getValue();
+                checkbox.setChecked(select);
+                toggleCorpusCheckbox(node.getData(), checkbox, row);
+                // update the item children
+            } else if (comp instanceof Treechildren) {
+                Treechildren children = (Treechildren) comp;
+                for (Treeitem childItem : children.getItems()) {
+                    updateItem(childItem, select);
+                }
             }
         }
-        
-        
+
     }
-    
 
 //    private Label createLabelForCorpus(Corpus2 data) {
 //        Label label;
@@ -261,7 +316,7 @@ public class Corpus2Renderer implements TreeitemRenderer<DefaultTreeNode<Corpus2
                     langs.append(lang);
                 }
                 langs.append(" ");
-                
+
             }
             Label label = new Label(langs.toString());
             label.setParent(cell);
