@@ -1,14 +1,18 @@
 <vlayout apply="eu.clarin.sru.fcs.aggregator.app.SearchResults">
                     
-                        
+                        <!--
                         <panel>
                             <panelchildren id="resultsPanel"  >
                                 <window id="resultsBox" style="overflow:auto;">
-                                    <!--<div style="margin:30px;">To get the results, please enter a keyword into the search fieled above, e.g. Elephant, and press the search button.</div>-->
+                      <div style="margin:30px;">To get the results, please enter a keyword into the search fieled above, e.g. Elephant, and press the search button.</div>
+
+
+
                                 </window>
                                 <label value=" " id="searchResultsProgress" style="border-width:0px;margin-left:5px;"/>
                             </panelchildren>
                         </panel>
+-->
                         
 <!--     
    <borderlayout width="100px" height="100px">
@@ -29,4 +33,14 @@
     </west>
 </borderlayout>
 -->
+
+
+
+
+<vlayout id="resultsBox" style="overflow:auto;">
+</vlayout>
+
+
+
+
 </vlayout>

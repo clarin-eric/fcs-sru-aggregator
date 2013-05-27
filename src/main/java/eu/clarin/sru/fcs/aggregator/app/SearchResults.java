@@ -70,6 +70,7 @@ import org.zkoss.zul.ListModel;
 import org.zkoss.zul.Popup;
 import org.zkoss.zul.Progressmeter;
 import org.zkoss.zul.SimpleListModel;
+import org.zkoss.zul.Vlayout;
 
 /**
  *
@@ -93,7 +94,8 @@ public class SearchResults extends SelectorComposer<Component> {
     @Wire
     private Comboitem anyLanguage;
     @Wire
-    private Window resultsBox;
+    //private Window resultsBox;
+    private Vlayout resultsBox;
 //    @Wire
 //    private Button selectAll;
 //    @Wire
@@ -137,6 +139,9 @@ public class SearchResults extends SelectorComposer<Component> {
     
     private boolean hasResults = false;
 
+    
+    @Wire
+    private Window infoWin;
 
     @Override
     public void doAfterCompose(Component comp) throws Exception {
@@ -511,6 +516,7 @@ public class SearchResults extends SelectorComposer<Component> {
 //            grid.setPageSize(10);
             Columns columns = new Columns();
             Column c;
+            
             c = new Column();
             //c.setLabel("Left");
             columns.appendChild(c);
@@ -523,6 +529,10 @@ public class SearchResults extends SelectorComposer<Component> {
             c = new Column();
             //c.setHflex("2");
             //c.setLabel("Right");
+            // info column
+            columns.appendChild(c);
+            c = new Column();
+            c.setHflex("min");
             columns.appendChild(c);
             grid.appendChild(columns);
 
