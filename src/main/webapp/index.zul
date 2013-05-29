@@ -29,42 +29,6 @@
                             </div>
                         </vlayout>
             </north>
-<!--
-            <center margins="0,5,0,0" autoscroll="true" border="0">
-                        <div>
-                            <div align="center">
-                                <progressmeter visible="false" id="pMeter" value="0" width="300px" />
-                            </div>
-                            <menubar id="menubar" visible="true" width="100%" style="margin-top:2px;border:0;">
-                            <menu label="Actions" image="buttonActions.png">
-                                <menupopup>
-                                    <menuitem label="Clear Results" id="clearResults"
-                                        image="buttonDelete.png"/>
-                                    <menuitem label="Export Results to CSV" id="exportResultsCSV"
-                                        image="buttonExport.png"/>
-                                    <menuitem label="Export Results to TCF" id="exportResultsTCF"
-                                        image="buttonExport.png"/>
-                                    <menuitem label="Export Results as TCF to personal workspace" id="exportResultsPWTCF"
-                                        image="buttonExport.png"/>
-                                </menupopup>
-                            </menu>
-                            <menu label="Help" image="buttonHelp.png">
-                                <menupopup>
-                                    <menuitem label="Show Help" id="showHelp" image="buttonHelp.png"/>
-                                    <menuitem label="About" id="showAbout"
-                                        image="buttonShowAbout.png"/>
-                                </menupopup>
-                            </menu>
-                        </menubar>
-                        
-                            <div id="aboutDiv"><include src="about.zul"/></div>
-                            <div id="soDiv" visible="false"><include src="searchOptions.zul"/></div>
-                            <div id="srDiv" visible="false"><include src="searchResults.zul"/></div>
-                            <div id="helpDiv" visible="false"><include src="help.zul"/></div>
-                       </div>
-                
-            </center>
-            -->
             
             
             <center border="0">
@@ -78,20 +42,20 @@
                 <menubar id="menubar" width="100%" style="margin-top:2px;border:0;">
                             <menuitem label="Clear" id="clearResults"
                                         image="buttonDelete.png"/>
-                            <menu label="Export to Workspace" image="buttonActions.png">
+                            <menu label="Export to Personal Workspace" image="avatar-default.png">
                                 <menupopup>
-                                    <menuitem label="Export Results as CSV" id="exportResultsPWCSV"
-                                        image="buttonExport.png"/>
-                                    <menuitem label="Export Results as TCF" id="exportResultsPWTCF"
-                                        image="buttonExport.png"/>
+                                    <menuitem label="Export Results as CSV" id="exportPWCSV"
+                                        image="x-office-spreadsheet.png"/>
+                                    <menuitem label="Export Results as TCF" id="exportPWTCF"
+                                        image="text-xml.png"/>
                                 </menupopup>
                             </menu>
-                            <menu label="Download" image="buttonHelp.png">
+                            <menu label="Download" image="buttonExport.png">
                                 <menupopup>
-                                    <menuitem label="Download Results as CSV" id="downloadResultsCSV"
-                                        image="buttonExport.png"/>
-                                    <menuitem label="Download Results as TCF" id="downloadResultsTCF"
-                                        image="buttonExport.png"/>
+                                    <menuitem label="Download Results as CSV" id="downloadCSV"
+                                        image="x-office-spreadsheet.png"/>
+                                    <menuitem label="Download Results as TCF" id="downloadTCF"
+                                        image="text-xml.png"/>
                                 </menupopup>
                             </menu>
                         </menubar>
@@ -115,7 +79,11 @@
                 style="border-width:0px 0px 0px 0px;text-align:center;">
                     <div align="center">
                                 <progressmeter visible="false" id="pMeter" value="0" width="300px" />
-                            </div>
+<hlayout>
+                                <button id="prevButton" visible="false" image="arrow_left_blue.png" hoverImage="arrow_left_green.png"  style="margin-right:30px;"/>
+                                <button id="nextButton" visible="false" image="arrow_right_blue.png" hoverImage="arrow_right_green.png" dir="reverse" style="margin-left:30px;" />
+</hlayout>
+                     </div>
                     
             </south>
             
@@ -152,22 +120,18 @@
 <textbox id="wspaceUserPwd" type="password" width="150px" value=""/>
 </row>
 
-<!--
-<row spans="2">
-<div align="center">
-<button id="wspaceSigninBtn" label="Sign in" image="key.png" sclass="ccsDarkBlue" />
-<button id="wspaceCancelBtn" label="Cancel" image="buttonDelete.png" sclass="ccsDarkBlue" style="margin-left:10px;"/>
-</div>
-</row>
--->
+
 <row>
-<div>
-</div>
+<cell>
+<label style="font-weight:bold" value="No Account Yet?"/>
+<a href="http://egi-cloud21.zam.kfa-juelich.de/owncloud/" target="_blank" label="Sign up" style="margin-left:10px;"/>
+</cell>
 <div align="center">
 <button id="wspaceSigninBtn" label="Sign in" image="key.png" sclass="ccsDarkBlue" />
 <button id="wspaceCancelBtn" label="Cancel" image="buttonDelete.png" sclass="ccsDarkBlue" style="margin-left:10px;"/>
 </div>
 </row>
+
 
 </rows>
 </grid>

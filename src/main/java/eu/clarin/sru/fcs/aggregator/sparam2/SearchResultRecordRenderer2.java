@@ -67,10 +67,12 @@ public class SearchResultRecordRenderer2 implements RowRenderer {
 
 
 
-
+            String pid = resource.getPid();
+            String reference = resource.getRef();
             // If dataviews are assigned directly to the resource:                    
             if (resource.hasDataViews()) {
-                appendDataView(row, resource.getDataViews());
+                appendDataView(row, resource.getDataViews(), resource.getPid(), resource.getRef());
+                appendResourceInfo(row, pid, reference);
             }
 
             // If there are resource fragments:
@@ -79,12 +81,19 @@ public class SearchResultRecordRenderer2 implements RowRenderer {
                     logger.log(Level.FINE, "ResourceFragment: ref={0}, pid={1}, dataViews={2}",
                             new Object[]{fragment.getRef(), fragment.getPid(), fragment.hasDataViews()});
                     if (fragment.hasDataViews()) {
-                        appendDataView(row, fragment.getDataViews());
+                        appendDataView(row, fragment.getDataViews(), fragment.getPid(), fragment.getRef());
+                        if (fragment.getPid() != null) {
+                            pid = fragment.getPid();
+                        }
+                        if (fragment.getRef() != null) {
+                            reference = fragment.getRef();
+                        }
+                        appendResourceInfo(row, pid, reference);
                     }
                 }
             }
 
-            appendResourceInfo(row, resource);
+            
 
         } else if (record.isRecordSchema(SRUSurrogateRecordData.RECORD_SCHEMA)) {
             SRUSurrogateRecordData r =
@@ -97,14 +106,14 @@ public class SearchResultRecordRenderer2 implements RowRenderer {
 
     }
 
-    private void appendDataView(Row row, List<DataView> dataViews) {
+    private void appendDataView(Row row, List<DataView> dataViews, String pid, String reference) {
 
         for (DataView dataview : dataViews) {
 
             // ***** Handling the KWIC dataviews
             if (dataview.isMimeType(DataViewKWIC.TYPE)) {
                 DataViewKWIC kw = (DataViewKWIC) dataview;
-                this.searchResult.addKWIC(kw);
+                this.searchResult.addKwic(kw, pid, reference);
 
                 Label toTheLeft = new Label();
                 toTheLeft.setValue(kw.getLeft());
@@ -144,7 +153,7 @@ public class SearchResultRecordRenderer2 implements RowRenderer {
         }
     }
 
-    private void appendResourceInfo(final Row row, Resource resource) {
+    private void appendResourceInfo(final Row row, String pid, String reference) {
         final Cell infoCell = new Cell();
         boolean hasInfo = false;
         final Window infoWin = new Window();
@@ -159,32 +168,30 @@ public class SearchResultRecordRenderer2 implements RowRenderer {
         Vlayout col2 = new Vlayout();
         hlayout.appendChild(col2);
         col2.setStyle("margin:10px;");
-        if (resource.getRef() != null) {
-            //resourceNames.add(resource.getRef());
-            //row.appendChild(new Label(resource.getRef()));
+        if (reference != null) {
             col1.appendChild(new Label("Reference: "));
-            A link = new A(resource.getRef());
+            A link = new A(reference);
             link.setTarget("_blank");
-            link.setHref(resource.getRef());
+            link.setHref(reference);
             col2.appendChild(link);
             hasInfo = true;
-        } else if (resource.getPid() != null) {
-            //resourceNames.add(resource.getPid());
+        } 
+        if (pid != null) {
             col1.appendChild(new Label("PID: "));
-            col2.appendChild(new Label(resource.getPid()));
+            col2.appendChild(new Label(pid));
             hasInfo = true;
         }
 
         if (hasInfo) {
-            infoCell.appendChild(new Image("help-about.png"));
+            Image infoImage = new Image("help-about.png");
+            infoImage.setStyle("margin-right:10px;");
+            infoCell.appendChild(infoImage);
             infoCell.addEventListener(Events.ON_CLICK, new EventListener() {
                 @Override
                 public void onEvent(Event event) throws Exception {
                     infoWin.setParent(infoCell);
-                    infoWin.doModal();//.doOverlapped();
-                    infoWin.setPosition("right");
-                    //infoWin.setMode(Window.Mode.OVERLAPPED);//open(infoCell, "overlap_end/top_right");
-                    //popup.appendChild(infoWin);
+                    infoWin.doModal();
+                    infoWin.setPosition("right,center");
                 }
             });
 
@@ -194,6 +201,14 @@ public class SearchResultRecordRenderer2 implements RowRenderer {
             Label label = new Label("");
             label.setParent(infoCell);
         }
+        //infoCell.setStyle("margin-right:10px;");
         row.appendChild(infoCell);
     }
+    
+//    private void appendEmptyCell(Row row) {
+//        Cell cell = new Cell();
+//        Label label = new Label("");
+//        label.setParent(cell);
+//        row.appendChild(cell);
+//    }
 }

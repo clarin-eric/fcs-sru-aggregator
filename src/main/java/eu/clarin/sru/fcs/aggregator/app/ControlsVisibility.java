@@ -4,6 +4,7 @@
  */
 package eu.clarin.sru.fcs.aggregator.app;
 
+import org.zkoss.zul.Button;
 import org.zkoss.zul.Menubar;
 import org.zkoss.zul.North;
 import org.zkoss.zul.Progressmeter;
@@ -18,16 +19,20 @@ class ControlsVisibility {
     private South controls2;
     private Progressmeter pMeter;
     private Menubar menubar;
+    private Button prev;
+    private Button next;
     
     private static final String CONTROLS1_SIZE = "30px";
     private static final String CONTROLS2_SIZE = "25px";
     private static final String CONTROLS_ZERO_SIZE = "0px";
 
-    public ControlsVisibility(North controls1, South controls2, Progressmeter pMeter, Menubar menubar) {
+    public ControlsVisibility(North controls1, South controls2, Progressmeter pMeter, Menubar menubar, Button prev, Button next) {
         this.controls1 = controls1;
         this.controls2 = controls2;
         this.pMeter = pMeter;
         this.menubar = menubar;
+        this.prev = prev;
+        this.next = next;
     }
     
 //    public void turnOn() {
@@ -43,11 +48,12 @@ class ControlsVisibility {
 //    }
     
     public void enableProgressMeter(int value) {
-        pMeter.setVisible(true);
         updateProgressMeter(value);
+        pMeter.setVisible(true);
     }
     
     public void disableProgressMeter() {
+        updateProgressMeter(0);
         pMeter.setVisible(false);
     }
     
@@ -69,5 +75,13 @@ class ControlsVisibility {
 
     public void updateProgressMeter(int value) {
         pMeter.setValue(value);
+    }
+    
+    public void enableNextButton() {
+        this.next.setVisible(true);
+    }
+    
+    public void disableNextButton() {
+        this.next.setVisible(true);
     }
 }

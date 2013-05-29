@@ -40,6 +40,8 @@ import org.zkoss.zul.event.ZulEvents;
 import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.api.client.config.ClientConfig;
 import com.sun.jersey.api.client.config.DefaultClientConfig;
+import eu.clarin.sru.client.fcs.DataViewKWIC;
+import eu.clarin.sru.fcs.aggregator.data.SearchResult;
 import eu.clarin.sru.fcs.aggregator.sparam2.Corpus2;
 import eu.clarin.sru.fcs.aggregator.sparam2.Corpus2Renderer;
 import eu.clarin.sru.fcs.aggregator.sparam2.CorpusTreeModel2;
@@ -48,6 +50,7 @@ import eu.clarin.weblicht.wlfxb.tc.api.Token;
 import eu.clarin.weblicht.wlfxb.tc.xb.TextCorpusStored;
 import eu.clarin.weblicht.wlfxb.xb.WLData;
 import javax.ws.rs.core.MediaType;
+import org.zkoss.zhtml.Filedownload;
 import org.zkoss.zul.Borderlayout;
 import org.zkoss.zul.DefaultTreeNode;
 import org.zkoss.zul.Div;
@@ -65,38 +68,9 @@ import org.zkoss.zul.South;
 public class Aggregator extends SelectorComposer<Component> {
 
     private static final Logger logger = Logger.getLogger(Aggregator.class.getName());
-//    @Wire
-//    private Grid anzeigeGrid;
+    
     @Wire
     private Textbox searchString;
-    @Wire
-    private Combobox languageSelect;
-//    @Wire
-//    private Button searchButton;
-//    @Wire
-//    private Groupbox allCorpora;
-//    @Wire
-//    private Comboitem german;
-    @Wire
-    private Comboitem anyLanguage;
-    @Wire
-    private Window resultsBox;
-//    @Wire
-//    private Button selectAll;
-//    @Wire
-//    private Button deselectAll;
-//    @Wire
-//    private Window mainWindow;
-    @Wire
-    private Combobox maximumRecordsSelect;
-//    @Wire
-//    private Button addForeignEndpoint;
-    @Wire
-    Combobox foreignEndpointSelect;
-    @Wire
-    private Tree tree;
-    @Wire
-    private Label searchResultsProgress;
     @Wire
     private Popup wspaceSigninpop;
     @Wire
@@ -107,12 +81,13 @@ public class Aggregator extends SelectorComposer<Component> {
     public static final String MAPS_SERVICE_URL = "http://weblicht.sfs.uni-tuebingen.de/rws/service-geolocationconsumer/resources/geoloc/";
     private Map<String, List<String>> xAggregationContext;
     private SRUVersion version = SRUVersion.VERSION_1_2;
-    private SearchResultsController searchResultsController;
+    //private SearchResultsController searchResultsController;
     private CenterRegistry registry;
     private boolean testingMode = false;
     
+    private int exportDataType = 1;
     
-    //TODO
+    
     @Wire
     private Div aboutDiv;
     @Wire
@@ -142,6 +117,11 @@ public class Aggregator extends SelectorComposer<Component> {
     North controls1;
     @Wire
     South controls2;
+    
+    @Wire
+    Button prevButton;
+    @Wire
+    Button nextButton;
     
     
     
@@ -177,35 +157,10 @@ public class Aggregator extends SelectorComposer<Component> {
         searchOptionsComposer = (SearchOptions) soDiv.getChildren().get(0).getChildren().get(0).getAttribute("$" + SearchOptions.class.getSimpleName());
         searchResultsComposer = (SearchResults) srDiv.getChildren().get(0).getChildren().get(0).getAttribute("$" + SearchResults.class.getSimpleName()); 
         
-        controlsVisibility = new ControlsVisibility(controls1, controls2, pMeter, menubar);
+        controlsVisibility = new ControlsVisibility(controls1, controls2, pMeter, menubar, prevButton, nextButton);
         
     }
 
-    @Listen("onSelect = #languageSelect")
-    public void onSelectLanguage(Event ev) {
-        //TODO
-    }
-
-    @Listen(ZulEvents.ON_AFTER_RENDER + "=#tree")
-    public void onAfterRenderCorporaTree(Event ev) {
-        CorpusTreeNodeRenderer.selectEndpoints(this.tree, this.xAggregationContext);
-    }
-
-//    @Listen("onClick = #selectAll")
-//    public void onSelectAll(Event ev) {
-//        Treechildren openTreeItems = tree.getTreechildren();
-//        for (Treeitem openItem : openTreeItems.getItems()) {
-//            CorpusTreeNodeRenderer.selectItem(openItem);
-//        }
-//    }
-//
-//    @Listen("onClick = #deselectAll")
-//    public void onDeselectAll(Event ev) {
-//        Treechildren openTreeItems = tree.getTreechildren();
-//        for (Treeitem openItem : openTreeItems.getItems()) {
-//            CorpusTreeNodeRenderer.unselectItem(openItem);
-//        }
-//    }
 
     @Listen("onClick = #searchButton")
     public void onExecuteSearch(Event ev) {
@@ -241,65 +196,57 @@ public class Aggregator extends SelectorComposer<Component> {
         
     }
 
-//    @Listen("onClick=#showHelp")
-//    public void onShowHelp(Event ev) {
-//        resultsBox.getChildren().clear();
-//        Iframe help = new Iframe();
-//        help.setWidth("100%");
-//        help.setHeight("100%");
-//        help.setSrc("help.html");
-//        resultsBox.appendChild(help);
-//    }
-//
-//    @Listen("onClick=#showAbout")
-//    public void onShowAbout(Event ev) {
-//        Messagebox.show("CLARIN-D Federated Content Search Aggregator\n\nVersion 0.0.1", "FCS", 0, Messagebox.INFORMATION);
-//
-//    }
-
-    @Listen("onClick=#exportResultsCSV")
+    @Listen("onClick=#downloadCSV")
     public void onExportResultsCSV(Event ev) {
-        searchResultsController.exportCSV();
+        searchResultsComposer.exportCSV();
+        //searchResultsController.exportCSV();
     }
 
-    @Listen("onClick=#exportResultsTCF")
+    @Listen("onClick=#downloadTCF")
     public void onExportResultsTCF(Event ev) {
-        searchResultsController.exportTCF();
+        //searchResultsController.exportTCF();
+        searchResultsComposer.exportTCF();
+    }
+    
+    @Listen("onClick=#exportPWCSV")
+    public void onExportResultsPWCSV(Event ev) {
+        exportDataType = 1;
+        wspaceSigninpop.open(srDiv, "top_center");
     }
 
-    @Listen("onClick=#exportResultsPWTCF")
+    @Listen("onClick=#exportPWTCF")
     public void onExportResultsPWTCF(Event ev) {
-        wspaceSigninpop.open(resultsBox, "top_center");
+        exportDataType = 0;
+        wspaceSigninpop.open(srDiv, "top_center");
     }
 
     @Listen("onClick=#wspaceSigninBtn")
-    public void onSignInExportResultsPWTCF(Event ev) {
+    public void onSignInExportResults(Event ev) {
         String user = wspaceUserName.getValue();
         String pswd = wspaceUserPwd.getValue();
+        wspaceUserPwd.setValue("");
         if (user.isEmpty() || pswd.isEmpty()) {
             Messagebox.show("Need user name and password!");
         } else {
-            wspaceUserPwd.setValue("");
             wspaceSigninpop.close();
-            searchResultsController.exportPWTCF(user, pswd);
+            if (exportDataType == 0) {
+                searchResultsComposer.exportPWTCF(user, pswd);
+            } else {
+                searchResultsComposer.exportPWCSV(user, pswd);
+            }
         }
     }
     
+    
     @Listen("onOK=#wspaceUserPwd")
-    public void onSignInExportResultsPWTCFPwdOK(Event ev) {
-        onSignInExportResultsPWTCF(ev);
+    public void onSignInExportResultsPwdOK(Event ev) {
+        onSignInExportResults(ev);
     }
     
     @Listen("onClick=#wspaceCancelBtn")
     public void onSignInPWCancel(Event ev) {
         wspaceUserPwd.setValue("");
         wspaceSigninpop.close();
-    }
-
-
-    @Listen("onClick=#addForeignEndpoint")
-    public void onAddForeignEndpoint(Event ev) {
-        registry.addForeignPoint(foreignEndpointSelect.getValue().split(";")[1], foreignEndpointSelect.getValue().split(";")[0]);
     }
 
     private void processParameters() {
@@ -376,7 +323,7 @@ public class Aggregator extends SelectorComposer<Component> {
         //tc.getGeoLayer().addPoint("138.56027", "-34.6663", 15.0, null, null, null, t1);
         WLData data = new WLData(tc);
 
-        Iframe resultsPic = (Iframe) resultsBox.getFellow("resultsPic");
+        Iframe resultsPic = (Iframe) srDiv.getFellow("resultsPic");
 
         try {
             String output = mapGenerator.path("3").accept(MediaType.TEXT_HTML).type("text/tcf+xml").post(String.class, data);
@@ -446,5 +393,6 @@ public class Aggregator extends SelectorComposer<Component> {
             this.controlsVisibility.enableControls1();
         }
     }
-
+    
+    
 }

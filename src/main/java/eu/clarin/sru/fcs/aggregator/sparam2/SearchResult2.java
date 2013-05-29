@@ -25,16 +25,25 @@ public class SearchResult2 {
     private Corpus2 corpus;
     private Future<SRUSearchRetrieveResponse> futureResponse;
     private SRUSearchRetrieveResponse response;
-    private List<DataViewKWIC> dataKWIC = new ArrayList<DataViewKWIC>();
+    //private List<DataViewKWIC> dataKWIC = new ArrayList<DataViewKWIC>();
+    private List<Kwic> kwics = new ArrayList<Kwic>();
     
     private static final Logger logger = Logger.getLogger(SearchResult2.class.getName());
 
-    public List<DataViewKWIC> getDataKWIC() {
-        return dataKWIC;
+//    public List<DataViewKWIC> getDataKWIC() {
+//        return dataKWIC;
+//    }
+    public List<Kwic> getKwics() {
+        return kwics;
     }
 
-    public void addKWIC(DataViewKWIC kw) {
-        this.dataKWIC.add(kw);
+//    public void addKWIC(DataViewKWIC kw) {
+//        this.dataKWIC.add(kw);
+//    }
+        
+    public void addKwic(DataViewKWIC kw, String pid, String reference) {
+        Kwic kwic = new Kwic(kw, pid, reference);
+        this.kwics.add(kwic);
     }
     
 
