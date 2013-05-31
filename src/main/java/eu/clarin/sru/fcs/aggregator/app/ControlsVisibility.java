@@ -4,7 +4,9 @@
  */
 package eu.clarin.sru.fcs.aggregator.app;
 
+import org.zkoss.zul.A;
 import org.zkoss.zul.Button;
+import org.zkoss.zul.Label;
 import org.zkoss.zul.Menubar;
 import org.zkoss.zul.North;
 import org.zkoss.zul.Progressmeter;
@@ -19,14 +21,14 @@ class ControlsVisibility {
     private South controls2;
     private Progressmeter pMeter;
     private Menubar menubar;
-    private Button prev;
-    private Button next;
+    private A prev;
+    private A next;
     
     private static final String CONTROLS1_SIZE = "30px";
     private static final String CONTROLS2_SIZE = "25px";
     private static final String CONTROLS_ZERO_SIZE = "0px";
 
-    public ControlsVisibility(North controls1, South controls2, Progressmeter pMeter, Menubar menubar, Button prev, Button next) {
+    public ControlsVisibility(North controls1, South controls2, Progressmeter pMeter, Menubar menubar, A prev, A next) {
         this.controls1 = controls1;
         this.controls2 = controls2;
         this.pMeter = pMeter;
@@ -82,6 +84,14 @@ class ControlsVisibility {
     }
     
     public void disableNextButton() {
-        this.next.setVisible(true);
+        this.next.setVisible(false);
+    }
+    
+    public void enablePrevButton() {
+        this.prev.setVisible(true);
+    }
+    
+    public void disablePrevButton() {
+        this.prev.setVisible(false);
     }
 }

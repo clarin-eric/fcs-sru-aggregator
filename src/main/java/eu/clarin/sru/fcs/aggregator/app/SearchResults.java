@@ -50,10 +50,12 @@ import eu.clarin.weblicht.wlfxb.xb.WLData;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Random;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.zkoss.zhtml.Filedownload;
 import org.zkoss.zk.ui.event.EventListener;
 import org.zkoss.zul.Column;
@@ -127,9 +129,14 @@ public class SearchResults extends SelectorComposer<Component> {
     
     //private Progressmeter progress;
     private ControlsVisibility controlsVisibility;
+    private PagesVisibility pagesVisibility;
     
     
-    private boolean hasResults = false;
+    private AtomicBoolean hasResults = new AtomicBoolean(false);
+    private AtomicBoolean searchInProgress = new AtomicBoolean(false);
+    
+    private int[] searchOffset;
+    private int maxRecords;
 
     
     @Wire
@@ -179,7 +186,8 @@ public class SearchResults extends SelectorComposer<Component> {
         this.controlsVisibility.disableControls1();
         this.controlsVisibility.disableControls2();
         resultsBox.getChildren().clear();
-        this.hasResults = false;
+        this.searchInProgress.set(false);
+        this.hasResults.set(false);
         
         
     }
@@ -245,21 +253,21 @@ public class SearchResults extends SelectorComposer<Component> {
         }
 
     }
-    
-     void executeSearch(Map<String, Set<Corpus2>> selectedCorpora, int maxRecords, String searchString, ControlsVisibility controlsVisibility) {
-          executeSearch(selectedCorpora, maxRecords, searchString, controlsVisibility, 1);
-     }
 
 
-    void executeSearch(Map<String, Set<Corpus2>> selectedCorpora, int maxRecords, String searchString, ControlsVisibility controlsVisibility, int startRecord) {
+    void executeSearch(Map<String, Set<Corpus2>> selectedCorpora, int maxRecords, String searchString, int[] searchOffset) {
         
-        this.controlsVisibility = controlsVisibility;
+        
         this.controlsVisibility.disableControls1();
         this.controlsVisibility.enableControls2();
+        this.controlsVisibility.disablePrevButton();
+        this.controlsVisibility.disableNextButton();
         this.controlsVisibility.enableProgressMeter(0);
         
-        this.hasResults = false;
-        
+        this.maxRecords = maxRecords;
+        this.hasResults.set(false);
+        this.searchInProgress.set(true);
+        this.searchOffset = searchOffset;
         
         // terminate previous search requests and corresponding response processing
         terminateProcessingRequestsAndResponses();
@@ -278,7 +286,7 @@ public class SearchResults extends SelectorComposer<Component> {
         // endpoints/corpora and process the responses
         for (String endpointUrl : selectedCorpora.keySet()) {
             for (Corpus2 corpus : selectedCorpora.get(endpointUrl)) {
-                resultsUnprocessed.add(executeSearch(corpus, maxRecords, searchString, startRecord));
+                resultsUnprocessed.add(executeSearch(corpus, searchString));
             }
         }
         
@@ -286,7 +294,7 @@ public class SearchResults extends SelectorComposer<Component> {
 
     }
 
-    private SearchResult2 executeSearch(Corpus2 corpus, int maxRecords, String searchString, int startRecord) {
+    private SearchResult2 executeSearch(Corpus2 corpus, String searchString) {
         SearchResult2 resultsItem = new SearchResult2(corpus);
         logger.log(Level.FINE, "Executing search for {0} query={1} maxRecords={2}", 
                 new Object[]{corpus.toString(), searchString, maxRecords});
@@ -296,7 +304,7 @@ public class SearchResults extends SelectorComposer<Component> {
         searchRequest.setRecordSchema(ClarinFCSRecordData.RECORD_SCHEMA);
         searchString = searchString.replace(" ", "%20");
         searchRequest.setQuery("%22" + searchString + "%22");
-        searchRequest.setStartRecord(startRecord);
+        searchRequest.setStartRecord(searchOffset[0] + searchOffset[1]);
         if (resultsItem.hasCorpusHandler()) {
             searchRequest.setExtraRequestData(SRUCQLsearchRetrieve.CORPUS_HANDLE_PARAMETER, resultsItem.getCorpus().getHandle());
         }
@@ -334,8 +342,17 @@ public class SearchResults extends SelectorComposer<Component> {
     }
 
     public boolean hasResults() {
-        return this.hasResults;
+        return this.hasResults.get();
     }
+    
+        public boolean hasSearchInProgress() {
+        return this.searchInProgress.get();
+    }
+
+    void setVisibilityControllers(PagesVisibility pagesVisibility, ControlsVisibility controlsVisibility) {
+        this.pagesVisibility = pagesVisibility;
+        this.controlsVisibility = controlsVisibility;
+        }
     
     
     private class UpdateResultsThread extends Thread {
@@ -406,11 +423,22 @@ public class SearchResults extends SelectorComposer<Component> {
             }
             
             if (resultsUnprocessed.isEmpty()) {
-                controlsVisibility.disableProgressMeter();
-                controlsVisibility.enableNextButton();
-                //controlsVisibility.disableControls2();
-                hasResults = true;
-                controlsVisibility.enableControls1();
+                boolean last = searchInProgress.getAndSet(false);
+                hasResults.set(true);
+                if (last) {
+                    controlsVisibility.disableProgressMeter();
+                    searchOffset[0] = searchOffset[0] + searchOffset[1];
+                    searchOffset[1] = maxRecords;
+                    pagesVisibility.openSearchResult();
+                    
+                    if (searchOffset[0] > 1) {
+                        controlsVisibility.enablePrevButton();
+                    }
+                    controlsVisibility.enableNextButton();
+                    controlsVisibility.enableControls1();
+                    controlsVisibility.enableControls2();
+                    
+                }
             } else {
                 controlsVisibility.updateProgressMeter(100 * resultsProcessed.size() / (resultsUnprocessed.size() + resultsProcessed.size() + 1));
             }
@@ -487,7 +515,7 @@ public class SearchResults extends SelectorComposer<Component> {
             recordsGroup.appendChild(grid);
             grid.setStyle("margin:10px;border:0px;");
         } else { // the response was fine, but there are no records
-            recordsGroup.appendChild(new Label("Sorry, there were no results!"));
+            recordsGroup.appendChild(new Label("no results"));
         }
         return recordsGroup;
     }

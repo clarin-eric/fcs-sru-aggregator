@@ -1,6 +1,6 @@
 <vlayout>
 <div align="center">
-<image src="karte.png" width="400px"/>
+<image src="karte.png" width="330px"/>
 </div>
 <div align="center">
 <include src="about-fcs.html" width="600px" />

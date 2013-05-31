@@ -5,9 +5,6 @@ import com.google.gson.reflect.TypeToken;
 import com.sun.jersey.api.client.Client;
 import eu.clarin.sru.client.SRUVersion;
 import eu.clarin.sru.fcs.aggregator.data.CenterRegistry;
-import eu.clarin.sru.fcs.aggregator.sparam.CorpusTreeModel;
-import eu.clarin.sru.fcs.aggregator.sparam.CorpusTreeNodeRenderer;
-import eu.clarin.sru.fcs.aggregator.sresult.SearchResultsController;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -24,41 +21,27 @@ import org.zkoss.zk.ui.select.SelectorComposer;
 import org.zkoss.zk.ui.select.annotation.Listen;
 import org.zkoss.zk.ui.select.annotation.Wire;
 import org.zkoss.zul.Button;
-import org.zkoss.zul.Combobox;
-import org.zkoss.zul.Comboitem;
-import org.zkoss.zul.Groupbox;
 import org.zkoss.zul.Iframe;
 import org.zkoss.zul.Label;
-import org.zkoss.zul.Menuitem;
 import org.zkoss.zul.Messagebox;
 import org.zkoss.zul.Textbox;
-import org.zkoss.zul.Tree;
-import org.zkoss.zul.Treechildren;
-import org.zkoss.zul.Treeitem;
-import org.zkoss.zul.Window;
-import org.zkoss.zul.event.ZulEvents;
 import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.api.client.config.ClientConfig;
 import com.sun.jersey.api.client.config.DefaultClientConfig;
-import eu.clarin.sru.client.fcs.DataViewKWIC;
-import eu.clarin.sru.fcs.aggregator.data.SearchResult;
 import eu.clarin.sru.fcs.aggregator.sparam2.Corpus2;
-import eu.clarin.sru.fcs.aggregator.sparam2.Corpus2Renderer;
-import eu.clarin.sru.fcs.aggregator.sparam2.CorpusTreeModel2;
 import eu.clarin.weblicht.wlfxb.tc.api.GeoLongLatFormat;
 import eu.clarin.weblicht.wlfxb.tc.api.Token;
 import eu.clarin.weblicht.wlfxb.tc.xb.TextCorpusStored;
 import eu.clarin.weblicht.wlfxb.xb.WLData;
 import javax.ws.rs.core.MediaType;
-import org.zkoss.zhtml.Filedownload;
-import org.zkoss.zul.Borderlayout;
-import org.zkoss.zul.DefaultTreeNode;
+import org.zkoss.zul.A;
 import org.zkoss.zul.Div;
 import org.zkoss.zul.Menubar;
 import org.zkoss.zul.North;
 import org.zkoss.zul.Popup;
 import org.zkoss.zul.Progressmeter;
 import org.zkoss.zul.South;
+import org.zkoss.zul.event.ZulEvents;
 
 /**
  * Main window of the Aggregator application.
@@ -83,7 +66,7 @@ public class Aggregator extends SelectorComposer<Component> {
     private SRUVersion version = SRUVersion.VERSION_1_2;
     //private SearchResultsController searchResultsController;
     private CenterRegistry registry;
-    private boolean testingMode = false;
+    //private boolean testingMode = false;
     
     private int exportDataType = 1;
     
@@ -119,20 +102,24 @@ public class Aggregator extends SelectorComposer<Component> {
     South controls2;
     
     @Wire
-    Button prevButton;
+    A prevButton;
     @Wire
-    Button nextButton;
+    A nextButton;
+    private int[] searchOffset = new int[]{1,0}; // start and size
     
     
     
     private ControlsVisibility controlsVisibility;
+    private PagesVisibility pagesVisibility;
+    
+    //public static final String TESTING_MODE_ATTR = "testingMode";
 
     @Override
     public void doAfterCompose(Component comp) throws Exception {
 
         super.doAfterCompose(comp);
 
-//        processParameters();
+        processParameters();
 //
 //        languageSelect.setSelectedItem(anyLanguage);
 //
@@ -155,12 +142,21 @@ public class Aggregator extends SelectorComposer<Component> {
         
         
         searchOptionsComposer = (SearchOptions) soDiv.getChildren().get(0).getChildren().get(0).getAttribute("$" + SearchOptions.class.getSimpleName());
-        searchResultsComposer = (SearchResults) srDiv.getChildren().get(0).getChildren().get(0).getAttribute("$" + SearchResults.class.getSimpleName()); 
+        if (this.xAggregationContext != null) {
+            searchOptionsComposer.selectCorpora(xAggregationContext);
+        }
+        searchResultsComposer = (SearchResults) srDiv.getChildren().get(0).getChildren().get(0).getAttribute("$" + SearchResults.class.getSimpleName());
         
+        
+        pagesVisibility = new PagesVisibility(aboutDiv, aboutLabel, soDiv, soLabel, srDiv, srLabel, helpDiv, helpLabel);
         controlsVisibility = new ControlsVisibility(controls1, controls2, pMeter, menubar, prevButton, nextButton);
+
+        //System.out.println(pagesVisibility);
+        searchResultsComposer.setVisibilityControllers(pagesVisibility, controlsVisibility);
         
     }
 
+    
 
     @Listen("onClick = #searchButton")
     public void onExecuteSearch(Event ev) {
@@ -179,7 +175,8 @@ public class Aggregator extends SelectorComposer<Component> {
             Messagebox.show("No query is specified. To perform the search, please enter a keyword of interest in the search input field, e.g. Elefant, and press the 'Search' button.", "FCS", 0, Messagebox.INFORMATION);
         } else {
             int maxRecords = searchOptionsComposer.getMaxRecords();
-            searchResultsComposer.executeSearch(selectedCorpora, maxRecords, searchString.getText(), controlsVisibility);
+            searchOffset = new int[]{1,0};
+            searchResultsComposer.executeSearch(selectedCorpora, maxRecords, searchString.getText(), searchOffset);
             onClickSearchResult(null);
         }
     }
@@ -288,13 +285,14 @@ public class Aggregator extends SelectorComposer<Component> {
         }
         logger.log(Level.INFO, "Received parameters: query[{0}], operation[{1}], version[{2}], x-aggregation-context[{3}], ", paramsReceived);
 
-        paramValue = Executions.getCurrent().getParameterMap().get("mode");
-        if (paramValue != null) {
-            String mode = paramValue[0].trim();
-            if (mode.equals("testing")) {
-                testingMode = true;
-            }
-        }
+//        paramValue = Executions.getCurrent().getParameterMap().get("mode");
+//        if (paramValue != null) {
+//            String mode = paramValue[0].trim();
+//            if (mode.equals("testing")) {
+//                Executions.getCurrent().getDesktop().setAttribute(Aggregator.TESTING_MODE_ATTR, true);
+//            }
+//        } 
+        
 
         if (contextJson != null) {
             Gson gson = new Gson();
@@ -338,61 +336,87 @@ public class Aggregator extends SelectorComposer<Component> {
 
     @Listen("onClick = #helpLabel")
     public void onClickHelp(Event ev) {
-        this.helpDiv.setVisible(true);
-        this.helpLabel.setSclass("internalLinkSelected");
-        this.aboutDiv.setVisible(false);
-        this.aboutLabel.setSclass("internalLink");
-        this.soDiv.setVisible(false);
-        this.soLabel.setSclass("internalLink");
-        this.srDiv.setVisible(false);
-        this.srLabel.setSclass("internalLink");
+        this.pagesVisibility.openHelp();
         
         this.controlsVisibility.disableControls1();
+        this.controlsVisibility.disableControls2();
     }
     
     @Listen("onClick = #aboutLabel")
     public void onClickAbout(Event ev) {
-        this.aboutDiv.setVisible(true);
-        this.aboutLabel.setSclass("internalLinkSelected");
-        this.helpDiv.setVisible(false);
-        this.helpLabel.setSclass("internalLink");
-        this.soDiv.setVisible(false);
-        this.soLabel.setSclass("internalLink");
-        this.srDiv.setVisible(false);
-        this.srLabel.setSclass("internalLink");
+        this.pagesVisibility.openAbout();
         
         this.controlsVisibility.disableControls1();
+        this.controlsVisibility.disableControls2();
     }
     
     @Listen("onClick = #soLabel")
     public void onClickAdvSearch(Event ev) {
-        this.soDiv.setVisible(true);
-        this.soLabel.setSclass("internalLinkSelected");
-        this.aboutDiv.setVisible(false);
-        this.aboutLabel.setSclass("internalLink");
-        this.helpDiv.setVisible(false);
-        this.helpLabel.setSclass("internalLink");
-        this.srDiv.setVisible(false);
-        this.srLabel.setSclass("internalLink");
+        this.pagesVisibility.openSearchOptions();
         
         this.controlsVisibility.disableControls1();
+        this.controlsVisibility.disableControls2();
     }
     
     @Listen("onClick = #srLabel")
     public void onClickSearchResult(Event ev) {
-        this.srDiv.setVisible(true);
-        this.srLabel.setSclass("internalLinkSelected");
-        this.aboutDiv.setVisible(false);
-        this.aboutLabel.setSclass("internalLink");
-        this.soDiv.setVisible(false);
-        this.soLabel.setSclass("internalLink");
-        this.helpDiv.setVisible(false);
-        this.helpLabel.setSclass("internalLink");
+        this.pagesVisibility.openSearchResult();
         
+        if (this.searchResultsComposer.hasSearchInProgress()) {
+            this.controlsVisibility.enableControls2();
+        }
+                
         if (this.searchResultsComposer.hasResults()) {
             this.controlsVisibility.enableControls1();
+            this.controlsVisibility.enableControls2();
         }
     }
     
+    @Listen("onClick = #prevButton")
+    public void onSearchPrev(Event ev) {
+                Map<String,Set<Corpus2>> selectedCorpora = searchOptionsComposer.getSelectedCorpora();
+        boolean emptyCorpora = true;
+        for (Set<Corpus2> corpora : selectedCorpora.values()) {
+            if (!corpora.isEmpty()) {
+                emptyCorpora = false;
+                break;
+            }
+        }
+        if (emptyCorpora) {
+            Messagebox.show("No corpora is selected. To perform the search, please select corus/corpora of interest by checking the corpora checkboxes.", "FCS", 0, Messagebox.INFORMATION);
+        } else if (searchString.getText().isEmpty()) {
+            Messagebox.show("No query is specified. To perform the search, please enter a keyword of interest in the search input field, e.g. Elefant, and press the 'Search' button.", "FCS", 0, Messagebox.INFORMATION);
+        } else {
+            int maxRecords = searchOptionsComposer.getMaxRecords();
+            searchOffset[0] = searchOffset[0] - 2*searchOffset[1];
+            if (searchOffset[0] < 1) {
+                searchOffset[0] = 1;
+                searchOffset[1] = 0;
+            }
+            searchResultsComposer.executeSearch(selectedCorpora, maxRecords, searchString.getText(), searchOffset);
+            onClickSearchResult(null);
+        }
+    }
+    
+    @Listen("onClick = #nextButton")
+    public void onSearchNext(Event ev) {
+        Map<String,Set<Corpus2>> selectedCorpora = searchOptionsComposer.getSelectedCorpora();
+        boolean emptyCorpora = true;
+        for (Set<Corpus2> corpora : selectedCorpora.values()) {
+            if (!corpora.isEmpty()) {
+                emptyCorpora = false;
+                break;
+            }
+        }
+        if (emptyCorpora) {
+            Messagebox.show("No corpora is selected. To perform the search, please select corus/corpora of interest by checking the corpora checkboxes.", "FCS", 0, Messagebox.INFORMATION);
+        } else if (searchString.getText().isEmpty()) {
+            Messagebox.show("No query is specified. To perform the search, please enter a keyword of interest in the search input field, e.g. Elefant, and press the 'Search' button.", "FCS", 0, Messagebox.INFORMATION);
+        } else {
+            int maxRecords = searchOptionsComposer.getMaxRecords();
+            searchResultsComposer.executeSearch(selectedCorpora, maxRecords, searchString.getText(), searchOffset);
+            onClickSearchResult(null);
+        }
+    }
     
 }

@@ -30,6 +30,7 @@ import org.zkoss.zk.ui.select.annotation.Wire;
 import org.zkoss.zul.Combobox;
 import org.zkoss.zul.Comboitem;
 import org.zkoss.zul.DefaultTreeNode;
+import org.zkoss.zul.Groupbox;
 import org.zkoss.zul.Label;
 import org.zkoss.zul.Messagebox;
 import org.zkoss.zul.Tree;
@@ -45,7 +46,6 @@ import org.zkoss.zul.event.ZulEvents;
 public class SearchOptions extends SelectorComposer<Component> {
 
     private static final Logger logger = Logger.getLogger(Aggregator.class.getName());
-
     @Wire
     private Combobox languageSelect;
     @Wire
@@ -54,32 +54,39 @@ public class SearchOptions extends SelectorComposer<Component> {
     private Combobox maximumRecordsSelect;
     @Wire
     private Tree tree;
-    
     private Map<String, List<String>> xAggregationContext;
     private CenterRegistry registry;
     private boolean testingMode = false;
-    
     private Corpus2Renderer corpusRenderer;
-    
     private Languages languages;
-    
-    //private Map<String,List<Corpus2>> corporaByLanguage = new HashMap<String,List<Corpus2>>();
+    @Wire
+    private Groupbox allCorpora;
     
 
+    //private Map<String,List<Corpus2>> corporaByLanguage = new HashMap<String,List<Corpus2>>();
     @Override
     public void doAfterCompose(Component comp) throws Exception {
 
         super.doAfterCompose(comp);
-        
+
         languages = (Languages) Executions.getCurrent().getDesktop().getWebApp().getAttribute(WebAppListener.LANGUAGES);
+        String[] paramValue = Executions.getCurrent().getParameterMap().get("mode");
+        if (paramValue != null) {
+            String mode = paramValue[0].trim();
+            if (mode.equals("testing")) {
+                this.testingMode = true;
+            }
+        } 
         
         registry = new CenterRegistry();
-        
+        if (testingMode) {
+            registry.loadChildren(testingMode);
+        }
         Corpus2 rootCorpus = new Corpus2();
         List<DefaultTreeNode<Corpus2>> rootChildren = Corpus2.initCorpusChildren(registry);
         DefaultTreeNode<Corpus2> root = new DefaultTreeNode(rootCorpus, rootChildren);
         CorpusTreeModel2 corporaModel = new CorpusTreeModel2(root);
-        
+
         corporaModel.setMultiple(true);
         tree.setModel(corporaModel);
         corpusRenderer = new Corpus2Renderer();
@@ -91,9 +98,18 @@ public class SearchOptions extends SelectorComposer<Component> {
         instCol.setSortAscending(new CorpusByInstitutionComparator());
         instCol.setSortDescending(new CorpusByInstitutionDComparator());
         //tree.setSizedByContent(true);
-        
+
         languageSelect.setSelectedItem(anyLanguage);
-        
+
+    }
+
+    @Listen("onOpen=#allCorpora")
+    public void onOpenCorpora(Event ev) {
+        if (allCorpora.isOpen()) {
+            allCorpora.setWidth("100%");
+        } else {
+            allCorpora.setWidth("600px");
+        }
     }
 
     @Listen("onSelect = #languageSelect")
@@ -102,21 +118,21 @@ public class SearchOptions extends SelectorComposer<Component> {
         //System.out.println(cbox.getSelectedItem().getValue());
         String selectedLang = cbox.getSelectedItem().getValue();
         //if (selectedLang.equals("anylang")) {
-            // do nothing
+        // do nothing
         //} else {
-            //List<Treeitem> itemsToRemove = new ArrayList<Treeitem>();
-            for (Component comp : tree.getTreechildren().getChildren()) {
-                Treeitem treeitem = (Treeitem) comp;
-                DefaultTreeNode<Corpus2> node = (DefaultTreeNode<Corpus2>) treeitem.getValue();
-                Corpus2 corpus = node.getData();
-                if (corpus.getLanguages().contains(selectedLang) || selectedLang.equals("anylang")) {
-                    treeitem.setVisible(true);
-                } else {
-                    corpusRenderer.updateItem(treeitem, false);
-                    treeitem.setVisible(false);
-                    //itemsToRemove.add(treeitem);
-                }
+        //List<Treeitem> itemsToRemove = new ArrayList<Treeitem>();
+        for (Component comp : tree.getTreechildren().getChildren()) {
+            Treeitem treeitem = (Treeitem) comp;
+            DefaultTreeNode<Corpus2> node = (DefaultTreeNode<Corpus2>) treeitem.getValue();
+            Corpus2 corpus = node.getData();
+            if (corpus.getLanguages().contains(selectedLang) || selectedLang.equals("anylang")) {
+                treeitem.setVisible(true);
+            } else {
+                corpusRenderer.updateItem(treeitem, false);
+                treeitem.setVisible(false);
+                //itemsToRemove.add(treeitem);
             }
+        }
 //            for (Treeitem item : itemsToRemove) {
 //                //item.detach();
 //                //parentItem.getChildren().remove(item);
@@ -124,7 +140,6 @@ public class SearchOptions extends SelectorComposer<Component> {
 //            }
         //}
     }
-    
 
     @Listen(ZulEvents.ON_AFTER_RENDER + "=#tree")
     public void onAfterRenderCorporaTree(Event ev) {
@@ -147,16 +162,44 @@ public class SearchOptions extends SelectorComposer<Component> {
             corpusRenderer.updateItem(openItem, false);
         }
     }
-    
+
+    void selectCorpora(Map<String, List<String>> xAggregationContext) {
+        onDeselectAll(null);
+        Treechildren openTreeItems = tree.getTreechildren();
+        for (Treeitem openItem : openTreeItems.getItems()) {
+            DefaultTreeNode<Corpus2> node = (DefaultTreeNode<Corpus2>) openItem.getValue();
+            Corpus2 data = node.getData();
+            List<String> handles = xAggregationContext.get(data.getEndpointUrl());
+            if (handles == null) {
+                if (data.getEndpointUrl().endsWith("/")) {
+                     handles =  xAggregationContext.get(
+                             data.getEndpointUrl().substring(0, data.getEndpointUrl().length() - 1));
+                } else {
+                    handles =  xAggregationContext.get(
+                             data.getEndpointUrl() + "/");
+                }
+            }
+            if (handles != null) {
+                if (handles.isEmpty()) {
+                    corpusRenderer.updateItem(openItem, true);
+                } else {
+                    for (String handle : handles) {
+                        if (handle.equals(data.getHandle())) {
+                            corpusRenderer.updateItem(openItem, true);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     public int getMaxRecords() {
         return Integer.parseInt(maximumRecordsSelect.getValue());
     }
 
-    public Map<String,Set<Corpus2>> getSelectedCorpora() {
+    public Map<String, Set<Corpus2>> getSelectedCorpora() {
         return corpusRenderer.getSelectedCorpora();
     }
-
-    
 
 //    private void processParameters() {
 //
@@ -218,16 +261,15 @@ public class SearchOptions extends SelectorComposer<Component> {
 //        }
 //
 //    }
-
     private void loadLanguages() {
-        
+
         Set<String> availableLangs = new HashSet<String>();
 //        for (Set<Corpus2> corpora : corpusRenderer.getSelectedCorpora().values()) {
 //            for (Corpus2 corpus : corpora) {
 //                availableLangs.addAll(corpus.getLanguages());
 //            }
 //        }
-        
+
         Treechildren treeItems = tree.getTreechildren();
         for (Treeitem item : treeItems.getItems()) {
             DefaultTreeNode<Corpus2> node = item.getValue();
@@ -240,7 +282,7 @@ public class SearchOptions extends SelectorComposer<Component> {
 //                this.corporaByLanguage.get(langCode).add(corpus);
             }
         }
-        
+
         List<String> sortedAvailableLanguages = new ArrayList<String>(availableLangs.size());
         sortedAvailableLanguages.addAll(availableLangs);
         Collections.sort(sortedAvailableLanguages);
@@ -256,5 +298,4 @@ public class SearchOptions extends SelectorComposer<Component> {
 //            item.setValue(code);
 //        }
     }
-    
 }

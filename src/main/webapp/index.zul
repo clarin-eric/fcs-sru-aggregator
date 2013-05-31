@@ -80,8 +80,8 @@
                     <div align="center">
                                 <progressmeter visible="false" id="pMeter" value="0" width="300px" />
 <hlayout>
-                                <button id="prevButton" visible="false" image="arrow_left_blue.png" hoverImage="arrow_left_green.png"  style="margin-right:30px;"/>
-                                <button id="nextButton" visible="false" image="arrow_right_blue.png" hoverImage="arrow_right_green.png" dir="reverse" style="margin-left:30px;" />
+                                <a id="prevButton" visible="false" image="arrow_left_blue.png" hoverImage="arrow_left_green.png"  style="margin-right:20px;"/>
+                                <a id="nextButton" visible="false" image="arrow_right_blue.png" hoverImage="arrow_right_green.png" dir="reverse" style="margin-left:20px;" />
 </hlayout>
                      </div>
                     

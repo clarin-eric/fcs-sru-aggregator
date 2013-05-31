@@ -25,6 +25,7 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.w3c.dom.DocumentFragment;
+import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.zkoss.zul.DefaultTreeNode;
@@ -150,12 +151,12 @@ public class Corpus2 {
                 Endpoint endp = (Endpoint) institChild;
                 
                 //TODO: temp for testing, this 3 lines are to be removed:
-                if (//!endp.getUrl().contains("uni-leipzig.de") && 
-                        !endp.getUrl().contains("mpi.") && 
-                            !endp.getUrl().contains("ids-mannheim") && 
-                        !endp.getUrl().contains("weblicht")) {
-                    continue;
-                }
+                //if (//!endp.getUrl().contains("uni-leipzig.de") && 
+                        //!endp.getUrl().contains("mpi.") && 
+                        //    !endp.getUrl().contains("ids-mannheim") && 
+                        //!endp.getUrl().contains("weblicht")) {
+                    //continue;
+                //}
                 
                 SRUScanResponse corporaResponse = null;
                 try {
@@ -246,6 +247,7 @@ public class Corpus2 {
         private static void addExtraInfo(Corpus2 c, SRUTerm term) {
                         
                 DocumentFragment extraInfo = term.getExtraTermData();
+                String enDescription = null;
                 if (extraInfo != null) {
                 NodeList infoNodes = extraInfo.getChildNodes().item(0).getChildNodes();
                 for (int i = 0; i < infoNodes.getLength(); i++) {
@@ -253,19 +255,29 @@ public class Corpus2 {
                     if (infoNode.getNodeName().equals("LandingPageURI")) {
                         c.setLandingPage(infoNode.getTextContent().trim());
                     } else if (infoNode.getNodeName().equals("Languages")) {
-                        for (int j = 0; j < infoNode.getChildNodes().getLength(); j++) {
-                            String languageText = infoNode.getChildNodes().item(j).getTextContent();
-                            if (!languageText.isEmpty()) {
-                                c.addLanguage(languageText.trim());
+                        NodeList languageNodes = infoNode.getChildNodes();
+                        for (int j = 0; j < languageNodes.getLength(); j++) {
+                            if (languageNodes.item(j).getNodeName().equals("Language")) {
+                                Element languageNode = (Element) languageNodes.item(j);
+                                String languageText = languageNode.getTextContent().trim();
+                                if (!languageText.isEmpty()) {
+                                    c.addLanguage(languageText.trim());
+                                }
                             }
+                            
                         }
                     } else if (infoNode.getNodeName().equals("Description")) {
-                        //c.setDescription("This is the corpus of newspapers from the years 1995-1998, covering a wide range of topics, from economics and politics, to sports and cultural events.");
-                        //TODO: select only with the xml:lang=en
+                        Element element = (Element) infoNode;
                         c.setDescription(infoNode.getTextContent().trim());
+                        if ("en".equals(element.getAttribute("xml:lang"))) {
+                            enDescription = infoNode.getTextContent().trim();
+                        }
                     }
                 }
-                
+                // description in Engish has priority
+                if (enDescription != null && !enDescription.isEmpty()) {
+                    c.setDescription(enDescription);
+                }
                 }
     }
 }
