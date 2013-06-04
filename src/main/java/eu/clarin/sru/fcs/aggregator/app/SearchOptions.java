@@ -100,6 +100,8 @@ public class SearchOptions extends SelectorComposer<Component> {
         //tree.setSizedByContent(true);
 
         languageSelect.setSelectedItem(anyLanguage);
+        
+        
 
     }
 
@@ -143,7 +145,12 @@ public class SearchOptions extends SelectorComposer<Component> {
 
     @Listen(ZulEvents.ON_AFTER_RENDER + "=#tree")
     public void onAfterRenderCorporaTree(Event ev) {
-        onSelectAll(null);
+        
+        if (this.xAggregationContext != null) {
+            selectCorpora(xAggregationContext);
+        } else {
+            onSelectAll(null);
+        }
         loadLanguages();
     }
 
@@ -297,5 +304,9 @@ public class SearchOptions extends SelectorComposer<Component> {
 //            Comboitem item = this.languageSelect.appendItem(this.languages.nameForCode(code));
 //            item.setValue(code);
 //        }
+    }
+
+    void setAggregationContext(Map<String, List<String>> xAggregationContext) {
+        this.xAggregationContext = xAggregationContext;
     }
 }

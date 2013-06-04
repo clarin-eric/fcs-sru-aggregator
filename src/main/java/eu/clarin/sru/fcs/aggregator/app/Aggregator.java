@@ -142,9 +142,10 @@ public class Aggregator extends SelectorComposer<Component> {
         
         
         searchOptionsComposer = (SearchOptions) soDiv.getChildren().get(0).getChildren().get(0).getAttribute("$" + SearchOptions.class.getSimpleName());
-        if (this.xAggregationContext != null) {
-            searchOptionsComposer.selectCorpora(xAggregationContext);
-        }
+        //if (this.xAggregationContext != null) {
+            //searchOptionsComposer.selectCorpora(xAggregationContext);
+            searchOptionsComposer.setAggregationContext(xAggregationContext);
+        //}
         searchResultsComposer = (SearchResults) srDiv.getChildren().get(0).getChildren().get(0).getAttribute("$" + SearchResults.class.getSimpleName());
         
         
