@@ -9,6 +9,10 @@
         <theme-uri>clarind.css</theme-uri>
     </desktop-config>
     
+    <session-config>
+        <session-timeout>1200</session-timeout>
+    </session-config>
+    
     <listener>
         <description>Desktop cleanup</description>
         <listener-class>eu.clarin.sru.fcs.aggregator.app.DesktopDestroyedListener</listener-class>
