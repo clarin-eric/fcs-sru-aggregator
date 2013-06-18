@@ -1,15 +1,10 @@
 package eu.clarin.sru.fcs.aggregator.app;
 
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 import com.googlecode.sardine.Sardine;
 import com.googlecode.sardine.SardineFactory;
 import com.googlecode.sardine.impl.SardineException;
 import eu.clarin.sru.client.SRUVersion;
-import eu.clarin.sru.fcs.aggregator.data.CenterRegistry;
-import java.lang.reflect.Type;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -18,29 +13,20 @@ import org.zkoss.zk.ui.Component;
 import org.zkoss.zk.ui.Executions;
 import org.zkoss.zk.ui.event.Event;
 import org.zkoss.zk.ui.select.SelectorComposer;
-import org.zkoss.zk.ui.select.annotation.Listen;
 import org.zkoss.zk.ui.select.annotation.Wire;
-import org.zkoss.zul.Combobox;
-import org.zkoss.zul.Comboitem;
 import org.zkoss.zul.Groupbox;
 import org.zkoss.zul.Label;
 import org.zkoss.zul.Messagebox;
-import org.zkoss.zul.Textbox;
-import org.zkoss.zul.Tree;
-import org.zkoss.zul.Window;
-import com.sun.jersey.api.client.WebResource;
 import eu.clarin.sru.client.SRUClientException;
 import eu.clarin.sru.client.SRURecord;
 import eu.clarin.sru.client.SRUSearchRetrieveRequest;
 import eu.clarin.sru.client.SRUSearchRetrieveResponse;
 import eu.clarin.sru.client.SRUThreadedClient;
 import eu.clarin.sru.client.fcs.ClarinFCSRecordData;
-import eu.clarin.sru.client.fcs.DataViewKWIC;
-import eu.clarin.sru.fcs.aggregator.sparam2.Corpus2;
-import eu.clarin.sru.fcs.aggregator.sparam2.Kwic;
-import eu.clarin.sru.fcs.aggregator.sparam2.SearchResult2;
-import eu.clarin.sru.fcs.aggregator.sparam2.SearchResultRecordRenderer2;
-import eu.clarin.sru.fcs.aggregator.sresult.SearchResultsController;
+import eu.clarin.sru.fcs.aggregator.sopt.Corpus;
+import eu.clarin.sru.fcs.aggregator.sresult.Kwic;
+import eu.clarin.sru.fcs.aggregator.sresult.SearchResult;
+import eu.clarin.sru.fcs.aggregator.sresult.SearchResultRecordRenderer;
 import eu.clarin.sru.fcs.aggregator.util.SRUCQLsearchRetrieve;
 import eu.clarin.weblicht.wlfxb.io.WLDObjector;
 import eu.clarin.weblicht.wlfxb.io.WLFormatException;
@@ -50,10 +36,11 @@ import eu.clarin.weblicht.wlfxb.xb.WLData;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Random;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.zkoss.zhtml.Filedownload;
@@ -62,123 +49,53 @@ import org.zkoss.zul.Column;
 import org.zkoss.zul.Columns;
 import org.zkoss.zul.Grid;
 import org.zkoss.zul.ListModel;
-import org.zkoss.zul.Popup;
 import org.zkoss.zul.SimpleListModel;
 import org.zkoss.zul.Vlayout;
 
 /**
+ * Class representing Search Results page. Displays results in a table-like
+ * manner, allows to retrieve next/previous results, and provides export results
+ * possibilities.
  *
  * @author Yana Panchenko
  */
 public class SearchResults extends SelectorComposer<Component> {
 
-    private static final Logger logger = Logger.getLogger(Aggregator.class.getName());
-//    @Wire
-//    private Grid anzeigeGrid;
+    private static final Logger LOGGER = Logger.getLogger(SearchResults.class.getName());
     @Wire
-    private Textbox searchString;
-    @Wire
-    private Combobox languageSelect;
-//    @Wire
-//    private Button searchButton;
-//    @Wire
-//    private Groupbox allCorpora;
-//    @Wire
-//    private Comboitem german;
-    @Wire
-    private Comboitem anyLanguage;
-    @Wire
-    //private Window resultsBox;
     private Vlayout resultsBox;
-//    @Wire
-//    private Button selectAll;
-//    @Wire
-//    private Button deselectAll;
-//    @Wire
-//    private Window mainWindow;
-    @Wire
-    private Combobox maximumRecordsSelect;
-//    @Wire
-//    private Button addForeignEndpoint;
-    @Wire
-    Combobox foreignEndpointSelect;
-    @Wire
-    private Tree tree;
-    @Wire
-    private Label searchResultsProgress;
-    @Wire
-    private Popup wspaceSigninpop;
-    @Wire
-    private Textbox wspaceUserName;
-    @Wire
-    private Textbox wspaceUserPwd;
-    private WebResource mapGenerator;
-    public static final String MAPS_SERVICE_URL = "http://weblicht.sfs.uni-tuebingen.de/rws/service-geolocationconsumer/resources/geoloc/";
-    private Map<String, List<String>> xAggregationContext;
     private SRUVersion version = SRUVersion.VERSION_1_2;
-    private CenterRegistry registry;
-    private boolean testingMode = false;
-    
     private SRUThreadedClient searchClient;
-    
-    private List<SearchResult2> resultsUnprocessed;
-    private List<SearchResult2> resultsProcessed;
+    private List<SearchResult> resultsUnprocessed;
+    private List<SearchResult> resultsProcessed;
     private UpdateResultsThread resultsThread;
     private int currentRequestId = 0;
-    
-    
-    //private Progressmeter progress;
     private ControlsVisibility controlsVisibility;
     private PagesVisibility pagesVisibility;
-    
-    
     private AtomicBoolean hasResults = new AtomicBoolean(false);
     private AtomicBoolean searchInProgress = new AtomicBoolean(false);
-    
     private int[] searchOffset;
     private int maxRecords;
-
-    
-    @Wire
-    private Window infoWin;
-    
-    private static final String WSPACE_SERVER_URL = "http://egi-cloud21.zam.kfa-juelich.de"; 
+    private static final String WSPACE_SERVER_URL = "http://egi-cloud21.zam.kfa-juelich.de";
     private static final String WSPACE_WEBDAV_DIR = "/owncloud/remote.php/webdav/";
     private static final String WSPACE_AGGREGATOR_DIR = "aggregator_results/";
+    private Timer timer;
+    private int seconds = 200;
 
     @Override
     public void doAfterCompose(Component comp) throws Exception {
 
         super.doAfterCompose(comp);
-        
+        setUpSRUVersion();
         Executions.getCurrent().getDesktop().enableServerPush(true);
         searchClient = (SRUThreadedClient) Executions.getCurrent().getDesktop().getWebApp().getAttribute(WebAppListener.SHARED_SRU_CLIENT);
-        
-
-//        processParameters();
-//
-//        languageSelect.setSelectedItem(anyLanguage);
-//
-//        searchResultsController = new SearchResultsController(resultsBox, searchResultsProgress);
-//        // assign the search controller to desktop, so that it can be accessed to be shutdown when the desktop is destroyed
-//        Executions.getCurrent().getDesktop().setAttribute(searchResultsController.getClass().getSimpleName(), searchResultsController);
-//        // also add it to the list of actice controllers of the web application, so that they can be shutdown when the application stops
-//        Set<SearchResultsController> activeControllers = (Set<SearchResultsController>) Executions.getCurrent().getDesktop().getWebApp().getAttribute(WebAppListener.ACTIVE_SEARCH_CONTROLLERS);
-//        activeControllers.add(searchResultsController);
-//
-//        registry = new CenterRegistry();
-//        registry.loadChildren(testingMode);
-//        CorpusTreeModel corporaModel = new CorpusTreeModel(registry);
-//        tree.setModel(corporaModel);
-//        tree.setItemRenderer(new CorpusTreeNodeRenderer());
-//        tree.setMultiple(true);
-
-
-        //tempMap();
-       
-        
+        setUpSRUVersion();
+        // assign the search controller to desktop, so that it can be accessed to be shutdown when the desktop is destroyed
+        Executions.getCurrent().getDesktop().setAttribute(this.getClass().getSimpleName(), this);
+        // also add it to the list of actice controllers of the web application, so that they can be shutdown when the application stops
+        Set<SearchResults> activeControllers = (Set<SearchResults>) Executions.getCurrent().getDesktop().getWebApp().getAttribute(WebAppListener.ACTIVE_SEARCH_CONTROLLERS);
+        activeControllers.add(this);
     }
-
 
     public void clearResults() {
         // terminate previous search requests and corresponding response processing
@@ -188,115 +105,52 @@ public class SearchResults extends SelectorComposer<Component> {
         resultsBox.getChildren().clear();
         this.searchInProgress.set(false);
         this.hasResults.set(false);
-        
-        
     }
 
+    void executeSearch(Map<String, Set<Corpus>> selectedCorpora, int maxRecords, String searchString, int[] searchOffset) {
 
-    private void processParameters() {
-
-        String[] paramValue;
-        String contextJson = null;
-
-        String[] paramsReceived = new String[4];
-
-        paramValue = Executions.getCurrent().getParameterMap().get("query");
-        if (paramValue != null) {
-            searchString.setValue(paramValue[0].trim());
-            paramsReceived[0] = searchString.getValue();
-        }
-        paramValue = Executions.getCurrent().getParameterMap().get("operation");
-        if (paramValue != null) {
-            String operationString = paramValue[0].trim();
-            paramsReceived[1] = operationString;
-            if (!operationString.equals("searchRetrieve")) {
-                Messagebox.show("Not supported operation " + operationString, "FCS", 0, Messagebox.INFORMATION);
-            }
-        }
-        paramValue = Executions.getCurrent().getParameterMap().get("version");
-        if (paramValue != null) {
-            String versionString = paramValue[0].trim();
-            paramsReceived[2] = versionString;
-            if (versionString.equals("1.2")) {
-                version = SRUVersion.VERSION_1_2;
-            } else if (versionString.equals("1.1")) {
-                version = SRUVersion.VERSION_1_1;
-            } else {
-                Messagebox.show("SRU Version " + version + " not supported", "FCS", 0, Messagebox.INFORMATION);
-            }
-        }
-        paramValue = Executions.getCurrent().getParameterMap().get("x-aggregation-context");
-        if (paramValue != null) {
-            contextJson = paramValue[0].trim();
-            paramsReceived[3] = contextJson;
-        }
-        logger.log(Level.INFO, "Received parameters: query[{0}], operation[{1}], version[{2}], x-aggregation-context[{3}], ", paramsReceived);
-
-        paramValue = Executions.getCurrent().getParameterMap().get("mode");
-        if (paramValue != null) {
-            String mode = paramValue[0].trim();
-            if (mode.equals("testing")) {
-                testingMode = true;
-            }
-        }
-
-        if (contextJson != null) {
-            Gson gson = new Gson();
-            Type mapType = new TypeToken<LinkedHashMap<String, ArrayList<String>>>() {
-            }.getType();
-            try {
-                this.xAggregationContext = gson.fromJson(contextJson, mapType);
-            } catch (Exception ex) {
-                logger.log(Level.SEVERE, "Error parsing JSON from x-aggregation-context: {0} {1}", new String[]{ex.getMessage(), contextJson});
-                Messagebox.show("Error in x-aggregation-context parameter", "FCS", 0, Messagebox.INFORMATION);
-            }
-        }
-
-    }
-
-
-    void executeSearch(Map<String, Set<Corpus2>> selectedCorpora, int maxRecords, String searchString, int[] searchOffset) {
-        
-        
         this.controlsVisibility.disableControls1();
         this.controlsVisibility.enableControls2();
         this.controlsVisibility.disablePrevButton();
         this.controlsVisibility.disableNextButton();
         this.controlsVisibility.enableProgressMeter(0);
-        
+
         this.maxRecords = maxRecords;
         this.hasResults.set(false);
         this.searchInProgress.set(true);
         this.searchOffset = searchOffset;
-        
+
         // terminate previous search requests and corresponding response processing
         terminateProcessingRequestsAndResponses();
 
         // update current search request id
         currentRequestId++;
 
-        // clear are where results are to be displayed
+        // clear area where results are to be displayed
         resultsBox.getChildren().clear();
 
         // empty storage for unprocessed processed lists with recordsData
-        resultsProcessed = new ArrayList<SearchResult2>();
-        resultsUnprocessed = new ArrayList<SearchResult2>();
+        resultsProcessed = new ArrayList<SearchResult>();
+        resultsUnprocessed = new ArrayList<SearchResult>();
+
+        // set up timer, so that when it takes too much time to get the response to cancell the request
+        timer = new Timer();
+        timer.schedule(new TimeoutTask(), seconds * 1000);
 
         // finally, send search requests to all the selected by user 
         // endpoints/corpora and process the responses
         for (String endpointUrl : selectedCorpora.keySet()) {
-            for (Corpus2 corpus : selectedCorpora.get(endpointUrl)) {
+            for (Corpus corpus : selectedCorpora.get(endpointUrl)) {
                 resultsUnprocessed.add(executeSearch(corpus, searchString));
             }
         }
-        
-        processResponses();
 
+        processResponses();
     }
 
-    private SearchResult2 executeSearch(Corpus2 corpus, String searchString) {
-        SearchResult2 resultsItem = new SearchResult2(corpus);
-        logger.log(Level.FINE, "Executing search for {0} query={1} maxRecords={2}", 
+    private SearchResult executeSearch(Corpus corpus, String searchString) {
+        SearchResult resultsItem = new SearchResult(corpus);
+        LOGGER.log(Level.INFO, "Executing search for {0} query={1} maxRecords={2}",
                 new Object[]{corpus.toString(), searchString, maxRecords});
         SRUSearchRetrieveRequest searchRequest = new SRUSearchRetrieveRequest(corpus.getEndpointUrl());
         searchRequest.setVersion(version);
@@ -312,12 +166,12 @@ public class SearchResults extends SelectorComposer<Component> {
             Future<SRUSearchRetrieveResponse> futureResponse = searchClient.searchRetrieve(searchRequest);
             resultsItem.setFutureResponse(futureResponse);
         } catch (SRUClientException ex) {
-            logger.log(Level.SEVERE, "SearchRetrieve failed for {0} {1} {2}", 
+            LOGGER.log(Level.SEVERE, "SearchRetrieve failed for {0} {1} {2}",
                     new String[]{corpus.getEndpointUrl(), ex.getClass().getName(), ex.getMessage()});
         }
         return resultsItem;
     }
-    
+
     public void shutdown() {
         terminateProcessingRequestsAndResponses();
     }
@@ -331,9 +185,9 @@ public class SearchResults extends SelectorComposer<Component> {
             } catch (InterruptedException ex) {
                 Logger.getLogger(SearchResults.class.getName()).log(Level.SEVERE, null, ex);
             }
+            timer.cancel();
         }
-
-        Logger.getLogger(SearchResults.class.getName()).log(Level.INFO, "Search terminated");
+        LOGGER.log(Level.INFO, "Search terminated");
     }
 
     private void processResponses() {
@@ -344,24 +198,23 @@ public class SearchResults extends SelectorComposer<Component> {
     public boolean hasResults() {
         return this.hasResults.get();
     }
-    
-        public boolean hasSearchInProgress() {
+
+    public boolean hasSearchInProgress() {
         return this.searchInProgress.get();
     }
 
     void setVisibilityControllers(PagesVisibility pagesVisibility, ControlsVisibility controlsVisibility) {
         this.pagesVisibility = pagesVisibility;
         this.controlsVisibility = controlsVisibility;
-        }
-    
-    
+    }
+
     private class UpdateResultsThread extends Thread {
 
         @Override
         public void run() {
             while (!resultsUnprocessed.isEmpty() && !Thread.currentThread().isInterrupted()) {
-                
-                SearchResult2 resultsItem = resultsUnprocessed.remove(0);
+
+                SearchResult resultsItem = resultsUnprocessed.remove(0);
                 if (!resultsItem.isWaitingForResponse()) {
                     resultsItem.consumeResponse();
                     Executions.schedule(resultsBox.getDesktop(), new SearchResults.ResponseListener(resultsItem, currentRequestId), new Event("onDummy"));
@@ -378,15 +231,12 @@ public class SearchResults extends SelectorComposer<Component> {
                     //    Executions.deactivate(resultsArea.getDesktop());
                     //}
                     resultsProcessed.add(resultsItem);
-                    //System.out.println("RECORDS ITEM ADDED");
-                    
                 } else {
                     resultsUnprocessed.add(resultsItem);
                 }
             }
-
             if (Thread.currentThread().isInterrupted()) {
-                for (SearchResult2 resultsItem : resultsUnprocessed) {
+                for (SearchResult resultsItem : resultsUnprocessed) {
                     resultsItem.cancelWaitingForResponse();
                 }
             }
@@ -397,9 +247,9 @@ public class SearchResults extends SelectorComposer<Component> {
     private class ResponseListener implements EventListener {
 
         int requestId;
-        SearchResult2 resultsItem;
+        SearchResult resultsItem;
 
-        public ResponseListener(SearchResult2 resultsItem, int requestId) {
+        public ResponseListener(SearchResult resultsItem, int requestId) {
             this.resultsItem = resultsItem;
             this.requestId = requestId;
         }
@@ -421,7 +271,7 @@ public class SearchResults extends SelectorComposer<Component> {
             if (requestId != currentRequestId) {
                 groupbox.detach();
             }
-            
+
             if (resultsUnprocessed.isEmpty()) {
                 boolean last = searchInProgress.getAndSet(false);
                 hasResults.set(true);
@@ -430,14 +280,14 @@ public class SearchResults extends SelectorComposer<Component> {
                     searchOffset[0] = searchOffset[0] + searchOffset[1];
                     searchOffset[1] = maxRecords;
                     pagesVisibility.openSearchResult();
-                    
+
                     if (searchOffset[0] > 1) {
                         controlsVisibility.enablePrevButton();
                     }
                     controlsVisibility.enableNextButton();
                     controlsVisibility.enableControls1();
                     controlsVisibility.enableControls2();
-                    
+
                 }
             } else {
                 controlsVisibility.updateProgressMeter(100 * resultsProcessed.size() / (resultsUnprocessed.size() + resultsProcessed.size() + 1));
@@ -445,34 +295,23 @@ public class SearchResults extends SelectorComposer<Component> {
 
         }
     }
-    
-        private Groupbox createRecordsGroup(SearchResult2 resultsItem) {
+
+    private Groupbox createRecordsGroup(SearchResult resultsItem) {
 
         Groupbox recordsGroup = new Groupbox();
-
-        // style the box
         recordsGroup.setMold("3d");
         recordsGroup.setSclass("ccsLightBlue");
         recordsGroup.setContentStyle("border:0;");
         recordsGroup.setStyle("margin:10px;10px;10px;10px;");
         recordsGroup.setClosable(true);
-        //recordsGroup.setOpen(false);
-
         // create title
         StringBuilder sb = new StringBuilder();
-//        sb.append(resultsItem.getCorpus().getInstitution().getName());
-//        sb.append(" ");
-//        sb.append(resultsItem.getCorpus().getEndpointUrl());
         if (resultsItem.hasCorpusHandler()) {
             if (resultsItem.getCorpus().getDisplayName() != null) {
 //                sb.append(" ");
                 sb.append(resultsItem.getCorpus().getDisplayName());
                 sb.append(", ");
             }
-//            if (sb.append(resultsItem.getCorpus().getHandle()) != null) {
-//                sb.append(" ");
-//                sb.append(resultsItem.getCorpus().getHandle());
-//            }
         }
         sb.append(resultsItem.getCorpus().getInstitution().getName());
         recordsGroup.setTitle(sb.toString());
@@ -487,7 +326,7 @@ public class SearchResults extends SelectorComposer<Component> {
 //            grid.setPageSize(10);
             Columns columns = new Columns();
             Column c;
-            
+
             c = new Column();
             //c.setLabel("Left");
             columns.appendChild(c);
@@ -506,12 +345,11 @@ public class SearchResults extends SelectorComposer<Component> {
             c.setHflex("min");
             columns.appendChild(c);
             grid.appendChild(columns);
-            
 
             List<SRURecord> sruRecords = resultsItem.getResponse().getRecords();
             ListModel lmodel = new SimpleListModel(sruRecords);
             grid.setModel(lmodel);
-            grid.setRowRenderer(new SearchResultRecordRenderer2(resultsItem));
+            grid.setRowRenderer(new SearchResultRecordRenderer(resultsItem));
             recordsGroup.appendChild(grid);
             grid.setStyle("margin:10px;border:0px;");
         } else { // the response was fine, but there are no records
@@ -519,16 +357,27 @@ public class SearchResults extends SelectorComposer<Component> {
         }
         return recordsGroup;
     }
-        
-        public void exportTCF() {
-
-        boolean noResult = true;
+    
+    public void exportTCF() {
+            byte[] bytes = getExportTCF();
+            if (bytes != null) {
+                Filedownload.save(bytes, "text/tcf+xml", "ClarinDFederatedContentSearch.xml");
+        }
+    }
+    
+   public void exportPWTCF(String user, String pass) {
+       
+       byte[] bytes = getExportTCF();
+            if (bytes != null) {
+                uploadToPW(user, pass, bytes, "text/tcf+xml",".tcf");
+        }
+    }
+    
+    private byte[] getExportTCF() {
         StringBuilder text = new StringBuilder();
-        
         Set<String> resultsLangs = new HashSet<String>();
-
         if (resultsProcessed != null && !resultsProcessed.isEmpty()) {
-            for (SearchResult2 result : resultsProcessed) {
+            for (SearchResult result : resultsProcessed) {
                 resultsLangs.addAll(result.getCorpus().getLanguages());
                 for (Kwic kwic : result.getKwics()) {
                     text.append(kwic.getLeft());
@@ -537,20 +386,16 @@ public class SearchResults extends SelectorComposer<Component> {
                     text.append(" ");
                     text.append(kwic.getRight());
                     text.append("\n");
-                    noResult = false;
                 }
             }
 
         }
-
-        if (noResult) {
+        ByteArrayOutputStream os = null;
+        if (text.length() == 0) {
             Messagebox.show("Nothing to export!");
         } else {
             WLData data;
             MetaData md = new MetaData();
-            //data.metaData.source = "Tuebingen Uni";
-            //md.addMetaDataItem("title", "binding test");
-            //md.addMetaDataItem("author", "Yana");
             String resultsLang = "unknown";
             if (resultsLangs.size() == 1) {
                 resultsLang = resultsLangs.iterator().next();
@@ -558,63 +403,59 @@ public class SearchResults extends SelectorComposer<Component> {
             TextCorpusStored tc = new TextCorpusStored(resultsLang);
             tc.createTextLayer().addText(text.toString());
             data = new WLData(md, tc);
-            ByteArrayOutputStream os = new ByteArrayOutputStream();
+            os = new ByteArrayOutputStream();
             try {
                 WLDObjector.write(data, os);
-                Filedownload.save(os.toByteArray(), "text/tcf+xml", "ClarinDFederatedContentSearch.xml");
             } catch (WLFormatException ex) {
-                logger.log(Level.SEVERE, "Error exporting TCF {0} {1}", new String[]{ex.getClass().getName(), ex.getMessage()});
+                LOGGER.log(Level.SEVERE, "Error exporting TCF {0} {1}", new String[]{ex.getClass().getName(), ex.getMessage()});
                 Messagebox.show("Sorry, export error!");
             }
         }
-    }
-        
-        public void exportCSV() {
-            String csv = getExportCSV();
-            if (csv != null) {
-                Filedownload.save(csv.toString(), "text/plain", "ClarinDFederatedContentSearch.csv");
-            }
+        if (os == null) {
+            return null;
+        } else {
+            return os.toByteArray();
         }
-        
-        public String getExportCSV() {
+    }
+    
+    public void exportCSV() {
+        String csv = getExportCSV();
+        if (csv != null) {
+            Filedownload.save(csv.toString(), "text/plain", "ClarinDFederatedContentSearch.csv");
+        }
+    }
+    
+    
+    public void exportPWCSV(String user, String pass) {
+        String csv = getExportCSV();
+        if (csv != null) {
+            uploadToPW(user, pass, csv.getBytes(), "text/csv",".csv");
+        }
+    }
+
+    private String getExportCSV() {
 
         boolean noResult = true;
         StringBuilder csv = new StringBuilder();
         if (resultsProcessed != null && !resultsProcessed.isEmpty()) {
-            csv.append("\"");
-            csv.append("LEFT CONTEXT");
-            csv.append("\"");
+            csv.append("\""); csv.append("LEFT CONTEXT"); csv.append("\"");
             csv.append(",");
-            csv.append("\"");
-            csv.append("KEYWORD");
-            csv.append("\"");
+            csv.append("\""); csv.append("KEYWORD"); csv.append("\"");
             csv.append(",");
-            csv.append("\"");
-            csv.append("RIGHT CONTEXT");
-            csv.append("\"");
+            csv.append("\""); csv.append("RIGHT CONTEXT"); csv.append("\"");
             csv.append(",");
-            csv.append("\"");
-            csv.append("PID");
-            csv.append("\"");
+            csv.append("\""); csv.append("PID"); csv.append("\"");
             csv.append(",");
-            csv.append("\"");
-            csv.append("REFERENCE");
-            csv.append("\"");
+            csv.append("\""); csv.append("REFERENCE"); csv.append("\"");
             csv.append("\n");
-            
-            for (SearchResult2 result : resultsProcessed) {
+
+            for (SearchResult result : resultsProcessed) {
                 for (Kwic kwic : result.getKwics()) {
-                    csv.append("\"");
-                    csv.append(kwic.getLeft().replace("\"", "QUOTE"));
-                    csv.append("\"");
+                    csv.append("\""); csv.append(kwic.getLeft().replace("\"", "QUOTE")); csv.append("\"");
                     csv.append(",");
-                    csv.append("\"");
-                    csv.append(kwic.getKeyword().replace("\"", "QUOTE"));
-                    csv.append("\"");
+                    csv.append("\""); csv.append(kwic.getKeyword().replace("\"", "QUOTE")); csv.append("\"");
                     csv.append(",");
-                    csv.append("\"");
-                    csv.append(kwic.getRight().replace("\"", "QUOTE"));
-                    csv.append("\"");
+                    csv.append("\""); csv.append(kwic.getRight().replace("\"", "QUOTE")); csv.append("\"");
                     csv.append(",");
                     csv.append("\"");
                     if (kwic.getPid() != null) {
@@ -632,117 +473,78 @@ public class SearchResults extends SelectorComposer<Component> {
                 }
             }
         }
-
         if (noResult) {
             Messagebox.show("Nothing to export!");
             return null;
         } else {
             return csv.toString();
         }
-        
-        
     }
-        
-        
-           
     
-    public void exportPWTCF(String user, String pass) {
-        String text = kwcToText();
-
-        if (text.isEmpty()) {
-            Messagebox.show("Nothing to export!");
-        } else {
-            WLData data;
-            MetaData md = new MetaData();
-            //data.metaData.source = "Tuebingen Uni";
-            //md.addMetaDataItem("title", "binding test");
-            //md.addMetaDataItem("author", "Yana");
-            //TODO when language solution will working add specific languages/unknown...
-            TextCorpusStored tc = new TextCorpusStored("de");
-            tc.createTextLayer().addText(text.toString());
-            data = new WLData(md, tc);
-            ByteArrayOutputStream os = new ByteArrayOutputStream();
-            try {
-                WLDObjector.write(data, os);
-                //Filedownload.save(os.toByteArray(), "text/tcf+xml", "ClarinDFederatedContentSearch.xml");
+    private void uploadToPW(String user, String pass, byte[] bytes, String mimeType, String fileExtention) {
+        try {
                 Sardine sardine = SardineFactory.begin();
                 sardine.setCredentials(user, pass);
                 String outputDir = WSPACE_SERVER_URL + WSPACE_WEBDAV_DIR + WSPACE_AGGREGATOR_DIR;
                 if (!sardine.exists(outputDir)) {
                     sardine.createDirectory(outputDir);
                 }
-		Date currentDate = new Date();
+                Date currentDate = new Date();
                 SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss-SSS");
                 Random generator = new Random();
                 int rn1 = generator.nextInt(1000000000);
-                String createdFilePath = outputDir + format.format(currentDate) + "-" + rn1 + ".tcf";
+                String createdFilePath = outputDir + format.format(currentDate) + "-" + rn1 + fileExtention;
                 while (sardine.exists(createdFilePath)) {
                     rn1 = generator.nextInt(1000000000);
-                    createdFilePath = outputDir + format.format(currentDate) + "-" + rn1 + ".tcf";
+                    createdFilePath = outputDir + format.format(currentDate) + "-" + rn1 + fileExtention;
                 }
-                sardine.put(createdFilePath, os.toByteArray(), "text/tcf+xml");
+                sardine.put(createdFilePath, bytes, mimeType);
                 Messagebox.show("Export complete!\nCreated file:\n" + createdFilePath);
             } catch (SardineException ex) {
-                Logger.getLogger(SearchResultsController.class.getName()).log(Level.SEVERE, "Error accessing " + WSPACE_SERVER_URL + WSPACE_WEBDAV_DIR, ex);
+                LOGGER.log(Level.SEVERE, "Error accessing " + WSPACE_SERVER_URL + WSPACE_WEBDAV_DIR, ex);
                 Messagebox.show("Wrong name or password!");
             } catch (IOException ex) {
-                Logger.getLogger(SearchResultsController.class.getName()).log(Level.SEVERE, "Error accessing " + WSPACE_SERVER_URL + WSPACE_WEBDAV_DIR, ex);
-            } catch (WLFormatException ex) {
-                logger.log(Level.SEVERE, "Error exporting TCF {0} {1}", new String[]{ex.getClass().getName(), ex.getMessage()});
+                LOGGER.log(Level.SEVERE, "Error exporting {0} {1} {2}", new String[]{fileExtention, ex.getClass().getName(), ex.getMessage()});
                 Messagebox.show("Sorry, export error!");
             }
-        }
     }
-    
-    public void exportPWCSV(String user, String pass) {
-        String csv = getExportCSV();
-        if (csv != null) {
-            try {
-                Sardine sardine = SardineFactory.begin();
-                sardine.setCredentials(user, pass);
-                String outputDir = WSPACE_SERVER_URL + WSPACE_WEBDAV_DIR + WSPACE_AGGREGATOR_DIR;
-                if (!sardine.exists(outputDir)) {
-                    sardine.createDirectory(outputDir);
-                }
-		Date currentDate = new Date();
-                SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss-SSS");
-                Random generator = new Random();
-                int rn1 = generator.nextInt(1000000000);
-                String createdFilePath = outputDir + format.format(currentDate) + "-" + rn1 + ".csv";
-                while (sardine.exists(createdFilePath)) {
-                    rn1 = generator.nextInt(1000000000);
-                    createdFilePath = outputDir + format.format(currentDate) + "-" + rn1 + ".csv";
-                }
-                sardine.put(createdFilePath, csv.getBytes(), "text/csv");
-                Messagebox.show("Export complete!\nCreated file:\n" + createdFilePath);
-            } catch (SardineException ex) {
-                logger.log(Level.SEVERE, "Error accessing " + WSPACE_SERVER_URL + WSPACE_WEBDAV_DIR, ex);
-                Messagebox.show("Wrong name or password!");
-            } catch (IOException ex) {
-                logger.log(Level.SEVERE, "Error exporting TCF {0} {1}", new String[]{ex.getClass().getName(), ex.getMessage()});
-                Messagebox.show("Sorry, export error!");
+
+    private void setUpSRUVersion() {
+        String[] paramValue = Executions.getCurrent().getParameterMap().get("version");
+        String versionString = null;
+        if (paramValue != null) {
+            versionString = paramValue[0].trim();
+            if (versionString.equals("1.2")) {
+                version = SRUVersion.VERSION_1_2;
+            } else if (versionString.equals("1.1")) {
+                version = SRUVersion.VERSION_1_1;
+            } else {
+                Messagebox.show("SRU Version " + version + " not supported", "FCS", 0, Messagebox.INFORMATION);
             }
         }
+        LOGGER.log(Level.INFO, "Received parameter: version[{0}], ", versionString);
     }
     
-    
-    
-    private String kwcToText() {
-        StringBuilder text = new StringBuilder();
+    /**
+     * Class to control the waiting time for searchRetrieve response. If the response
+     * doesn't come in predefined time limit, the response is no longer waited for.
+     */
+    class TimeoutTask extends TimerTask {
 
-        if (resultsProcessed != null && !resultsProcessed.isEmpty()) {
-            for (SearchResult2 result : resultsProcessed) {
-                for (Kwic kwic : result.getKwics()) {
-                    text.append(kwic.getLeft());
-                    text.append(" ");
-                    text.append(kwic.getKeyword());
-                    text.append(" ");
-                    text.append(kwic.getRight());
-                    text.append("\n");
+        @Override
+        public void run() {
+            SearchResult[] timeoutResult = new SearchResult[resultsUnprocessed.size() + 1];
+            resultsUnprocessed.toArray(timeoutResult);
+            for (int i = 0; i < timeoutResult.length; i++) {
+                SearchResult resultsItem = timeoutResult[i];
+                if (resultsItem != null) {
+                    System.out.println(resultsItem.getCorpus().getInstitution().getName());
+                    System.out.println(resultsItem.getCorpus().getEndpointUrl());
+                    System.out.println("Timer out!!!");
+                    resultsItem.cancelWaitingForResponse();
                 }
             }
-
+            timer.cancel(); //Terminate the timer thread
         }
-        return text.toString();
     }
 }

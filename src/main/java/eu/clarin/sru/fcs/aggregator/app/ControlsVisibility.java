@@ -1,7 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package eu.clarin.sru.fcs.aggregator.app;
 
 import org.zkoss.zul.A;
@@ -13,8 +9,11 @@ import org.zkoss.zul.Progressmeter;
 import org.zkoss.zul.South;
 
 /**
- *
- * @author yanapanchenko
+ * Class to manipulate controls area (actions menu, buttons, etc.) of the 
+ * currently displayed page (at the top and bottom of the page).
+ * Currently only used when the results page is displayed.
+ * 
+ * @author Yana Panchenko
  */
 class ControlsVisibility {
     private North controls1;
@@ -28,7 +27,11 @@ class ControlsVisibility {
     private static final String CONTROLS2_SIZE = "25px";
     private static final String CONTROLS_ZERO_SIZE = "0px";
 
-    public ControlsVisibility(North controls1, South controls2, Progressmeter pMeter, Menubar menubar, A prev, A next) {
+    public ControlsVisibility(
+            North controls1, South controls2, 
+            Progressmeter pMeter, 
+            Menubar menubar, 
+            A prev, A next) {
         this.controls1 = controls1;
         this.controls2 = controls2;
         this.pMeter = pMeter;
@@ -36,18 +39,6 @@ class ControlsVisibility {
         this.prev = prev;
         this.next = next;
     }
-    
-//    public void turnOn() {
-//        controls1.setSize(CONTROLS1_SIZE);
-//        controls2.setSize(CONTROLS2_SIZE);
-//        //menubar.setVisible(true);
-//    }
-//    
-//    public void turnOff() {
-//        disableControls1();
-//        disableControls2();
-//        //menubar.setVisible(false);
-//    }
     
     public void enableProgressMeter(int value) {
         updateProgressMeter(value);

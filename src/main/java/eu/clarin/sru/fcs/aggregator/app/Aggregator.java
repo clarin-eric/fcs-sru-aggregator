@@ -1,39 +1,18 @@
 package eu.clarin.sru.fcs.aggregator.app;
 
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
-import com.sun.jersey.api.client.Client;
-import eu.clarin.sru.client.SRUVersion;
-import eu.clarin.sru.fcs.aggregator.data.CenterRegistry;
-import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.*;
-import org.zkoss.util.media.AMedia;
-import org.zkoss.util.media.Media;
 import org.zkoss.zk.ui.Component;
 import org.zkoss.zk.ui.Executions;
 import org.zkoss.zk.ui.event.Event;
 import org.zkoss.zk.ui.select.SelectorComposer;
 import org.zkoss.zk.ui.select.annotation.Listen;
 import org.zkoss.zk.ui.select.annotation.Wire;
-import org.zkoss.zul.Button;
-import org.zkoss.zul.Iframe;
 import org.zkoss.zul.Label;
 import org.zkoss.zul.Messagebox;
 import org.zkoss.zul.Textbox;
-import com.sun.jersey.api.client.WebResource;
-import com.sun.jersey.api.client.config.ClientConfig;
-import com.sun.jersey.api.client.config.DefaultClientConfig;
-import eu.clarin.sru.fcs.aggregator.sparam2.Corpus2;
-import eu.clarin.weblicht.wlfxb.tc.api.GeoLongLatFormat;
-import eu.clarin.weblicht.wlfxb.tc.api.Token;
-import eu.clarin.weblicht.wlfxb.tc.xb.TextCorpusStored;
-import eu.clarin.weblicht.wlfxb.xb.WLData;
-import javax.ws.rs.core.MediaType;
+import eu.clarin.sru.fcs.aggregator.sopt.Corpus;
 import org.zkoss.zul.A;
 import org.zkoss.zul.Div;
 import org.zkoss.zul.Menubar;
@@ -41,7 +20,6 @@ import org.zkoss.zul.North;
 import org.zkoss.zul.Popup;
 import org.zkoss.zul.Progressmeter;
 import org.zkoss.zul.South;
-import org.zkoss.zul.event.ZulEvents;
 
 /**
  * Main window of the Aggregator application.
@@ -50,8 +28,7 @@ import org.zkoss.zul.event.ZulEvents;
  */
 public class Aggregator extends SelectorComposer<Component> {
 
-    private static final Logger logger = Logger.getLogger(Aggregator.class.getName());
-    
+    private static final Logger LOGGER = Logger.getLogger(Aggregator.class.getName());
     @Wire
     private Textbox searchString;
     @Wire
@@ -60,17 +37,7 @@ public class Aggregator extends SelectorComposer<Component> {
     private Textbox wspaceUserName;
     @Wire
     private Textbox wspaceUserPwd;
-    private WebResource mapGenerator;
-    public static final String MAPS_SERVICE_URL = "http://weblicht.sfs.uni-tuebingen.de/rws/service-geolocationconsumer/resources/geoloc/";
-    private Map<String, List<String>> xAggregationContext;
-    private SRUVersion version = SRUVersion.VERSION_1_2;
-    //private SearchResultsController searchResultsController;
-    private CenterRegistry registry;
-    //private boolean testingMode = false;
-    
     private int exportDataType = 1;
-    
-    
     @Wire
     private Div aboutDiv;
     @Wire
@@ -89,82 +56,40 @@ public class Aggregator extends SelectorComposer<Component> {
     private Div helpDiv;
     @Wire
     private Label helpLabel;
-    
-    
     @Wire
     Progressmeter pMeter;
-    
     @Wire
     Menubar menubar;
     @Wire
     North controls1;
     @Wire
     South controls2;
-    
     @Wire
     A prevButton;
     @Wire
     A nextButton;
-    private int[] searchOffset = new int[]{1,0}; // start and size
-    
-    
-    
+    private int[] searchOffset = new int[]{1, 0}; // start and size
     private ControlsVisibility controlsVisibility;
     private PagesVisibility pagesVisibility;
-    
-    //public static final String TESTING_MODE_ATTR = "testingMode";
 
+    
+    
     @Override
     public void doAfterCompose(Component comp) throws Exception {
-
         super.doAfterCompose(comp);
-
         processParameters();
-//
-//        languageSelect.setSelectedItem(anyLanguage);
-//
-//        searchResultsController = new SearchResultsController(resultsBox, searchResultsProgress);
-//        // assign the search controller to desktop, so that it can be accessed to be shutdown when the desktop is destroyed
-//        Executions.getCurrent().getDesktop().setAttribute(searchResultsController.getClass().getSimpleName(), searchResultsController);
-//        // also add it to the list of actice controllers of the web application, so that they can be shutdown when the application stops
-//        Set<SearchResultsController> activeControllers = (Set<SearchResultsController>) Executions.getCurrent().getDesktop().getWebApp().getAttribute(WebAppListener.ACTIVE_SEARCH_CONTROLLERS);
-//        activeControllers.add(searchResultsController);
-//
-//        registry = new CenterRegistry();
-//        registry.loadChildren(testingMode);
-//        CorpusTreeModel corporaModel = new CorpusTreeModel(registry);
-//        tree.setModel(corporaModel);
-//        tree.setItemRenderer(new CorpusTreeNodeRenderer());
-//        tree.setMultiple(true);
-
-
-        //tempMap();
-        
-        
         searchOptionsComposer = (SearchOptions) soDiv.getChildren().get(0).getChildren().get(0).getAttribute("$" + SearchOptions.class.getSimpleName());
-        //if (this.xAggregationContext != null) {
-            //searchOptionsComposer.selectCorpora(xAggregationContext);
-            searchOptionsComposer.setAggregationContext(xAggregationContext);
-        //}
         searchResultsComposer = (SearchResults) srDiv.getChildren().get(0).getChildren().get(0).getAttribute("$" + SearchResults.class.getSimpleName());
-        
-        
         pagesVisibility = new PagesVisibility(aboutDiv, aboutLabel, soDiv, soLabel, srDiv, srLabel, helpDiv, helpLabel);
         controlsVisibility = new ControlsVisibility(controls1, controls2, pMeter, menubar, prevButton, nextButton);
-
-        //System.out.println(pagesVisibility);
         searchResultsComposer.setVisibilityControllers(pagesVisibility, controlsVisibility);
-        
     }
-
-    
 
     @Listen("onClick = #searchButton")
     public void onExecuteSearch(Event ev) {
-        //searchResultsController.executeSearch(tree.getSelectedItems(), maxRecords, searchString.getText(), version);
-        Map<String,Set<Corpus2>> selectedCorpora = searchOptionsComposer.getSelectedCorpora();
+        Map<String, Set<Corpus>> selectedCorpora = searchOptionsComposer.getSelectedCorpora();
         boolean emptyCorpora = true;
-        for (Set<Corpus2> corpora : selectedCorpora.values()) {
+        for (Set<Corpus> corpora : selectedCorpora.values()) {
             if (!corpora.isEmpty()) {
                 emptyCorpora = false;
                 break;
@@ -176,7 +101,7 @@ public class Aggregator extends SelectorComposer<Component> {
             Messagebox.show("No query is specified. To perform the search, please enter a keyword of interest in the search input field, e.g. Elefant, and press the 'Search' button.", "FCS", 0, Messagebox.INFORMATION);
         } else {
             int maxRecords = searchOptionsComposer.getMaxRecords();
-            searchOffset = new int[]{1,0};
+            searchOffset = new int[]{1, 0};
             searchResultsComposer.executeSearch(selectedCorpora, maxRecords, searchString.getText(), searchOffset);
             onClickSearchResult(null);
         }
@@ -190,22 +115,18 @@ public class Aggregator extends SelectorComposer<Component> {
     @Listen("onClick=#clearResults")
     public void onClearResults(Event ev) {
         this.searchResultsComposer.clearResults();
-        
-        
     }
 
     @Listen("onClick=#downloadCSV")
     public void onExportResultsCSV(Event ev) {
         searchResultsComposer.exportCSV();
-        //searchResultsController.exportCSV();
     }
 
     @Listen("onClick=#downloadTCF")
     public void onExportResultsTCF(Event ev) {
-        //searchResultsController.exportTCF();
         searchResultsComposer.exportTCF();
     }
-    
+
     @Listen("onClick=#exportPWCSV")
     public void onExportResultsPWCSV(Event ev) {
         exportDataType = 1;
@@ -234,150 +155,56 @@ public class Aggregator extends SelectorComposer<Component> {
             }
         }
     }
-    
-    
+
     @Listen("onOK=#wspaceUserPwd")
     public void onSignInExportResultsPwdOK(Event ev) {
         onSignInExportResults(ev);
     }
-    
+
     @Listen("onClick=#wspaceCancelBtn")
     public void onSignInPWCancel(Event ev) {
         wspaceUserPwd.setValue("");
         wspaceSigninpop.close();
     }
 
-    private void processParameters() {
-
-        String[] paramValue;
-        String contextJson = null;
-
-        String[] paramsReceived = new String[4];
-
-        paramValue = Executions.getCurrent().getParameterMap().get("query");
-        if (paramValue != null) {
-            searchString.setValue(paramValue[0].trim());
-            paramsReceived[0] = searchString.getValue();
-        }
-        paramValue = Executions.getCurrent().getParameterMap().get("operation");
-        if (paramValue != null) {
-            String operationString = paramValue[0].trim();
-            paramsReceived[1] = operationString;
-            if (!operationString.equals("searchRetrieve")) {
-                Messagebox.show("Not supported operation " + operationString, "FCS", 0, Messagebox.INFORMATION);
-            }
-        }
-        paramValue = Executions.getCurrent().getParameterMap().get("version");
-        if (paramValue != null) {
-            String versionString = paramValue[0].trim();
-            paramsReceived[2] = versionString;
-            if (versionString.equals("1.2")) {
-                version = SRUVersion.VERSION_1_2;
-            } else if (versionString.equals("1.1")) {
-                version = SRUVersion.VERSION_1_1;
-            } else {
-                Messagebox.show("SRU Version " + version + " not supported", "FCS", 0, Messagebox.INFORMATION);
-            }
-        }
-        paramValue = Executions.getCurrent().getParameterMap().get("x-aggregation-context");
-        if (paramValue != null) {
-            contextJson = paramValue[0].trim();
-            paramsReceived[3] = contextJson;
-        }
-        logger.log(Level.INFO, "Received parameters: query[{0}], operation[{1}], version[{2}], x-aggregation-context[{3}], ", paramsReceived);
-
-//        paramValue = Executions.getCurrent().getParameterMap().get("mode");
-//        if (paramValue != null) {
-//            String mode = paramValue[0].trim();
-//            if (mode.equals("testing")) {
-//                Executions.getCurrent().getDesktop().setAttribute(Aggregator.TESTING_MODE_ATTR, true);
-//            }
-//        } 
-        
-
-        if (contextJson != null) {
-            Gson gson = new Gson();
-            Type mapType = new TypeToken<LinkedHashMap<String, ArrayList<String>>>() {
-            }.getType();
-            try {
-                this.xAggregationContext = gson.fromJson(contextJson, mapType);
-            } catch (Exception ex) {
-                logger.log(Level.SEVERE, "Error parsing JSON from x-aggregation-context: {0} {1}", new String[]{ex.getMessage(), contextJson});
-                Messagebox.show("Error in x-aggregation-context parameter", "FCS", 0, Messagebox.INFORMATION);
-            }
-        }
-
-    }
-
-    private void tempMap() {
-        ClientConfig config = new DefaultClientConfig();
-        Client client = Client.create(config);
-        mapGenerator = client.resource(MAPS_SERVICE_URL);
-        TextCorpusStored tc = new TextCorpusStored("en");
-        Token t1 = tc.createTokensLayer().addToken("Virginia");
-        List<Token> s1 = new ArrayList<Token>();
-        s1.add(t1);
-        tc.createSentencesLayer().addSentence(s1);
-        tc.createGeoLayer("unknown", GeoLongLatFormat.DegDec);
-        //tc.getGeoLayer().addPoint("138.56027", "-34.6663", 15.0, null, null, null, t1);
-        WLData data = new WLData(tc);
-
-        Iframe resultsPic = (Iframe) srDiv.getFellow("resultsPic");
-
-        try {
-            String output = mapGenerator.path("3").accept(MediaType.TEXT_HTML).type("text/tcf+xml").post(String.class, data);
-            Media media = new AMedia("map-" + 4 + ".html", null, "text/html", output);
-            resultsPic.setContent(media);
-        } catch (Exception e) {
-            Logger.getLogger(Aggregator.class.getName()).log(Level.SEVERE, "ERROR accessing the maps generator service", e);
-            Messagebox.show("ERROR accessing the maps generator service \n" + e.getMessage(), "FCS", 0, Messagebox.INFORMATION);
-        }
-    }
-
-
     @Listen("onClick = #helpLabel")
     public void onClickHelp(Event ev) {
         this.pagesVisibility.openHelp();
-        
         this.controlsVisibility.disableControls1();
         this.controlsVisibility.disableControls2();
     }
-    
+
     @Listen("onClick = #aboutLabel")
     public void onClickAbout(Event ev) {
         this.pagesVisibility.openAbout();
-        
         this.controlsVisibility.disableControls1();
         this.controlsVisibility.disableControls2();
     }
-    
+
     @Listen("onClick = #soLabel")
     public void onClickAdvSearch(Event ev) {
         this.pagesVisibility.openSearchOptions();
-        
         this.controlsVisibility.disableControls1();
         this.controlsVisibility.disableControls2();
     }
-    
+
     @Listen("onClick = #srLabel")
     public void onClickSearchResult(Event ev) {
         this.pagesVisibility.openSearchResult();
-        
         if (this.searchResultsComposer.hasSearchInProgress()) {
             this.controlsVisibility.enableControls2();
         }
-                
         if (this.searchResultsComposer.hasResults()) {
             this.controlsVisibility.enableControls1();
             this.controlsVisibility.enableControls2();
         }
     }
-    
+
     @Listen("onClick = #prevButton")
     public void onSearchPrev(Event ev) {
-                Map<String,Set<Corpus2>> selectedCorpora = searchOptionsComposer.getSelectedCorpora();
+        Map<String, Set<Corpus>> selectedCorpora = searchOptionsComposer.getSelectedCorpora();
         boolean emptyCorpora = true;
-        for (Set<Corpus2> corpora : selectedCorpora.values()) {
+        for (Set<Corpus> corpora : selectedCorpora.values()) {
             if (!corpora.isEmpty()) {
                 emptyCorpora = false;
                 break;
@@ -389,7 +216,7 @@ public class Aggregator extends SelectorComposer<Component> {
             Messagebox.show("No query is specified. To perform the search, please enter a keyword of interest in the search input field, e.g. Elefant, and press the 'Search' button.", "FCS", 0, Messagebox.INFORMATION);
         } else {
             int maxRecords = searchOptionsComposer.getMaxRecords();
-            searchOffset[0] = searchOffset[0] - 2*searchOffset[1];
+            searchOffset[0] = searchOffset[0] - 2 * searchOffset[1];
             if (searchOffset[0] < 1) {
                 searchOffset[0] = 1;
                 searchOffset[1] = 0;
@@ -398,12 +225,12 @@ public class Aggregator extends SelectorComposer<Component> {
             onClickSearchResult(null);
         }
     }
-    
+
     @Listen("onClick = #nextButton")
     public void onSearchNext(Event ev) {
-        Map<String,Set<Corpus2>> selectedCorpora = searchOptionsComposer.getSelectedCorpora();
+        Map<String, Set<Corpus>> selectedCorpora = searchOptionsComposer.getSelectedCorpora();
         boolean emptyCorpora = true;
-        for (Set<Corpus2> corpora : selectedCorpora.values()) {
+        for (Set<Corpus> corpora : selectedCorpora.values()) {
             if (!corpora.isEmpty()) {
                 emptyCorpora = false;
                 break;
@@ -419,5 +246,24 @@ public class Aggregator extends SelectorComposer<Component> {
             onClickSearchResult(null);
         }
     }
-    
+
+    private void processParameters() {
+        String[] paramValue;
+        String query = null;
+        paramValue = Executions.getCurrent().getParameterMap().get("query");
+        if (paramValue != null) {
+            query = paramValue[0].trim();
+            searchString.setValue(query);
+        }
+        LOGGER.log(Level.INFO, "Received parameter: query[{0}], ", query);
+        paramValue = Executions.getCurrent().getParameterMap().get("operation");
+        String operationString = null;
+        if (paramValue != null) {
+            operationString = paramValue[0].trim();
+            if (!operationString.equals("searchRetrieve")) {
+                Messagebox.show("Not supported operation " + operationString, "FCS", 0, Messagebox.INFORMATION);
+            }
+        }
+        LOGGER.log(Level.INFO, "Received parameter: operation[{0}], ", operationString);
+    }
 }

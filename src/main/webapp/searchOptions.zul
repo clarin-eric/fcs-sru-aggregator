@@ -1,73 +1,69 @@
 <panel apply="eu.clarin.sru.fcs.aggregator.app.SearchOptions">
-                            <panelchildren
-                                style="margin-top:10px;margin-left:10px;margin-right:10px;border:0;overflow:auto;">
-                                
-                                <div align="center">
+    <panelchildren
+        style="margin-top:10px;margin-left:10px;margin-right:10px;border:0;overflow:auto;">
 
-                                <groupbox width="600px" open="false" mold="3d" id="allCorpora" sclass="ccsLightBlue"
-                                    contentStyle="border:0" >
-                                    <caption label="Corpora" style="border:0;"/>
+        <div align="center">
 
-                                    <div style="text-align:right;">
-                                        <button id="selectAll" label="Select All"
-                                            image="buttonSelectAll.png" sclass="ccsDarkBlue"/>
-                                        <button id="deselectAll" label="Deselect All"
-                                            image="buttonDeselectAll.png" sclass="ccsDarkBlue"/>
-                                    </div>
+            <groupbox width="600px" open="false" mold="3d" id="allCorpora" sclass="ccsLightBlue"
+                contentStyle="border:0">
+                <caption label="Corpora" style="border:0;"/>
+                <div style="text-align:right;">
+                    <button id="selectAll" label="Select All" image="img/buttonSelectAll.png"
+                        sclass="ccsDarkBlue"/>
+                    <button id="deselectAll" label="Deselect All" image="img/buttonDeselectAll.png"
+                        sclass="ccsDarkBlue"/>
+                </div>
+                <tree id="tree" style="margin-top:2px;">
+                    <treecols sizable="true">
+                        <treecol id="nameCol" label="Name" style="margin-left:100px;" sort="auto"/>
+                        <treecol label="" hflex="min"/>
+                        <treecol label="Language" hflex="min"/>
+                        <treecol id="instCol" label="Institution" hflex="min" sort="auto"/>
+                        <treecol label="Description"/>
+                    </treecols>
+                </tree>
+            </groupbox>
 
-                                    <tree id="tree" style="margin-top:2px;"> 
-                                        <treecols sizable="true">
-                                            <treecol id="nameCol" label="Name" style="margin-left:100px;"  sort="auto"/>
-                                            <treecol label="" hflex="min"/>
-                                            <treecol label="Language" hflex="min" />
-                                            <treecol id="instCol" label="Institution" hflex="min" sort="auto"/>
-                                            <treecol label="Description" />
-                                        </treecols>
-                                    </tree>
-                                </groupbox>
+            <separator/>
+            <separator/>
 
-                                <separator/>
-                                <separator/>
-                                
-                                
-                                    
-                                    <groupbox mold="3d" id="sLang" sclass="ccsLightBlue"
-                                    contentStyle="border:0" open="false" width="600px">
-                                    <caption label="Language" style="border:0;"/>
-                                    <div style="margin-top:7px;margin-bottom:7px;">
-                                        <combobox id="languageSelect" readonly="true" width="100%">
-                                            <comboitem label="Any Language" id="anyLanguage" value="anylang"/>
-                                        </combobox>
-<!--
+            <groupbox mold="3d" id="sLang" sclass="ccsLightBlue" contentStyle="border:0"
+                open="false" width="600px">
+                <caption label="Language" style="border:0;"/>
+                <div style="margin-top:7px;margin-bottom:7px;">
+                    <combobox id="languageSelect" readonly="true" width="100%">
+                        <comboitem label="Any Language" id="anyLanguage" value="anylang"/>
+                    </combobox>
+                    <!--
                                         <div style="margin-top:2px;text-align:right;">
                                             <button id="addLangButton" label="Add"
-                                                image="buttonSelectAll.png" sclass="ccsDarkBlue"/>
+                                                image="img/buttonSelectAll.png" sclass="ccsDarkBlue"/>
                                             <button id="removeLangButton" label="Remove"
-                                                image="buttonDeselectAll.png" sclass="ccsDarkBlue"/>
+                                                image="img/buttonDeselectAll.png" sclass="ccsDarkBlue"/>
                                         </div>
--->
-                                    </div>
-                                </groupbox>
+                    -->
+                </div>
+            </groupbox>
+
+            <separator/>
+            <separator/>
+
+            <groupbox mold="3d" id="nHits" sclass="ccsLightBlue" contentStyle="border:0"
+                open="false" width="600px">
+                <caption label="Maximum hits" style="border:0;"/>
+                <combobox id="maximumRecordsSelect" width="100%" value="10"
+                    style="margin-top:7px;margin-bottom:7px;">
+                    <comboitem label="10" id="maximumHits10"/>
+                    <comboitem label="20" id="maximumHits20"/>
+                    <comboitem label="30" id="maximumHits30"/>
+                </combobox>
+            </groupbox>
+
+        </div>
+        <!--
+                                <separator/>
+                                <separator/>
                                 
-                                <separator/>
-                                <separator/>
-
-                                <groupbox mold="3d" id="nHits" sclass="ccsLightBlue"
-                                    contentStyle="border:0" open="false" width="600px">
-                                    <caption label="Maximum hits" style="border:0;"/>
-                                    <combobox id="maximumRecordsSelect" width="100%" value="10"
-                                        style="margin-top:7px;margin-bottom:7px;">
-                                        <comboitem label="10" id="maximumHits10"/>
-                                        <comboitem label="20" id="maximumHits20"/>
-                                        <comboitem label="30" id="maximumHits30"/>
-                                    </combobox>
-                                </groupbox>
-
-                                </div>
-<!--
-                                <separator/>
-                                <separator/>
-
                                 <groupbox mold="3d" id="sTiers" sclass="ccsLightBlue"
                                     contentStyle="border:0" open="false">
                                     <caption label="Tier type" style="border:0;"/>
@@ -76,14 +72,14 @@
                                             <comboitem label="full text"/>
                                             <comboitem label="words"/>
                                         </combobox>
-
+                                        
                                         <div style="margin-top:2px;text-align:right;">
                                             <button id="addTierButton" label="Add"
-                                                image="buttonSelectAll.png" sclass="ccsDarkBlue"/>
+                                                image="img/buttonSelectAll.png" sclass="ccsDarkBlue"/>
                                             <button id="removeTierButton" label="Remove"
-                                                image="buttonDeselectAll.png" sclass="ccsDarkBlue"/>
+                                                image="img/buttonDeselectAll.png" sclass="ccsDarkBlue"/>
                                         </div>
-
+                                        
                                             </div>
                                         </groupbox>
         -->

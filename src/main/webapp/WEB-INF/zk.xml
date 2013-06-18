@@ -6,7 +6,7 @@
     </device-config>
 
     <desktop-config>
-        <theme-uri>clarind.css</theme-uri>
+        <theme-uri>css/clarind.css</theme-uri>
     </desktop-config>
     
     <session-config>

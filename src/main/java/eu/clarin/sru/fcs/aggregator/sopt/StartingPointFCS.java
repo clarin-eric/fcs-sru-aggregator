@@ -1,0 +1,22 @@
+package eu.clarin.sru.fcs.aggregator.sopt;
+
+import java.util.List;
+
+/**
+ * Interface representing starting point of FCS. For example,
+ * center registry, that contains all the centers that in their turn contain
+ * the information about supporting endpoints.
+ *
+ * @author Yana Panchenko
+ */
+public interface StartingPointFCS {
+
+    public boolean hasInstitutionsLoaded();
+
+    public void loadInstitutions();
+        
+    public List<Institution> getInstitutions();
+
+    public Institution getInstitution(int index);
+
+}
