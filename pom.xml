@@ -70,6 +70,16 @@
             <version>314</version>
             <type>jar</type>
         </dependency>
+        <dependency>
+            <groupId>eu.clarin.weblicht</groupId>
+            <artifactId>connectors</artifactId>
+            <version>1.0.6</version>
+        </dependency>
+        <dependency>
+            <groupId>eu.clarin.weblicht</groupId>
+            <artifactId>bindings</artifactId>
+            <version>1.0.4</version>
+        </dependency>
     </dependencies>
     <build>
         <finalName>${project.artifactId}</finalName>

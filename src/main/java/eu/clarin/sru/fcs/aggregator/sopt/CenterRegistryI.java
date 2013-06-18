@@ -9,14 +9,14 @@ import java.util.List;
  *
  * @author Yana Panchenko
  */
-public interface StartingPointFCS {
+public interface CenterRegistryI {
 
-    public boolean hasInstitutionsLoaded();
+    public boolean hasCQLInstitutionsLoaded();
 
-    public void loadInstitutions();
+    public void loadCQLInstitutions();
         
-    public List<Institution> getInstitutions();
+    public List<InstitutionI> getCQLInstitutions();
 
-    public Institution getInstitution(int index);
+    public InstitutionI getCQLInstitution(int index);
 
 }

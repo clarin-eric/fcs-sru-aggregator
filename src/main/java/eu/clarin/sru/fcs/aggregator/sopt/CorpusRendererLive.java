@@ -34,12 +34,12 @@ import org.zkoss.zul.Treerow;
  * &lt;/treeitem>
  * </pre>
  */
-public class CorpusLiveRenderer implements TreeitemRenderer<DefaultTreeNode<Corpus>> {
+public class CorpusRendererLive implements TreeitemRenderer<DefaultTreeNode<Corpus>> {
 
     private Languages languages;
-    private CorpusLiveModel model;
+    private CorpusModelLive model;
 
-    public CorpusLiveRenderer(CorpusLiveModel model) {
+    public CorpusRendererLive(CorpusModelLive model) {
         languages = (Languages) Executions.getCurrent().getDesktop().getWebApp().getAttribute(WebAppListener.LANGUAGES);
         this.model = model;
     }

@@ -10,11 +10,11 @@ import java.util.logging.Logger;
  *
  * @author Yana Panchenko
  */
-public class CenterTestingRegistry implements StartingPointFCS {
+public class CenterRegistryForTesting implements CenterRegistryI {
 
-    private static final Logger logger = Logger.getLogger(CenterTestingRegistry.class.getName());
+    private static final Logger logger = Logger.getLogger(CenterRegistryForTesting.class.getName());
     private boolean hasChildrenLoaded = false;
-    private List<Institution> centers = new ArrayList<Institution>();
+    private List<InstitutionI> centers = new ArrayList<InstitutionI>();
     private static final String[] INSTITUTION_URLS = new String[]{
         "http://130.183.206.32/restxml/5"
     };
@@ -28,39 +28,42 @@ public class CenterTestingRegistry implements StartingPointFCS {
     };
 
     @Override
-    public boolean hasInstitutionsLoaded() {
+    public boolean hasCQLInstitutionsLoaded() {
         return hasChildrenLoaded;
     }
 
     @Override
-    public void loadInstitutions() {
+    public void loadCQLInstitutions() {
         if (hasChildrenLoaded) {
             return;
         }
         hasChildrenLoaded = true;
-        loadInstitutionsForTesting();
+        loadCQLInstitutionsForTesting();
         logger.log(Level.FINE, "Number of Centers: {0}", centers.size());
     }
 
     @Override
-    public List<Institution> getInstitutions() {
-        loadInstitutions();
+    public List<InstitutionI> getCQLInstitutions() {
+        loadCQLInstitutions();
         return centers;
     }
 
     @Override
-    public Institution getInstitution(int index) {
-        loadInstitutions();
+    public InstitutionI getCQLInstitution(int index) {
+        loadCQLInstitutions();
         if (index >= centers.size()) {
             return null;
         }
         return centers.get(index);
     }
 
-    private void loadInstitutionsForTesting() {
+    private void loadCQLInstitutionsForTesting() {
         for (int i = 0; i < INSTITUTION_ENDPOINTS.length; i++) {
-            Institution institution = new InstitutionForTesting(INSTITUTION_NAMES[i], INSTITUTION_URLS[i], INSTITUTION_ENDPOINTS[i]);
-            if (!institution.getChildren().isEmpty()) {
+            InstitutionI institution = new Institution(INSTITUTION_NAMES[i], INSTITUTION_URLS[i]);
+            for (int j = 0; j < INSTITUTION_ENDPOINTS.length; j++) {
+                institution.add(INSTITUTION_ENDPOINTS[i][j]);
+            } 
+            if (!institution.getEndpoints().isEmpty()) {
                 centers.add(institution);
             }
         }

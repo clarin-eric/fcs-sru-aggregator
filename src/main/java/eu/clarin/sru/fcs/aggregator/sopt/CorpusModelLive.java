@@ -34,13 +34,13 @@ import org.zkoss.zul.Treeitem;
  *
  * @author Yana Panchenko
  */
-public class CorpusLiveModel extends DefaultTreeModel<Corpus> {
+public class CorpusModelLive extends DefaultTreeModel<Corpus> {
 
-    private static final Logger logger = Logger.getLogger(CorpusLiveModel.class.getName());
+    private static final Logger logger = Logger.getLogger(CorpusModelLive.class.getName());
     private SRUThreadedClient sruClient;
     private Map<String, Set<Corpus>> selectedCorpora = new HashMap<String, Set<Corpus>>();
 
-    public CorpusLiveModel(StartingPointFCS startingPoint) {
+    public CorpusModelLive(CenterRegistryI startingPoint) {
         super(new DefaultTreeNode(new Corpus(), new ArrayList<DefaultTreeNode<Corpus>>()));
         sruClient = (SRUThreadedClient) Executions.getCurrent().getDesktop().getWebApp().getAttribute(WebAppListener.SHARED_SRU_CLIENT);
         initRootChildren(startingPoint);
@@ -184,9 +184,9 @@ public class CorpusLiveModel extends DefaultTreeModel<Corpus> {
         return selectedCorpora;
     }
 
-    private void initRootChildren(StartingPointFCS startingPoint) {
-        for (Institution instit : startingPoint.getInstitutions()) {
-            for (Endpoint endp : instit.getChildren()) {
+    private void initRootChildren(CenterRegistryI startingPoint) {
+        for (InstitutionI instit : startingPoint.getCQLInstitutions()) {
+            for (Endpoint endp : instit.getEndpoints()) {
                 try {
                     //TODO: temp for testing, this 3 lines are to be removed:
                     //if (//!endp.getUrl().contains("uni-leipzig.de") && 

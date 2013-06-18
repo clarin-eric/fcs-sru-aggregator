@@ -3,16 +3,16 @@ package eu.clarin.sru.fcs.aggregator.app;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import eu.clarin.sru.client.SRUVersion;
-import eu.clarin.sru.fcs.aggregator.sopt.CenterLiveRegistry;
-import eu.clarin.sru.fcs.aggregator.sopt.CenterTestingRegistry;
-import eu.clarin.sru.fcs.aggregator.sopt.StartingPointFCS;
+import eu.clarin.sru.fcs.aggregator.sopt.CenterRegistryLive;
+import eu.clarin.sru.fcs.aggregator.sopt.CenterRegistryForTesting;
+import eu.clarin.sru.fcs.aggregator.sopt.CenterRegistryI;
 import eu.clarin.sru.fcs.aggregator.sopt.Corpus;
 import eu.clarin.sru.fcs.aggregator.sopt.CorpusByInstitutionComparator;
 import eu.clarin.sru.fcs.aggregator.sopt.CorpusByInstitutionDComparator;
 import eu.clarin.sru.fcs.aggregator.sopt.CorpusByNameComparator;
 import eu.clarin.sru.fcs.aggregator.sopt.CorpusByNameDComparator;
-import eu.clarin.sru.fcs.aggregator.sopt.CorpusLiveModel;
-import eu.clarin.sru.fcs.aggregator.sopt.CorpusLiveRenderer;
+import eu.clarin.sru.fcs.aggregator.sopt.CorpusModelLive;
+import eu.clarin.sru.fcs.aggregator.sopt.CorpusRendererLive;
 import eu.clarin.sru.fcs.aggregator.sopt.Languages;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -65,8 +65,8 @@ public class SearchOptions extends SelectorComposer<Component> {
     private Tree tree;
     private Map<String, List<String>> xAggregationContext;
     
-    private CorpusLiveModel corporaModel;
-    private CorpusLiveRenderer corpusRenderer;
+    private CorpusModelLive corporaModel;
+    private CorpusRendererLive corpusRenderer;
     
     private boolean liveMode = true;
     
@@ -197,6 +197,10 @@ public class SearchOptions extends SelectorComposer<Component> {
             }
         }
     }
+    
+    public String getSearchLang() {
+        return this.languageSelect.getSelectedItem().getValue();
+    }
 
     private boolean isTestingOn() {
         boolean testingOn = false;
@@ -233,13 +237,13 @@ public class SearchOptions extends SelectorComposer<Component> {
 
     private void setUpCorpusTree() {
         if (isTestingOn()) {
-            StartingPointFCS registry = new CenterTestingRegistry();
-            corporaModel = new CorpusLiveModel(registry);
-            corpusRenderer = new CorpusLiveRenderer(corporaModel);
+            CenterRegistryI registry = new CenterRegistryForTesting();
+            corporaModel = new CorpusModelLive(registry);
+            corpusRenderer = new CorpusRendererLive(corporaModel);
         } else if (liveMode) {
-            StartingPointFCS registry = new CenterLiveRegistry();
-            corporaModel = new CorpusLiveModel(registry);
-            corpusRenderer = new CorpusLiveRenderer(corporaModel);
+            CenterRegistryI registry = new CenterRegistryLive();
+            corporaModel = new CorpusModelLive(registry);
+            corpusRenderer = new CorpusRendererLive(corporaModel);
 //        } else { // cached mode
 //            CorporaCachedData cachedData = (CorporaCachedData) Executions.getCurrent().getDesktop().getWebApp().getAttribute(WebAppListener.CORPORA_CACHED_DATA);
 //            DefaultTreeNode<Corpus2> root = CorpusCachedModel.initTree(cachedData);
@@ -274,4 +278,5 @@ public class SearchOptions extends SelectorComposer<Component> {
         }
         LOGGER.log(Level.INFO, "Received parameter: version[{0}], ", versionString);
     }
+
 }

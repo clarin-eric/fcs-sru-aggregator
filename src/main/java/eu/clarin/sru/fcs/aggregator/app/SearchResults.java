@@ -24,6 +24,7 @@ import eu.clarin.sru.client.SRUSearchRetrieveResponse;
 import eu.clarin.sru.client.SRUThreadedClient;
 import eu.clarin.sru.client.fcs.ClarinFCSRecordData;
 import eu.clarin.sru.fcs.aggregator.sopt.Corpus;
+import eu.clarin.sru.fcs.aggregator.sopt.Languages;
 import eu.clarin.sru.fcs.aggregator.sresult.Kwic;
 import eu.clarin.sru.fcs.aggregator.sresult.SearchResult;
 import eu.clarin.sru.fcs.aggregator.sresult.SearchResultRecordRenderer;
@@ -81,11 +82,14 @@ public class SearchResults extends SelectorComposer<Component> {
     private static final String WSPACE_AGGREGATOR_DIR = "aggregator_results/";
     private Timer timer;
     private int seconds = 200;
+    private String searchLanguage;
+    private Languages languages;
 
     @Override
     public void doAfterCompose(Component comp) throws Exception {
 
         super.doAfterCompose(comp);
+        languages = (Languages) Executions.getCurrent().getDesktop().getWebApp().getAttribute(WebAppListener.LANGUAGES);
         setUpSRUVersion();
         Executions.getCurrent().getDesktop().enableServerPush(true);
         searchClient = (SRUThreadedClient) Executions.getCurrent().getDesktop().getWebApp().getAttribute(WebAppListener.SHARED_SRU_CLIENT);
@@ -107,7 +111,7 @@ public class SearchResults extends SelectorComposer<Component> {
         this.hasResults.set(false);
     }
 
-    void executeSearch(Map<String, Set<Corpus>> selectedCorpora, int maxRecords, String searchString, int[] searchOffset) {
+    void executeSearch(Map<String, Set<Corpus>> selectedCorpora, int maxRecords, String searchString, int[] searchOffset, String searchLanguage) {
 
         this.controlsVisibility.disableControls1();
         this.controlsVisibility.enableControls2();
@@ -115,6 +119,7 @@ public class SearchResults extends SelectorComposer<Component> {
         this.controlsVisibility.disableNextButton();
         this.controlsVisibility.enableProgressMeter(0);
 
+        this.searchLanguage = searchLanguage;
         this.maxRecords = maxRecords;
         this.hasResults.set(false);
         this.searchInProgress.set(true);
@@ -399,6 +404,13 @@ public class SearchResults extends SelectorComposer<Component> {
             String resultsLang = "unknown";
             if (resultsLangs.size() == 1) {
                 resultsLang = resultsLangs.iterator().next();
+            } else if (!searchLanguage.equals("anylang")) {
+                String code2 = languages.code2ForCode(searchLanguage);
+                if (code2 == null) {
+                    resultsLang = searchLanguage;
+                } else {
+                    resultsLang = code2;
+                }
             }
             TextCorpusStored tc = new TextCorpusStored(resultsLang);
             tc.createTextLayer().addText(text.toString());

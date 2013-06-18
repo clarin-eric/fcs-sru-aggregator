@@ -101,8 +101,9 @@ public class Aggregator extends SelectorComposer<Component> {
             Messagebox.show("No query is specified. To perform the search, please enter a keyword of interest in the search input field, e.g. Elefant, and press the 'Search' button.", "FCS", 0, Messagebox.INFORMATION);
         } else {
             int maxRecords = searchOptionsComposer.getMaxRecords();
+            String searchLang = searchOptionsComposer.getSearchLang();
             searchOffset = new int[]{1, 0};
-            searchResultsComposer.executeSearch(selectedCorpora, maxRecords, searchString.getText(), searchOffset);
+            searchResultsComposer.executeSearch(selectedCorpora, maxRecords, searchString.getText(), searchOffset, searchLang);
             onClickSearchResult(null);
         }
     }
@@ -216,12 +217,13 @@ public class Aggregator extends SelectorComposer<Component> {
             Messagebox.show("No query is specified. To perform the search, please enter a keyword of interest in the search input field, e.g. Elefant, and press the 'Search' button.", "FCS", 0, Messagebox.INFORMATION);
         } else {
             int maxRecords = searchOptionsComposer.getMaxRecords();
+            String searchLang = searchOptionsComposer.getSearchLang();
             searchOffset[0] = searchOffset[0] - 2 * searchOffset[1];
             if (searchOffset[0] < 1) {
                 searchOffset[0] = 1;
                 searchOffset[1] = 0;
             }
-            searchResultsComposer.executeSearch(selectedCorpora, maxRecords, searchString.getText(), searchOffset);
+            searchResultsComposer.executeSearch(selectedCorpora, maxRecords, searchString.getText(), searchOffset, searchLang);
             onClickSearchResult(null);
         }
     }
@@ -242,7 +244,8 @@ public class Aggregator extends SelectorComposer<Component> {
             Messagebox.show("No query is specified. To perform the search, please enter a keyword of interest in the search input field, e.g. Elefant, and press the 'Search' button.", "FCS", 0, Messagebox.INFORMATION);
         } else {
             int maxRecords = searchOptionsComposer.getMaxRecords();
-            searchResultsComposer.executeSearch(selectedCorpora, maxRecords, searchString.getText(), searchOffset);
+            String searchLang = searchOptionsComposer.getSearchLang();
+            searchResultsComposer.executeSearch(selectedCorpora, maxRecords, searchString.getText(), searchOffset, searchLang);
             onClickSearchResult(null);
         }
     }
