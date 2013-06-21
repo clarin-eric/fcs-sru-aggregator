@@ -104,4 +104,36 @@ public class Corpus {
         this.description = description;
     }
 
+    @Override
+    public int hashCode() {
+        int hash = 3;
+        hash = 29 * hash + (this.endpointUrl != null ? this.endpointUrl.hashCode() : 0);
+        hash = 29 * hash + (this.handle != null ? this.handle.hashCode() : 0);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final Corpus other = (Corpus) obj;
+        if ((this.endpointUrl == null) ? (other.endpointUrl != null) : !this.endpointUrl.equals(other.endpointUrl)) {
+            return false;
+        }
+        if ((this.handle == null) ? (other.handle != null) : !this.handle.equals(other.handle)) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public String toString() {
+        return "Corpus{" + "endpointUrl=" + endpointUrl + ", handle=" + handle + '}';
+    }
+
+    
 }

@@ -3,11 +3,15 @@ package eu.clarin.sru.fcs.aggregator.app;
 import eu.clarin.sru.client.SRUClientException;
 import eu.clarin.sru.client.SRUThreadedClient;
 import eu.clarin.sru.client.fcs.ClarinFCSRecordParser;
+import eu.clarin.sru.fcs.aggregator.sopt.CorpusCache;
 import eu.clarin.sru.fcs.aggregator.sopt.Languages;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.Timer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.joda.time.DateTime;
 import org.zkoss.zk.ui.WebApp;
 import org.zkoss.zk.ui.util.WebAppCleanup;
 import org.zkoss.zk.ui.util.WebAppInit;
@@ -21,11 +25,15 @@ import org.zkoss.zk.ui.util.WebAppInit;
  */
 public class WebAppListener implements WebAppInit, WebAppCleanup {
 
-    public static String ACTIVE_SEARCH_CONTROLLERS = "ACTIVE_SEARCH_CONTROLLERS";
-    public static String SHARED_SRU_CLIENT = "SHARED_SRU_CLIENT";
-    public static String LANGUAGES = "LANG";
+    public static final String ACTIVE_SEARCH_CONTROLLERS = "ACTIVE_SEARCH_CONTROLLERS";
+    public static final String SHARED_SRU_CLIENT = "SHARED_SRU_CLIENT";
+    public static final String LANGUAGES = "LANG";
+    public static final String CORPUS_CACHE = "CORPUS_CACHE";
     
     private static final Logger LOGGER = Logger.getLogger(WebAppListener.class.getName());
+    private static final int HOURS_BETWEEN_CACHE_UPDATE = 3;
+    
+    private Timer cacheTimer;
 
     @Override
     public void init(WebApp webapp) throws Exception {
@@ -42,6 +50,21 @@ public class WebAppListener implements WebAppInit, WebAppCleanup {
         
         Languages languages = new Languages();
         webapp.setAttribute(LANGUAGES, languages);
+        
+        // set up timer to run the cache corpora scan info task
+        //cacheTimer = new Timer();
+        //CorpusCache cache = new CorpusCache();
+        //webapp.setAttribute(CORPUS_CACHE, cache);
+        
+        //DateTime date = new DateTime();
+        //date = date.withHourOfDay(1);
+        //date = date.withMinuteOfHour(0);
+        //date = date.withSecondOfMinute(0);
+        //if (date.isBeforeNow()) {
+        //    date = date.plusDays(1);
+        //}
+        //LOGGER.info(date.toLocalTime().toString() + " " + date.toLocalTime().toString());
+        //cacheTimer.scheduleAtFixedRate(new CacheCorporaScanTask(cache, searchClient), date.toDate(), HOURS_BETWEEN_CACHE_UPDATE * 3600000);
     }
 
     @Override
@@ -55,5 +78,6 @@ public class WebAppListener implements WebAppInit, WebAppCleanup {
         // with shutdown() there are memory leaks when web app stops even if all requests have been processed;
         // with shutdownNow() there are memory leaks when web app stops only if not all requests have been processed
         searchClient.shutdownNow();
+        //cacheTimer.cancel();
     }
 }

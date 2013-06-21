@@ -27,6 +27,12 @@
             <id>clarin</id>
             <url>http://catalog.clarin.eu/ds/nexus/content/repositories/Clarin/</url>
         </repository>
+        <!--<repository>
+            <id>sardine-google-svn-repo</id>
+            <snapshots> <enabled>true</enabled> </snapshots>
+            <name>Sardine maven repo at Google Code</name>
+            <url>http://sardine.googlecode.com/svn/maven/</url>
+        </repository>-->
     </repositories>
     <dependencies>
         <dependency>
@@ -79,6 +85,11 @@
             <groupId>eu.clarin.weblicht</groupId>
             <artifactId>bindings</artifactId>
             <version>1.0.4</version>
+        </dependency>
+        <dependency>
+            <groupId>joda-time</groupId>
+            <artifactId>joda-time</artifactId>
+            <version>2.2</version>
         </dependency>
     </dependencies>
     <build>

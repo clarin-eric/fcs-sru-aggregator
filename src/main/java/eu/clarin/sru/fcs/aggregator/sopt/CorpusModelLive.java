@@ -34,7 +34,7 @@ import org.zkoss.zul.Treeitem;
  *
  * @author Yana Panchenko
  */
-public class CorpusModelLive extends DefaultTreeModel<Corpus> {
+public class CorpusModelLive extends DefaultTreeModel<Corpus> implements CorpusModelI {
 
     private static final Logger logger = Logger.getLogger(CorpusModelLive.class.getName());
     private SRUThreadedClient sruClient;

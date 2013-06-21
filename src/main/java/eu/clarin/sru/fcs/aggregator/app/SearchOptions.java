@@ -11,7 +11,12 @@ import eu.clarin.sru.fcs.aggregator.sopt.CorpusByInstitutionComparator;
 import eu.clarin.sru.fcs.aggregator.sopt.CorpusByInstitutionDComparator;
 import eu.clarin.sru.fcs.aggregator.sopt.CorpusByNameComparator;
 import eu.clarin.sru.fcs.aggregator.sopt.CorpusByNameDComparator;
+import eu.clarin.sru.fcs.aggregator.sopt.CorpusCache;
+import eu.clarin.sru.fcs.aggregator.sopt.CorpusModelCached;
+import eu.clarin.sru.fcs.aggregator.sopt.CorpusModelI;
 import eu.clarin.sru.fcs.aggregator.sopt.CorpusModelLive;
+import eu.clarin.sru.fcs.aggregator.sopt.CorpusRendererCached;
+import eu.clarin.sru.fcs.aggregator.sopt.CorpusRendererI;
 import eu.clarin.sru.fcs.aggregator.sopt.CorpusRendererLive;
 import eu.clarin.sru.fcs.aggregator.sopt.Languages;
 import java.lang.reflect.Type;
@@ -65,19 +70,24 @@ public class SearchOptions extends SelectorComposer<Component> {
     private Tree tree;
     private Map<String, List<String>> xAggregationContext;
     
-    private CorpusModelLive corporaModel;
-    private CorpusRendererLive corpusRenderer;
+    private CorpusModelI corporaModel;
+    private CorpusRendererI corpusRenderer;
     
     private boolean liveMode = true;
     
     private SRUVersion version = SRUVersion.VERSION_1_2;
 
+    private CorpusCache cache;
     
     @Override
     public void doAfterCompose(Component comp) throws Exception {
         super.doAfterCompose(comp);
         setUpSRUVersion();
         setUpAggerationContext();
+        //cache = (CorpusCache) Executions.getCurrent().getDesktop().getWebApp().getAttribute(WebAppListener.CORPUS_CACHE);
+        //if (cache.isEmpty()) {
+        //    liveMode = true;
+        //}
         setUpCorpusTree();
         languages = (Languages) Executions.getCurrent().getDesktop().getWebApp().getAttribute(WebAppListener.LANGUAGES);
         languageSelect.setSelectedItem(anyLanguage);
@@ -238,22 +248,36 @@ public class SearchOptions extends SelectorComposer<Component> {
     private void setUpCorpusTree() {
         if (isTestingOn()) {
             CenterRegistryI registry = new CenterRegistryForTesting();
-            corporaModel = new CorpusModelLive(registry);
-            corpusRenderer = new CorpusRendererLive(corporaModel);
+            CorpusModelLive model = new CorpusModelLive(registry);
+            CorpusRendererLive renderer = new CorpusRendererLive(model);
+            model.setMultiple(true);
+            tree.setModel(model);
+            tree.setItemRenderer(renderer);
+            this.corporaModel = model;
+            this.corpusRenderer = renderer;
         } else if (liveMode) {
             CenterRegistryI registry = new CenterRegistryLive();
-            corporaModel = new CorpusModelLive(registry);
-            corpusRenderer = new CorpusRendererLive(corporaModel);
-//        } else { // cached mode
-//            CorporaCachedData cachedData = (CorporaCachedData) Executions.getCurrent().getDesktop().getWebApp().getAttribute(WebAppListener.CORPORA_CACHED_DATA);
+            CorpusModelLive model = new CorpusModelLive(registry);
+            CorpusRendererLive renderer = new CorpusRendererLive(model);
+            model.setMultiple(true);
+            tree.setModel(model);
+            tree.setItemRenderer(renderer);
+            this.corporaModel = model;
+            this.corpusRenderer = renderer;
+        } else { // cached mode
+            CorpusModelCached model = new CorpusModelCached(cache);
+            CorpusRendererCached renderer = new CorpusRendererCached(model);
+            model.setMultiple(true);
+            tree.setModel(model);
+            tree.setItemRenderer(renderer);
+            this.corporaModel = model;
+            this.corpusRenderer = renderer;
 //            DefaultTreeNode<Corpus2> root = CorpusCachedModel.initTree(cachedData);
 //            //CorpusTreeModel2 corporaModel = new CorpusTreeModel2(root);
 //            //corporaModel = new CorpusLiveModel(root);
 //            corporaModel = new CorpusLiveModel(root);
         }
-        corporaModel.setMultiple(true);
-        tree.setModel(corporaModel);
-        tree.setItemRenderer(corpusRenderer);
+        
         Treecol nameCol = (Treecol) tree.getTreecols().getFellow("nameCol");
         nameCol.setSortAscending(new CorpusByNameComparator());
         nameCol.setSortDescending(new CorpusByNameDComparator());

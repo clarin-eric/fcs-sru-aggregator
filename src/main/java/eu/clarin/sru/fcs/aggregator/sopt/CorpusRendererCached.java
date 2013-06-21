@@ -34,12 +34,12 @@ import org.zkoss.zul.Treerow;
  * &lt;/treeitem>
  * </pre>
  */
-public class CorpusRendererLive implements TreeitemRenderer<DefaultTreeNode<Corpus>>, CorpusRendererI {
+public class CorpusRendererCached implements TreeitemRenderer<DefaultTreeNode<Corpus>>, CorpusRendererI  {
 
     private Languages languages;
-    private CorpusModelLive model;
+    private CorpusModelCached model;
 
-    public CorpusRendererLive(CorpusModelLive model) {
+    public CorpusRendererCached(CorpusModelCached model) {
         languages = (Languages) Executions.getCurrent().getDesktop().getWebApp().getAttribute(WebAppListener.LANGUAGES);
         this.model = model;
     }
@@ -52,10 +52,6 @@ public class CorpusRendererLive implements TreeitemRenderer<DefaultTreeNode<Corp
         treeItem.setValue(treeNode);
         treeItem.setOpen(false);
         Corpus data = treeNode.getData();
-
-        if (data.isTemporary()) {
-            return;
-        }
         addCorpusDataIntoRow(dataRow, data);
 
         treeItem.addEventListener(Events.ON_OPEN, new EventListener<Event>() {
@@ -63,14 +59,14 @@ public class CorpusRendererLive implements TreeitemRenderer<DefaultTreeNode<Corp
             public void onEvent(Event event) throws Exception {
 
                 Treeitem openedTreeitem = (Treeitem) event.getTarget();
-                if (openedTreeitem.isOpen()) {
-                    if (model.hasChildren(openedTreeitem)) {
-                        model.loadChildren(openedTreeitem);
-                        openedTreeitem.setOpen(model.hasChildren(openedTreeitem));
-                    } else {
-                        openedTreeitem.setOpen(false);
-                    }
-                }
+                //if (openedTreeitem.isOpen()) {
+                //    if (model.hasChildren(openedTreeitem)) {
+                //        model.loadChildren(openedTreeitem);
+                //        openedTreeitem.setOpen(model.hasChildren(openedTreeitem));
+                //    } else {
+                //        openedTreeitem.setOpen(false);
+                //    }
+                //}
 
                 if (model.isCorpusSelected((DefaultTreeNode<Corpus>) openedTreeitem.getValue())) {
                     selectChildren(openedTreeitem);
