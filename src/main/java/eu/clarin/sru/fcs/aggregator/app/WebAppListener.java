@@ -3,6 +3,7 @@ package eu.clarin.sru.fcs.aggregator.app;
 import eu.clarin.sru.client.SRUClientException;
 import eu.clarin.sru.client.SRUThreadedClient;
 import eu.clarin.sru.client.fcs.ClarinFCSRecordParser;
+import eu.clarin.sru.fcs.aggregator.sopt.CorporaScanCache;
 import eu.clarin.sru.fcs.aggregator.sopt.CorpusCache;
 import eu.clarin.sru.fcs.aggregator.sopt.Languages;
 import java.util.Date;
@@ -65,6 +66,10 @@ public class WebAppListener implements WebAppInit, WebAppCleanup {
         //}
         //LOGGER.info(date.toLocalTime().toString() + " " + date.toLocalTime().toString());
         //cacheTimer.scheduleAtFixedRate(new CacheCorporaScanTask(cache, searchClient), date.toDate(), HOURS_BETWEEN_CACHE_UPDATE * 3600000);
+        
+        // read cache from file
+        CorporaScanCache cache = new CorporaScanCache(webapp.getRealPath("scan") + "/");
+        webapp.setAttribute(CORPUS_CACHE, cache);
     }
 
     @Override

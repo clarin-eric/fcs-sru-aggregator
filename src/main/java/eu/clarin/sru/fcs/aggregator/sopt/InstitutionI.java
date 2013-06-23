@@ -10,7 +10,7 @@ import java.util.*;
     public interface InstitutionI {
 
     
-    public void add(String endpointUrl);
+    public Endpoint add(String endpointUrl);
 
     public String getName();
     

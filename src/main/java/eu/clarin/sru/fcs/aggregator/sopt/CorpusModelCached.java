@@ -20,9 +20,9 @@ public class CorpusModelCached extends org.zkoss.zul.DefaultTreeModel<Corpus> im
 
     private static final Logger logger = Logger.getLogger(CorpusModelCached.class.getName());
     private Map<String, Set<Corpus>> selectedCorpora = new HashMap<String, Set<Corpus>>();
-    private CorpusCache cache;
+    private CorporaScanCache cache;
 
-    public CorpusModelCached(CorpusCache cache) {
+    public CorpusModelCached(CorporaScanCache cache) {
         super(new DefaultTreeNode(new Corpus(), new ArrayList<DefaultTreeNode<Corpus>>()));
         this.cache = cache;
         initCorpusTree();

@@ -6,6 +6,7 @@ import eu.clarin.sru.client.SRUVersion;
 import eu.clarin.sru.fcs.aggregator.sopt.CenterRegistryLive;
 import eu.clarin.sru.fcs.aggregator.sopt.CenterRegistryForTesting;
 import eu.clarin.sru.fcs.aggregator.sopt.CenterRegistryI;
+import eu.clarin.sru.fcs.aggregator.sopt.CorporaScanCache;
 import eu.clarin.sru.fcs.aggregator.sopt.Corpus;
 import eu.clarin.sru.fcs.aggregator.sopt.CorpusByInstitutionComparator;
 import eu.clarin.sru.fcs.aggregator.sopt.CorpusByInstitutionDComparator;
@@ -73,18 +74,18 @@ public class SearchOptions extends SelectorComposer<Component> {
     private CorpusModelI corporaModel;
     private CorpusRendererI corpusRenderer;
     
-    private boolean liveMode = true;
+    private boolean liveMode = false;
     
     private SRUVersion version = SRUVersion.VERSION_1_2;
 
-    private CorpusCache cache;
+    private CorporaScanCache cache;
     
     @Override
     public void doAfterCompose(Component comp) throws Exception {
         super.doAfterCompose(comp);
         setUpSRUVersion();
         setUpAggerationContext();
-        //cache = (CorpusCache) Executions.getCurrent().getDesktop().getWebApp().getAttribute(WebAppListener.CORPUS_CACHE);
+        cache = (CorporaScanCache) Executions.getCurrent().getDesktop().getWebApp().getAttribute(WebAppListener.CORPUS_CACHE);
         //if (cache.isEmpty()) {
         //    liveMode = true;
         //}
@@ -272,12 +273,7 @@ public class SearchOptions extends SelectorComposer<Component> {
             tree.setItemRenderer(renderer);
             this.corporaModel = model;
             this.corpusRenderer = renderer;
-//            DefaultTreeNode<Corpus2> root = CorpusCachedModel.initTree(cachedData);
-//            //CorpusTreeModel2 corporaModel = new CorpusTreeModel2(root);
-//            //corporaModel = new CorpusLiveModel(root);
-//            corporaModel = new CorpusLiveModel(root);
         }
-        
         Treecol nameCol = (Treecol) tree.getTreecols().getFellow("nameCol");
         nameCol.setSortAscending(new CorpusByNameComparator());
         nameCol.setSortDescending(new CorpusByNameDComparator());

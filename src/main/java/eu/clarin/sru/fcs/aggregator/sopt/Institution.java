@@ -21,9 +21,10 @@ import java.util.logging.Logger;
     }
     
     @Override
-    public void add(String endpointUrl) {
+    public Endpoint add(String endpointUrl) {
         Endpoint ep = new Endpoint(endpointUrl, this);
         endpoints.add(ep);
+        return ep;
     }
 
     @Override

@@ -404,6 +404,10 @@ public class SearchResults extends SelectorComposer<Component> {
             String resultsLang = "unknown";
             if (resultsLangs.size() == 1) {
                 resultsLang = resultsLangs.iterator().next();
+                String code2 = languages.code2ForCode(resultsLang);
+                if (code2 != null) {
+                    resultsLang = code2;
+                }
             } else if (!searchLanguage.equals("anylang")) {
                 String code2 = languages.code2ForCode(searchLanguage);
                 if (code2 == null) {
