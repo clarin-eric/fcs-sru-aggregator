@@ -42,12 +42,8 @@ public class WebAppListener implements WebAppInit, WebAppCleanup {
         Set<SearchResults> activeControllers = new HashSet<SearchResults>();
         webapp.setAttribute(ACTIVE_SEARCH_CONTROLLERS, activeControllers);
         SRUThreadedClient searchClient = new SRUThreadedClient();
-        try {
-            searchClient.registerRecordParser(new ClarinFCSRecordParser());
-            webapp.setAttribute(WebAppListener.SHARED_SRU_CLIENT, searchClient);
-        } catch (SRUClientException e) {
-            LOGGER.log(Level.SEVERE, "SRU Client Parser registration failed", e);
-        }
+        searchClient.registerRecordParser(new ClarinFCSRecordParser());
+        webapp.setAttribute(WebAppListener.SHARED_SRU_CLIENT, searchClient);
         
         Languages languages = new Languages();
         webapp.setAttribute(LANGUAGES, languages);

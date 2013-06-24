@@ -7,6 +7,8 @@
     <properties>
         <endorsed.dir>${project.build.directory}/endorsed</endorsed.dir>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <slf4j.version>1.7.2</slf4j.version>
+        <httpClient.version>4.2.5</httpClient.version>
     </properties>
     <packaging>war</packaging>
     <name>Aggregator</name>
@@ -27,12 +29,12 @@
             <id>clarin</id>
             <url>http://catalog.clarin.eu/ds/nexus/content/repositories/Clarin/</url>
         </repository>
-        <!--<repository>
+        <repository>
             <id>sardine-google-svn-repo</id>
             <snapshots> <enabled>true</enabled> </snapshots>
             <name>Sardine maven repo at Google Code</name>
             <url>http://sardine.googlecode.com/svn/maven/</url>
-        </repository>-->
+        </repository>
     </repositories>
     <dependencies>
         <dependency>
@@ -58,7 +60,7 @@
         <dependency>
             <groupId>eu.clarin.sru</groupId>
             <artifactId>sru-client</artifactId>
-            <version>0.9.0</version>
+            <version>0.9.2</version>
         </dependency>
         <dependency>
             <groupId>eu.clarin.weblicht</groupId>
@@ -70,12 +72,28 @@
             <artifactId>jersey-client</artifactId>
             <version>1.17.1</version>
         </dependency>
+        
         <dependency>
             <groupId>com.googlecode.sardine</groupId>
             <artifactId>sardine</artifactId>
             <version>314</version>
             <type>jar</type>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.httpcomponents</groupId>
+                    <artifactId>httpcore</artifactId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>commons-codec</artifactId>
+                    <groupId>commons-codec</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-jdk14</artifactId>
+        </dependency>
+ 
         <dependency>
             <groupId>eu.clarin.weblicht</groupId>
             <artifactId>connectors</artifactId>
@@ -92,6 +110,27 @@
             <version>2.2</version>
         </dependency>
     </dependencies>
+    
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-api</artifactId>
+                <version>${slf4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-jdk14</artifactId>
+                <version>${slf4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.httpcomponents</groupId>
+                <artifactId>httpclient</artifactId>
+                <version>${httpClient.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+    
     <build>
         <finalName>${project.artifactId}</finalName>
         <plugins>

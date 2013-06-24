@@ -4,6 +4,27 @@
 
         <div align="center">
 
+            <groupbox mold="3d" id="sLang" sclass="ccsLightBlue" contentStyle="border:0"
+                open="false" width="600px">
+                <caption label="Language" style="border:0;"/>
+                <div style="margin-top:7px;margin-bottom:7px;">
+                    <combobox id="languageSelect" readonly="true" width="100%">
+                        <comboitem label="Any Language" id="anyLanguage" value="anylang"/>
+                    </combobox>
+                    <!--
+                                        <div style="margin-top:2px;text-align:right;">
+                                            <button id="addLangButton" label="Add"
+                                                image="img/buttonSelectAll.png" sclass="ccsDarkBlue"/>
+                                            <button id="removeLangButton" label="Remove"
+                                                image="img/buttonDeselectAll.png" sclass="ccsDarkBlue"/>
+                                        </div>
+                    -->
+                </div>
+            </groupbox>
+
+            <separator/>
+            <separator/>
+
             <groupbox width="600px" open="false" mold="3d" id="allCorpora" sclass="ccsLightBlue"
                 contentStyle="border:0">
                 <caption label="Corpora" style="border:0;"/>
@@ -22,27 +43,6 @@
                         <treecol label="Description"/>
                     </treecols>
                 </tree>
-            </groupbox>
-
-            <separator/>
-            <separator/>
-
-            <groupbox mold="3d" id="sLang" sclass="ccsLightBlue" contentStyle="border:0"
-                open="false" width="600px">
-                <caption label="Language" style="border:0;"/>
-                <div style="margin-top:7px;margin-bottom:7px;">
-                    <combobox id="languageSelect" readonly="true" width="100%">
-                        <comboitem label="Any Language" id="anyLanguage" value="anylang"/>
-                    </combobox>
-                    <!--
-                                        <div style="margin-top:2px;text-align:right;">
-                                            <button id="addLangButton" label="Add"
-                                                image="img/buttonSelectAll.png" sclass="ccsDarkBlue"/>
-                                            <button id="removeLangButton" label="Remove"
-                                                image="img/buttonDeselectAll.png" sclass="ccsDarkBlue"/>
-                                        </div>
-                    -->
-                </div>
             </groupbox>
 
             <separator/>

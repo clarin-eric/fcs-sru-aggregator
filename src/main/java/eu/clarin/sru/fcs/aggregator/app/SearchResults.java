@@ -161,8 +161,9 @@ public class SearchResults extends SelectorComposer<Component> {
         searchRequest.setVersion(version);
         searchRequest.setMaximumRecords(maxRecords);
         searchRequest.setRecordSchema(ClarinFCSRecordData.RECORD_SCHEMA);
-        searchString = searchString.replace(" ", "%20");
-        searchRequest.setQuery("%22" + searchString + "%22");
+        //searchString = searchString.replace(" ", "%20");
+        //searchRequest.setQuery("%22" + searchString + "%22");
+        searchRequest.setQuery("\"" + searchString + "\"");
         searchRequest.setStartRecord(searchOffset[0] + searchOffset[1]);
         if (resultsItem.hasCorpusHandler()) {
             searchRequest.setExtraRequestData(SRUCQLsearchRetrieve.CORPUS_HANDLE_PARAMETER, resultsItem.getCorpus().getHandle());

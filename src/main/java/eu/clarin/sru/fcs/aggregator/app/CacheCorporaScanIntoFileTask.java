@@ -337,11 +337,7 @@ public class CacheCorporaScanIntoFileTask extends TimerTask {
 
     public static void main(String[] args) {
         SRUThreadedClient sruClient = new SRUThreadedClient();
-        try {
-            sruClient.registerRecordParser(new ClarinFCSRecordParser());
-        } catch (SRUClientException e) {
-            logger.log(Level.SEVERE, "SRU Client Parser registration failed", e);
-        }
+        sruClient.registerRecordParser(new ClarinFCSRecordParser());
 
 
         //TODO do caching
