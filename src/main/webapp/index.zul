@@ -119,10 +119,15 @@
 
 
                     <row>
+                        <!--
                         <cell>
                             <label style="font-weight:bold" value="No Account Yet?"/>
                             <a href="http://egi-cloud21.zam.kfa-juelich.de/owncloud/"
                                 target="_blank" label="Sign up" style="margin-left:10px;"/>
+                        </cell>
+                        -->
+                        <cell>
+                            <label style="font-weight:bold" value=""/>
                         </cell>
                         <div align="center">
                             <button id="wspaceSigninBtn" label="Sign in" image="img/key.png"
