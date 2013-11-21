@@ -152,6 +152,8 @@ public class CorpusRendererCached implements TreeitemRenderer<DefaultTreeNode<Co
         dataRow.appendChild(cell4);
         Treecell cell2 = createCellForCorpusLanguage(data);
         dataRow.appendChild(cell2);
+        //Treecell cell6 = createCellForCorpusNumberOfRecords(data);
+        //dataRow.appendChild(cell6);
         Treecell cell5 = createCellForCorpusInstitution(data);
         dataRow.appendChild(cell5);
         Treecell cell3 = createCellForCorpusDescription(data);
@@ -166,6 +168,19 @@ public class CorpusRendererCached implements TreeitemRenderer<DefaultTreeNode<Co
             Label corpusLabel = new Label("");
             corpusLabel.setParent(cell);
         } else {
+            String name = data.getDisplayName();
+            // TODO: this is temp, before some endpoint
+            // fix long names for their resources, that look 
+            // more like a description
+            if (name.length() > 50) {
+                int firstWordEnd = name.indexOf(" ");
+                if (firstWordEnd > 0) {
+                    data.setDisplayName(name.substring(0, firstWordEnd));
+                    if (data.getDescription() == null) {
+                        data.setDescription(name);
+                    }
+                }
+            }
             Label corpusLabel = new Label(data.getDisplayName());
             corpusLabel.setParent(cell);
         }
@@ -205,6 +220,18 @@ public class CorpusRendererCached implements TreeitemRenderer<DefaultTreeNode<Co
             label.setParent(cell);
         } else {
             Label label = new Label(data.getInstitution().getName());
+            label.setParent(cell);
+        }
+        return cell;
+    }
+    
+    private Treecell createCellForCorpusNumberOfRecords(Corpus data) {
+        Treecell cell = new Treecell();
+        if (data.getNumberOfRecords() == null) {
+            Label label = new Label("");
+            label.setParent(cell);
+        } else {
+            Label label = new Label(data.getNumberOfRecords().toString());
             label.setParent(cell);
         }
         return cell;

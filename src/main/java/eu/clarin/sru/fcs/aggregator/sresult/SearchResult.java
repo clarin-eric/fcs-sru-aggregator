@@ -19,6 +19,7 @@ import java.util.logging.Logger;
 public class SearchResult {
 
     private Corpus corpus;
+    private String searchString;
     private Future<SRUSearchRetrieveResponse> futureResponse;
     private SRUSearchRetrieveResponse response;
     private List<Kwic> kwics = new ArrayList<Kwic>();
@@ -34,12 +35,17 @@ public class SearchResult {
         this.kwics.add(kwic);
     }
     
-    public SearchResult(Corpus corpus) {
+    public SearchResult(Corpus corpus, String searchString) {
         this.corpus = corpus;
+        this.searchString = searchString;
     }
 
     public Corpus getCorpus() {
         return corpus;
+    }
+    
+    public String getSearchString() {
+        return searchString;
     }
 
     public void setFutureResponse(Future<SRUSearchRetrieveResponse> futureResponse) {

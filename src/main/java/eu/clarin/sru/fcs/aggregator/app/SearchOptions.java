@@ -22,6 +22,7 @@ import eu.clarin.sru.fcs.aggregator.sopt.CorpusRendererLive;
 import eu.clarin.sru.fcs.aggregator.sopt.Languages;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -142,6 +143,11 @@ public class SearchOptions extends SelectorComposer<Component> {
     public void onDeselectAll(Event ev) {
         Treechildren openTreeItems = tree.getTreechildren();
         for (Treeitem openItem : openTreeItems.getItems()) {
+            
+            DefaultTreeNode<Corpus> node = (DefaultTreeNode<Corpus>) openItem.getValue();
+            Corpus data = node.getData();
+            System.out.println(data);
+            
             corpusRenderer.updateItem(openItem, false);
         }
     }
@@ -149,7 +155,11 @@ public class SearchOptions extends SelectorComposer<Component> {
     void selectCorpora(Map<String, List<String>> xAggregationContext) {
         onDeselectAll(null);
         Treechildren openTreeItems = tree.getTreechildren();
-        for (Treeitem openItem : openTreeItems.getItems()) {
+        
+        List<Treeitem> openitems = new ArrayList<Treeitem>();
+        openitems.addAll(openTreeItems.getItems());
+            
+        for (Treeitem openItem : openitems) {
             DefaultTreeNode<Corpus> node = (DefaultTreeNode<Corpus>) openItem.getValue();
             Corpus data = node.getData();
             List<String> handles = xAggregationContext.get(data.getEndpointUrl());
@@ -171,6 +181,15 @@ public class SearchOptions extends SelectorComposer<Component> {
                             corpusRenderer.updateItem(openItem, true);
                         }
                     }
+                    
+//                    // this is a temporary solution,
+//                    // the whole concept on how selected externally resources
+//                    // are displayed has to be changed, otherwise endpoints with
+//                    // hundreds of subresources will break the tree interface
+//                    // by loading all their resources...
+//                    List<String> handlesCopy = new ArrayList<String>(handles.size());
+//                    handlesCopy.addAll(handles);
+//                    selectCorpora(openItem, data, handlesCopy);
                 }
             }
         }
@@ -297,6 +316,38 @@ public class SearchOptions extends SelectorComposer<Component> {
             }
         }
         LOGGER.log(Level.INFO, "Received parameter: version[{0}], ", versionString);
+    }
+
+    private void selectCorpora(Treeitem openItem, Corpus data, List<String> handles) {
+        List<String> handlesFound = new ArrayList<String>();
+        for (String handle : handles) {
+            if (handle.equals(data.getHandle())) {
+                handlesFound.add(handle);
+            }
+        }
+        for (String handle : handlesFound) {
+            corpusRenderer.updateItem(openItem, true);
+            handles.remove(handle);
+        }
+        
+        if (!handles.isEmpty()) {
+            int sizeBefore = handles.size();
+            openItem.setOpen(true);
+            Treechildren tchildren = openItem.getTreechildren();
+            List<Treeitem> tcitems = new ArrayList<Treeitem>();
+            tcitems.addAll(tchildren.getItems());
+            for (Treeitem child : tcitems) {
+                DefaultTreeNode<Corpus> node = (DefaultTreeNode<Corpus>) child.getValue();
+                Corpus cdata = node.getData();
+                selectCorpora(child, cdata, handles);
+                if (handles.isEmpty()) {
+                    break;
+                }
+            }
+            if (sizeBefore == handles.size()) {
+                openItem.setOpen(false);
+            }
+        }
     }
 
 }

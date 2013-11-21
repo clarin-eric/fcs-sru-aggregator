@@ -127,6 +127,16 @@ public class Aggregator extends SelectorComposer<Component> {
     public void onExportResultsTCF(Event ev) {
         searchResultsComposer.exportTCF();
     }
+    
+    @Listen("onClick=#downloadText")
+    public void onExportResultsText(Event ev) {
+        searchResultsComposer.exportText();
+    }
+    
+    @Listen("onClick=#downloadExcel")
+    public void onExportResultsExcel(Event ev) {
+        searchResultsComposer.exportExcel();
+    }
 
     @Listen("onClick=#exportPWCSV")
     public void onExportResultsPWCSV(Event ev) {
@@ -137,6 +147,18 @@ public class Aggregator extends SelectorComposer<Component> {
     @Listen("onClick=#exportPWTCF")
     public void onExportResultsPWTCF(Event ev) {
         exportDataType = 0;
+        wspaceSigninpop.open(srDiv, "top_center");
+    }
+    
+    @Listen("onClick=#exportPWText")
+    public void onExportResultsPWText(Event ev) {
+        exportDataType = 2;
+        wspaceSigninpop.open(srDiv, "top_center");
+    }
+    
+    @Listen("onClick=#exportPWExcel")
+    public void onExportResultsPWExcel(Event ev) {
+        exportDataType = 3;
         wspaceSigninpop.open(srDiv, "top_center");
     }
 
@@ -151,8 +173,12 @@ public class Aggregator extends SelectorComposer<Component> {
             wspaceSigninpop.close();
             if (exportDataType == 0) {
                 searchResultsComposer.exportPWTCF(user, pswd);
-            } else {
+            } else if (exportDataType == 1) {
                 searchResultsComposer.exportPWCSV(user, pswd);
+            } else if (exportDataType == 2) {
+                searchResultsComposer.exportPWText(user, pswd);
+            } else if (exportDataType == 3) {
+                searchResultsComposer.exportPWExcel(user, pswd);
             }
         }
     }

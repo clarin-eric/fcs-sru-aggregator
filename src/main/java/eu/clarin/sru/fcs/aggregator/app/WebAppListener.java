@@ -6,12 +6,15 @@ import eu.clarin.sru.client.fcs.ClarinFCSRecordParser;
 import eu.clarin.sru.fcs.aggregator.sopt.CorporaScanCache;
 import eu.clarin.sru.fcs.aggregator.sopt.CorpusCache;
 import eu.clarin.sru.fcs.aggregator.sopt.Languages;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.Timer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import opennlp.tools.tokenize.TokenizerModel;
 import org.joda.time.DateTime;
 import org.zkoss.zk.ui.WebApp;
 import org.zkoss.zk.ui.util.WebAppCleanup;
@@ -35,6 +38,8 @@ public class WebAppListener implements WebAppInit, WebAppCleanup {
     private static final int HOURS_BETWEEN_CACHE_UPDATE = 3;
     
     private Timer cacheTimer;
+    
+    public static final String DE_TOK_MODEL = "/tokenizer/de-tuebadz-8.0-token.bin";
 
     @Override
     public void init(WebApp webapp) throws Exception {
@@ -66,6 +71,16 @@ public class WebAppListener implements WebAppInit, WebAppCleanup {
         // read cache from file
         CorporaScanCache cache = new CorporaScanCache(webapp.getRealPath("scan") + "/");
         webapp.setAttribute(CORPUS_CACHE, cache);
+        
+        TokenizerModel model = null;
+        try {
+            InputStream tokenizerModelDeAsIS = this.getClass().getResourceAsStream(DE_TOK_MODEL);
+            model = new TokenizerModel(tokenizerModelDeAsIS);
+            tokenizerModelDeAsIS.close();
+        } catch (IOException ex) {
+            LOGGER.log(Level.SEVERE, "Failed to load tokenizer model", ex);
+        }
+        webapp.setAttribute(DE_TOK_MODEL, model);
     }
 
     @Override

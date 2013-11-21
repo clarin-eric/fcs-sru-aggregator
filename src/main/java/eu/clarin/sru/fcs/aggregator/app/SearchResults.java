@@ -32,10 +32,13 @@ import eu.clarin.sru.fcs.aggregator.util.SRUCQLsearchRetrieve;
 import eu.clarin.weblicht.wlfxb.io.WLDObjector;
 import eu.clarin.weblicht.wlfxb.io.WLFormatException;
 import eu.clarin.weblicht.wlfxb.md.xb.MetaData;
+import eu.clarin.weblicht.wlfxb.tc.api.MatchedCorpus;
+import eu.clarin.weblicht.wlfxb.tc.api.Token;
 import eu.clarin.weblicht.wlfxb.tc.xb.TextCorpusStored;
 import eu.clarin.weblicht.wlfxb.xb.WLData;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashSet;
@@ -44,6 +47,14 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
+import opennlp.tools.tokenize.TokenizerME;
+import opennlp.tools.tokenize.TokenizerModel;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.Font;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.zkoss.zhtml.Filedownload;
 import org.zkoss.zk.ui.event.EventListener;
 import org.zkoss.zul.Column;
@@ -84,6 +95,7 @@ public class SearchResults extends SelectorComposer<Component> {
     private int seconds = 200;
     private String searchLanguage;
     private Languages languages;
+
 
     @Override
     public void doAfterCompose(Component comp) throws Exception {
@@ -154,7 +166,7 @@ public class SearchResults extends SelectorComposer<Component> {
     }
 
     private SearchResult executeSearch(Corpus corpus, String searchString) {
-        SearchResult resultsItem = new SearchResult(corpus);
+        SearchResult resultsItem = new SearchResult(corpus, searchString);
         LOGGER.log(Level.INFO, "Executing search for {0} query={1} maxRecords={2}",
                 new Object[]{corpus.toString(), searchString, maxRecords});
         SRUSearchRetrieveRequest searchRequest = new SRUSearchRetrieveRequest(corpus.getEndpointUrl());
@@ -365,15 +377,122 @@ public class SearchResults extends SelectorComposer<Component> {
     }
     
     public void exportTCF() {
-            byte[] bytes = getExportTCF();
+            byte[] bytes = getExportTokenizedTCF();
             if (bytes != null) {
                 Filedownload.save(bytes, "text/tcf+xml", "ClarinDFederatedContentSearch.xml");
         }
     }
     
+    public void exportText() {
+            String text = getExportText().toString();
+            if (text != null) {
+                Filedownload.save(text, "text/plain", "ClarinDFederatedContentSearch.txt");
+        }
+    }
+    
+    
+    void exportExcel() {
+        
+        byte[] bytes = getExportExcel();
+            if (bytes != null) {
+                Filedownload.save(bytes, "text/tcf+xml", "ClarinDFederatedContentSearch.xls");
+        }
+    }
+
+    private byte[] getExportExcel() {
+        
+        boolean noResult = true;
+        SXSSFWorkbook workbook = null;
+        ByteArrayOutputStream excelStream = new ByteArrayOutputStream();
+        if (resultsProcessed != null && !resultsProcessed.isEmpty()) {
+            try {
+                String[] headers = new String[] {
+                    "LEFT CONTEXT", "KEYWORD", "RIGHT CONTEXT", "PID", "REFERENCE"};
+            
+                workbook = new SXSSFWorkbook();
+                Sheet sheet = workbook.createSheet();
+
+                Font boldFont = workbook.createFont();
+                boldFont.setBoldweight(Font.BOLDWEIGHT_BOLD);
+
+                // Header
+                CellStyle headerStyle = workbook.createCellStyle();
+                headerStyle.setFont(boldFont);
+
+                Row row = sheet.createRow(0);
+
+                for (int j = 0; j < headers.length; ++j) {
+                    Cell cell = row.createCell(j, Cell.CELL_TYPE_STRING);
+                    cell.setCellValue(headers[j]);
+                    cell.setCellStyle(headerStyle);
+                }
+
+                // Body
+                Cell cell;
+                for (int k = 0; k < resultsProcessed.size(); k++) {
+                    SearchResult result = resultsProcessed.get(k);
+                    List<Kwic> kwics = result.getKwics();
+                    for (int i = 0; i < kwics.size(); i++) {
+                        Kwic kwic = kwics.get(i);
+                        row = sheet.createRow(k + i + 1);
+                        cell = row.createCell(0, Cell.CELL_TYPE_STRING);
+                        cell.setCellValue(kwic.getLeft());
+                        cell = row.createCell(1, Cell.CELL_TYPE_STRING);
+                        cell.setCellValue(kwic.getKeyword());
+                        cell = row.createCell(2, Cell.CELL_TYPE_STRING);
+                        cell.setCellValue(kwic.getRight());
+                        if (kwic.getPid() != null) {
+                            cell = row.createCell(3, Cell.CELL_TYPE_STRING);
+                            cell.setCellValue(kwic.getPid());
+                        }
+                        if (kwic.getReference() != null) {
+                            cell = row.createCell(3, Cell.CELL_TYPE_STRING);
+                            cell.setCellValue(kwic.getReference());
+                        }
+                        noResult = false;
+                    }
+                }
+                workbook.write(excelStream);
+            } catch (IOException ex) {
+                // should not happen
+                Logger.getLogger(SearchResults.class.getName()).log(Level.SEVERE, null, ex);
+            } finally {
+                if (workbook != null) {
+                    workbook.dispose();
+                }
+            }
+        }
+        if (noResult) {
+            Messagebox.show("Nothing to export!");
+            return null;
+        } else {
+            return excelStream.toByteArray();
+        }
+        
+    }
+
+    void exportPWText(String user, String pass) {
+        byte[] bytes = null;
+        try {
+            bytes = getExportText().toString().getBytes("UTF-8");
+        } catch (UnsupportedEncodingException ex) {
+            Logger.getLogger(SearchResults.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        if (bytes != null) {
+            uploadToPW(user, pass, bytes, "text/plan",".txt");
+        }
+    }
+
+    void exportPWExcel(String user, String pass) {
+        byte[] bytes = getExportExcel();
+            if (bytes != null) {
+                uploadToPW(user, pass, bytes, "application/vnd.ms-excel",".xls");
+        }
+    }
+    
    public void exportPWTCF(String user, String pass) {
        
-       byte[] bytes = getExportTCF();
+       byte[] bytes = getExportTokenizedTCF();
             if (bytes != null) {
                 uploadToPW(user, pass, bytes, "text/tcf+xml",".tcf");
         }
@@ -435,8 +554,138 @@ public class SearchResults extends SelectorComposer<Component> {
         }
     }
     
+    
+        private byte[] getExportTokenizedTCF() {
+        StringBuilder text = new StringBuilder();
+        Set<String> resultsLangs = new HashSet<String>();
+        if (resultsProcessed != null && !resultsProcessed.isEmpty()) {
+            for (SearchResult result : resultsProcessed) {
+                resultsLangs.addAll(result.getCorpus().getLanguages());
+                for (Kwic kwic : result.getKwics()) {
+                    text.append(kwic.getLeft());
+                    text.append(" ");
+                    text.append(kwic.getKeyword());
+                    text.append(" ");
+                    text.append(kwic.getRight());
+                    text.append("\n");
+                }
+            }
+
+        }
+        ByteArrayOutputStream os = null;
+        if (text.length() == 0) {
+            Messagebox.show("Nothing to export!");
+        } else {
+            WLData data;
+            MetaData md = new MetaData();
+            String resultsLang = "unknown";
+            if (resultsLangs.size() == 1) {
+                resultsLang = resultsLangs.iterator().next();
+                String code2 = languages.code2ForCode(resultsLang);
+                if (code2 != null) {
+                    resultsLang = code2;
+                }
+            } else if (!searchLanguage.equals("anylang")) {
+                String code2 = languages.code2ForCode(searchLanguage);
+                if (code2 == null) {
+                    resultsLang = searchLanguage;
+                } else {
+                    resultsLang = code2;
+                }
+            }
+            TextCorpusStored tc = new TextCorpusStored(resultsLang);
+            tc.createTextLayer().addText(text.toString());
+            addTokensSentencesMatches(tc);
+            data = new WLData(md, tc);
+            os = new ByteArrayOutputStream();
+            try {
+                WLDObjector.write(data, os);
+            } catch (WLFormatException ex) {
+                LOGGER.log(Level.SEVERE, "Error exporting TCF {0} {1}", new String[]{ex.getClass().getName(), ex.getMessage()});
+                Messagebox.show("Sorry, export error!");
+            }
+        }
+        if (os == null) {
+            return null;
+        } else {
+            return os.toByteArray();
+        }
+    }
+    
+        
+    private void addTokensSentencesMatches(TextCorpusStored tc) {
+        
+        TokenizerModel model = (TokenizerModel) Executions.getCurrent().getDesktop().getWebApp().getAttribute(WebAppListener.DE_TOK_MODEL);
+        
+        if (model == null || !tc.getLanguage().equals("de")) {
+            return;
+        }
+        TokenizerME tokenizer = new TokenizerME(model);
+        
+        if (resultsProcessed != null && !resultsProcessed.isEmpty()) {
+            tc.createTokensLayer();
+            tc.createSentencesLayer();
+            tc.createMatchesLayer("FCS", resultsProcessed.get(0).getSearchString());
+            for (SearchResult result : resultsProcessed) {
+                MatchedCorpus mCorpus = tc.getMatchesLayer().addCorpus(result.getCorpus().getDisplayName(), result.getCorpus().getHandle());
+                for (Kwic kwic : result.getKwics()) {
+                    List<Token> tokens = new ArrayList<Token>();
+                    addToTcfTokens(tokens, tc, tokenizer.tokenize(kwic.getLeft()));
+                    String[] target = tokenizer.tokenize(kwic.getKeyword());
+                    List<Token> targetTokens = addToTcfTokens(tokens, tc, target);
+                    addToTcfTokens(tokens, tc, tokenizer.tokenize(kwic.getRight()));
+                    tc.getSentencesLayer().addSentence(tokens);
+                    List<String> pidAndRef = new ArrayList<String>();
+                    if (kwic.getPid() != null) {
+                        pidAndRef.add(kwic.getPid());
+                    }
+                    if (kwic.getReference() != null) {
+                        pidAndRef.add(kwic.getReference());
+                    }
+                    tc.getMatchesLayer().addItem(mCorpus, targetTokens, pidAndRef);
+                }
+            }
+        }
+    }
+    
+    
+    private List<Token> addToTcfTokens(List<Token> tokens, TextCorpusStored tc, String[] tokenStrings) {
+        List<Token> addedTokens = new ArrayList<Token>(tokenStrings.length);
+        for (String tokenString : tokenStrings) {
+            Token token = tc.getTokensLayer().addToken(tokenString);
+            addedTokens.add(token);
+            tokens.add(token);
+        }
+        return addedTokens;
+    }
+    
+    private CharSequence getExportText() {
+        StringBuilder text = new StringBuilder();
+        //Set<String> resultsLangs = new HashSet<String>();
+        if (resultsProcessed != null && !resultsProcessed.isEmpty()) {
+            for (SearchResult result : resultsProcessed) {
+                //resultsLangs.addAll(result.getCorpus().getLanguages());
+                for (Kwic kwic : result.getKwics()) {
+                    text.append(kwic.getLeft());
+                    text.append(" ");
+                    text.append(kwic.getKeyword());
+                    text.append(" ");
+                    text.append(kwic.getRight());
+                    text.append("\n");
+                }
+            }
+
+        }
+        if (text.length() == 0) {
+            Messagebox.show("Nothing to export!");
+            return null;
+        } else {
+            return text;
+        }
+    }
+    
     public void exportCSV() {
-        String csv = getExportCSV();
+        String csv = getExportCSV(";");
         if (csv != null) {
             Filedownload.save(csv.toString(), "text/plain", "ClarinDFederatedContentSearch.csv");
         }
@@ -444,45 +693,42 @@ public class SearchResults extends SelectorComposer<Component> {
     
     
     public void exportPWCSV(String user, String pass) {
-        String csv = getExportCSV();
+        String csv = getExportCSV(";");
         if (csv != null) {
             uploadToPW(user, pass, csv.getBytes(), "text/csv",".csv");
         }
     }
 
-    private String getExportCSV() {
+    private String getExportCSV(String separator) {
 
         boolean noResult = true;
         StringBuilder csv = new StringBuilder();
         if (resultsProcessed != null && !resultsProcessed.isEmpty()) {
-            csv.append("\""); csv.append("LEFT CONTEXT"); csv.append("\"");
-            csv.append(",");
-            csv.append("\""); csv.append("KEYWORD"); csv.append("\"");
-            csv.append(",");
-            csv.append("\""); csv.append("RIGHT CONTEXT"); csv.append("\"");
-            csv.append(",");
-            csv.append("\""); csv.append("PID"); csv.append("\"");
-            csv.append(",");
-            csv.append("\""); csv.append("REFERENCE"); csv.append("\"");
+            String[] headers = new String[] {
+                    "LEFT CONTEXT", "KEYWORD", "RIGHT CONTEXT", "PID", "REFERENCE"};
+            for (String header : headers) {
+                csv.append("\""); csv.append(header); csv.append("\"");
+                csv.append(separator);
+            }
             csv.append("\n");
 
             for (SearchResult result : resultsProcessed) {
                 for (Kwic kwic : result.getKwics()) {
-                    csv.append("\""); csv.append(kwic.getLeft().replace("\"", "QUOTE")); csv.append("\"");
-                    csv.append(",");
-                    csv.append("\""); csv.append(kwic.getKeyword().replace("\"", "QUOTE")); csv.append("\"");
-                    csv.append(",");
-                    csv.append("\""); csv.append(kwic.getRight().replace("\"", "QUOTE")); csv.append("\"");
-                    csv.append(",");
+                    csv.append("\""); csv.append(escapeQuotes(kwic.getLeft())); csv.append("\"");
+                    csv.append(separator);
+                    csv.append("\""); csv.append(escapeQuotes(kwic.getKeyword())); csv.append("\"");
+                    csv.append(separator);
+                    csv.append("\""); csv.append(escapeQuotes(kwic.getRight())); csv.append("\"");
+                    csv.append(separator);
                     csv.append("\"");
                     if (kwic.getPid() != null) {
-                        csv.append(kwic.getPid().replace("\"", "QUOTE"));
+                        csv.append(escapeQuotes(kwic.getPid()));
                     }
                     csv.append("\"");
-                    csv.append(",");
+                    csv.append(separator);
                     csv.append("\"");
                     if (kwic.getReference() != null) {
-                        csv.append(kwic.getReference().replace("\"", "QUOTE"));
+                        csv.append(escapeQuotes(kwic.getReference()));
                     }
                     csv.append("\"");
                     csv.append("\n");
@@ -496,6 +742,18 @@ public class SearchResults extends SelectorComposer<Component> {
         } else {
             return csv.toString();
         }
+    }
+    
+    private CharSequence escapeQuotes(String text) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < text.length(); i++) {
+            char ch = text.charAt(i);
+            if (ch == '"') {
+                sb.append('"');
+            }
+            sb.append(ch);
+        }
+        return sb;
     }
     
     private void uploadToPW(String user, String pass, byte[] bytes, String mimeType, String fileExtention) {
