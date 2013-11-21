@@ -39,6 +39,7 @@
                         <treecol id="nameCol" label="Name" style="margin-left:100px;" sort="auto"/>
                         <treecol label="" hflex="min"/>
                         <treecol label="Language" hflex="min"/>
+                        <!--<treecol label="Records" hflex="min"/>-->
                         <treecol id="instCol" label="Institution" hflex="min" sort="auto"/>
                         <treecol label="Description"/>
                     </treecols>

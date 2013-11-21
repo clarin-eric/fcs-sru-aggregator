@@ -42,18 +42,26 @@
                                 <menu label="Export to Personal Workspace"
                                     image="img/avatar-default.png">
                                     <menupopup>
-                                        <menuitem label="Export Results as CSV" id="exportPWCSV"
+                                        <menuitem label="as CSV" id="exportPWCSV"
+                                            image="img/doc_excel_csv.png"/>
+                                        <menuitem label="as Excel sheet" id="exportPWExcel"
                                             image="img/x-office-spreadsheet.png"/>
-                                        <menuitem label="Export Results as TCF" id="exportPWTCF"
+                                        <menuitem label="as TCF" id="exportPWTCF"
                                             image="img/text-xml.png"/>
+                                        <menuitem label="as Plain text" id="exportPWText"
+                                            image="img/text-plain.png"/>
                                     </menupopup>
                                 </menu>
                                 <menu label="Download" image="img/buttonExport.png">
                                     <menupopup>
-                                        <menuitem label="Download Results as CSV" id="downloadCSV"
+                                        <menuitem label="as CSV" id="downloadCSV"
+                                            image="img/doc_excel_csv.png"/>
+                                        <menuitem label="as Excel sheet" id="downloadExcel"
                                             image="img/x-office-spreadsheet.png"/>
-                                        <menuitem label="Download Results as TCF" id="downloadTCF"
+                                        <menuitem label="as TCF" id="downloadTCF"
                                             image="img/text-xml.png"/>
+                                        <menuitem label="as Plain text" id="downloadText"
+                                            image="img/text-plain.png"/>
                                     </menupopup>
                                 </menu>
                             </menubar>
