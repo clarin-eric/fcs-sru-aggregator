@@ -14,8 +14,10 @@ import org.zkoss.zul.Messagebox;
 import org.zkoss.zul.Textbox;
 import eu.clarin.sru.fcs.aggregator.sopt.Corpus;
 import org.zkoss.zul.A;
+import org.zkoss.zul.Button;
 import org.zkoss.zul.Div;
 import org.zkoss.zul.Menubar;
+import org.zkoss.zul.Menuitem;
 import org.zkoss.zul.North;
 import org.zkoss.zul.Popup;
 import org.zkoss.zul.Progressmeter;
@@ -68,10 +70,15 @@ public class Aggregator extends SelectorComposer<Component> {
     A prevButton;
     @Wire
     A nextButton;
+    
+    @Wire
+    Menuitem weblichtTcf;
+    
     private int[] searchOffset = new int[]{1, 0}; // start and size
     private ControlsVisibility controlsVisibility;
     private PagesVisibility pagesVisibility;
 
+    private static final String WEBLICHT_URL = "https://weblicht.sfs.uni-tuebingen.de/WebLicht-4/?input=";
     
     
     @Override
@@ -104,6 +111,11 @@ public class Aggregator extends SelectorComposer<Component> {
             String searchLang = searchOptionsComposer.getSearchLang();
             searchOffset = new int[]{1, 0};
             searchResultsComposer.executeSearch(selectedCorpora, maxRecords, searchString.getText(), searchOffset, searchLang);
+            if (searchLang.equals("anylang")) {
+                this.weblichtTcf.setVisible(false);
+            } else {
+                this.weblichtTcf.setVisible(true);
+            }
             onClickSearchResult(null);
         }
     }
@@ -160,6 +172,28 @@ public class Aggregator extends SelectorComposer<Component> {
     public void onExportResultsPWExcel(Event ev) {
         exportDataType = 3;
         wspaceSigninpop.open(srDiv, "top_center");
+    }
+    
+    @Listen("onClick=#weblichtText")
+    public void onUseWebLichtOnText(Event ev) {
+        String url = searchResultsComposer.useWebLichtOnText();
+        if (url != null) {
+            Executions.getCurrent().sendRedirect(WEBLICHT_URL
+                + url, "_blank");
+        } else {
+            Messagebox.show("Sorry, drop-off/WebLicht error!");
+        }
+    }
+    
+    @Listen("onClick=#weblichtTcf")
+    public void onUseWebLichtOnTcf(Event ev) {
+        String url = searchResultsComposer.useWebLichtOnToks();
+        if (url != null) {
+            Executions.getCurrent().sendRedirect(WEBLICHT_URL
+                + url, "_blank");
+        } else {
+            Messagebox.show("Sorry, drop-off/WebLicht error!");
+        }
     }
 
     @Listen("onClick=#wspaceSigninBtn")
@@ -250,6 +284,11 @@ public class Aggregator extends SelectorComposer<Component> {
                 searchOffset[1] = 0;
             }
             searchResultsComposer.executeSearch(selectedCorpora, maxRecords, searchString.getText(), searchOffset, searchLang);
+            if (searchLang.equals("anylang")) {
+                this.weblichtTcf.setVisible(false);
+            } else {
+                this.weblichtTcf.setVisible(true);
+            }
             onClickSearchResult(null);
         }
     }
@@ -272,6 +311,11 @@ public class Aggregator extends SelectorComposer<Component> {
             int maxRecords = searchOptionsComposer.getMaxRecords();
             String searchLang = searchOptionsComposer.getSearchLang();
             searchResultsComposer.executeSearch(selectedCorpora, maxRecords, searchString.getText(), searchOffset, searchLang);
+            if (searchLang.equals("anylang")) {
+                this.weblichtTcf.setVisible(false);
+            } else {
+                this.weblichtTcf.setVisible(true);
+            }
             onClickSearchResult(null);
         }
     }

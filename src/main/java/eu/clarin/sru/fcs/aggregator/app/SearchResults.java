@@ -3,6 +3,11 @@ package eu.clarin.sru.fcs.aggregator.app;
 import com.googlecode.sardine.Sardine;
 import com.googlecode.sardine.SardineFactory;
 import com.googlecode.sardine.impl.SardineException;
+import com.sun.jersey.api.client.Client;
+import com.sun.jersey.api.client.ClientResponse;
+import com.sun.jersey.api.client.WebResource;
+import com.sun.jersey.api.client.config.ClientConfig;
+import com.sun.jersey.api.client.config.DefaultClientConfig;
 import eu.clarin.sru.client.SRUVersion;
 import java.util.ArrayList;
 import java.util.List;
@@ -47,6 +52,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
+import javax.ws.rs.core.MediaType;
 import opennlp.tools.tokenize.TokenizerME;
 import opennlp.tools.tokenize.TokenizerModel;
 import org.apache.poi.ss.usermodel.Cell;
@@ -95,6 +101,8 @@ public class SearchResults extends SelectorComposer<Component> {
     private int seconds = 200;
     private String searchLanguage;
     private Languages languages;
+    
+    private static final String DROP_OFF_URL = "http://ws1-clarind.esc.rzg.mpg.de/drop-off/storage/";
 
 
     @Override
@@ -482,6 +490,29 @@ public class SearchResults extends SelectorComposer<Component> {
             uploadToPW(user, pass, bytes, "text/plan",".txt");
         }
     }
+    
+    String useWebLichtOnText() {
+        byte[] bytes = null;
+        String url = null;
+        try {
+            bytes = getExportText().toString().getBytes("UTF-8");
+        } catch (UnsupportedEncodingException ex) {
+            Logger.getLogger(SearchResults.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        if (bytes != null) {
+            url = uploadToDropOff(bytes, "text/plan",".txt");
+        }
+        return url;
+    }
+    
+    String useWebLichtOnToks() {
+        String url = null;
+        byte[] bytes = getExportTokenizedTCF();
+        if (bytes != null) {
+            url = uploadToDropOff(bytes, "text/tcf+xml",".tcf");
+        }
+        return url;
+    }
 
     void exportPWExcel(String user, String pass) {
         byte[] bytes = getExportExcel();
@@ -782,6 +813,42 @@ public class SearchResults extends SelectorComposer<Component> {
                 LOGGER.log(Level.SEVERE, "Error exporting {0} {1} {2}", new String[]{fileExtention, ex.getClass().getName(), ex.getMessage()});
                 Messagebox.show("Sorry, export error!");
             }
+    }
+    
+        private String uploadToDropOff(byte[] bytes, String mimeType, String fileExtention) {
+            Client client = null;
+            String url = null;
+        try {
+
+                Date currentDate = new Date();
+                SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss-SSS");
+                Random generator = new Random();
+                int rn1 = generator.nextInt(1000000000);
+                String createdFileName = format.format(currentDate) + "-" + rn1 + fileExtention;
+    
+                ClientConfig config = new DefaultClientConfig();
+                client = Client.create(config);
+                url = DROP_OFF_URL + createdFileName;
+                WebResource service = client.resource(url);
+        
+            ClientResponse response = service.type(mimeType) //.accept(MediaType.TEXT_PLAIN).post(String.class, media.getStringData());
+                    .post(ClientResponse.class, bytes);
+            if (response.getClientResponseStatus() != ClientResponse.Status.CREATED) {
+                    LOGGER.log(Level.SEVERE, "Error uploading {0}", new String[]{url});
+                    Messagebox.show("Sorry, export to drop-off error!");
+                    return null;
+                }
+        } catch (Exception ex) {
+                LOGGER.log(Level.SEVERE, "Error uploading {0} {1} {2}", new String[]{url, ex.getClass().getName(), ex.getMessage()});
+                Messagebox.show("Sorry, export to drop-off error!");
+                return null;
+        } finally {
+            if (client != null) {
+            client.destroy();
+            }
+        }
+        return url;
+
     }
 
     private void setUpSRUVersion() {

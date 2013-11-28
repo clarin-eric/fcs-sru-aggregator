@@ -39,6 +39,15 @@
                         <div>
                             <menubar id="menubar" width="100%" style="margin-top:2px;border:0;">
                                 <menuitem label="Clear" id="clearResults" image="img/buttonDelete.png"/>
+                                <menu label="Use WebLicht"
+                                    image="img/Letter-W-blue-icon.png">
+                                    <menupopup>
+                                        <menuitem label="with search results as text" id="weblichtText"
+                                            image="img/text-plain.png"/>
+                                        <menuitem label="with search results as TCF" id="weblichtTcf"
+                                            image="img/text-xml.png"/>
+                                    </menupopup>
+                                </menu>
                                 <menu label="Export to Personal Workspace"
                                     image="img/avatar-default.png">
                                     <menupopup>
