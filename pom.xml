@@ -11,7 +11,7 @@
         <httpClient.version>4.2.5</httpClient.version>
     </properties>
     <packaging>war</packaging>
-    <name>Aggregator-g</name>
+    <name>Aggregator</name>
     <description>The Aggregator Project</description>
     <organization>
         <name>SfS Uni Tuebingen</name>
