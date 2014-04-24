@@ -15,10 +15,11 @@ import eu.clarin.sru.fcs.aggregator.sopt.CorpusModelCached;
 import eu.clarin.sru.fcs.aggregator.sopt.CorpusModelI;
 import eu.clarin.sru.fcs.aggregator.sopt.CorpusModelLive;
 import eu.clarin.sru.fcs.aggregator.sopt.CorpusRendererCached;
-import eu.clarin.sru.fcs.aggregator.sopt.CorpusRendererI;
 import eu.clarin.sru.fcs.aggregator.sopt.CorpusRendererLive;
 import eu.clarin.sru.fcs.aggregator.sopt.Languages;
 import eu.clarin.sru.fcs.aggregator.cache.ScanCache;
+import eu.clarin.sru.fcs.aggregator.sopt.CorpusRenderer;
+import eu.clarin.sru.fcs.aggregator.sopt.Language;
 import eu.clarin.sru.fcs.aggregator.util.SRUCQL;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -72,7 +73,7 @@ public class SearchOptions extends SelectorComposer<Component> {
     private Map<String, List<String>> xAggregationContext;
     
     private CorpusModelI corporaModel;
-    private CorpusRendererI corpusRenderer;
+    private CorpusRenderer corpusRenderer;
     
     private boolean liveMode = false;
 
@@ -134,6 +135,7 @@ public class SearchOptions extends SelectorComposer<Component> {
                 treeitem.setVisible(false);
             }
         }
+        onSelectAll(null);
     }
 
     @Listen(ZulEvents.ON_AFTER_RENDER + "=#tree")
@@ -150,7 +152,9 @@ public class SearchOptions extends SelectorComposer<Component> {
     public void onSelectAll(Event ev) {
         Treechildren openTreeItems = tree.getTreechildren();
         for (Treeitem openItem : openTreeItems.getItems()) {
-            corpusRenderer.updateItem(openItem, true);
+            if (openItem.isVisible()) {
+                corpusRenderer.updateItem(openItem, true);
+            }
         }
     }
 
@@ -160,8 +164,8 @@ public class SearchOptions extends SelectorComposer<Component> {
         for (Treeitem openItem : openTreeItems.getItems()) {
             
             DefaultTreeNode<Corpus> node = (DefaultTreeNode<Corpus>) openItem.getValue();
-            Corpus data = node.getData();
-            System.out.println(data);
+            //Corpus data = node.getData();
+            //System.out.println(data);
             
             corpusRenderer.updateItem(openItem, false);
         }
@@ -226,20 +230,30 @@ public class SearchOptions extends SelectorComposer<Component> {
         for (Treeitem item : treeItems.getItems()) {
             DefaultTreeNode<Corpus> node = item.getValue();
             Corpus corpus = node.getData();
-            for (String langCode : corpus.getLanguages()) {
-                availableLangs.add(langCode);
+            // offer for selection only those langauges
+            // that are unique for a corpus
+            if (corpus.getLanguages().size() == 1) {
+                availableLangs.add(corpus.getLanguages().iterator().next());
             }
+            //for (String langCode : corpus.getLanguages()) {
+            //    availableLangs.add(langCode);
+            //}
         }
 
-        List<String> sortedAvailableLanguages = new ArrayList<String>(availableLangs.size());
-        sortedAvailableLanguages.addAll(availableLangs);
-        Collections.sort(sortedAvailableLanguages);
-        for (String langCode : sortedAvailableLanguages) {
-            String name = this.languages.nameForCode(langCode);
-            if (name != null) {
-                Comboitem item = this.languageSelect.appendItem(name);
-                item.setValue(langCode);
+        //List<String> sortedAvailableLanguages = new ArrayList<String>(availableLangs.size());
+        //sortedAvailableLanguages.addAll(availableLangs);
+        //Collections.sort(sortedAvailableLanguages);
+        List<Language> sortedLangs = new ArrayList<Language>(availableLangs.size());
+        for (String langCode : availableLangs) {
+            Language lang = this.languages.langForCode(langCode);
+            if (lang != null) {
+                sortedLangs.add(lang);
             }
+        }
+        Collections.sort(sortedLangs);
+        for (Language lang : sortedLangs) {
+                Comboitem item = this.languageSelect.appendItem(lang.getNameEn());
+                item.setValue(lang.getCode());
         }
     }
     

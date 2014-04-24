@@ -50,8 +50,8 @@ public class WebAppListener implements WebAppInit, WebAppCleanup {
     private static final String AGGREGATOR_DIR_NAME = "aggregator";
     private static final String SCAN_DIR_NAME = "scan";
     private static final TimeUnit CACHE_UPDATE_INTERVAL_UNIT = TimeUnit.HOURS;
-    private static final int CACHE_UPDATE_INTERVAL = 5;
-    private static final int CACHE_MAX_DEPTH = 2;
+    private static final int CACHE_UPDATE_INTERVAL = 6;
+    private static final int CACHE_MAX_DEPTH = 3;
     private static final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
     public static final String CORPUS_CRAWLER = "CORPUS_CRAWLER";
 
@@ -71,6 +71,7 @@ public class WebAppListener implements WebAppInit, WebAppCleanup {
         webapp.setAttribute(LANGUAGES, languages);
         
         setUpScanCache(webapp);
+        //setUpScanCacheForReadOnly(webapp);
         
         setUpTokenizers(webapp);
         
@@ -90,11 +91,15 @@ public class WebAppListener implements WebAppInit, WebAppCleanup {
     }
 
     private String getScanDirectory() {
-        File aggregatorDir = new File(System.getProperty("user.home"), "/." + AGGREGATOR_DIR_NAME);
+        //File aggregatorDir = new File(System.getProperty("user.home"), "/." + AGGREGATOR_DIR_NAME);
         //File aggregatorDir = new File("/var/www", "/." + AGGREGATOR_DIR_NAME);
+        File aggregatorDir = new File("/data/fcsAggregator");
         
         if (!aggregatorDir.exists()) {
-            aggregatorDir.mkdir();
+            if (!aggregatorDir.mkdir()) {
+                LOGGER.info("Scan directory does not exist and cannot be created: " 
+                        + aggregatorDir.getAbsolutePath());
+            }
         }
         File scanDir = new File(aggregatorDir, SCAN_DIR_NAME);
         if (!scanDir.exists()) {
@@ -104,19 +109,42 @@ public class WebAppListener implements WebAppInit, WebAppCleanup {
         LOGGER.info("Scan location: " + scanPath);
         return scanPath;
     }
+    
+    /**
+     * Use this method instead of setUpScanCache() method if it is necessary
+     * to run the application without scan data crawl, given that the scan 
+     * data was crawled before and was stored as cache under appropriate
+     * location (useful when testing or when smth is wrong with the endpoint 
+     * scan responses).
+     * 
+     * @param webapp 
+     */
+    private void setUpScanCacheForReadOnly(WebApp webapp) {
+        ScanCacheFiled scanCacheFiled = new ScanCacheFiled(getScanDirectory());
+        ScanCache scanCache;
+        LOGGER.info("Start cache read");
+        try {
+            scanCache = scanCacheFiled.read();
+            LOGGER.info("Finished cache read, number of root corpora: " + scanCache.getRootCorpora().size());
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Error while reading the scan cache!", e);
+            scanCache = new SimpleInMemScanCache();
+        }
+        webapp.setAttribute(CORPUS_CACHE, scanCache);
+    }
 
     private void setUpScanCache(WebApp webapp) {
 
         ScanCacheFiled scanCacheFiled = new ScanCacheFiled(getScanDirectory());
         CenterRegistryI centerRegistry = new CenterRegistryLive();
         SRUThreadedClient sruScanClient = (SRUThreadedClient) webapp.getAttribute(WebAppListener.SHARED_SRU_CLIENT);
-        EndpointUrlFilter filter = new EndpointUrlFilter();
-        //filter.urlShouldContainAnyOf("leipzig", ".mpi.nl");
+        //EndpointUrlFilter filter = new EndpointUrlFilter();
+        //filter.urlShouldContainAnyOf("leipzig");
         //filter.urlShouldContainAnyOf("uni-tuebingen.de");
-        filter.urlShouldContainAnyOf("uni-tuebingen.de", ".mpi.nl");
+        //filter.urlShouldContainAnyOf("uni-tuebingen.de", ".mpi.nl");
         //filter.urlShouldContainAnyOf("dspin.dwds.de", "lindat.");
-        ScanCrawler scanCrawler = new ScanCrawler(centerRegistry, sruScanClient, filter, CACHE_MAX_DEPTH);
-        //ScanCrawler scanCrawler = new ScanCrawler(centerRegistry, sruScanClient, null, CACHE_MAX_DEPTH);
+        //ScanCrawler scanCrawler = new ScanCrawler(centerRegistry, sruScanClient, filter, CACHE_MAX_DEPTH);
+        ScanCrawler scanCrawler = new ScanCrawler(centerRegistry, sruScanClient, null, CACHE_MAX_DEPTH);
         ScanCache scanCache;
 
         //synchronized (scanCrawler) {
@@ -190,4 +218,5 @@ public class WebAppListener implements WebAppInit, WebAppCleanup {
         }
         webapp.setAttribute(DE_TOK_MODEL, model);
     }
+
 }

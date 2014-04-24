@@ -70,6 +70,10 @@ public class Aggregator extends SelectorComposer<Component> {
     A prevButton;
     @Wire
     A nextButton;
+    @Wire
+    Label tooltipPrevText;
+    @Wire
+    Label tooltipNextText;
     
     @Wire
     Menuitem weblichtTcf;
@@ -110,8 +114,11 @@ public class Aggregator extends SelectorComposer<Component> {
         } else {
             int maxRecords = searchOptionsComposer.getMaxRecords();
             String searchLang = searchOptionsComposer.getSearchLang();
+            //searchOffset = new int[]{1, 0};
             searchOffset = new int[]{1, 0};
-            searchResultsComposer.executeSearch(selectedCorpora, maxRecords, searchString.getText(), searchOffset, searchLang);
+            searchOffset[0] = searchOffset[0] + searchOffset[1];
+            searchOffset[1] = maxRecords;
+            searchResultsComposer.executeSearch(selectedCorpora, searchOffset[0], maxRecords, searchString.getText(), searchLang);
             if (searchLang.equals("anylang")) {
                 this.weblichtTcf.setVisible(false);
             } else {
@@ -181,8 +188,6 @@ public class Aggregator extends SelectorComposer<Component> {
         if (url != null) {
             Executions.getCurrent().sendRedirect(WEBLICHT_URL
                 + url, "_blank");
-        } else {
-            Messagebox.show("Sorry, drop-off/WebLicht error!");
         }
     }
     
@@ -192,8 +197,6 @@ public class Aggregator extends SelectorComposer<Component> {
         if (url != null) {
             Executions.getCurrent().sendRedirect(WEBLICHT_URL
                 + url, "_blank");
-        } else {
-            Messagebox.show("Sorry, drop-off/WebLicht error!");
         }
     }
 
@@ -252,6 +255,7 @@ public class Aggregator extends SelectorComposer<Component> {
 
     @Listen("onClick = #srLabel")
     public void onClickSearchResult(Event ev) {
+        setupPrevNextSearchTooltips();
         this.pagesVisibility.openSearchResult();
         if (this.searchResultsComposer.hasSearchInProgress()) {
             this.controlsVisibility.enableControls2();
@@ -260,6 +264,7 @@ public class Aggregator extends SelectorComposer<Component> {
             this.controlsVisibility.enableControls1();
             this.controlsVisibility.enableControls2();
         }
+        
     }
 
     @Listen("onClick = #prevButton")
@@ -279,12 +284,13 @@ public class Aggregator extends SelectorComposer<Component> {
         } else {
             int maxRecords = searchOptionsComposer.getMaxRecords();
             String searchLang = searchOptionsComposer.getSearchLang();
-            searchOffset[0] = searchOffset[0] - 2 * searchOffset[1];
+            //searchOffset[0] = searchOffset[0] - searchOffset[1];
+            searchOffset[0] = searchOffset[0] - maxRecords;
             if (searchOffset[0] < 1) {
                 searchOffset[0] = 1;
-                searchOffset[1] = 0;
             }
-            searchResultsComposer.executeSearch(selectedCorpora, maxRecords, searchString.getText(), searchOffset, searchLang);
+            searchOffset[1] = maxRecords;
+            searchResultsComposer.executeSearch(selectedCorpora, searchOffset[0], maxRecords, searchString.getText(), searchLang);
             if (searchLang.equals("anylang")) {
                 this.weblichtTcf.setVisible(false);
             } else {
@@ -293,6 +299,7 @@ public class Aggregator extends SelectorComposer<Component> {
             onClickSearchResult(null);
         }
     }
+
 
     @Listen("onClick = #nextButton")
     public void onSearchNext(Event ev) {
@@ -311,7 +318,9 @@ public class Aggregator extends SelectorComposer<Component> {
         } else {
             int maxRecords = searchOptionsComposer.getMaxRecords();
             String searchLang = searchOptionsComposer.getSearchLang();
-            searchResultsComposer.executeSearch(selectedCorpora, maxRecords, searchString.getText(), searchOffset, searchLang);
+            searchOffset[0] = searchOffset[0] + searchOffset[1];
+            searchOffset[1] = maxRecords;
+            searchResultsComposer.executeSearch(selectedCorpora, searchOffset[0], maxRecords, searchString.getText(), searchLang);
             if (searchLang.equals("anylang")) {
                 this.weblichtTcf.setVisible(false);
             } else {
@@ -339,5 +348,19 @@ public class Aggregator extends SelectorComposer<Component> {
             }
         }
         LOGGER.log(Level.INFO, "Received parameter: operation[{0}], ", operationString);
+    }
+
+    private void setupPrevNextSearchTooltips() {
+        int startHit = searchOffset[0] - searchOptionsComposer.getMaxRecords();
+        if (startHit < 1) {
+            startHit = 1;
+        }
+        int endHit = searchOffset[0] - 1;
+        tooltipPrevText.setValue("hits " + 
+                    startHit + "-" + endHit);
+        startHit = searchOffset[0] + searchOffset[1];
+        endHit = startHit + searchOptionsComposer.getMaxRecords() - 1;
+        tooltipNextText.setValue("hits " + 
+                    startHit + "-" + endHit);
     }
 }

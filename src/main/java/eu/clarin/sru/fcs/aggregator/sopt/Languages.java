@@ -16,8 +16,9 @@ import java.util.logging.Logger;
  */
 public class Languages {
     
-    private Map<String,String> code2Name = new HashMap<String,String>();
-    private Map<String,String> code22Code = new HashMap<String,String>();
+    
+    private Map<String,Language> code2Lang = new HashMap<String,Language>();
+    
     public static final String LANGUAGES_FILE_PATH = "/lang/ISO-639-2_utf-8.txt";
     public static final String LANGUAGES_FILE_ENCODING = "UTF-8";
     public static final String ANY_LANGUAGE_NAME = "anylang";
@@ -26,16 +27,36 @@ public class Languages {
         loadMapping();
     }
     
+    /**
+     * Gets language by its ISO 639 language code.
+     * 
+     * @param code ISO 639/1, 639/2T or 639/2B language code
+     * @return language
+     */
+    public Language langForCode(String code) {
+        return this.code2Lang.get(code);
+    }
+    
+    /**
+     * Gets language name by the ISO 639 language code.
+     * 
+     * @param code ISO 639/1, 639/2T or 639/2B language code
+     * @return language name in English
+     */
     public String nameForCode(String code) {
-        return this.code2Name.get(code);
+        if (this.code2Lang.containsKey(code)) {
+            return this.code2Lang.get(code).getNameEn();
+        }
+        return code;
     }
-    
-    public String code2ForCode(String code) {
-        return this.code22Code.get(code);
-    }
-    
+
+    /**
+     * Gets all known to it ISO 639/1, 639/2T and 639/2B language codes.
+     * 
+     * @return language codes
+     */
     public Set<String> getCodes() {
-        return this.code2Name.keySet();
+        return this.code2Lang.keySet();
     }
 
     private void loadMapping() {
@@ -52,17 +73,15 @@ public class Languages {
                     String alpha3t = splitted[1];
                     String alpha2 = splitted[2];
                     String enName = splitted[3];
+                    Language lang = new Language(alpha2, alpha3t, alpha3b, enName);
                     if (!alpha3b.isEmpty()) {
-                        this.code2Name.put(alpha3b, enName);
-                        this.code22Code.put(alpha3b, alpha2);
+                        this.code2Lang.put(alpha3b, lang);
                     }
                     if (!alpha3t.isEmpty()) {
-                        this.code2Name.put(alpha3t, enName);
-                        this.code22Code.put(alpha3t, alpha2);
+                        this.code2Lang.put(alpha3t, lang);
                     }
                     if (!alpha2.isEmpty()) {
-                        this.code2Name.put(alpha2, enName);
-                        this.code22Code.put(alpha2, alpha2);
+                        this.code2Lang.put(alpha2, lang);
                     }
                 }
             }

@@ -6,8 +6,6 @@ import eu.clarin.sru.client.fcs.ClarinFCSRecordData;
 import eu.clarin.sru.client.fcs.DataView;
 import eu.clarin.sru.client.fcs.DataViewKWIC;
 import eu.clarin.sru.client.fcs.Resource;
-import eu.clarin.sru.fcs.aggregator.sresult.SearchResult;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -16,16 +14,11 @@ import org.zkoss.zk.ui.event.EventListener;
 import org.zkoss.zk.ui.event.Events;
 import org.zkoss.zul.A;
 import org.zkoss.zul.Cell;
-import org.zkoss.zul.Checkbox;
-import org.zkoss.zul.DefaultTreeNode;
 import org.zkoss.zul.Hlayout;
 import org.zkoss.zul.Image;
 import org.zkoss.zul.Label;
-import org.zkoss.zul.Popup;
 import org.zkoss.zul.Row;
 import org.zkoss.zul.RowRenderer;
-import org.zkoss.zul.Treeitem;
-import org.zkoss.zul.Treerow;
 import org.zkoss.zul.Vlayout;
 import org.zkoss.zul.Window;
 
@@ -192,5 +185,7 @@ public class SearchResultRecordRenderer implements RowRenderer {
         //infoCell.setStyle("margin-right:10px;");
         row.appendChild(infoCell);
     }
+    
+    
     
 }

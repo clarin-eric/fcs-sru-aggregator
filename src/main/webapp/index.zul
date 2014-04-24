@@ -99,9 +99,9 @@
                         <div align="center">
                             <progressmeter visible="false" id="pMeter" value="0" width="300px"/>
                             <hlayout>
-                                <a id="prevButton" visible="false" image="img/arrow_left_blue.png"
+                                <a id="prevButton" visible="false" image="img/arrow_left_blue.png" tooltip="tooltipPrev"
                                     hoverImage="img/arrow_left_green.png" style="margin-right:20px;"/>
-                                <a id="nextButton" visible="false" image="img/arrow_right_blue.png"
+                                <a id="nextButton" visible="false" image="img/arrow_right_blue.png" tooltip="tooltipNext"
                                     hoverImage="img/arrow_right_green.png" dir="reverse"
                                     style="margin-left:20px;"/>
                             </hlayout>
@@ -158,6 +158,9 @@
                 </rows>
             </grid>
         </popup>
+        
+        <popup id="tooltipPrev"><label id="tooltipPrevText" value="previous N hits from each resource" style="font-weight:bold"/></popup>
+        <popup id="tooltipNext"><label id="tooltipNextText" value="next N hits from each resource" style="font-weight:bold"/></popup>
 
     </window>
 

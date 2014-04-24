@@ -20,6 +20,8 @@ public class SearchResult {
 
     private Corpus corpus;
     private String searchString;
+    private int startRecord;
+    private int endRecord;
     private Future<SRUSearchRetrieveResponse> futureResponse;
     private SRUSearchRetrieveResponse response;
     private List<Kwic> kwics = new ArrayList<Kwic>();
@@ -35,9 +37,19 @@ public class SearchResult {
         this.kwics.add(kwic);
     }
     
-    public SearchResult(Corpus corpus, String searchString) {
+    public SearchResult(Corpus corpus, String searchString, int startRecord , int endRecord) {
         this.corpus = corpus;
         this.searchString = searchString;
+        this.startRecord = startRecord;
+        this.endRecord = endRecord;
+    }
+
+    public int getStartRecord() {
+        return startRecord;
+    }
+
+    public int getEndRecord() {
+        return endRecord;
     }
 
     public Corpus getCorpus() {

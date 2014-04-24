@@ -6,6 +6,7 @@ import eu.clarin.sru.client.SRUScanResponse;
 import eu.clarin.sru.client.SRUTerm;
 import eu.clarin.sru.client.SRUThreadedClient;
 import eu.clarin.sru.fcs.aggregator.app.WebAppListener;
+import eu.clarin.sru.fcs.aggregator.cache.ScanCrawler;
 import static eu.clarin.sru.fcs.aggregator.sopt.Corpus.ROOT_HANDLE;
 import eu.clarin.sru.fcs.aggregator.util.SRUCQL;
 import java.util.ArrayList;
@@ -135,6 +136,7 @@ public class CorpusModelLive extends DefaultTreeModel<Corpus> implements CorpusM
     }
 
     public void loadChildren(Treeitem item) {
+         logger.info("LOADING CHILDREN");
         // get first child
         Treeitem childTreeitem = (Treeitem) item.getTreechildren().getChildren().get(0);
         // if this first child is temp node remove it
@@ -143,6 +145,7 @@ public class CorpusModelLive extends DefaultTreeModel<Corpus> implements CorpusM
         DefaultTreeNode<Corpus> childNodeValue = (DefaultTreeNode<Corpus>) childTreeitem.getValue();
         Corpus childCorpus = childNodeValue.getData();
         if (childCorpus.isTemporary()) {
+            logger.info("REPLACING TEMP WITH REAL");
             // remove temporary node
             remove(openedNodeValue, childTreeitem.getIndex());
             // add real corpora nodes
@@ -185,9 +188,10 @@ public class CorpusModelLive extends DefaultTreeModel<Corpus> implements CorpusM
     }
 
     private void initRootChildren(CenterRegistryI startingPoint) {
+        logger.info("INITIALIZING ROOT CHILDREN");
         for (Institution instit : startingPoint.getCQLInstitutions()) {
             for (Endpoint endp : instit.getEndpoints()) {
-                try {
+                //try {
                     //TODO: temp for testing, this 3 lines are to be removed:
                     //if (//!endp.getUrl().contains("uni-leipzig.de") && 
                     //        !endp.getUrl().contains("mpi.")
@@ -195,96 +199,110 @@ public class CorpusModelLive extends DefaultTreeModel<Corpus> implements CorpusM
                     //        && !endp.getUrl().contains("weblicht")) {
                     //    continue;
                     //}
-
-                    Future<SRUScanResponse> corporaResponse = null;
-                    SRUScanRequest corporaRequest = new SRUScanRequest(endp.getUrl());
-                    StringBuilder scanClause = new StringBuilder(SRUCQL.SCAN_RESOURCE_PARAMETER);
-                    scanClause.append("=");
-                    scanClause.append(ROOT_HANDLE);
-                    corporaRequest.setScanClause(scanClause.toString());
-                    corporaRequest.setExtraRequestData(SRUCQL.SCAN_RESOURCE_INFO_PARAMETER, "true");
-                    corporaResponse = sruClient.scan(corporaRequest);
-                    SRUScanResponse response = corporaResponse.get(200, TimeUnit.SECONDS);
-                    if (response != null && response.hasTerms()) {
-                        for (SRUTerm term : response.getTerms()) {
-                            Corpus c = new Corpus(instit, endp.getUrl());
-                            c.setHandle(term.getValue());
-                            c.setDisplayName(term.getDisplayTerm());
-                            c.setNumberOfRecords(term.getNumberOfRecords());
-                            addExtraInfo(c, term);
-                            DefaultTreeNode<Corpus> rootChild = createNodeWithTempChildren(c);
-                            super.getRoot().add(rootChild);
-                        }
-                    } else {
-                        Corpus endpCorpus = new Corpus(endp.getInstitution(), endp.getUrl());
-                        DefaultTreeNode<Corpus> rootChild = createNodeWithTempChildren(endpCorpus);
+                    
+                    List<Corpus> rootCorpora = ScanCrawler.doScan(sruClient, endp.getUrl(), instit, null);
+                    for (Corpus c : rootCorpora) {
+                        DefaultTreeNode<Corpus> rootChild = createNodeWithTempChildren(c);
                         super.getRoot().add(rootChild);
                     }
-                } catch (SRUClientException ex) {
-                    logger.log(Level.SEVERE, "Error accessing corpora {0} at {1} {2} {3}",
-                            new String[]{ROOT_HANDLE, endp.getUrl(), ex.getClass().getName(), ex.getMessage()});
-                } catch (InterruptedException ex) {
-                    logger.log(Level.SEVERE, "Error accessing corpora {0} at {1} {2} {3}",
-                            new String[]{ROOT_HANDLE, endp.getUrl(), ex.getClass().getName(), ex.getMessage()});
-                } catch (ExecutionException ex) {
-                    logger.log(Level.SEVERE, "Error accessing corpora {0} at {1} {2} {3}",
-                            new String[]{ROOT_HANDLE, endp.getUrl(), ex.getClass().getName(), ex.getMessage()});
-                } catch (TimeoutException ex) {
-                    logger.log(Level.SEVERE, "Timeout scanning corpora {0} at {1} {2} {3}",
-                            new String[]{ROOT_HANDLE, endp.getUrl(), ex.getClass().getName(), ex.getMessage()});
-                }
+//                    Future<SRUScanResponse> corporaResponse = null;
+//                    SRUScanRequest corporaRequest = new SRUScanRequest(endp.getUrl());
+//                    StringBuilder scanClause = new StringBuilder(SRUCQL.SCAN_RESOURCE_PARAMETER);
+//                    scanClause.append("=");
+//                    scanClause.append(ROOT_HANDLE);
+//                    corporaRequest.setScanClause(scanClause.toString());
+//                    corporaRequest.setExtraRequestData(SRUCQL.SCAN_RESOURCE_INFO_PARAMETER, "true");
+//                    corporaResponse = sruClient.scan(corporaRequest);
+//                    SRUScanResponse response = corporaResponse.get(200, TimeUnit.SECONDS);
+//                    if (response != null && response.hasTerms()) {
+//                        for (SRUTerm term : response.getTerms()) {
+//                            Corpus c = new Corpus(instit, endp.getUrl());
+//                            c.setHandle(term.getValue());
+//                            c.setDisplayName(term.getDisplayTerm());
+//                            c.setNumberOfRecords(term.getNumberOfRecords());
+//                            addExtraInfo(c, term);
+//                            DefaultTreeNode<Corpus> rootChild = createNodeWithTempChildren(c);
+//                            super.getRoot().add(rootChild);
+//                        }
+//                    } else {
+//                        Corpus endpCorpus = new Corpus(endp.getInstitution(), endp.getUrl());
+//                        DefaultTreeNode<Corpus> rootChild = createNodeWithTempChildren(endpCorpus);
+//                        super.getRoot().add(rootChild);
+//                    }
+//                } catch (SRUClientException ex) {
+//                    logger.log(Level.SEVERE, "Error accessing corpora {0} at {1} {2} {3}",
+//                            new String[]{ROOT_HANDLE, endp.getUrl(), ex.getClass().getName(), ex.getMessage()});
+//                } catch (InterruptedException ex) {
+//                    logger.log(Level.SEVERE, "Error accessing corpora {0} at {1} {2} {3}",
+//                            new String[]{ROOT_HANDLE, endp.getUrl(), ex.getClass().getName(), ex.getMessage()});
+//                } catch (ExecutionException ex) {
+//                    logger.log(Level.SEVERE, "Error accessing corpora {0} at {1} {2} {3}",
+//                            new String[]{ROOT_HANDLE, endp.getUrl(), ex.getClass().getName(), ex.getMessage()});
+//                } catch (TimeoutException ex) {
+//                    logger.log(Level.SEVERE, "Timeout scanning corpora {0} at {1} {2} {3}",
+//                            new String[]{ROOT_HANDLE, endp.getUrl(), ex.getClass().getName(), ex.getMessage()});
+//                }
             }
 
         }
     }
-
+    
     private Iterable<Corpus> getSubcorpora(Corpus corpus) {
-
-        ArrayList<Corpus> subCorpora = new ArrayList<Corpus>();
-        try {
-            SRUScanRequest corporaRequest = new SRUScanRequest(corpus.getEndpointUrl());
-            StringBuilder scanClause = new StringBuilder(SRUCQL.SCAN_RESOURCE_PARAMETER);
-            scanClause.append("=");
-            String resourceValue = corpus.getHandle();
-            if (corpus.getHandle() == null) {
-                resourceValue = ROOT_HANDLE;
-            }
-            if (Corpus.HANDLE_WITH_SPECIAL_CHARS.matcher(resourceValue).matches()) {
-                resourceValue = "%22" + resourceValue + "%22";
-            }
-            scanClause.append(resourceValue);
-            corporaRequest.setScanClause(scanClause.toString());
-            //!!!TODO request doesn't work for scan with resource handle???
-            //corporaRequest.setExtraRequestData(SRUCQLscan.RESOURCE_INFO_PARAMETER, "true");
-            Future<SRUScanResponse> corporaResponse = sruClient.scan(corporaRequest);
-            SRUScanResponse response = corporaResponse.get(200, TimeUnit.SECONDS);
-            if (response != null && response.hasTerms()) {
-            for (SRUTerm term : response.getTerms()) {
-                Corpus c = new Corpus(corpus.getInstitution(), corpus.getEndpointUrl());
-                c.setHandle(term.getValue());
-                c.setDisplayName(term.getDisplayTerm());
-                c.setNumberOfRecords(term.getNumberOfRecords());
-                addExtraInfo(c, term);
-                subCorpora.add(c);
-            }
-            System.out.println("Found " + subCorpora.size() + " children");
-        }
-        } catch (SRUClientException ex) {
-            logger.log(Level.SEVERE, "Error accessing corpora {0} at {1} {2} {3}",
-                    new String[]{corpus.getHandle(), corpus.getEndpointUrl(), ex.getClass().getName(), ex.getMessage()});
-        } catch (InterruptedException ex) {
-            logger.log(Level.SEVERE, "Error accessing corpora {0} at {1} {2} {3}",
-                    new String[]{corpus.getHandle(), corpus.getEndpointUrl(), ex.getClass().getName(), ex.getMessage()});
-        } catch (ExecutionException ex) {
-            logger.log(Level.SEVERE, "Error accessing corpora {0} at {1} {2} {3}",
-                    new String[]{corpus.getHandle(), corpus.getEndpointUrl(), ex.getClass().getName(), ex.getMessage()});
-        } catch (TimeoutException ex) {
-            logger.log(Level.SEVERE, "Timeout scanning corpora {0} at {1} {2} {3}",
-                    new String[]{corpus.getHandle(), corpus.getEndpointUrl(), ex.getClass().getName(), ex.getMessage()});
-        }
-
-        return subCorpora;
+        //get rid of institution and endpoint? get get this info from corpus
+        return ScanCrawler.doScan(sruClient, corpus.getEndpointUrl(), corpus.getInstitution(), corpus);
     }
+
+//    private Iterable<Corpus> getSubcorpora(Corpus corpus) {
+//        logger.info("OBTAINING SUBCORPORA");
+//        ArrayList<Corpus> subCorpora = new ArrayList<Corpus>();
+//        try {
+//            
+//            
+//            SRUScanRequest corporaRequest = new SRUScanRequest(corpus.getEndpointUrl());
+//            StringBuilder scanClause = new StringBuilder(SRUCQL.SCAN_RESOURCE_PARAMETER);
+//            scanClause.append("=");
+//            String resourceValue = corpus.getHandle();
+//            if (corpus.getHandle() == null) {
+//                resourceValue = ROOT_HANDLE;
+//            }
+//            if (Corpus.HANDLE_WITH_SPECIAL_CHARS.matcher(resourceValue).matches()) {
+//                resourceValue = "%22" + resourceValue + "%22";
+//            }
+//            scanClause.append(resourceValue);
+//            corporaRequest.setScanClause(scanClause.toString());
+//            //!!!TODO request doesn't work for scan with resource handle???
+//            //corporaRequest.setExtraRequestData(SRUCQLscan.RESOURCE_INFO_PARAMETER, "true");
+//            Future<SRUScanResponse> corporaResponse = sruClient.scan(corporaRequest);
+//            logger.info("BEFORE get " + resourceValue);
+//            SRUScanResponse response = corporaResponse.get(200, TimeUnit.SECONDS);
+//            logger.info("AFTER get " + resourceValue);
+//            if (response != null && response.hasTerms()) {
+//            for (SRUTerm term : response.getTerms()) {
+//                Corpus c = new Corpus(corpus.getInstitution(), corpus.getEndpointUrl());
+//                c.setHandle(term.getValue());
+//                c.setDisplayName(term.getDisplayTerm());
+//                c.setNumberOfRecords(term.getNumberOfRecords());
+//                addExtraInfo(c, term);
+//                subCorpora.add(c);
+//            }
+//            logger.info("OBTAINED SUBCORPORA " + subCorpora.size());
+//        }
+//        } catch (SRUClientException ex) {
+//            logger.log(Level.SEVERE, "Error accessing corpora {0} at {1} {2} {3}",
+//                    new String[]{corpus.getHandle(), corpus.getEndpointUrl(), ex.getClass().getName(), ex.getMessage()});
+//        } catch (InterruptedException ex) {
+//            logger.log(Level.SEVERE, "Error accessing corpora {0} at {1} {2} {3}",
+//                    new String[]{corpus.getHandle(), corpus.getEndpointUrl(), ex.getClass().getName(), ex.getMessage()});
+//        } catch (ExecutionException ex) {
+//            logger.log(Level.SEVERE, "Error accessing corpora {0} at {1} {2} {3}",
+//                    new String[]{corpus.getHandle(), corpus.getEndpointUrl(), ex.getClass().getName(), ex.getMessage()});
+//        } catch (TimeoutException ex) {
+//            logger.log(Level.SEVERE, "Timeout scanning corpora {0} at {1} {2} {3}",
+//                    new String[]{corpus.getHandle(), corpus.getEndpointUrl(), ex.getClass().getName(), ex.getMessage()});
+//        }
+//        
+//        return subCorpora;
+//    }
 
     private void addExtraInfo(Corpus c, SRUTerm term) {
 

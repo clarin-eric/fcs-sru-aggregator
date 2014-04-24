@@ -21,6 +21,18 @@ import java.util.logging.Logger;
 /**
  * Utility for reading/writing scan data (endpoints descriptions) from/to
  * ScanCache from/to local files.
+ * 
+ * The data saved in a folder into files has the following format:
+ * inst.txt lists all the centers and the endpoints that have CQL compliant 
+ * resources, with each CQL endpoint top resources assigned a number.
+ * Number that represents a resource corresponds to a folder name, inside which 
+ * resource info is stored in a file corpus.txt. If a resource has sub-resources, 
+ * the folder contains sub-folders, also named by numbers, with their 
+ * corresponding corpus.txt files, and so on. 
+ * The corpus.txt file contains each piece of info on a separate line. Line 1 
+ * is resource endpoint, line 2 - handle, line 3 - display name, line 4 - landing 
+ * page, 5 - desription, 6 - languages (multiple languages are separated by | 
+ * separator), 7 - number of records.
  *
  * @author yanapanchenko
  */

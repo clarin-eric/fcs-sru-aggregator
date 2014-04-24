@@ -1,5 +1,6 @@
 package eu.clarin.sru.fcs.aggregator.cache;
 
+import eu.clarin.sru.client.SRUClientException;
 import eu.clarin.sru.client.SRUScanRequest;
 import eu.clarin.sru.client.SRUScanResponse;
 import eu.clarin.sru.client.SRUTerm;
@@ -9,7 +10,9 @@ import eu.clarin.sru.fcs.aggregator.sopt.Corpus;
 import eu.clarin.sru.fcs.aggregator.sopt.Endpoint;
 import eu.clarin.sru.fcs.aggregator.sopt.Institution;
 import eu.clarin.sru.fcs.aggregator.util.SRUCQL;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -71,10 +74,206 @@ public class ScanCrawler {
 
     }
 
-    // TODO: ask Oliver to add API support for the extra info in the 
+
+
+    private void addCorpora(SRUThreadedClient sruScanClient, String endpointUrl,
+            Institution institution, int depth, Corpus parentCorpus, ScanCache cache) {
+        
+
+        depth++;
+        if (depth > maxDepth) {
+            return;
+        }
+
+
+            List<Corpus> childrenCorpora = doScan(sruScanClient, endpointUrl, institution, parentCorpus);
+            
+            //if (childrenCorpora.isEmpty()) {
+                for (Corpus c : childrenCorpora) {
+                    // don't add corpus that introduces cyclic references
+                    // as of March 2014, there are 2 such endpoints...
+                    if (cache.getCorpus(c.getHandle())!= null) {
+                        LOGGER.warning("Cyclic reference in corpus " + c.getHandle() + " of endpoint " + endpointUrl);
+                        continue;
+                    }
+                    //Corpus c = createCorpus(institution, endpointUrl, term);
+                    //Corpus c = new Corpus(institution, endpointUrl);
+//                    c.setHandle(term.getValue());
+//                    c.setDisplayName(term.getDisplayTerm());
+//                    if (term.getNumberOfRecords() > 0) {
+//                        c.setNumberOfRecords(term.getNumberOfRecords());
+//                    }
+//                    addExtraInfo(c, term);
+                    cache.addCorpus(c, parentCorpus);
+                    // how not to query default corpus???
+                    addCorpora(sruScanClient, c.getEndpointUrl(), c.getInstitution(),
+                            depth, c, cache);
+                }
+                //} else if () {
+                // TODO if diagnistics came back, try simple scan without the 
+                // SRUCQLscan.RESOURCE_INFO_PARAMETER
+//            } 
+//else {
+//                if (parentCorpus == null) { // means root
+                    // create default root corpus:
+//                    Corpus c = new Corpus(institution, endpointUrl);
+//                    cache.addCorpus(c);
+//                }
+//            }
+            
+            
+//            SRUScanResponse response = doScan(sruScanClient, endpointUrl, parentCorpus);
+//            
+//            
+//            if (response != null && response.hasTerms()) {
+//                for (SRUTerm term : response.getTerms()) {
+//                    // don't add corpus that introduces cyclic references
+//                    // as of March 2014, there are 2 such endpoints...
+//                    if (cache.getCorpus(term.getValue())!= null) {
+//                        LOGGER.warning("Cyclic reference in corpus " + term.getValue() + " of endpoint " + endpointUrl);
+//                        continue;
+//                    }
+//                    Corpus c = createCorpus(institution, endpointUrl, term);
+//                    //Corpus c = new Corpus(institution, endpointUrl);
+////                    c.setHandle(term.getValue());
+////                    c.setDisplayName(term.getDisplayTerm());
+////                    if (term.getNumberOfRecords() > 0) {
+////                        c.setNumberOfRecords(term.getNumberOfRecords());
+////                    }
+////                    addExtraInfo(c, term);
+//                    cache.addCorpus(c, parentCorpus);
+//                    addCorpora(sruScanClient, c.getEndpointUrl(), c.getInstitution(),
+//                            depth, c, cache);
+//                }
+//                //} else if () {
+//                // TODO if diagnistics came back, try simple scan without the 
+//                // SRUCQLscan.RESOURCE_INFO_PARAMETER
+//            } else {
+//                if (parentCorpus == null) { // means root
+//                    // create default root corpus:
+//                    Corpus c = new Corpus(institution, endpointUrl);
+//                    cache.addCorpus(c);
+//                }
+//            }
+        
+    }
+
+    private static String normalizeHandle(Corpus corpus, boolean root) {
+        if (root) {
+            return Corpus.ROOT_HANDLE;
+        }
+        String handle = corpus.getHandle();
+        if (Corpus.HANDLE_WITH_SPECIAL_CHARS.matcher(handle).matches()) {
+            //resourceValue = "%22" + resourceValue + "%22";
+            handle = "\"" + handle + "\"";
+        }
+        return handle;
+    }
+
+//    public static SRUScanResponse doScan(SRUThreadedClient sruScanClient, 
+//            String endpointUrl, Corpus parentCorpus) {
+//        
+//        Future<SRUScanResponse> corporaResponse = null;
+//        SRUScanResponse response = null;
+//        try {
+//                    SRUScanRequest corporaRequest = new SRUScanRequest(endpointUrl);
+//            StringBuilder scanClause = new StringBuilder(SRUCQL.SCAN_RESOURCE_PARAMETER);
+//            scanClause.append("=");
+//            String normalizedHandle = normalizeHandle(parentCorpus, parentCorpus == null);
+//            scanClause.append(normalizedHandle);
+//            corporaRequest.setScanClause(scanClause.toString());
+//            corporaRequest.setExtraRequestData(SRUCQL.SCAN_RESOURCE_INFO_PARAMETER, 
+//                    SRUCQL.SCAN_RESOURCE_INFO_PARAMETER_DEFAULT_VALUE);
+//            corporaResponse = sruScanClient.scan(corporaRequest);
+//            Thread.sleep(5000);
+//            response = corporaResponse.get(600, TimeUnit.SECONDS);
+//            return response;
+//        }    catch (TimeoutException ex) {
+//            LOGGER.log(Level.SEVERE, "Timeout scanning corpora {0} at {1} {2} {3}",
+//                    new String[]{Corpus.ROOT_HANDLE, endpointUrl, ex.getClass().getName(), ex.getMessage()});
+//        } catch (Exception ex) {
+//            LOGGER.log(Level.SEVERE, "Error accessing corpora {0} at {1} {2} {3}",
+//                    new String[]{Corpus.ROOT_HANDLE, endpointUrl, ex.getClass().getName(), ex.getMessage()});
+//        } finally {
+//            if (corporaResponse != null && !corporaResponse.isDone()) {
+//                corporaResponse.cancel(true);
+//            }
+//        }
+//        
+//        return response;
+//    }
+    
+    
+        public static List<Corpus> doScan(SRUThreadedClient sruScanClient, 
+            String endpointUrl, Institution institution, Corpus parentCorpus) {
+        
+        List<Corpus> corpora = new ArrayList<Corpus>();
+        Future<SRUScanResponse> corporaResponse = null;
+        SRUScanResponse response = null;
+        try {
+                    SRUScanRequest corporaRequest = new SRUScanRequest(endpointUrl);
+            StringBuilder scanClause = new StringBuilder(SRUCQL.SCAN_RESOURCE_PARAMETER);
+            scanClause.append("=");
+            String normalizedHandle = normalizeHandle(parentCorpus, parentCorpus == null);
+            scanClause.append(normalizedHandle);
+            corporaRequest.setScanClause(scanClause.toString());
+            corporaRequest.setExtraRequestData(SRUCQL.SCAN_RESOURCE_INFO_PARAMETER, 
+                    SRUCQL.SCAN_RESOURCE_INFO_PARAMETER_DEFAULT_VALUE);
+            corporaResponse = sruScanClient.scan(corporaRequest);
+            Thread.sleep(5000);
+            response = corporaResponse.get(600, TimeUnit.SECONDS);
+        }    catch (TimeoutException ex) {
+            LOGGER.log(Level.SEVERE, "Timeout scanning corpora {0} at {1} {2} {3}",
+                    new String[]{Corpus.ROOT_HANDLE, endpointUrl, ex.getClass().getName(), ex.getMessage()});
+        } catch (Exception ex) {
+            LOGGER.log(Level.SEVERE, "Error accessing corpora {0} at {1} {2} {3}",
+                    new String[]{Corpus.ROOT_HANDLE, endpointUrl, ex.getClass().getName(), ex.getMessage()});
+        } finally {
+            if (corporaResponse != null && !corporaResponse.isDone()) {
+                corporaResponse.cancel(true);
+            }
+        }
+        
+        
+        if (response != null && response.hasTerms()) {
+                for (SRUTerm term : response.getTerms()) {
+                    // don't add corpus that introduces cyclic references
+                    // as of March 2014, there are 2 such endpoints...
+                    //if (cache.getCorpus(term.getValue())!= null) {
+                    //    LOGGER.warning("Cyclic reference in corpus " + term.getValue() + " of endpoint " + endpointUrl);
+                    //    continue;
+                    //}
+                    Corpus c = createCorpus(institution, endpointUrl, term);
+                    corpora.add(c);
+                }
+                //} else if () {
+                // TODO if diagnistics came back, try simple scan without the 
+                // SRUCQLscan.RESOURCE_INFO_PARAMETER
+            } else {
+                if (parentCorpus == null) { // means root
+                    // create default root corpus:
+                    Corpus c = new Corpus(institution, endpointUrl);
+                    corpora.add(c);
+                }
+            }
+        return corpora;
+    }
+
+    private static Corpus createCorpus(Institution institution, String endpointUrl, SRUTerm term) {
+                    Corpus c = new Corpus(institution, endpointUrl);
+                    c.setHandle(term.getValue());
+                    c.setDisplayName(term.getDisplayTerm());
+                    if (term.getNumberOfRecords() > 0) {
+                        c.setNumberOfRecords(term.getNumberOfRecords());
+                    }
+                    addExtraInfo(c, term);
+                    return c;
+    }
+    
+        // TODO: ask Oliver to add API support for the extra info in the 
     // SRU client/server libraries, so that it's not necessary to work
     // with DocumentFragment
-    private void addExtraInfo(Corpus c, SRUTerm term) {
+    private static void addExtraInfo(Corpus c, SRUTerm term) {
 
         DocumentFragment extraInfo = term.getExtraTermData();
         String enDescription = null;
@@ -114,85 +313,5 @@ public class ScanCrawler {
                 c.setDescription(enDescription);
             }
         }
-    }
-
-    private void addCorpora(SRUThreadedClient sruScanClient, String endpointUrl,
-            Institution institution, int depth, Corpus parentCorpus, ScanCache cache) {
-        
-        Future<SRUScanResponse> corporaResponse = null;
-
-        depth++;
-        if (depth > maxDepth) {
-            return;
-        }
-        try {
-            boolean root = false;
-            if (parentCorpus == null) {
-                root = true;
-            }
-
-            SRUScanRequest corporaRequest = new SRUScanRequest(endpointUrl);
-            StringBuilder scanClause = new StringBuilder(SRUCQL.SCAN_RESOURCE_PARAMETER);
-            scanClause.append("=");
-            String normalizedHandle = normalizeHandle(parentCorpus, root);
-            scanClause.append(normalizedHandle);
-            corporaRequest.setScanClause(scanClause.toString());
-            corporaRequest.setExtraRequestData(SRUCQL.SCAN_RESOURCE_INFO_PARAMETER, 
-                    SRUCQL.SCAN_RESOURCE_INFO_PARAMETER_DEFAULT_VALUE);
-            corporaResponse = sruScanClient.scan(corporaRequest);
-            Thread.sleep(5000);
-            SRUScanResponse response = corporaResponse.get(600, TimeUnit.SECONDS);
-            if (response != null && response.hasTerms()) {
-                for (SRUTerm term : response.getTerms()) {
-                    // don't add corpus that introduces cyclic references
-                    // as of March 2014, there are 2 such endpoints...
-                    if (cache.getCorpus(term.getValue())!= null) {
-                        LOGGER.warning("Cyclic reference in corpus " + term.getValue() + " of endpoint " + endpointUrl);
-                        continue;
-                    }
-                    Corpus c = new Corpus(institution, endpointUrl);
-                    c.setHandle(term.getValue());
-                    c.setDisplayName(term.getDisplayTerm());
-                    if (term.getNumberOfRecords() > 0) {
-                        c.setNumberOfRecords(term.getNumberOfRecords());
-                    }
-                    addExtraInfo(c, term);
-                    cache.addCorpus(c, parentCorpus);
-                    addCorpora(sruScanClient, c.getEndpointUrl(), c.getInstitution(),
-                            depth, c, cache);
-                }
-                //} else if () {
-                // TODO if diagnistics came back, try simple scan without the 
-                // SRUCQLscan.RESOURCE_INFO_PARAMETER
-            } else {
-                if (root) {
-                    // create default root corpus:
-                    Corpus c = new Corpus(institution, endpointUrl);
-                    cache.addCorpus(c);
-                }
-            }
-        } catch (TimeoutException ex) {
-            LOGGER.log(Level.SEVERE, "Timeout scanning corpora {0} at {1} {2} {3}",
-                    new String[]{Corpus.ROOT_HANDLE, endpointUrl, ex.getClass().getName(), ex.getMessage()});
-        } catch (Exception ex) {
-            LOGGER.log(Level.SEVERE, "Error accessing corpora {0} at {1} {2} {3}",
-                    new String[]{Corpus.ROOT_HANDLE, endpointUrl, ex.getClass().getName(), ex.getMessage()});
-        } finally {
-            if (corporaResponse != null && !corporaResponse.isDone()) {
-                corporaResponse.cancel(true);
-            }
-        }
-    }
-
-    private String normalizeHandle(Corpus corpus, boolean root) {
-        if (root) {
-            return Corpus.ROOT_HANDLE;
-        }
-        String handle = corpus.getHandle();
-        if (Corpus.HANDLE_WITH_SPECIAL_CHARS.matcher(handle).matches()) {
-            //resourceValue = "%22" + resourceValue + "%22";
-            handle = "\"" + handle + "\"";
-        }
-        return handle;
     }
 }
