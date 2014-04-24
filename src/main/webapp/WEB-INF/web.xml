@@ -39,6 +39,21 @@
         <servlet-name>auEngine</servlet-name>
         <url-pattern>/zkau/*</url-pattern>
     </servlet-mapping>
+    
+    <servlet> 
+        <servlet-name>ServletAdaptor</servlet-name>
+        <servlet-class>com.sun.jersey.spi.container.servlet.ServletContainer</servlet-class>
+         <init-param>
+         <param-name>javax.ws.rs.Application</param-name>
+        <param-value>eu.clarin.sru.fcs.aggregator.rest.AggregatorService</param-value>
+        </init-param>
+        <load-on-startup>1</load-on-startup>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>ServletAdaptor</servlet-name>
+        <url-pattern>/service/*</url-pattern>
+    </servlet-mapping>
+    
     <welcome-file-list>
         <welcome-file>index.zul</welcome-file>
         <welcome-file>index.zhtml</welcome-file>

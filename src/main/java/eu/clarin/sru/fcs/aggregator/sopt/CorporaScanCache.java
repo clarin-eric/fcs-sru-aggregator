@@ -1,5 +1,6 @@
 package eu.clarin.sru.fcs.aggregator.sopt;
 
+import eu.clarin.sru.fcs.aggregator.cache.ScanCacheI;
 import eu.clarin.sru.fcs.aggregator.app.CacheCorporaScanIntoFileTask;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -24,7 +25,8 @@ import java.util.logging.Logger;
  *
  * @author Yana Panchenko
  */
-public class CorporaScanCache {
+@Deprecated
+public class CorporaScanCache implements ScanCacheI {
 
     private Map<String, List<Corpus>> enpUrlToRootCorpora = new LinkedHashMap<String, List<Corpus>>(30);
     private Map<Corpus, List<Corpus>> corpusToChildren = new HashMap<Corpus, List<Corpus>>();
@@ -44,7 +46,7 @@ public class CorporaScanCache {
     }
 
     public CorporaScanCache(String corporaScanDir) {
-        createCache(corporaScanDir);
+        readCache(corporaScanDir);
     }
 
     public Map<String, Set<Corpus>> getLangToCorpora() {
@@ -62,8 +64,15 @@ public class CorporaScanCache {
         }
         return rootCorpora;
     }
+    
+    
 
-    public List<Corpus> getRootCorpora(String lang) {
+    @Override
+    public List<Corpus> getRootCorporaOfEndpoint(String enpointUrl) {
+        return this.enpUrlToRootCorpora.get(enpointUrl);
+    }
+
+    public List<Corpus> getRootCorporaForLang(String lang) {
         List<Corpus> rootCorpora = new ArrayList<Corpus>(enpUrlToRootCorpora.size());
         for (List<Corpus> corpora : this.enpUrlToRootCorpora.values()) {
             for (Corpus corpus : corpora) {
@@ -75,12 +84,14 @@ public class CorporaScanCache {
         return rootCorpora;
     }
 
+    @Override
     public Set<String> getLanguages() {
         Set<String> languages = new HashSet<String>(this.langToCorpora.size());
         languages.addAll(this.langToCorpora.keySet());
         return languages;
     }
 
+    @Override
     public List<Corpus> getChildren(Corpus corpus) {
         List<Corpus> corpora = this.corpusToChildren.get(corpus);
         if (corpora == null) {
@@ -97,7 +108,7 @@ public class CorporaScanCache {
         return "CorpusCache{\n" + "enpUrlToRootCorpora=" + enpUrlToRootCorpora + "\n corpusToChildren=" + corpusToChildren + "\n langToCorpora=" + langToCorpora + "\n}";
     }
 
-    private void createCache(String corporaScanDir) {
+    private void readCache(String corporaScanDir) {
         File sruInstitutionsFile = new File(corporaScanDir + "inst.txt");
         BufferedReader reader = null;
         try {
@@ -291,4 +302,20 @@ public class CorporaScanCache {
         CorporaScanCache cache = new CorporaScanCache("/Users/yanapanchenko/Documents/Work/temp/agca-r/");
         System.out.println(cache);
     }
+
+    @Override
+    public Map<String, Set<Corpus>> getRootCorporaForLang() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public Map<String, Set<Corpus>> getTopUniqueLangToCorpora() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public List<Corpus> getTopUniqueLanguageCorpora(String lang) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
 }

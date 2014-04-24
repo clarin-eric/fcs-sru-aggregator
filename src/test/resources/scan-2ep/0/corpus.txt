@@ -1,0 +1,6 @@
+http://cqlservlet.mpi.nl/
+hdl:1839/00-0000-0000-0001-53A5-2@format=cmdi
+MPI CGN
+http://hdl.handle.net/1839/00-0000-0000-0001-53A5-2@view
+een databank voor het hedendaags Nederlands zoals dat door volwassen sprekers in Nederland en Vlaanderen wordt gesproken
+nld

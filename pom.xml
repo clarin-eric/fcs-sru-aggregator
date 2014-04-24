@@ -11,7 +11,7 @@
         <httpClient.version>4.2.5</httpClient.version>
     </properties>
     <packaging>war</packaging>
-    <name>Aggregator</name>
+    <name>Aggregator-g</name>
     <description>The Aggregator Project</description>
     <organization>
         <name>SfS Uni Tuebingen</name>
@@ -31,7 +31,9 @@
         </repository>
         <repository>
             <id>sardine-google-svn-repo</id>
-            <snapshots> <enabled>true</enabled> </snapshots>
+            <snapshots> 
+                <enabled>true</enabled> 
+            </snapshots>
             <name>Sardine maven repo at Google Code</name>
             <url>http://sardine.googlecode.com/svn/maven/</url>
         </repository>
@@ -70,6 +72,11 @@
         <dependency>
             <groupId>com.sun.jersey</groupId>
             <artifactId>jersey-client</artifactId>
+            <version>1.17.1</version>
+        </dependency>
+        <dependency>
+            <groupId>com.sun.jersey</groupId>
+            <artifactId>jersey-servlet</artifactId>
             <version>1.17.1</version>
         </dependency>
         <dependency>
@@ -118,6 +125,22 @@
             <artifactId>joda-time</artifactId>
             <version>2.2</version>
         </dependency>
+        
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.10</version>
+            <scope>test</scope>
+            <type>jar</type>
+        </dependency>
+        
+        <dependency>  
+            <groupId>org.mockito</groupId>  
+            <artifactId>mockito-all</artifactId>  
+            <version>1.9.5</version> 
+            <scope>test</scope> 
+        </dependency>  
+        
     </dependencies>
     
     <dependencyManagement>

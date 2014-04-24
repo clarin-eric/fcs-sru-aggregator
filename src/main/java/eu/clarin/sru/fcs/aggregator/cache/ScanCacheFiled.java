@@ -1,0 +1,324 @@
+package eu.clarin.sru.fcs.aggregator.cache;
+
+import eu.clarin.sru.fcs.aggregator.app.CacheCorporaScanIntoFileTask;
+import eu.clarin.sru.fcs.aggregator.cache.ScanCache;
+import eu.clarin.sru.fcs.aggregator.sopt.Corpus;
+import eu.clarin.sru.fcs.aggregator.sopt.Endpoint;
+import eu.clarin.sru.fcs.aggregator.sopt.Institution;
+import eu.clarin.sru.fcs.aggregator.sopt.InstitutionI;
+import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+/**
+ *
+ * @author yanapanchenko
+ */
+public class ScanCacheFiled {
+
+    private String scanDirectory;
+    private static final String INSTITUTION_ENDPOINTS_FILENAME = "inst.txt";
+    private static final String CORPUS_INFO_FILENAME = "corpus.txt";
+    private static final String ENCODING = "UTF-8";
+    public static final String I = "II";
+    public static final String IE = "IE";
+    public static final String SEP = "|";
+    public static final String NL = "\n";
+    public static final String SPACE = " ";
+    private static final Logger LOGGER = Logger.getLogger(ScanCacheFiled.class.getName());
+
+    public ScanCacheFiled(String scanDirectory) {
+        this.scanDirectory = scanDirectory;
+    }
+
+    public void write(ScanCache cache) {
+
+        OutputStreamWriter os = null;
+        int epCorpusCounter = 0;
+        try {
+            clearDir(scanDirectory);
+            File sruInstitutionsFile = new File(scanDirectory, INSTITUTION_ENDPOINTS_FILENAME);
+            os = new OutputStreamWriter(new BufferedOutputStream(new FileOutputStream(sruInstitutionsFile)), ENCODING);
+            for (InstitutionI institution : cache.getInstitutions()) {
+                writeInstitutionInfo(os, institution);
+                for (Endpoint endp : institution.getEndpoints()) {
+                    for (Corpus corpus : cache.getRootCorporaOfEndpoint(endp.getUrl())) {
+                        if (corpus.getHandle() == null || corpus.getHandle().isEmpty()) {
+                            //write endpoint info:
+                            writeDefaultCorpusInfo(os, corpus);
+                        } else {
+                            writeEndpointCorpusInfo(epCorpusCounter, os, corpus);
+                            writeCorpusData(epCorpusCounter, scanDirectory, corpus, cache);
+                        }
+                        epCorpusCounter++;
+                    }
+                }
+                os.write(NL);
+            }
+
+        } catch (Exception ex) {
+            LOGGER.log(Level.SEVERE, null, ex);
+        } finally {
+            if (os != null) {
+                try {
+                    os.close();
+                } catch (IOException ex) {
+                    LOGGER.log(Level.SEVERE, null, ex);
+                }
+            }
+        }
+
+    }
+
+    private void writeCorpusData(int corpusNumber, String currentDir, Corpus c, ScanCache cache) {
+
+        File corpusDir = new File(currentDir, corpusNumber + "");
+        corpusDir.mkdir();
+        
+        File corpusInfoFile = new File(corpusDir, CORPUS_INFO_FILENAME);
+        OutputStreamWriter os = null;
+        int childCounter = 0;
+        
+        try {
+            os = new OutputStreamWriter(new BufferedOutputStream(new FileOutputStream(corpusInfoFile)), ENCODING);
+            writeCorpusInfo(os, c);
+
+            List<Corpus> children = cache.getChildrenCorpora(c.getHandle());
+            if (children != null) {
+                for (Corpus child : children) {
+                    writeCorpusData(childCounter, corpusDir.getAbsolutePath(), child, cache);
+                    childCounter++;
+                }
+                //logger.log(Level.INFO, "Found {0} children corpora for {1} {2}", new String[]{"" + corpusToChildren.get(corpus).size(), corpus.getEndpointUrl(), corpus.getHandle()});
+            }
+            // else if () {
+            // TODO if diagnistics came back, try simple scan without the 
+            // SRUCQLscan.RESOURCE_INFO_PARAMETER
+            //}
+
+        } catch (Exception ex) {
+            LOGGER.log(Level.SEVERE, null, ex);
+        } finally {
+            if (os != null) {
+                try {
+                    os.close();
+                } catch (IOException ex) {
+                    LOGGER.log(Level.SEVERE, null, ex);
+                }
+            }
+        }
+    }
+
+    private void writeInstitutionInfo(Writer writer, InstitutionI institution) throws IOException {
+
+        writer.write(I);
+        writer.write(SEP);
+        writer.write(institution.getName());
+        writer.write(NL);
+    }
+
+    private void writeCorpusInfo(Writer writer, Corpus c) throws IOException {
+
+        writer.write(c.getEndpointUrl());
+        writer.write(NL);
+        writer.write(c.getHandle());
+        writer.write(NL);
+        if (c.getDisplayName() != null) {
+            writer.write(c.getDisplayName());
+        } else {
+            writer.write(SPACE);
+        }
+        writer.write(NL);
+        if (c.getLandingPage() != null) {
+            writer.write(c.getLandingPage());
+        } else {
+            writer.write(SPACE);
+        }
+        writer.write(NL);
+        if (c.getDescription() != null) {
+            writer.write(c.getDescription());
+        } else {
+            writer.write(SPACE);
+        }
+        writer.write(NL);
+        boolean hasLangs = false;
+        for (String lang : c.getLanguages()) {
+            if (hasLangs) {
+                writer.write(SEP);
+            }
+            writer.write(lang);
+            hasLangs = true;
+        }
+        writer.write(NL);
+    }
+
+    private void writeEndpointCorpusInfo(int number, Writer writer, Corpus c) throws IOException {
+        writer.write(IE);
+        writer.write(SEP);
+        writer.write(("" + number));
+        writer.write(SEP);
+        writer.write(c.getEndpointUrl());
+        writer.write(NL);
+    }
+
+    private void writeDefaultCorpusInfo(Writer writer, Corpus c) throws IOException {
+        writer.write(IE);
+        writer.write(SEP);
+        writer.write(SPACE);
+        writer.write(SEP);
+        writer.write(c.getEndpointUrl());
+        writer.write(NL);
+    }
+
+    public ScanCache read() {
+        ScanCache cache = new ScanCache();
+        File sruInstitutionsFile = new File(scanDirectory, INSTITUTION_ENDPOINTS_FILENAME);
+        BufferedReader reader = null;
+        Set<Institution> institutions = new HashSet<Institution>();
+        try {
+            reader = new BufferedReader(new InputStreamReader(new FileInputStream(sruInstitutionsFile), ENCODING));
+            String line;
+            Institution inst = null;
+            while ((line = reader.readLine()) != null) {
+                line = line.trim();
+                if (line.length() > 0) {
+                    String[] splitted = line.split("\\" + CacheCorporaScanIntoFileTask.SEP);
+                    if (splitted.length == 2 && splitted[0].equals(CacheCorporaScanIntoFileTask.I)) {
+                        inst = new Institution(splitted[1], "");
+                        if (!institutions.contains(inst)) {
+                            institutions.add(inst);
+                            cache.addInstitution(inst);
+                        }
+                    } else if (inst != null && splitted.length == 3 && splitted[0].equals(CacheCorporaScanIntoFileTask.IE)) {
+                        Endpoint ep = inst.add(splitted[2]);
+                        if (!splitted[1].trim().isEmpty()) {
+                            // traverse the corresponding dir
+                            File corpusDir = new File(scanDirectory, splitted[1]);
+                            readAndAddCorpus(corpusDir.getAbsolutePath(), null, inst, cache);
+                        } else {
+                            Corpus c = new Corpus(inst, ep.getUrl());
+                            cache.addCorpus(c);
+                        }
+                    }
+                }
+            }
+
+        } catch (Exception ex) {
+            LOGGER.log(Level.SEVERE, null, ex);
+        } finally {
+            if (reader != null) {
+                try {
+                    reader.close();
+                } catch (IOException ex) {
+                    LOGGER.log(Level.SEVERE, null, ex);
+                }
+            }
+        }
+        return cache;
+    }
+
+    private void readAndAddCorpus(String path, Corpus parentCorpus, InstitutionI inst, ScanCache cache) {
+        File corpusFile = new File(path, CORPUS_INFO_FILENAME);
+        BufferedReader reader = null;
+        Corpus corpus = null;
+        try {
+            reader = new BufferedReader(new InputStreamReader(new FileInputStream(corpusFile), ENCODING));
+            String line;
+            int lineCount = 0;
+            while ((line = reader.readLine()) != null) {
+                line = line.trim();
+                if (!line.isEmpty()) {
+
+                    if (lineCount == 0) {
+                        corpus = new Corpus(inst, line);
+                    } else if (lineCount == 1) {
+                        // corpis id/handle
+                        corpus.setHandle(line);
+                    } else if (lineCount == 2) {
+                        // corpis name
+                        corpus.setDisplayName(line);
+                    } else if (lineCount == 3) {
+                        // corpis page
+                        corpus.setLandingPage(line);
+                    } else if (lineCount == 4) {
+                        // corpis description
+                        corpus.setDescription(line);
+                    } else if (lineCount == 5) {
+                        // corpus langs
+                        Set<String> langs = new HashSet<String>();
+                        for (String lang : line.split("\\" + CacheCorporaScanIntoFileTask.SEP)) {
+                            langs.add(lang);
+                        }
+                        corpus.setLanguages(langs);
+                    }
+                }
+                lineCount++;
+            }
+            if (corpus != null) {
+                if (parentCorpus == null) {
+                    cache.addCorpus(corpus);
+                } else {
+                    //cache.addCorpus(corpus, parentCorpus.getHandle());
+                    cache.addCorpus(corpus, parentCorpus);
+                }
+                
+                File currentDir = new File(path);
+                for (File file : currentDir.listFiles()) {
+                    if (file.isDirectory() && !file.isHidden()) {
+                        readAndAddCorpus(file.getAbsolutePath(), corpus, inst, cache);
+                    }
+                }
+            }
+
+        } catch (Exception ex) {
+            LOGGER.log(Level.SEVERE, null, ex);
+        } finally {
+            if (reader != null) {
+                try {
+                    reader.close();
+                } catch (IOException ex) {
+                    LOGGER.log(Level.SEVERE, null, ex);
+                }
+            }
+        }
+
+
+    }
+
+    private void clearDir(String scanDirectory) {
+        File file = new File(scanDirectory);
+        for (File fileChild : file.listFiles()) {
+            boolean deleted = deleteR(fileChild);
+            if (!deleted) {
+                LOGGER.warning("Could not delete in old cache: " + fileChild.getAbsolutePath());
+            }
+        }
+    }
+
+    public static boolean deleteR(File file) {
+        boolean success = false;
+        if (file.exists()) {
+            if (file.isDirectory()) {
+                for (File fileChild : file.listFiles()) {
+                    success = deleteR(fileChild);
+                    if (!success) {
+                        return success;
+                    }
+                }
+            }
+            success = file.delete();
+        }
+        return success;
+    }
+}

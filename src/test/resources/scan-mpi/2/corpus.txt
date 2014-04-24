@@ -1,0 +1,6 @@
+http://cqlservlet.mpi.nl/
+hdl:1839/00-0000-0000-0003-46DA-E@format=cmdi
+IFA corpus
+http://hdl.handle.net/1839/00-0000-0000-0003-46DA-E@view
+The IFA Spoken Language corpus is a free (GPL) database of hand-segmented Dutch speech. It was constructed with off-the-shelf software using speech from 8 speakers in a variety of speaking styles. For a total of 50,000 words (41 minutes/speaker), speech acquisition and preparation took around 3 person-weeks per speaker. Hand segmentation took 1,000 hours of labeling altogether. The asymptotic segmentation speed was about one word, or four boundaries, per minute. An evaluation showed that the Median Absolute Difference of the segment boundaries was 6 ms between labelers, and 4 ms within labelers. Label differences (substitutions, insertions, and deletions) were found in 8% of the segments between labelers and 5% within labelers. Compiled data are available in relational database format for querying with SQL.
+nld

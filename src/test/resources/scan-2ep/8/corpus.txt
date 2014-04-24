@@ -1,0 +1,6 @@
+http://clarin.phonetik.uni-muenchen.de/BASSRU/
+hdl:11858/00-1779-0000-001D-BE8B-7@format=cmdi
+ZIPTEL
+https://clarin.phonetik.uni-muenchen.de/BASRepository/Public/Corpora/ZIPTEL/ZIPTEL.2.php
+The ZipTel telephone speech database contains recordings of people applying for a SpeechDat prompt sheet via telephone. For the SpeechDat data collection, calls for participation were published in phone, the customer magazine of the mobile telephone provider e-plus, and in numerous newspapers all over Germany. In these calls, a telephone number was given where callers could order a SpeechDat prompt sheet. The calls were recorded by an automatic telephone server; callers were asked to provide name, address and telephone number. The ZipTel telephone speech database consists of 1957 recording sessions with a total of 7746 signal files. A recording session corresponds to one phone call, each signal file contains a single recorded utterance from the recording session. For privacy reasons, only a subset of the recorded signal files are contained in the databases: Streetnames (z2), ZIP-Codes (z3), Citynames (z4) and Telephone numbers (z5) All recordings are stored on a single CD-ROM in a format following the SpeechDat database exchange format.
+deu

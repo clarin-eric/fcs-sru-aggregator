@@ -1,5 +1,6 @@
 package eu.clarin.sru.fcs.aggregator.sopt;
 
+import eu.clarin.sru.fcs.aggregator.cache.ScanCacheI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -20,9 +21,9 @@ public class CorpusModelCached extends org.zkoss.zul.DefaultTreeModel<Corpus> im
 
     private static final Logger logger = Logger.getLogger(CorpusModelCached.class.getName());
     private Map<String, Set<Corpus>> selectedCorpora = new HashMap<String, Set<Corpus>>();
-    private CorporaScanCache cache;
+    private ScanCacheI cache;
 
-    public CorpusModelCached(CorporaScanCache cache) {
+    public CorpusModelCached(ScanCacheI cache) {
         super(new DefaultTreeNode(new Corpus(), new ArrayList<DefaultTreeNode<Corpus>>()));
         this.cache = cache;
         initCorpusTree();

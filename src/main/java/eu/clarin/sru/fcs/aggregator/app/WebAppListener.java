@@ -1,17 +1,26 @@
 package eu.clarin.sru.fcs.aggregator.app;
 
-import eu.clarin.sru.client.SRUClientException;
+import eu.clarin.sru.fcs.aggregator.cache.ScanCrawlerRunnable;
+import eu.clarin.sru.fcs.aggregator.cache.ScanCrawler;
+import eu.clarin.sru.fcs.aggregator.cache.ScanCacheFiled;
+import eu.clarin.sru.fcs.aggregator.cache.ScanCache;
 import eu.clarin.sru.client.SRUThreadedClient;
 import eu.clarin.sru.client.fcs.ClarinFCSRecordParser;
-import eu.clarin.sru.fcs.aggregator.sopt.CorporaScanCache;
-import eu.clarin.sru.fcs.aggregator.sopt.CorpusCache;
+import eu.clarin.sru.fcs.aggregator.sopt.CenterRegistryI;
+import eu.clarin.sru.fcs.aggregator.sopt.CenterRegistryLive;
 import eu.clarin.sru.fcs.aggregator.sopt.Languages;
+import eu.clarin.sru.fcs.aggregator.cache.ScanCacheI;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.Timer;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import opennlp.tools.tokenize.TokenizerModel;
@@ -21,7 +30,7 @@ import org.zkoss.zk.ui.util.WebAppCleanup;
 import org.zkoss.zk.ui.util.WebAppInit;
 
 /**
- * Application initialization and clean up: only one SRU threaded client is used 
+ * Application initialization and clean up: only one SRU threaded client is used
  * in the application, it has to be shut down when the application stops. One
  * Languages object instance is used within the application.
  *
@@ -33,54 +42,37 @@ public class WebAppListener implements WebAppInit, WebAppCleanup {
     public static final String SHARED_SRU_CLIENT = "SHARED_SRU_CLIENT";
     public static final String LANGUAGES = "LANG";
     public static final String CORPUS_CACHE = "CORPUS_CACHE";
-    
     private static final Logger LOGGER = Logger.getLogger(WebAppListener.class.getName());
-    private static final int HOURS_BETWEEN_CACHE_UPDATE = 3;
-    
-    private Timer cacheTimer;
-    
+    //private static final int HOURS_BETWEEN_CACHE_UPDATE = 3;
+    //private Timer cacheTimer;
     public static final String DE_TOK_MODEL = "/tokenizer/de-tuebadz-8.0-token.bin";
+    private static final String AGGREGATOR_DIR_NAME = "aggregator";
+    private static final String SCAN_DIR_NAME = "scan";
+    private static final TimeUnit CACHE_UPDATE_INTERVAL_UNIT = TimeUnit.HOURS;
+    private static final int CACHE_UPDATE_INTERVAL = 5;
+    private static final int CACHE_MAX_DEPTH = 3;
+    private static final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+    public static final String CORPUS_CRAWLER = "CORPUS_CRAWLER";
 
     @Override
     public void init(WebApp webapp) throws Exception {
+
         LOGGER.info("Aggregator is starting.");
+        
         Set<SearchResults> activeControllers = new HashSet<SearchResults>();
         webapp.setAttribute(ACTIVE_SEARCH_CONTROLLERS, activeControllers);
-        SRUThreadedClient searchClient = new SRUThreadedClient();
-        searchClient.registerRecordParser(new ClarinFCSRecordParser());
-        webapp.setAttribute(WebAppListener.SHARED_SRU_CLIENT, searchClient);
         
+        SRUThreadedClient sruClient = new SRUThreadedClient();
+        sruClient.registerRecordParser(new ClarinFCSRecordParser());
+        webapp.setAttribute(WebAppListener.SHARED_SRU_CLIENT, sruClient);
+
         Languages languages = new Languages();
         webapp.setAttribute(LANGUAGES, languages);
         
-        // set up timer to run the cache corpora scan info task
-        //cacheTimer = new Timer();
-        //CorpusCache cache = new CorpusCache();
-        //webapp.setAttribute(CORPUS_CACHE, cache);
+        setUpScanCache(webapp);
         
-        //DateTime date = new DateTime();
-        //date = date.withHourOfDay(1);
-        //date = date.withMinuteOfHour(0);
-        //date = date.withSecondOfMinute(0);
-        //if (date.isBeforeNow()) {
-        //    date = date.plusDays(1);
-        //}
-        //LOGGER.info(date.toLocalTime().toString() + " " + date.toLocalTime().toString());
-        //cacheTimer.scheduleAtFixedRate(new CacheCorporaScanTask(cache, searchClient), date.toDate(), HOURS_BETWEEN_CACHE_UPDATE * 3600000);
+        setUpTokenizers(webapp);
         
-        // read cache from file
-        CorporaScanCache cache = new CorporaScanCache(webapp.getRealPath("scan") + "/");
-        webapp.setAttribute(CORPUS_CACHE, cache);
-        
-        TokenizerModel model = null;
-        try {
-            InputStream tokenizerModelDeAsIS = this.getClass().getResourceAsStream(DE_TOK_MODEL);
-            model = new TokenizerModel(tokenizerModelDeAsIS);
-            tokenizerModelDeAsIS.close();
-        } catch (IOException ex) {
-            LOGGER.log(Level.SEVERE, "Failed to load tokenizer model", ex);
-        }
-        webapp.setAttribute(DE_TOK_MODEL, model);
     }
 
     @Override
@@ -91,9 +83,109 @@ public class WebAppListener implements WebAppInit, WebAppCleanup {
             activeController.shutdown();
         }
         SRUThreadedClient searchClient = (SRUThreadedClient) webapp.getAttribute(WebAppListener.SHARED_SRU_CLIENT);
+        shutdownAndAwaitTermination(searchClient);
+        shutdownAndAwaitTermination(scheduler);
+        //cacheTimer.cancel();
+    }
+
+    private String getScanDirectory() {
+        //File aggregatorDir = new File(System.getProperty("user.home"), "/." + AGGREGATOR_DIR_NAME);
+        File aggregatorDir = new File("/var/www", "/." + AGGREGATOR_DIR_NAME);
+        
+        if (!aggregatorDir.exists()) {
+            aggregatorDir.mkdir();
+        }
+        File scanDir = new File(aggregatorDir, SCAN_DIR_NAME);
+        if (!scanDir.exists()) {
+            scanDir.mkdir();
+        }
+        String scanPath = scanDir.getAbsolutePath();
+        LOGGER.info("Scan location: " + scanPath);
+        return scanPath;
+    }
+
+    private void setUpScanCache(WebApp webapp) {
+
+        ScanCacheFiled scanCacheFiled = new ScanCacheFiled(getScanDirectory());
+        CenterRegistryI centerRegistry = new CenterRegistryLive();
+        SRUThreadedClient sruScanClient = (SRUThreadedClient) webapp.getAttribute(WebAppListener.SHARED_SRU_CLIENT);
+        //EndpointUrlFilter filter = new EndpointUrlFilter();
+        //filter.urlShouldContainAnyOf("leipzig", ".mpi.nl");
+        //filter.urlShouldContainAnyOf("uni-tuebingen.de", ".mpi.nl");
+        //filter.urlShouldContainAnyOf("dspin.dwds.de", "lindat.");
+        //ScanCrawler scanCrawler = new ScanCrawler(centerRegistry, sruScanClient, filter, maxDepth);
+        ScanCrawler scanCrawler = new ScanCrawler(centerRegistry, sruScanClient, null, CACHE_MAX_DEPTH);
+        ScanCacheI scanCache;
+
+        //synchronized (scanCrawler) {
+            LOGGER.info("Start cache read");
+            try {
+                scanCache = scanCacheFiled.read();
+                LOGGER.info("Finished cache read, number of root corpora: " + scanCache.getRootCorpora().size());
+            } catch (Exception e) {
+                LOGGER.log(Level.SEVERE, "Error while reading the scan cache!", e);
+                scanCache = new ScanCache();
+            }
+        //}
+        webapp.setAttribute(CORPUS_CACHE, scanCache);
+        webapp.setAttribute(CORPUS_CRAWLER, scanCrawler);
+
+        scheduler.scheduleAtFixedRate(
+                new ScanCrawlerRunnable(scanCrawler, scanCacheFiled, webapp),
+                0, CACHE_UPDATE_INTERVAL, CACHE_UPDATE_INTERVAL_UNIT);
+
+    }
+
+    private void shutdownAndAwaitTermination(SRUThreadedClient sruClient) {
         // with shutdown() there are memory leaks when web app stops even if all requests have been processed;
         // with shutdownNow() there are memory leaks when web app stops only if not all requests have been processed
-        searchClient.shutdownNow();
-        //cacheTimer.cancel();
+        //searchClient.shutdown();
+        //searchClient.shutdownNow();
+        try {
+            sruClient.shutdown(); // Disable new tasks from being submitted
+            // Wait 10 secs for existing tasks to terminate
+            // replace with awaitTermination if ever provided in SRUClient API
+            Thread.sleep(10000);
+            sruClient.shutdownNow(); // Cancel currently executing tasks
+            // Wait 10 secs for tasks to respond to being cancelled
+            // replace with awaitTermination if ever provided in SRUClient API
+            Thread.sleep(10000);
+        } catch (InterruptedException ie) {
+            // (Re-)Cancel if current thread also interrupted
+            sruClient.shutdownNow();
+            // Preserve interrupt status
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    private void shutdownAndAwaitTermination(ExecutorService pool) {
+        pool.shutdown(); // Disable new tasks from being submitted
+        try {
+            // Wait a while for existing tasks to terminate
+            if (!pool.awaitTermination(60, TimeUnit.SECONDS)) {
+                pool.shutdownNow(); // Cancel currently executing tasks
+                // Wait a while for tasks to respond to being cancelled
+                if (!pool.awaitTermination(60, TimeUnit.SECONDS)) {
+                    LOGGER.info("Pool did not terminate");
+                }
+            }
+        } catch (InterruptedException ie) {
+            // (Re-)Cancel if current thread also interrupted
+            pool.shutdownNow();
+            // Preserve interrupt status
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    private void setUpTokenizers(WebApp webapp) {
+        TokenizerModel model = null;
+        try {
+            InputStream tokenizerModelDeAsIS = this.getClass().getResourceAsStream(DE_TOK_MODEL);
+            model = new TokenizerModel(tokenizerModelDeAsIS);
+            tokenizerModelDeAsIS.close();
+        } catch (IOException ex) {
+            LOGGER.log(Level.SEVERE, "Failed to load tokenizer model", ex);
+        }
+        webapp.setAttribute(DE_TOK_MODEL, model);
     }
 }

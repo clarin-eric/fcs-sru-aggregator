@@ -1,0 +1,22 @@
+II|Eberhard Karls Universität Tübingen
+
+II|ASV Leipzig
+
+II|Bayerisches Archiv für Sprachsignale
+IE|8|http://clarin.phonetik.uni-muenchen.de/BASSRU/
+
+II|Institut für Deutsche Sprache
+
+II|MPI for Psycholinguistics
+IE|0|http://cqlservlet.mpi.nl/
+
+II|Universität des Saarlandes
+
+II|Berlin-Brandenburg Academy of Sciences and Humanities
+
+II|Hamburger Zentrum für Sprachkorpora (HZSK)
+
+II|IMS, Universität Stuttgart
+
+II|DANS (Data Archiving and Networked Services)
+

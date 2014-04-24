@@ -6,13 +6,11 @@ import eu.clarin.sru.client.SRUVersion;
 import eu.clarin.sru.fcs.aggregator.sopt.CenterRegistryLive;
 import eu.clarin.sru.fcs.aggregator.sopt.CenterRegistryForTesting;
 import eu.clarin.sru.fcs.aggregator.sopt.CenterRegistryI;
-import eu.clarin.sru.fcs.aggregator.sopt.CorporaScanCache;
 import eu.clarin.sru.fcs.aggregator.sopt.Corpus;
 import eu.clarin.sru.fcs.aggregator.sopt.CorpusByInstitutionComparator;
 import eu.clarin.sru.fcs.aggregator.sopt.CorpusByInstitutionDComparator;
 import eu.clarin.sru.fcs.aggregator.sopt.CorpusByNameComparator;
 import eu.clarin.sru.fcs.aggregator.sopt.CorpusByNameDComparator;
-import eu.clarin.sru.fcs.aggregator.sopt.CorpusCache;
 import eu.clarin.sru.fcs.aggregator.sopt.CorpusModelCached;
 import eu.clarin.sru.fcs.aggregator.sopt.CorpusModelI;
 import eu.clarin.sru.fcs.aggregator.sopt.CorpusModelLive;
@@ -20,9 +18,9 @@ import eu.clarin.sru.fcs.aggregator.sopt.CorpusRendererCached;
 import eu.clarin.sru.fcs.aggregator.sopt.CorpusRendererI;
 import eu.clarin.sru.fcs.aggregator.sopt.CorpusRendererLive;
 import eu.clarin.sru.fcs.aggregator.sopt.Languages;
+import eu.clarin.sru.fcs.aggregator.cache.ScanCacheI;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -79,14 +77,14 @@ public class SearchOptions extends SelectorComposer<Component> {
     
     private SRUVersion version = SRUVersion.VERSION_1_2;
 
-    private CorporaScanCache cache;
+    private ScanCacheI cache;
     
     @Override
     public void doAfterCompose(Component comp) throws Exception {
         super.doAfterCompose(comp);
         setUpSRUVersion();
         setUpAggerationContext();
-        cache = (CorporaScanCache) Executions.getCurrent().getDesktop().getWebApp().getAttribute(WebAppListener.CORPUS_CACHE);
+        cache = (ScanCacheI) Executions.getCurrent().getDesktop().getWebApp().getAttribute(WebAppListener.CORPUS_CACHE);
         //if (cache.isEmpty()) {
         //    liveMode = true;
         //}

@@ -19,4 +19,6 @@ import java.util.*;
    public List<Endpoint> getEndpoints();
    
     public Endpoint getEndpoint(int index);
+    
+    public Endpoint getEndpoint(String endpointUrl);
 }

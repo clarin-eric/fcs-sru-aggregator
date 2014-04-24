@@ -1,0 +1,6 @@
+http://cqlservlet.mpi.nl/
+hdl:1839/00-0000-0000-0008-7CF8-E@format=cmdi
+ESF corpus
+http://hdl.handle.net/1839/00-0000-0000-0008-7CF8-E@view
+The European Science Foundation Second Language Acquisition by Adult Immigrants collected spontaneous second language acquisition data of forty adult immigrant workers living in Western Europe. The program ran over 5 ½ years and was preceded by a one-year pilot study. It had been planned as a longitudinal comparative study in five European countries: France, (Federal Republic of) Germany, Great Britain, The Netherlands, and Sweden. Financial support came from the Max-Planck-Gesellschaft (Germany) and the research councils of France (CNRS), The Netherlands (NWO), Switzerland (FNS), and Norway (NAVS).
+deu|ita|ara|fra|tur|fin|eng|swe|spa|pan|nld

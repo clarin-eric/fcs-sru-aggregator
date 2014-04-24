@@ -1,0 +1,6 @@
+http://clarin.phonetik.uni-muenchen.de/BASSRU/
+hdl:11858/00-1779-0000-001F-7D95-0@format=cmdi
+VM2
+https://clarin.phonetik.uni-muenchen.de/BASRepository/Public/Corpora/VM2/VM2.2.php
+Verbmobil 2 contains the speech of 401 speakers participating in 810 recordings. The emotional tagged recordings are not part of this edition but are collected inthe corpus BAS VMEmo. The total VM2 corpus amounts to 17.6GB of data containing 58961 conversational turns distributed on 39 CD-R. VM2 contains dialogs in German, English, Japanese and mixed language pairs (partly with interpreter). The domain is appointment scheduling, travel planing, leisure time planing.
+deu

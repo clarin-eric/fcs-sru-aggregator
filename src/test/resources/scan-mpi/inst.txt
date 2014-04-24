@@ -1,0 +1,25 @@
+II|Eberhard Karls Universität Tübingen
+
+II|ASV Leipzig
+
+II|Bayerisches Archiv für Sprachsignale
+
+II|Institut für Deutsche Sprache
+
+II|MPI for Psycholinguistics
+IE|0|http://cqlservlet.mpi.nl/
+IE|1|http://cqlservlet.mpi.nl/
+IE|2|http://cqlservlet.mpi.nl/
+
+II|Universität des Saarlandes
+
+II|Berlin-Brandenburg Academy of Sciences and Humanities
+
+II|Hamburger Zentrum für Sprachkorpora (HZSK)
+
+II|IMS, Universität Stuttgart
+
+II|LINDAT-Clarin
+
+II|DANS (Data Archiving and Networked Services)
+

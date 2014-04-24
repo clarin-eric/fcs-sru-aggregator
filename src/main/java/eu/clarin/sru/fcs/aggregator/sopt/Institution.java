@@ -1,7 +1,6 @@
 package eu.clarin.sru.fcs.aggregator.sopt;
 
 import java.util.*;
-import java.util.logging.Logger;
 
 /**
  * Institution. Can have Endpoint children.
@@ -22,8 +21,11 @@ import java.util.logging.Logger;
     
     @Override
     public Endpoint add(String endpointUrl) {
-        Endpoint ep = new Endpoint(endpointUrl, this);
-        endpoints.add(ep);
+        Endpoint ep = getEndpoint(endpointUrl);
+        if (ep == null) {
+            ep = new Endpoint(endpointUrl, this);
+            endpoints.add(ep);
+        }
         return ep;
     }
 
@@ -52,6 +54,16 @@ import java.util.logging.Logger;
     }
     
     @Override
+    public Endpoint getEndpoint(String endpointUrl) {
+        for (Endpoint ep : endpoints) {
+            if (ep.getUrl().equals(endpointUrl)) {
+                return ep;
+            }
+        }
+        return null;
+    }
+    
+    @Override
     public String toString() {
         if (name != null && name.length() > 0) {
             return name;
@@ -59,4 +71,6 @@ import java.util.logging.Logger;
         return link;
        }
     }
+    
+    
 }
