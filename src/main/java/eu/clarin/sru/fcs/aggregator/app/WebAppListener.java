@@ -51,7 +51,7 @@ public class WebAppListener implements WebAppInit, WebAppCleanup {
     private static final String SCAN_DIR_NAME = "scan";
     private static final TimeUnit CACHE_UPDATE_INTERVAL_UNIT = TimeUnit.HOURS;
     private static final int CACHE_UPDATE_INTERVAL = 5;
-    private static final int CACHE_MAX_DEPTH = 3;
+    private static final int CACHE_MAX_DEPTH = 2;
     private static final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
     public static final String CORPUS_CRAWLER = "CORPUS_CRAWLER";
 
@@ -112,8 +112,8 @@ public class WebAppListener implements WebAppInit, WebAppCleanup {
         SRUThreadedClient sruScanClient = (SRUThreadedClient) webapp.getAttribute(WebAppListener.SHARED_SRU_CLIENT);
         EndpointUrlFilter filter = new EndpointUrlFilter();
         //filter.urlShouldContainAnyOf("leipzig", ".mpi.nl");
-        //filter.urlShouldContainAnyOf("uni-tuebingen.de", ".mpi.nl");
-        filter.urlShouldContainAnyOf("dspin.dwds.de", "lindat.");
+        filter.urlShouldContainAnyOf("uni-tuebingen.de", ".mpi.nl");
+        //filter.urlShouldContainAnyOf("dspin.dwds.de", "lindat.");
         ScanCrawler scanCrawler = new ScanCrawler(centerRegistry, sruScanClient, filter, CACHE_MAX_DEPTH);
         //ScanCrawler scanCrawler = new ScanCrawler(centerRegistry, sruScanClient, null, CACHE_MAX_DEPTH);
         ScanCache scanCache;

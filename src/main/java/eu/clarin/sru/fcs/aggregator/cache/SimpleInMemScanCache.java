@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -56,9 +57,7 @@ public class SimpleInMemScanCache implements ScanCache {
     @Override
     public void addCorpus(Corpus c, Corpus parentCorpus) {
 
-        // index top corpora with unique language as for their languages
-        //if (c.getLanguages().size() == 1 && 
-        //        (root || this.))
+        
 
         handleToCorpus.put(c.getHandle(), c);
 
@@ -82,6 +81,16 @@ public class SimpleInMemScanCache implements ScanCache {
             }
             corpusToChildren.get(parentCorpus.getHandle()).add(c);
             //childToParent.put(c.getHandle(), parentCorpus.getHandle());
+        }
+        
+        // index top corpora with unique language as for their languages
+        if (c.getLanguages().size() == 1 && 
+                (parentCorpus == null || parentCorpus.getLanguages().size() > 0)) {
+            String lang = getElementOfStringUnitset(c.getLanguages());
+            if (!langToTopUniqueCorpora.containsKey(lang)) {
+                langToTopUniqueCorpora.put(lang, new LinkedHashSet<Corpus>());
+            }
+            langToTopUniqueCorpora.get(lang).add(c);
         }
     }
 
@@ -145,16 +154,22 @@ public class SimpleInMemScanCache implements ScanCache {
 
     @Override
     public Map<String, Set<Corpus>> getTopUniqueLangToCorpora() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return this.langToTopUniqueCorpora;
     }
 
     @Override
     public List<Corpus> getTopUniqueLanguageCorpora(String lang) {
-        throw new UnsupportedOperationException("Not supported yet."); 
+        ArrayList<Corpus> corpora = new ArrayList<Corpus>(langToTopUniqueCorpora.get(lang).size());
+        corpora.addAll(langToTopUniqueCorpora.get(lang));
+        return corpora;
     }
 
     @Override
     public Corpus getCorpus(String handle) {
         return this.handleToCorpus.get(handle);
+    }
+
+    private String getElementOfStringUnitset(Set<String> stringUnitSet) {
+        return stringUnitSet.iterator().next();
     }
 }

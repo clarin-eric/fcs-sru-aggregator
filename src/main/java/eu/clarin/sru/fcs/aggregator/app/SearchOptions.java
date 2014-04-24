@@ -100,6 +100,24 @@ public class SearchOptions extends SelectorComposer<Component> {
         }
     }
 
+//    @Listen("onSelect = #languageSelect")
+//    public void onSelectLanguage(Event ev) {
+//        Combobox cbox = (Combobox) ev.getTarget();
+//        String selectedLang = cbox.getSelectedItem().getValue();
+//        for (Component comp : tree.getTreechildren().getChildren()) {
+//            Treeitem treeitem = (Treeitem) comp;
+//            DefaultTreeNode<Corpus> node = (DefaultTreeNode<Corpus>) treeitem.getValue();
+//            Corpus corpus = node.getData();
+//            if (corpus.getLanguages().contains(selectedLang) || selectedLang.equals(Languages.ANY_LANGUAGE_NAME)) {
+//                treeitem.setVisible(true);
+//            } else {
+//                corpusRenderer.updateItem(treeitem, false);
+//                treeitem.setVisible(false);
+//            }
+//        }
+//    }
+    
+    
     @Listen("onSelect = #languageSelect")
     public void onSelectLanguage(Event ev) {
         Combobox cbox = (Combobox) ev.getTarget();
@@ -108,7 +126,8 @@ public class SearchOptions extends SelectorComposer<Component> {
             Treeitem treeitem = (Treeitem) comp;
             DefaultTreeNode<Corpus> node = (DefaultTreeNode<Corpus>) treeitem.getValue();
             Corpus corpus = node.getData();
-            if (corpus.getLanguages().contains(selectedLang) || selectedLang.equals(Languages.ANY_LANGUAGE_NAME)) {
+            if ((corpus.getLanguages().contains(selectedLang) && corpus.getLanguages().size() == 1) 
+                    || selectedLang.equals(Languages.ANY_LANGUAGE_NAME)) {
                 treeitem.setVisible(true);
             } else {
                 corpusRenderer.updateItem(treeitem, false);
