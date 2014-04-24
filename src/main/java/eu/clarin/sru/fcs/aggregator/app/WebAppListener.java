@@ -70,8 +70,8 @@ public class WebAppListener implements WebAppInit, WebAppCleanup {
         Languages languages = new Languages();
         webapp.setAttribute(LANGUAGES, languages);
         
-        setUpScanCache(webapp);
-        //setUpScanCacheForReadOnly(webapp);
+        //setUpScanCache(webapp);
+        setUpScanCacheForReadOnly(webapp);
         
         setUpTokenizers(webapp);
         
@@ -91,9 +91,9 @@ public class WebAppListener implements WebAppInit, WebAppCleanup {
     }
 
     private String getScanDirectory() {
-        //File aggregatorDir = new File(System.getProperty("user.home"), "/." + AGGREGATOR_DIR_NAME);
+        File aggregatorDir = new File(System.getProperty("user.home"), "/." + AGGREGATOR_DIR_NAME);
         //File aggregatorDir = new File("/var/www", "/." + AGGREGATOR_DIR_NAME);
-        File aggregatorDir = new File("/data/fcsAggregator");
+        //File aggregatorDir = new File("/data/fcsAggregator");
         
         if (!aggregatorDir.exists()) {
             if (!aggregatorDir.mkdir()) {

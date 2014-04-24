@@ -67,7 +67,7 @@
         <dependency>
             <groupId>eu.clarin.weblicht</groupId>
             <artifactId>wlfxb</artifactId>
-            <version>1.2.2</version>
+            <version>1.2.9</version>
         </dependency>
         <dependency>
             <groupId>com.sun.jersey</groupId>

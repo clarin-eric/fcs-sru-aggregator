@@ -24,7 +24,43 @@ import org.zkoss.zul.Progressmeter;
 import org.zkoss.zul.South;
 
 /**
- * Main component of the Aggregator application.
+ * Main component of the Aggregator application intended to provide
+ * users access to CLARIN-FCS resources.
+ * 
+ * The webapp base URL corresponds to the default behavior of displaying
+ * the main aggregator page, where the user can enter query, select the 
+ * resources of CQL endpoints (as specified in the Clarin center registry), 
+ * and search in these resources. The endpoints/resources selection is 
+ * optional, by default all the endpoints root resources are selected.
+ * 
+ * If invoked with 'x-aggregation-context' and 'query' parameter, 
+ * the aggregator will pre-select provided resources and fill in the query field.
+ * This mechanism is currently used by VLO.
+ * Example:
+ * POST http://weblicht.sfs.uni-tuebingen.de/Aggregator HTTP/1.1
+ * operation = searchRetrieve &
+ * version = 1.2 &
+ * query = bellen &
+ * x-aggregation-context = {"http://fedora.clarin-d.uni-saarland.de/sru/":["hdl:11858/00-246C-0000-0008-5F2A-0"]}
+ * 
+ * 
+ * Additionally, if run with the a URL query string parameter 'mode', the 
+ * special behavior of the aggregator is triggered:
+ * 
+ * /?mode=testing
+ * corresponds to the mode where the CQL endpoints are taken not from Clarin 
+ * center repository, but from a hard-coded endpoints list; this functionality
+ * is useful for testing the development instances of endpoints, before they
+ * are moved to production. Was done to meet the request from MPI.
+ * 
+ * /?mode=search
+ * corresponds to the mode where the aggregator page is requested with the 
+ * already known query and (optionally) resources to search in, and if the
+ * immediate search is desired. In this case the aggregator search results 
+ * page is displayed and search results of the provided query start to fill
+ * it in immediately (i.e. users don't need to click 'search' in the aggregator 
+ * page). Was done to meet the request from CLARIN ERIC ( Martin Wynne 
+ * contacted us).
  *
  * @author Yana Panchenko
  */
@@ -85,12 +121,19 @@ public class Aggregator extends SelectorComposer<Component> {
     private static final String WEBLICHT_URL = 
             "https://weblicht.sfs.uni-tuebingen.de/WebLicht-4/?input=";
     
+    public static final String MODE_PARAM = "mode";
+    public static final String MODE_PARAM_VALUE_TEST = "testing";
+    public static final String MODE_PARAM_VALUE_SEARCH = "search";
+    public static final String MODE_PARAM_VALUE_LIVE = "live";
+    
+    
     
     @Override
     public void doAfterCompose(Component comp) throws Exception {
         super.doAfterCompose(comp);
         processParameters();
         searchOptionsComposer = (SearchOptions) soDiv.getChildren().get(0).getChildren().get(0).getAttribute("$" + SearchOptions.class.getSimpleName());
+        searchOptionsComposer.setAggregatorController(this);
         searchResultsComposer = (SearchResults) srDiv.getChildren().get(0).getChildren().get(0).getAttribute("$" + SearchResults.class.getSimpleName());
         pagesVisibility = new PagesVisibility(aboutDiv, aboutLabel, soDiv, soLabel, srDiv, srLabel, helpDiv, helpLabel);
         controlsVisibility = new ControlsVisibility(controls1, controls2, pMeter, menubar, prevButton, nextButton);
@@ -363,4 +406,5 @@ public class Aggregator extends SelectorComposer<Component> {
         tooltipNextText.setValue("hits " + 
                     startHit + "-" + endHit);
     }
+
 }

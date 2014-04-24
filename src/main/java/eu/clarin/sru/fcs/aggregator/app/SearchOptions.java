@@ -48,8 +48,9 @@ import org.zkoss.zul.Treeitem;
 import org.zkoss.zul.event.ZulEvents;
 
 /**
- * Class representing Search Options page. Displays and let's user select corpora,
- * languages, number of records per page to be displayed, etc.
+ * Class representing Search Options view of the Aggregator. Displays and lets 
+ * users select corpora, languages, number of records per page to be displayed, 
+ * etc.
  * 
  * @author Yana Panchenko
  */
@@ -79,6 +80,8 @@ public class SearchOptions extends SelectorComposer<Component> {
 
     private ScanCache cache;
     
+    private Aggregator aggregatorController;
+    
     @Override
     public void doAfterCompose(Component comp) throws Exception {
         super.doAfterCompose(comp);
@@ -90,6 +93,11 @@ public class SearchOptions extends SelectorComposer<Component> {
         setUpCorpusTree();
         languages = (Languages) Executions.getCurrent().getDesktop().getWebApp().getAttribute(WebAppListener.LANGUAGES);
         languageSelect.setSelectedItem(anyLanguage);
+    }
+    
+    
+    void setAggregatorController(Aggregator aggregatorController) {
+        this.aggregatorController = aggregatorController;
     }
 
     @Listen("onOpen=#allCorpora")
@@ -140,12 +148,17 @@ public class SearchOptions extends SelectorComposer<Component> {
 
     @Listen(ZulEvents.ON_AFTER_RENDER + "=#tree")
     public void onAfterRenderCorporaTree(Event ev) {
-        if (this.xAggregationContext == null) {
+        loadLanguages();
+        if (isSearchOn() && (xAggregationContext == null || xAggregationContext.isEmpty())) {
+            onSelectAll(null);
+        } else if (this.xAggregationContext == null) {
             onSelectAll(null);
         } else {
             selectCorpora(xAggregationContext);
         }
-        loadLanguages();
+        if (isSearchOn()) {
+            this.aggregatorController.onExecuteSearch(null);
+        }
     }
 
     @Listen("onClick = #selectAll")
@@ -261,17 +274,6 @@ public class SearchOptions extends SelectorComposer<Component> {
         return this.languageSelect.getSelectedItem().getValue();
     }
 
-    private boolean isTestingOn() {
-        boolean testingOn = false;
-        String[] paramValue = Executions.getCurrent().getParameterMap().get("mode");
-        if (paramValue != null) {
-            String mode = paramValue[0].trim();
-            if (mode.equals("testing")) {
-                testingOn = true;
-            }
-        }
-        return testingOn;
-    }
 
     private void setUpAggerationContext() {
         String[] paramValue = Executions.getCurrent().getParameterMap().get(SRUCQL.AGGREGATION_CONTEXT);
@@ -362,6 +364,33 @@ public class SearchOptions extends SelectorComposer<Component> {
                 openItem.setOpen(false);
             }
         }
+    }
+    
+    
+    private boolean isTestingOn() {
+        boolean testingOn = false;
+        String[] paramValue = Executions.getCurrent().getParameterMap().get(Aggregator.MODE_PARAM);
+        if (paramValue != null) {
+            String mode = paramValue[0].trim();
+            LOGGER.log(Level.INFO, "Received parameter: {0}[{1}]", new String[]{Aggregator.MODE_PARAM, mode});
+            if (mode.equals(Aggregator.MODE_PARAM_VALUE_TEST)) {
+                testingOn = true;
+            }
+        }
+        return testingOn;
+    }
+        
+    private boolean isSearchOn() {
+        boolean searchOn = false;
+        String[] paramValue = Executions.getCurrent().getParameterMap().get(Aggregator.MODE_PARAM);
+        if (paramValue != null) {
+            String mode = paramValue[0].trim();
+            LOGGER.log(Level.INFO, "Received parameter: {0}[{1}]", new String[]{Aggregator.MODE_PARAM, mode});
+            if (mode.equals(Aggregator.MODE_PARAM_VALUE_SEARCH)) {
+                searchOn = true;
+            }
+        }
+        return searchOn;
     }
 
 }
