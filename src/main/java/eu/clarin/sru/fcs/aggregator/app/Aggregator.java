@@ -13,7 +13,10 @@ import org.zkoss.zul.Label;
 import org.zkoss.zul.Messagebox;
 import org.zkoss.zul.Textbox;
 import eu.clarin.sru.fcs.aggregator.sopt.Corpus;
+import eu.clarin.sru.fcs.aggregator.sopt.Languages;
 import eu.clarin.sru.fcs.aggregator.util.SRUCQL;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
 import org.zkoss.zul.A;
 import org.zkoss.zul.Div;
 import org.zkoss.zul.Menubar;
@@ -59,9 +62,19 @@ import org.zkoss.zul.South;
  * immediate search is desired. In this case the aggregator search results 
  * page is displayed and search results of the provided query start to fill
  * it in immediately (i.e. users don't need to click 'search' in the aggregator 
- * page). Was done to meet the request from CLARIN ERIC ( Martin Wynne 
+ * page). Was done to meet the request from CLARIN ERIC (Martin Wynne 
  * contacted us).
+ * 
+ * /?mode=live
+ * corresponds to the mode where the information about corpora are taken not 
+ * from the scan cache (crawled in advance), but loaded live, starting from
+ * the request to center registry and then performing scan operation requests on 
+ * each CQL  endpoint listed there. It takes time to get the corresponding 
+ * responses from the endpoints, therefore the Aggregator page loads very slow 
+ * in this mode. But this mode is useful for testing of the newly added or 
+ * changed corpora without waiting for the next crawl.
  *
+ * 
  * @author Yana Panchenko
  */
 public class Aggregator extends SelectorComposer<Component> {
@@ -95,32 +108,29 @@ public class Aggregator extends SelectorComposer<Component> {
     @Wire
     private Label helpLabel;
     @Wire
-    Progressmeter pMeter;
+    private Progressmeter pMeter;
     @Wire
-    Menubar menubar;
+    private Menubar menubar;
     @Wire
-    North controls1;
+    private North controls1;
     @Wire
-    South controls2;
+    private South controls2;
     @Wire
-    A prevButton;
+    private A prevButton;
     @Wire
-    A nextButton;
+    private A nextButton;
     @Wire
-    Label tooltipPrevText;
+    private Label tooltipPrevText;
     @Wire
-    Label tooltipNextText;
-    
+    private Label tooltipNextText;
     @Wire
-    Menuitem weblichtTcf;
+    private Menuitem weblichtTcf;
     
     private int[] searchOffset = new int[]{1, 0}; // start and size
     private ControlsVisibility controlsVisibility;
     private PagesVisibility pagesVisibility;
 
-    private static final String WEBLICHT_URL = 
-            "https://weblicht.sfs.uni-tuebingen.de/WebLicht-4/?input=";
-    
+    private String weblichtUrl; // defined in web.xml
     public static final String MODE_PARAM = "mode";
     public static final String MODE_PARAM_VALUE_TEST = "testing";
     public static final String MODE_PARAM_VALUE_SEARCH = "search";
@@ -131,6 +141,7 @@ public class Aggregator extends SelectorComposer<Component> {
     @Override
     public void doAfterCompose(Component comp) throws Exception {
         super.doAfterCompose(comp);
+        processContext();
         processParameters();
         searchOptionsComposer = (SearchOptions) soDiv.getChildren().get(0).getChildren().get(0).getAttribute("$" + SearchOptions.class.getSimpleName());
         searchOptionsComposer.setAggregatorController(this);
@@ -162,7 +173,7 @@ public class Aggregator extends SelectorComposer<Component> {
             searchOffset[0] = searchOffset[0] + searchOffset[1];
             searchOffset[1] = maxRecords;
             searchResultsComposer.executeSearch(selectedCorpora, searchOffset[0], maxRecords, searchString.getText(), searchLang);
-            if (searchLang.equals("anylang")) {
+            if (searchLang.equals(Languages.ANY_LANGUAGE_NAME)) {
                 this.weblichtTcf.setVisible(false);
             } else {
                 this.weblichtTcf.setVisible(true);
@@ -229,7 +240,7 @@ public class Aggregator extends SelectorComposer<Component> {
     public void onUseWebLichtOnText(Event ev) {
         String url = searchResultsComposer.useWebLichtOnText();
         if (url != null) {
-            Executions.getCurrent().sendRedirect(WEBLICHT_URL
+            Executions.getCurrent().sendRedirect(weblichtUrl
                 + url, "_blank");
         }
     }
@@ -238,7 +249,7 @@ public class Aggregator extends SelectorComposer<Component> {
     public void onUseWebLichtOnTcf(Event ev) {
         String url = searchResultsComposer.useWebLichtOnToks();
         if (url != null) {
-            Executions.getCurrent().sendRedirect(WEBLICHT_URL
+            Executions.getCurrent().sendRedirect(weblichtUrl
                 + url, "_blank");
         }
     }
@@ -334,7 +345,7 @@ public class Aggregator extends SelectorComposer<Component> {
             }
             searchOffset[1] = maxRecords;
             searchResultsComposer.executeSearch(selectedCorpora, searchOffset[0], maxRecords, searchString.getText(), searchLang);
-            if (searchLang.equals("anylang")) {
+            if (searchLang.equals(Languages.ANY_LANGUAGE_NAME)) {
                 this.weblichtTcf.setVisible(false);
             } else {
                 this.weblichtTcf.setVisible(true);
@@ -364,7 +375,7 @@ public class Aggregator extends SelectorComposer<Component> {
             searchOffset[0] = searchOffset[0] + searchOffset[1];
             searchOffset[1] = maxRecords;
             searchResultsComposer.executeSearch(selectedCorpora, searchOffset[0], maxRecords, searchString.getText(), searchLang);
-            if (searchLang.equals("anylang")) {
+            if (searchLang.equals(Languages.ANY_LANGUAGE_NAME)) {
                 this.weblichtTcf.setVisible(false);
             } else {
                 this.weblichtTcf.setVisible(true);
@@ -405,6 +416,16 @@ public class Aggregator extends SelectorComposer<Component> {
         endHit = startHit + searchOptionsComposer.getMaxRecords() - 1;
         tooltipNextText.setValue("hits " + 
                     startHit + "-" + endHit);
+    }
+
+    private void processContext() {
+        InitialContext context;
+        try {
+            context = new InitialContext();
+            weblichtUrl = (String) context.lookup("java:comp/env/weblicht-url");
+        } catch (NamingException ex) {
+            LOGGER.log(Level.SEVERE, null, ex);
+        }
     }
 
 }

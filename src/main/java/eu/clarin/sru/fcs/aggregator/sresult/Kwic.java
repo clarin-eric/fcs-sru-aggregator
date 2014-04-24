@@ -3,7 +3,9 @@ package eu.clarin.sru.fcs.aggregator.sresult;
 import eu.clarin.sru.client.fcs.DataViewKWIC;
 
 /**
- *
+ * Represents keyword in context data view and information about its
+ * PID and reference.
+ * 
  * @author Yana Panchenko
  */
 public class Kwic {

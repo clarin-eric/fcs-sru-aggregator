@@ -5,7 +5,7 @@ import org.zkoss.zul.Label;
 
 /**
  * Class to control which/how page is to be displayed in the main Aggregator window 
- * (about page, search options page, results page or help page).
+ * ('about' page, 'search options' page, 'results' page or 'help' page).
  * 
  * @author Yana Panchenko
  */

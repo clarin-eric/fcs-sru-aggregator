@@ -30,8 +30,9 @@ import org.zkoss.zk.ui.Executions;
 import org.zkoss.zul.Messagebox;
 
 /**
- *
- * @author Yana Panchenko <yana.panchenko@uni-tuebingen.de>
+ * Utility for representing SearchResult data in different formats.
+ * 
+ * @author Yana Panchenko
  */
 public class SearchResultContent {
 
@@ -336,10 +337,8 @@ public class SearchResultContent {
 
     public String getExportText(List<SearchResult> resultsProcessed) {
         StringBuilder text = new StringBuilder();
-        //Set<String> resultsLangs = new HashSet<String>();
         if (resultsProcessed != null && !resultsProcessed.isEmpty()) {
             for (SearchResult result : resultsProcessed) {
-                //resultsLangs.addAll(result.getCorpus().getLanguages());
                 for (Kwic kwic : result.getKwics()) {
                     text.append(kwic.getLeft());
                     text.append(" ");

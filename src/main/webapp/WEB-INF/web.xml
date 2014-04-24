@@ -2,10 +2,53 @@
 <web-app version="3.0" xmlns="http://java.sun.com/xml/ns/javaee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd">
     <description>CLARIN-D Federated Content Search Aggregator</description>
     <display-name>CLARIN-D Federated Content Search Aggregator</display-name>
+    
+    <env-entry>
+        <env-entry-name>center-registry-url</env-entry-name>
+        <env-entry-type>java.lang.String</env-entry-type>
+        <env-entry-value>http://centerregistry-clarin.esc.rzg.mpg.de/restxml/</env-entry-value>
+    </env-entry>
+    <env-entry>
+        <env-entry-name>weblicht-url</env-entry-name>
+        <env-entry-type>java.lang.String</env-entry-type>
+        <env-entry-value>https://weblicht.sfs.uni-tuebingen.de/WebLicht-4/?input=</env-entry-value>
+    </env-entry>
+    <env-entry>
+        <env-entry-name>update-interval-unit</env-entry-name>
+        <env-entry-type>java.lang.String</env-entry-type>
+        <env-entry-value>HOURS</env-entry-value>
+    </env-entry>
+    <env-entry>
+        <env-entry-name>update-interval</env-entry-name>
+        <env-entry-type>java.lang.Integer</env-entry-type>
+        <env-entry-value>6</env-entry-value>
+    </env-entry>
+    <env-entry>
+        <env-entry-name>scan-max-depth</env-entry-name>
+        <env-entry-type>java.lang.Integer</env-entry-type>
+        <env-entry-value>3</env-entry-value>
+    </env-entry>
+    <!-- Value of this property (data.location) should be specified in CATALINA_OPT
+         (e.g. inside /etc/init.d/tomcat7*), unless the default is used. 
+         Currently defaults to /data/ or user.home -->
+    <env-entry>
+        <env-entry-name>data-location-property</env-entry-name>
+        <env-entry-type>java.lang.String</env-entry-type>
+        <env-entry-value>data.location</env-entry-value>
+    </env-entry>
+    <!-- Folder for the data specific to the current Aggregator application,
+         supposed to be inside the data location folder above  -->
+    <env-entry>
+        <env-entry-name>aggregator-folder</env-entry-name>
+        <env-entry-type>java.lang.String</env-entry-type>
+        <env-entry-value>fcsAggregator</env-entry-value>
+    </env-entry>
+    
     <listener>
         <description>ZK listener for session cleanup</description>
         <listener-class>org.zkoss.zk.ui.http.HttpSessionListener</listener-class>
     </listener>
+    
     <servlet>
         <description>ZK loader for ZUML pages</description>
         <servlet-name>zkLoader</servlet-name>
@@ -60,4 +103,5 @@
         <welcome-file>index.html</welcome-file>
         <welcome-file>index.htm</welcome-file>
     </welcome-file-list>
+    
 </web-app>

@@ -1,7 +1,8 @@
 package eu.clarin.sru.fcs.aggregator.sopt;
 
 /**
- * Endpoint. Contains the parent Institution.
+ * Endpoint. Contains information about CQL endpoint url and the parent 
+ * Institution.
  * 
  * @author Yana Panchenko
  */
@@ -57,8 +58,5 @@ public class Endpoint {
         }
         return true;
     }
-
-    
-    
     
 }

@@ -62,24 +62,22 @@ public class SearchOptions extends SelectorComposer<Component> {
     private Combobox languageSelect;
     @Wire
     private Comboitem anyLanguage;
-    private Languages languages;
-    
     @Wire
     private Combobox maximumRecordsSelect;
-    
     @Wire
     private Groupbox allCorpora;
     @Wire
     private Tree tree;
-    private Map<String, List<String>> xAggregationContext;
+    @Wire
+    private Treecol nameCol;
+    @Wire
+    private Treecol instCol;
     
+    private Languages languages;
+    private Map<String, List<String>> xAggregationContext;
     private CorpusModelI corporaModel;
     private CorpusRenderer corpusRenderer;
-    
-    private boolean liveMode = false;
-
     private ScanCache cache;
-    
     private Aggregator aggregatorController;
     
     @Override
@@ -87,9 +85,6 @@ public class SearchOptions extends SelectorComposer<Component> {
         super.doAfterCompose(comp);
         setUpAggerationContext();
         cache = (ScanCache) Executions.getCurrent().getDesktop().getWebApp().getAttribute(WebAppListener.CORPUS_CACHE);
-        //if (cache.isEmpty()) {
-        //    liveMode = true;
-        //}
         setUpCorpusTree();
         languages = (Languages) Executions.getCurrent().getDesktop().getWebApp().getAttribute(WebAppListener.LANGUAGES);
         languageSelect.setSelectedItem(anyLanguage);
@@ -175,11 +170,7 @@ public class SearchOptions extends SelectorComposer<Component> {
     public void onDeselectAll(Event ev) {
         Treechildren openTreeItems = tree.getTreechildren();
         for (Treeitem openItem : openTreeItems.getItems()) {
-            
             DefaultTreeNode<Corpus> node = (DefaultTreeNode<Corpus>) openItem.getValue();
-            //Corpus data = node.getData();
-            //System.out.println(data);
-            
             corpusRenderer.updateItem(openItem, false);
         }
     }
@@ -213,15 +204,6 @@ public class SearchOptions extends SelectorComposer<Component> {
                             corpusRenderer.updateItem(openItem, true);
                         }
                     }
-                    
-//                    // this is a temporary solution,
-//                    // the whole concept on how selected externally resources
-//                    // are displayed has to be changed, otherwise endpoints with
-//                    // hundreds of subresources will break the tree interface
-//                    // by loading all their resources...
-//                    List<String> handlesCopy = new ArrayList<String>(handles.size());
-//                    handlesCopy.addAll(handles);
-//                    selectCorpora(openItem, data, handlesCopy);
                 }
             }
         }
@@ -248,14 +230,8 @@ public class SearchOptions extends SelectorComposer<Component> {
             if (corpus.getLanguages().size() == 1) {
                 availableLangs.add(corpus.getLanguages().iterator().next());
             }
-            //for (String langCode : corpus.getLanguages()) {
-            //    availableLangs.add(langCode);
-            //}
         }
 
-        //List<String> sortedAvailableLanguages = new ArrayList<String>(availableLangs.size());
-        //sortedAvailableLanguages.addAll(availableLangs);
-        //Collections.sort(sortedAvailableLanguages);
         List<Language> sortedLangs = new ArrayList<Language>(availableLangs.size());
         for (String langCode : availableLangs) {
             Language lang = this.languages.langForCode(langCode);
@@ -306,7 +282,7 @@ public class SearchOptions extends SelectorComposer<Component> {
             tree.setItemRenderer(renderer);
             this.corporaModel = model;
             this.corpusRenderer = renderer;
-        } else if (liveMode) {
+        } else if (isLiveModeOn()) {
             CenterRegistryI registry = new CenterRegistryLive();
             CorpusModelLive model = new CorpusModelLive(registry);
             CorpusRendererLive renderer = new CorpusRendererLive(model);
@@ -324,47 +300,47 @@ public class SearchOptions extends SelectorComposer<Component> {
             this.corporaModel = model;
             this.corpusRenderer = renderer;
         }
-        Treecol nameCol = (Treecol) tree.getTreecols().getFellow("nameCol");
+        //Treecol nameCol = (Treecol) tree.getTreecols().getFellow("nameCol");
         nameCol.setSortAscending(new CorpusByNameComparator());
         nameCol.setSortDescending(new CorpusByNameDComparator());
-        Treecol instCol = (Treecol) tree.getTreecols().getFellow("instCol");
+        //Treecol instCol = (Treecol) tree.getTreecols().getFellow("instCol");
         instCol.setSortAscending(new CorpusByInstitutionComparator());
         instCol.setSortDescending(new CorpusByInstitutionDComparator());
         //tree.setSizedByContent(true);
     }
 
 
-    private void selectCorpora(Treeitem openItem, Corpus data, List<String> handles) {
-        List<String> handlesFound = new ArrayList<String>();
-        for (String handle : handles) {
-            if (handle.equals(data.getHandle())) {
-                handlesFound.add(handle);
-            }
-        }
-        for (String handle : handlesFound) {
-            corpusRenderer.updateItem(openItem, true);
-            handles.remove(handle);
-        }
-        
-        if (!handles.isEmpty()) {
-            int sizeBefore = handles.size();
-            openItem.setOpen(true);
-            Treechildren tchildren = openItem.getTreechildren();
-            List<Treeitem> tcitems = new ArrayList<Treeitem>();
-            tcitems.addAll(tchildren.getItems());
-            for (Treeitem child : tcitems) {
-                DefaultTreeNode<Corpus> node = (DefaultTreeNode<Corpus>) child.getValue();
-                Corpus cdata = node.getData();
-                selectCorpora(child, cdata, handles);
-                if (handles.isEmpty()) {
-                    break;
-                }
-            }
-            if (sizeBefore == handles.size()) {
-                openItem.setOpen(false);
-            }
-        }
-    }
+//    private void selectCorpora(Treeitem openItem, Corpus data, List<String> handles) {
+//        List<String> handlesFound = new ArrayList<String>();
+//        for (String handle : handles) {
+//            if (handle.equals(data.getHandle())) {
+//                handlesFound.add(handle);
+//            }
+//        }
+//        for (String handle : handlesFound) {
+//            corpusRenderer.updateItem(openItem, true);
+//            handles.remove(handle);
+//        }
+//        
+//        if (!handles.isEmpty()) {
+//            int sizeBefore = handles.size();
+//            openItem.setOpen(true);
+//            Treechildren tchildren = openItem.getTreechildren();
+//            List<Treeitem> tcitems = new ArrayList<Treeitem>();
+//            tcitems.addAll(tchildren.getItems());
+//            for (Treeitem child : tcitems) {
+//                DefaultTreeNode<Corpus> node = (DefaultTreeNode<Corpus>) child.getValue();
+//                Corpus cdata = node.getData();
+//                selectCorpora(child, cdata, handles);
+//                if (handles.isEmpty()) {
+//                    break;
+//                }
+//            }
+//            if (sizeBefore == handles.size()) {
+//                openItem.setOpen(false);
+//            }
+//        }
+//    }
     
     
     private boolean isTestingOn() {
@@ -372,12 +348,25 @@ public class SearchOptions extends SelectorComposer<Component> {
         String[] paramValue = Executions.getCurrent().getParameterMap().get(Aggregator.MODE_PARAM);
         if (paramValue != null) {
             String mode = paramValue[0].trim();
-            LOGGER.log(Level.INFO, "Received parameter: {0}[{1}]", new String[]{Aggregator.MODE_PARAM, mode});
             if (mode.equals(Aggregator.MODE_PARAM_VALUE_TEST)) {
                 testingOn = true;
+                LOGGER.log(Level.INFO, "Received parameter: {0}[{1}]", new String[]{Aggregator.MODE_PARAM, mode});
             }
         }
         return testingOn;
+    }
+    
+    private boolean isLiveModeOn() {
+        boolean liveOn = false;
+        String[] paramValue = Executions.getCurrent().getParameterMap().get(Aggregator.MODE_PARAM);
+        if (paramValue != null) {
+            String mode = paramValue[0].trim();
+            if (mode.equals(Aggregator.MODE_PARAM_VALUE_LIVE)) {
+                liveOn = true;
+                LOGGER.log(Level.INFO, "Received parameter: {0}[{1}]", new String[]{Aggregator.MODE_PARAM, mode});
+            }
+        }
+        return liveOn;
     }
         
     private boolean isSearchOn() {
@@ -385,9 +374,9 @@ public class SearchOptions extends SelectorComposer<Component> {
         String[] paramValue = Executions.getCurrent().getParameterMap().get(Aggregator.MODE_PARAM);
         if (paramValue != null) {
             String mode = paramValue[0].trim();
-            LOGGER.log(Level.INFO, "Received parameter: {0}[{1}]", new String[]{Aggregator.MODE_PARAM, mode});
             if (mode.equals(Aggregator.MODE_PARAM_VALUE_SEARCH)) {
                 searchOn = true;
+                LOGGER.log(Level.INFO, "Received parameter: {0}[{1}]", new String[]{Aggregator.MODE_PARAM, mode});
             }
         }
         return searchOn;

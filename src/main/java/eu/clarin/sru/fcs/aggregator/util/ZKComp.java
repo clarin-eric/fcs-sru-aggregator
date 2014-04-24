@@ -1,13 +1,10 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package eu.clarin.sru.fcs.aggregator.util;
 
 import org.zkoss.zul.A;
 
 /**
- *
+ * Utility for reusable ZK components created for Aggregator.
+ * 
  * @author Yana Panchenko <yana.panchenko@uni-tuebingen.de>
  */
 public class ZKComp {

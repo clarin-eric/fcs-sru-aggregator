@@ -5,6 +5,9 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
+ * Represents information about corpus resource, such as corpus handle (id),
+ * institution, title, description, language(s), etc. Does not store the
+ * information about corpus sub-corpora.
  *
  * @author Yana Panchenko
  */

@@ -14,7 +14,9 @@ import org.zkoss.zul.DefaultTreeNode;
 import org.zkoss.zul.Treeitem;
 
 /**
- *
+ * Represents corpora model where corpora data is taken from cache of the 
+ * pre-crawled scan requests.
+ * 
  * @author Yana Panchenko
  */
 public class CorpusModelCached extends org.zkoss.zul.DefaultTreeModel<Corpus> implements CorpusModelI {
@@ -160,17 +162,12 @@ public class CorpusModelCached extends org.zkoss.zul.DefaultTreeModel<Corpus> im
     }
 
     private void initCorpusTree() {
-        //System.out.println("Initializing tree");
-        //System.out.println(cache);
         for (Corpus c : cache.getRootCorpora()) {
             // create node from root corpora
-            DefaultTreeNode<Corpus> rootChildNode = new DefaultTreeNode(c, new ArrayList<DefaultTreeNode<Corpus>>());
-            
-            //System.out.println("Adding children to root node " + c.getEndpointUrl() + " " + c.getHandle());
+            DefaultTreeNode<Corpus> rootChildNode = 
+                    new DefaultTreeNode(c, new ArrayList<DefaultTreeNode<Corpus>>());
             // add children to that node
             addChildren(rootChildNode);
-            
-            //System.out.println("Adding root to tree " + c.getEndpointUrl() + " " + c.getHandle());
             // add to the root of the model
             super.getRoot().getChildren().add(rootChildNode);
         }
@@ -181,11 +178,9 @@ public class CorpusModelCached extends org.zkoss.zul.DefaultTreeModel<Corpus> im
         Corpus corpus = parentNode.getData();
         
         List<Corpus> corpusChildren = cache.getChildren(corpus);
-        //System.out.println("Getting children of " + corpus.getEndpointUrl() + " " + corpus.getHandle() + "--> " + corpusChildren);
         for (Corpus corpusChild : corpusChildren) {
             DefaultTreeNode<Corpus> child = new DefaultTreeNode(corpusChild, new ArrayList<DefaultTreeNode<Corpus>>());
             parentNode.add(child);
-            //System.out.println("Adding child " + corpusChild.getEndpointUrl() + " " + corpusChild.getHandle());
             addChildren(child);
         }
     }

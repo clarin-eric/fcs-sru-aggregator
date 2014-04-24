@@ -1,7 +1,9 @@
 package eu.clarin.sru.fcs.aggregator.sopt;
 
 /**
- *
+ * Represents language and contains information about language name and 
+ * language codes according to ISO-639 codes.
+ * 
  * @author Yana Panchenko
  */
 public class Language implements Comparable {

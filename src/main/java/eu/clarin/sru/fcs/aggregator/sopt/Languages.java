@@ -11,7 +11,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- *
+ * Represents collection of languages.
+ * 
  * @author Yana Panchenko
  */
 public class Languages {

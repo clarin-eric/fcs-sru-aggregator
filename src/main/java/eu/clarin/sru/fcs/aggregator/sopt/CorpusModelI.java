@@ -6,7 +6,9 @@ import org.zkoss.zul.DefaultTreeNode;
 import org.zkoss.zul.Treeitem;
 
 /**
- *
+ * Represents corpora model that has access to Corpus objects and their 
+ * information about corpora.
+ * 
  * @author Yana Panchenko
  */
 public interface CorpusModelI {

@@ -4,7 +4,9 @@ import java.util.Comparator;
 import org.zkoss.zul.DefaultTreeNode;
 
 /**
- *
+ * Comparator necessary for sorting the corpora according to their 
+ * institution name in descending order.
+ * 
  * @author Yana Panchenko
  */
 public class CorpusByInstitutionDComparator implements Comparator<DefaultTreeNode<Corpus>> {

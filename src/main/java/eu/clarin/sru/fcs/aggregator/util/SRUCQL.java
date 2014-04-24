@@ -1,8 +1,9 @@
 package eu.clarin.sru.fcs.aggregator.util;
 
 /**
- *
- * @author Yana Panchenko <yana.panchenko@uni-tuebingen.de>
+ * Utility for storing constants related to SRU/CQL specification.
+ * 
+ * @author Yana Panchenko
  */
 public class SRUCQL {
     

@@ -13,8 +13,8 @@ import org.zkoss.zul.Treerow;
  * are loaded on demand. It is necessary that CorpusModelLive is used with this
  * renderer.
  *
- * TODO: maybe remove the loaded sub-resources from the tree when they are
- * closed by the user.
+ * TODO: remove the loaded sub-resources from the tree when they are
+ * closed by the user?
  *
  * @author Yana Panchenko
  */

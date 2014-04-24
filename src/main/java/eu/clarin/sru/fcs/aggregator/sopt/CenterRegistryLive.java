@@ -12,6 +12,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
 
 /**
  * Center registry node. Its children are centers (institutions).
@@ -21,10 +23,16 @@ import java.util.logging.Logger;
 public class CenterRegistryLive implements CenterRegistryI {
 
     private static final Logger LOGGER = Logger.getLogger(CenterRegistryLive.class.getName());
-    private static final String CENTER_REGISTRY_URL = "http://130.183.206.32/restxml/";
+    //private static final String CENTER_REGISTRY_URL = "http://130.183.206.32/restxml/";
+    private String centerRegistryUrl; //defined in web.xml
     //https://centerregistry-clarin.esc.rzg.mpg.de/restxml/
     private boolean hasInstitutionsLoaded = false;
     private List<Institution> centers = new ArrayList<Institution>();
+    
+    public CenterRegistryLive() {
+        super();
+        processContext();
+    }
 
     @Override
     public boolean hasCQLInstitutionsLoaded() {
@@ -38,7 +46,7 @@ public class CenterRegistryLive implements CenterRegistryI {
                 return;
             }
             hasInstitutionsLoaded = true;
-            URI url = URI.create(CENTER_REGISTRY_URL);
+            URI url = URI.create(centerRegistryUrl);
             CenterRegistryConnector connector = new CenterRegistryConnector(url, 30000);
              try {
             List<Center> regCenters = connector.retrieveCenters();
@@ -88,6 +96,16 @@ public class CenterRegistryLive implements CenterRegistryI {
             return null;
         }
         return centers.get(index);
+    }
+    
+    private void processContext() {
+        InitialContext context;
+        try {
+            context = new InitialContext();
+            centerRegistryUrl = (String) context.lookup("java:comp/env/center-registry-url");
+        } catch (NamingException ex) {
+            LOGGER.log(Level.SEVERE, null, ex);
+        }
     }
 
 }

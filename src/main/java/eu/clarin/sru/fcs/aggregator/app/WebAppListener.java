@@ -24,6 +24,9 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
+import javax.servlet.ServletContext;
 import opennlp.tools.tokenize.TokenizerModel;
 import org.joda.time.DateTime;
 import org.zkoss.zk.ui.WebApp;
@@ -39,42 +42,46 @@ import org.zkoss.zk.ui.util.WebAppInit;
  */
 public class WebAppListener implements WebAppInit, WebAppCleanup {
 
+    private static final Logger LOGGER = Logger.getLogger(WebAppListener.class.getName());
     public static final String ACTIVE_SEARCH_CONTROLLERS = "ACTIVE_SEARCH_CONTROLLERS";
     public static final String SHARED_SRU_CLIENT = "SHARED_SRU_CLIENT";
     public static final String LANGUAGES = "LANG";
     public static final String CORPUS_CACHE = "CORPUS_CACHE";
-    private static final Logger LOGGER = Logger.getLogger(WebAppListener.class.getName());
-    //private static final int HOURS_BETWEEN_CACHE_UPDATE = 3;
+    public static final String CORPUS_CRAWLER = "CORPUS_CRAWLER";
+    public static final int WAITING_TIME_FOR_SRUCLIENT_SHUTDOWN_MS = 10000;
+    public static final int WAITING_TIME_FOR_POOL_SHUTDOWN_MS = 60000;
     //private Timer cacheTimer;
     public static final String DE_TOK_MODEL = "/tokenizer/de-tuebadz-8.0-token.bin";
-    private static final String AGGREGATOR_DIR_NAME = "aggregator";
-    private static final String SCAN_DIR_NAME = "scan";
-    private static final TimeUnit CACHE_UPDATE_INTERVAL_UNIT = TimeUnit.HOURS;
-    private static final int CACHE_UPDATE_INTERVAL = 6;
-    private static final int CACHE_MAX_DEPTH = 3;
     private static final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-    public static final String CORPUS_CRAWLER = "CORPUS_CRAWLER";
+    private static final String DEFAULT_DATA_LOCATION = "/data";
+    private String dataLocation; // defined in web.xml with fall-back in the code
+    private String aggregatorDirName; // defined in web.xml
+    private static final String SCAN_DIR_NAME = "scan";
+    private TimeUnit cacheUpdateIntervalUnit; // defined in web.xml
+    private Integer cacheUpdateInterval; // defined in web.xml
+    private Integer cacheMaxDepth; // defined in web.xml
 
     @Override
-    public void init(WebApp webapp) throws Exception {
+    public void init(WebApp webapp) {
 
         LOGGER.info("Aggregator is starting.");
-        
+        processContext();
+
         Set<SearchResults> activeControllers = new HashSet<SearchResults>();
         webapp.setAttribute(ACTIVE_SEARCH_CONTROLLERS, activeControllers);
-        
+
         SRUThreadedClient sruClient = new SRUThreadedClient();
         sruClient.registerRecordParser(new ClarinFCSRecordParser());
         webapp.setAttribute(WebAppListener.SHARED_SRU_CLIENT, sruClient);
 
         Languages languages = new Languages();
         webapp.setAttribute(LANGUAGES, languages);
-        
-        //setUpScanCache(webapp);
-        setUpScanCacheForReadOnly(webapp);
-        
+
+        setUpScanCache(webapp);
+        //setUpScanCacheForReadOnly(webapp);
+
         setUpTokenizers(webapp);
-        
+
     }
 
     @Override
@@ -91,33 +98,31 @@ public class WebAppListener implements WebAppInit, WebAppCleanup {
     }
 
     private String getScanDirectory() {
-        File aggregatorDir = new File(System.getProperty("user.home"), "/." + AGGREGATOR_DIR_NAME);
-        //File aggregatorDir = new File("/var/www", "/." + AGGREGATOR_DIR_NAME);
-        //File aggregatorDir = new File("/data/fcsAggregator");
-        
+
+        File aggregatorDir = new File(dataLocation, aggregatorDirName);
         if (!aggregatorDir.exists()) {
-            if (!aggregatorDir.mkdir()) {
-                LOGGER.info("Scan directory does not exist and cannot be created: " 
+            LOGGER.severe("Aggregator directory does not exist and cannot be created: "
                         + aggregatorDir.getAbsolutePath());
-            }
         }
         File scanDir = new File(aggregatorDir, SCAN_DIR_NAME);
         if (!scanDir.exists()) {
-            scanDir.mkdir();
+            if (!scanDir.mkdir()) {
+                LOGGER.severe("Scan directory does not exist and cannot be created: "
+                        + aggregatorDir.getAbsolutePath());
+            }
         }
         String scanPath = scanDir.getAbsolutePath();
-        LOGGER.info("Scan location: " + scanPath);
+        LOGGER.info("Scan data location: " + scanPath);
         return scanPath;
     }
-    
+
     /**
-     * Use this method instead of setUpScanCache() method if it is necessary
-     * to run the application without scan data crawl, given that the scan 
-     * data was crawled before and was stored as cache under appropriate
-     * location (useful when testing or when smth is wrong with the endpoint 
-     * scan responses).
-     * 
-     * @param webapp 
+     * Use this method instead of setUpScanCache() method if it is necessary to
+     * run the application without scan data crawl, given that the scan data was
+     * crawled before and was stored as cache under appropriate location (useful
+     * when testing or when smth is wrong with the endpoint scan responses).
+     *
+     * @param webapp
      */
     private void setUpScanCacheForReadOnly(WebApp webapp) {
         ScanCacheFiled scanCacheFiled = new ScanCacheFiled(getScanDirectory());
@@ -144,25 +149,23 @@ public class WebAppListener implements WebAppInit, WebAppCleanup {
         //filter.urlShouldContainAnyOf("uni-tuebingen.de", ".mpi.nl");
         //filter.urlShouldContainAnyOf("dspin.dwds.de", "lindat.");
         //ScanCrawler scanCrawler = new ScanCrawler(centerRegistry, sruScanClient, filter, CACHE_MAX_DEPTH);
-        ScanCrawler scanCrawler = new ScanCrawler(centerRegistry, sruScanClient, null, CACHE_MAX_DEPTH);
+        ScanCrawler scanCrawler = new ScanCrawler(centerRegistry, sruScanClient, null, cacheMaxDepth);
         ScanCache scanCache;
 
-        //synchronized (scanCrawler) {
-            LOGGER.info("Start cache read");
-            try {
-                scanCache = scanCacheFiled.read();
-                LOGGER.info("Finished cache read, number of root corpora: " + scanCache.getRootCorpora().size());
-            } catch (Exception e) {
-                LOGGER.log(Level.SEVERE, "Error while reading the scan cache!", e);
-                scanCache = new SimpleInMemScanCache();
-            }
-        //}
+        LOGGER.info("Start cache read");
+        try {
+            scanCache = scanCacheFiled.read();
+            LOGGER.info("Finished cache read, number of root corpora: " + scanCache.getRootCorpora().size());
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Error while reading the scan cache!", e);
+            scanCache = new SimpleInMemScanCache();
+        }
         webapp.setAttribute(CORPUS_CACHE, scanCache);
         webapp.setAttribute(CORPUS_CRAWLER, scanCrawler);
 
         scheduler.scheduleAtFixedRate(
                 new ScanCrawlTask(scanCrawler, scanCacheFiled, webapp),
-                0, CACHE_UPDATE_INTERVAL, CACHE_UPDATE_INTERVAL_UNIT);
+                0, cacheUpdateInterval, cacheUpdateIntervalUnit);
 
     }
 
@@ -175,11 +178,11 @@ public class WebAppListener implements WebAppInit, WebAppCleanup {
             sruClient.shutdown(); // Disable new tasks from being submitted
             // Wait 10 secs for existing tasks to terminate
             // replace with awaitTermination if ever provided in SRUClient API
-            Thread.sleep(10000);
+            Thread.sleep(WAITING_TIME_FOR_SRUCLIENT_SHUTDOWN_MS);
             sruClient.shutdownNow(); // Cancel currently executing tasks
             // Wait 10 secs for tasks to respond to being cancelled
             // replace with awaitTermination if ever provided in SRUClient API
-            Thread.sleep(10000);
+            Thread.sleep(WAITING_TIME_FOR_SRUCLIENT_SHUTDOWN_MS);
         } catch (InterruptedException ie) {
             // (Re-)Cancel if current thread also interrupted
             sruClient.shutdownNow();
@@ -192,10 +195,12 @@ public class WebAppListener implements WebAppInit, WebAppCleanup {
         pool.shutdown(); // Disable new tasks from being submitted
         try {
             // Wait a while for existing tasks to terminate
-            if (!pool.awaitTermination(60, TimeUnit.SECONDS)) {
+            if (!pool.awaitTermination(WAITING_TIME_FOR_POOL_SHUTDOWN_MS, 
+                    TimeUnit.MILLISECONDS)) {
                 pool.shutdownNow(); // Cancel currently executing tasks
                 // Wait a while for tasks to respond to being cancelled
-                if (!pool.awaitTermination(60, TimeUnit.SECONDS)) {
+                if (!pool.awaitTermination(WAITING_TIME_FOR_POOL_SHUTDOWN_MS, 
+                        TimeUnit.MILLISECONDS)) {
                     LOGGER.info("Pool did not terminate");
                 }
             }
@@ -219,4 +224,34 @@ public class WebAppListener implements WebAppInit, WebAppCleanup {
         webapp.setAttribute(DE_TOK_MODEL, model);
     }
 
+    private void processContext() {
+        try {
+            InitialContext context;
+            context = new InitialContext();
+            String dataLocationPropertyName = (String) context.lookup("java:comp/env/data-location-property");
+            aggregatorDirName = (String) context.lookup("java:comp/env/aggregator-folder");
+            String updateIntervalUnitString = (String) context.lookup("java:comp/env/update-interval-unit");
+            cacheUpdateIntervalUnit = TimeUnit.valueOf(updateIntervalUnitString);
+            cacheUpdateInterval = (Integer) context.lookup("java:comp/env/update-interval");
+            cacheMaxDepth = (Integer) context.lookup("java:comp/env/scan-max-depth");
+            // see if data location is set in properties
+            dataLocation = System.getProperty(dataLocationPropertyName);
+            if (dataLocation == null || !(new File(dataLocation, aggregatorDirName).exists())) {
+                dataLocation = DEFAULT_DATA_LOCATION;
+                if (!(new File(dataLocation, aggregatorDirName).exists())) {
+                    dataLocation = System.getProperty("user.home");
+                }
+                if ((new File(dataLocation, aggregatorDirName).exists())) {
+                    LOGGER.info(dataLocationPropertyName + " property is not defined, "
+                            + "setting to default: " + dataLocation);
+                } else {
+                    LOGGER.info(dataLocationPropertyName + " property is not defined, "
+                            + "default location does not extist: " + dataLocation);
+                    throw new RuntimeException("Data location not found");
+                }
+            }
+        } catch (NamingException ex) {
+            Logger.getLogger(WebAppListener.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
 }

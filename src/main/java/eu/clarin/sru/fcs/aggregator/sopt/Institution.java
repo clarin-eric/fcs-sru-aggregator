@@ -3,7 +3,8 @@ package eu.clarin.sru.fcs.aggregator.sopt;
 import java.util.*;
 
 /**
- * Institution. Can have Endpoint children.
+ * Institution. Contains information about institution name and link (url). 
+ * Can have information about its CQL Endpoints.
  * 
  * @author Yana Panchenko
  */
@@ -57,6 +58,7 @@ import java.util.*;
         return null;
     }
     
+    @Override
     public String toString() {
         if (name != null && name.length() > 0) {
             return name;

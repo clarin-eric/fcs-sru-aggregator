@@ -27,7 +27,7 @@ import org.zkoss.zul.Window;
  * resource, its caption containing information about the endpoint resource of 
  * the corresponding SearchResult.
  * 
- * @author Yana Panchenko <yana.panchenko@uni-tuebingen.de>
+ * @author Yana Panchenko
  */
 public class SearchResultGroupRenderer {
     
@@ -114,8 +114,6 @@ public class SearchResultGroupRenderer {
         Label recordsFound = null;
         final Toolbarbutton infoCell = new Toolbarbutton();
         
-
-        
         if (resultsItem.getCorpus().getLandingPage() != null) {
             homeLink = ZKComp.createCorpusHomeLink(resultsItem.getCorpus().getLandingPage());
             homeLink.setStyle("margin-left:10px;margin-right:10px;");
@@ -160,15 +158,11 @@ public class SearchResultGroupRenderer {
         if (resultsItem.getResponse() != null && resultsItem.getResponse().getNumberOfRecords() > 0) {
             sb2.append(" from " + resultsItem.getResponse().getNumberOfRecords() + " found");
         }
-
         recordsFound = new Label(sb2.toString());
         recordsFound.setStyle("margin-left:10px;margin-right:30px;");
-            
-
         if (hasInfo) {
             Image infoImage = new Image("img/help-about.png");
             infoImage.setStyle("margin-right:10px;");
-            //infoCell.appendChild(infoImage);
             infoCell.setImage("img/help-about.png");
             infoCell.addEventListener(Events.ON_CLICK, new EventListener() {
                 @Override
@@ -180,24 +174,14 @@ public class SearchResultGroupRenderer {
             });
 
         } else {
-            //Label label = new Label("");
-            //label.setParent(infoCell);
             infoCell.setLabel("");
         }
-        //infoCell.setStyle("margin-left:10px;margin-right:10px;");
-        
-        //caption.appendChild(name);
-        
         caption.appendChild(recordsFound);
         if (homeLink != null) {
             caption.appendChild(homeLink);
         }
-        
         caption.appendChild(infoCell);
         
-         //align="left" width="300px">
-                
-                
         return caption;
     }
 
