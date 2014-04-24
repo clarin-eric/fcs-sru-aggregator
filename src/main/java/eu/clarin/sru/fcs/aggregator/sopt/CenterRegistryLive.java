@@ -24,7 +24,7 @@ public class CenterRegistryLive implements CenterRegistryI {
     private static final String CENTER_REGISTRY_URL = "http://130.183.206.32/restxml/";
     //https://centerregistry-clarin.esc.rzg.mpg.de/restxml/
     private boolean hasInstitutionsLoaded = false;
-    private List<InstitutionI> centers = new ArrayList<InstitutionI>();
+    private List<Institution> centers = new ArrayList<Institution>();
 
     @Override
     public boolean hasCQLInstitutionsLoaded() {
@@ -45,7 +45,7 @@ public class CenterRegistryLive implements CenterRegistryI {
             for (Center regCenter : regCenters) {
                 String institutionUrl = regCenter.getId();
                 String institutionName = regCenter.getCenterName();
-                InstitutionI institution = new Institution(institutionName, institutionUrl);
+                Institution institution = new Institution(institutionName, institutionUrl);
                 // display in the tree only those institutions that have CQL endpoints:
                 CenterProfile profile = connector.retrieveCenterProfile(regCenter);
                 CenterExtendedInformation info = profile.getCenterExtendedInformation();
@@ -76,13 +76,13 @@ public class CenterRegistryLive implements CenterRegistryI {
     }
 
     @Override
-    public List<InstitutionI> getCQLInstitutions() {
+    public List<Institution> getCQLInstitutions() {
         loadCQLInstitutions();
         return centers;
     }
 
     @Override
-    public InstitutionI getCQLInstitution(int index) {
+    public Institution getCQLInstitution(int index) {
         loadCQLInstitutions();
         if (index >= centers.size()) {
             return null;

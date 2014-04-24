@@ -1,8 +1,6 @@
 package eu.clarin.sru.fcs.aggregator.app;
 
 import org.zkoss.zul.A;
-import org.zkoss.zul.Button;
-import org.zkoss.zul.Label;
 import org.zkoss.zul.Menubar;
 import org.zkoss.zul.North;
 import org.zkoss.zul.Progressmeter;

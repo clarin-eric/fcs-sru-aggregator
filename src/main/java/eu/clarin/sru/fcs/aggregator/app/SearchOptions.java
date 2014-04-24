@@ -18,7 +18,8 @@ import eu.clarin.sru.fcs.aggregator.sopt.CorpusRendererCached;
 import eu.clarin.sru.fcs.aggregator.sopt.CorpusRendererI;
 import eu.clarin.sru.fcs.aggregator.sopt.CorpusRendererLive;
 import eu.clarin.sru.fcs.aggregator.sopt.Languages;
-import eu.clarin.sru.fcs.aggregator.cache.ScanCacheI;
+import eu.clarin.sru.fcs.aggregator.cache.ScanCache;
+import eu.clarin.sru.fcs.aggregator.util.SRUCQL;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -74,17 +75,14 @@ public class SearchOptions extends SelectorComposer<Component> {
     private CorpusRendererI corpusRenderer;
     
     private boolean liveMode = false;
-    
-    private SRUVersion version = SRUVersion.VERSION_1_2;
 
-    private ScanCacheI cache;
+    private ScanCache cache;
     
     @Override
     public void doAfterCompose(Component comp) throws Exception {
         super.doAfterCompose(comp);
-        setUpSRUVersion();
         setUpAggerationContext();
-        cache = (ScanCacheI) Executions.getCurrent().getDesktop().getWebApp().getAttribute(WebAppListener.CORPUS_CACHE);
+        cache = (ScanCache) Executions.getCurrent().getDesktop().getWebApp().getAttribute(WebAppListener.CORPUS_CACHE);
         //if (cache.isEmpty()) {
         //    liveMode = true;
         //}
@@ -110,7 +108,7 @@ public class SearchOptions extends SelectorComposer<Component> {
             Treeitem treeitem = (Treeitem) comp;
             DefaultTreeNode<Corpus> node = (DefaultTreeNode<Corpus>) treeitem.getValue();
             Corpus corpus = node.getData();
-            if (corpus.getLanguages().contains(selectedLang) || selectedLang.equals("anylang")) {
+            if (corpus.getLanguages().contains(selectedLang) || selectedLang.equals(Languages.ANY_LANGUAGE_NAME)) {
                 treeitem.setVisible(true);
             } else {
                 corpusRenderer.updateItem(treeitem, false);
@@ -243,12 +241,12 @@ public class SearchOptions extends SelectorComposer<Component> {
     }
 
     private void setUpAggerationContext() {
-        String[] paramValue = Executions.getCurrent().getParameterMap().get("x-aggregation-context");
+        String[] paramValue = Executions.getCurrent().getParameterMap().get(SRUCQL.AGGREGATION_CONTEXT);
         String contextJson = null;
         if (paramValue != null) {
             contextJson = paramValue[0].trim();
         }
-        LOGGER.log(Level.INFO, "Received parameter: x-aggregation-context[{0}], ", contextJson);
+        LOGGER.log(Level.INFO, "Received parameter {0}:[{1}], ", new String[]{SRUCQL.AGGREGATION_CONTEXT, contextJson});
 
         if (contextJson != null) {
             Gson gson = new Gson();
@@ -258,7 +256,7 @@ public class SearchOptions extends SelectorComposer<Component> {
                 this.xAggregationContext = gson.fromJson(contextJson, mapType);
             } catch (Exception ex) {
                 LOGGER.log(Level.SEVERE, "Error parsing JSON from x-aggregation-context: {0} {1}", new String[]{ex.getMessage(), contextJson});
-                Messagebox.show("Error in x-aggregation-context parameter", "FCS", 0, Messagebox.INFORMATION);
+                Messagebox.show("Error in " + SRUCQL.AGGREGATION_CONTEXT, "FCS", 0, Messagebox.INFORMATION);
             }
         }
     }
@@ -300,21 +298,6 @@ public class SearchOptions extends SelectorComposer<Component> {
         //tree.setSizedByContent(true);
     }
 
-    private void setUpSRUVersion() {
-        String[] paramValue = Executions.getCurrent().getParameterMap().get("version");
-        String versionString = null;
-        if (paramValue != null) {
-            versionString = paramValue[0].trim();
-            if (versionString.equals("1.2")) {
-                version = SRUVersion.VERSION_1_2;
-            } else if (versionString.equals("1.1")) {
-                version = SRUVersion.VERSION_1_1;
-            } else {
-                Messagebox.show("SRU Version " + version + " not supported", "FCS", 0, Messagebox.INFORMATION);
-            }
-        }
-        LOGGER.log(Level.INFO, "Received parameter: version[{0}], ", versionString);
-    }
 
     private void selectCorpora(Treeitem openItem, Corpus data, List<String> handles) {
         List<String> handlesFound = new ArrayList<String>();

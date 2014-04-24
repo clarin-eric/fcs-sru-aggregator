@@ -7,7 +7,7 @@ import eu.clarin.sru.client.SRUTerm;
 import eu.clarin.sru.client.SRUThreadedClient;
 import eu.clarin.sru.fcs.aggregator.app.WebAppListener;
 import static eu.clarin.sru.fcs.aggregator.sopt.Corpus.ROOT_HANDLE;
-import eu.clarin.sru.fcs.aggregator.util.SRUCQLscan;
+import eu.clarin.sru.fcs.aggregator.util.SRUCQL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -185,7 +185,7 @@ public class CorpusModelLive extends DefaultTreeModel<Corpus> implements CorpusM
     }
 
     private void initRootChildren(CenterRegistryI startingPoint) {
-        for (InstitutionI instit : startingPoint.getCQLInstitutions()) {
+        for (Institution instit : startingPoint.getCQLInstitutions()) {
             for (Endpoint endp : instit.getEndpoints()) {
                 try {
                     //TODO: temp for testing, this 3 lines are to be removed:
@@ -198,11 +198,11 @@ public class CorpusModelLive extends DefaultTreeModel<Corpus> implements CorpusM
 
                     Future<SRUScanResponse> corporaResponse = null;
                     SRUScanRequest corporaRequest = new SRUScanRequest(endp.getUrl());
-                    StringBuilder scanClause = new StringBuilder(SRUCQLscan.RESOURCE_PARAMETER);
+                    StringBuilder scanClause = new StringBuilder(SRUCQL.SCAN_RESOURCE_PARAMETER);
                     scanClause.append("=");
                     scanClause.append(ROOT_HANDLE);
                     corporaRequest.setScanClause(scanClause.toString());
-                    corporaRequest.setExtraRequestData(SRUCQLscan.RESOURCE_INFO_PARAMETER, "true");
+                    corporaRequest.setExtraRequestData(SRUCQL.SCAN_RESOURCE_INFO_PARAMETER, "true");
                     corporaResponse = sruClient.scan(corporaRequest);
                     SRUScanResponse response = corporaResponse.get(200, TimeUnit.SECONDS);
                     if (response != null && response.hasTerms()) {
@@ -243,7 +243,7 @@ public class CorpusModelLive extends DefaultTreeModel<Corpus> implements CorpusM
         ArrayList<Corpus> subCorpora = new ArrayList<Corpus>();
         try {
             SRUScanRequest corporaRequest = new SRUScanRequest(corpus.getEndpointUrl());
-            StringBuilder scanClause = new StringBuilder(SRUCQLscan.RESOURCE_PARAMETER);
+            StringBuilder scanClause = new StringBuilder(SRUCQL.SCAN_RESOURCE_PARAMETER);
             scanClause.append("=");
             String resourceValue = corpus.getHandle();
             if (corpus.getHandle() == null) {

@@ -8,9 +8,9 @@ package eu.clarin.sru.fcs.aggregator.sopt;
 public class Endpoint {
 
     private String url;
-    private InstitutionI institution;
+    private Institution institution;
 
-    public Endpoint(String url, InstitutionI institution) {
+    public Endpoint(String url, Institution institution) {
         this.url = url;
         this.institution = institution;
     }
@@ -23,11 +23,11 @@ public class Endpoint {
         this.url = url;
     }
 
-    public InstitutionI getInstitution() {
+    public Institution getInstitution() {
         return institution;
     }
 
-    public void setInstitution(InstitutionI institution) {
+    public void setInstitution(Institution institution) {
         this.institution = institution;
     }
 

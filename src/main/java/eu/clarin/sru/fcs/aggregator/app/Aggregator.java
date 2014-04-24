@@ -13,8 +13,8 @@ import org.zkoss.zul.Label;
 import org.zkoss.zul.Messagebox;
 import org.zkoss.zul.Textbox;
 import eu.clarin.sru.fcs.aggregator.sopt.Corpus;
+import eu.clarin.sru.fcs.aggregator.util.SRUCQL;
 import org.zkoss.zul.A;
-import org.zkoss.zul.Button;
 import org.zkoss.zul.Div;
 import org.zkoss.zul.Menubar;
 import org.zkoss.zul.Menuitem;
@@ -24,7 +24,7 @@ import org.zkoss.zul.Progressmeter;
 import org.zkoss.zul.South;
 
 /**
- * Main window of the Aggregator application.
+ * Main component of the Aggregator application.
  *
  * @author Yana Panchenko
  */
@@ -78,7 +78,8 @@ public class Aggregator extends SelectorComposer<Component> {
     private ControlsVisibility controlsVisibility;
     private PagesVisibility pagesVisibility;
 
-    private static final String WEBLICHT_URL = "https://weblicht.sfs.uni-tuebingen.de/WebLicht-4/?input=";
+    private static final String WEBLICHT_URL = 
+            "https://weblicht.sfs.uni-tuebingen.de/WebLicht-4/?input=";
     
     
     @Override
@@ -323,17 +324,17 @@ public class Aggregator extends SelectorComposer<Component> {
     private void processParameters() {
         String[] paramValue;
         String query = null;
-        paramValue = Executions.getCurrent().getParameterMap().get("query");
+        paramValue = Executions.getCurrent().getParameterMap().get(SRUCQL.SEARCH_QUERY_PARAMETER);
         if (paramValue != null) {
             query = paramValue[0].trim();
             searchString.setValue(query);
         }
         LOGGER.log(Level.INFO, "Received parameter: query[{0}], ", query);
-        paramValue = Executions.getCurrent().getParameterMap().get("operation");
+        paramValue = Executions.getCurrent().getParameterMap().get(SRUCQL.OPERATION);
         String operationString = null;
         if (paramValue != null) {
             operationString = paramValue[0].trim();
-            if (!operationString.equals("searchRetrieve")) {
+            if (!operationString.equals(SRUCQL.SEARCH_RETRIEVE)) {
                 Messagebox.show("Not supported operation " + operationString, "FCS", 0, Messagebox.INFORMATION);
             }
         }

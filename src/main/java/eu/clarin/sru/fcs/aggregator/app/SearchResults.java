@@ -33,7 +33,7 @@ import eu.clarin.sru.fcs.aggregator.sopt.Languages;
 import eu.clarin.sru.fcs.aggregator.sresult.Kwic;
 import eu.clarin.sru.fcs.aggregator.sresult.SearchResult;
 import eu.clarin.sru.fcs.aggregator.sresult.SearchResultRecordRenderer;
-import eu.clarin.sru.fcs.aggregator.util.SRUCQLsearchRetrieve;
+import eu.clarin.sru.fcs.aggregator.util.SRUCQL;
 import eu.clarin.weblicht.wlfxb.io.WLDObjector;
 import eu.clarin.weblicht.wlfxb.io.WLFormatException;
 import eu.clarin.weblicht.wlfxb.md.xb.MetaData;
@@ -52,7 +52,6 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
-import javax.ws.rs.core.MediaType;
 import opennlp.tools.tokenize.TokenizerME;
 import opennlp.tools.tokenize.TokenizerModel;
 import org.apache.poi.ss.usermodel.Cell;
@@ -113,7 +112,6 @@ public class SearchResults extends SelectorComposer<Component> {
         setUpSRUVersion();
         Executions.getCurrent().getDesktop().enableServerPush(true);
         searchClient = (SRUThreadedClient) Executions.getCurrent().getDesktop().getWebApp().getAttribute(WebAppListener.SHARED_SRU_CLIENT);
-        setUpSRUVersion();
         // assign the search controller to desktop, so that it can be accessed to be shutdown when the desktop is destroyed
         Executions.getCurrent().getDesktop().setAttribute(this.getClass().getSimpleName(), this);
         // also add it to the list of actice controllers of the web application, so that they can be shutdown when the application stops
@@ -186,7 +184,7 @@ public class SearchResults extends SelectorComposer<Component> {
         searchRequest.setQuery("\"" + searchString + "\"");
         searchRequest.setStartRecord(searchOffset[0] + searchOffset[1]);
         if (resultsItem.hasCorpusHandler()) {
-            searchRequest.setExtraRequestData(SRUCQLsearchRetrieve.CORPUS_HANDLE_PARAMETER, resultsItem.getCorpus().getHandle());
+            searchRequest.setExtraRequestData(SRUCQL.SEARCH_CORPUS_HANDLE_PARAMETER, resultsItem.getCorpus().getHandle());
         }
         try {
             Future<SRUSearchRetrieveResponse> futureResponse = searchClient.searchRetrieve(searchRequest);
@@ -852,7 +850,7 @@ public class SearchResults extends SelectorComposer<Component> {
     }
 
     private void setUpSRUVersion() {
-        String[] paramValue = Executions.getCurrent().getParameterMap().get("version");
+        String[] paramValue = Executions.getCurrent().getParameterMap().get(SRUCQL.VERSION);
         String versionString = null;
         if (paramValue != null) {
             versionString = paramValue[0].trim();
@@ -864,7 +862,7 @@ public class SearchResults extends SelectorComposer<Component> {
                 Messagebox.show("SRU Version " + version + " not supported", "FCS", 0, Messagebox.INFORMATION);
             }
         }
-        LOGGER.log(Level.INFO, "Received parameter: version[{0}], ", versionString);
+        LOGGER.log(Level.INFO, "Received parameter: {0}[{1}], ", new String[]{SRUCQL.VERSION,versionString});
     }
     
     /**

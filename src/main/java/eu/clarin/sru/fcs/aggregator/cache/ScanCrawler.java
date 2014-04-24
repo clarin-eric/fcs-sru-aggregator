@@ -1,6 +1,5 @@
 package eu.clarin.sru.fcs.aggregator.cache;
 
-import eu.clarin.sru.fcs.aggregator.cache.ScanCache;
 import eu.clarin.sru.client.SRUScanRequest;
 import eu.clarin.sru.client.SRUScanResponse;
 import eu.clarin.sru.client.SRUTerm;
@@ -8,8 +7,8 @@ import eu.clarin.sru.client.SRUThreadedClient;
 import eu.clarin.sru.fcs.aggregator.sopt.CenterRegistryI;
 import eu.clarin.sru.fcs.aggregator.sopt.Corpus;
 import eu.clarin.sru.fcs.aggregator.sopt.Endpoint;
-import eu.clarin.sru.fcs.aggregator.sopt.InstitutionI;
-import eu.clarin.sru.fcs.aggregator.util.SRUCQLscan;
+import eu.clarin.sru.fcs.aggregator.sopt.Institution;
+import eu.clarin.sru.fcs.aggregator.util.SRUCQL;
 import java.util.List;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -22,7 +21,9 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 /**
- *
+ * Crawler for collecting endpoint scan operation responses of FCS specification. 
+ * Collects all the endpoints and resources descriptions.
+ * 
  * @author yanapanchenko
  */
 public class ScanCrawler {
@@ -44,14 +45,19 @@ public class ScanCrawler {
         this.filter = filter;
     }
 
-    public ScanCache crawl() {
-
-        ScanCache cache = new ScanCache();
+    /**
+     * Crawler of scan operation of FCS specification. Collects all the endpoints
+     * and resources descriptions into the provided cache.
+     * 
+     * @param cache cache into which the endpoints and resources descriptions 
+     * from scan operation responses should be collected.
+     */
+    public void crawl(ScanCache cache) {
 
         //TODO remember not responding root corpora and come back to them later... ?
-        List<InstitutionI> institutions = cr.getCQLInstitutions();
+        List<Institution> institutions = cr.getCQLInstitutions();
         //LOGGER.info(institutions.toString());
-        for (InstitutionI institution : institutions) {
+        for (Institution institution : institutions) {
             cache.addInstitution(institution);
             Iterable<Endpoint> endpoints = institution.getEndpoints();
             if (filter != null) {
@@ -63,10 +69,11 @@ public class ScanCrawler {
             }
         }
 
-        return cache;
-
     }
 
+    // TODO: ask Oliver to add API support for the extra info in the 
+    // SRU client/server libraries, so that it's not necessary to work
+    // with DocumentFragment
     private void addExtraInfo(Corpus c, SRUTerm term) {
 
         DocumentFragment extraInfo = term.getExtraTermData();
@@ -110,9 +117,8 @@ public class ScanCrawler {
     }
 
     private void addCorpora(SRUThreadedClient sruScanClient, String endpointUrl,
-            InstitutionI institution, int depth, Corpus parentCorpus, ScanCache cache) {
-        //System.out.println("Adding Corpora: " + endpointUrl + " " + handle);
-
+            Institution institution, int depth, Corpus parentCorpus, ScanCache cache) {
+        
         Future<SRUScanResponse> corporaResponse = null;
 
         depth++;
@@ -126,24 +132,30 @@ public class ScanCrawler {
             }
 
             SRUScanRequest corporaRequest = new SRUScanRequest(endpointUrl);
-            StringBuilder scanClause = new StringBuilder(SRUCQLscan.RESOURCE_PARAMETER);
+            StringBuilder scanClause = new StringBuilder(SRUCQL.SCAN_RESOURCE_PARAMETER);
             scanClause.append("=");
-            //String normalizedHandle = normalizeHandle(handle, root);
             String normalizedHandle = normalizeHandle(parentCorpus, root);
             scanClause.append(normalizedHandle);
             corporaRequest.setScanClause(scanClause.toString());
-            corporaRequest.setExtraRequestData(SRUCQLscan.RESOURCE_INFO_PARAMETER, "true");
+            corporaRequest.setExtraRequestData(SRUCQL.SCAN_RESOURCE_INFO_PARAMETER, 
+                    SRUCQL.SCAN_RESOURCE_INFO_PARAMETER_DEFAULT_VALUE);
             corporaResponse = sruScanClient.scan(corporaRequest);
             Thread.sleep(5000);
             SRUScanResponse response = corporaResponse.get(600, TimeUnit.SECONDS);
             if (response != null && response.hasTerms()) {
                 for (SRUTerm term : response.getTerms()) {
+                    // don't add corpus that introduces cyclic references
+                    // as of March 2014, there are 2 such endpoints...
+                    if (cache.getCorpus(term.getValue())!= null) {
+                        LOGGER.warning("Cyclic reference in corpus " + term.getValue() + " of endpoint " + endpointUrl);
+                        continue;
+                    }
                     Corpus c = new Corpus(institution, endpointUrl);
                     c.setHandle(term.getValue());
                     c.setDisplayName(term.getDisplayTerm());
                     c.setNumberOfRecords(term.getNumberOfRecords());
                     addExtraInfo(c, term);
-                    cache.addCorpus(c, root, parentCorpus);
+                    cache.addCorpus(c, parentCorpus);
                     addCorpora(sruScanClient, c.getEndpointUrl(), c.getInstitution(),
                             depth, c, cache);
                 }

@@ -1,15 +1,16 @@
 package eu.clarin.sru.fcs.aggregator.app;
 
-import eu.clarin.sru.fcs.aggregator.cache.ScanCrawlerRunnable;
+import eu.clarin.sru.fcs.aggregator.cache.ScanCrawlTask;
 import eu.clarin.sru.fcs.aggregator.cache.ScanCrawler;
 import eu.clarin.sru.fcs.aggregator.cache.ScanCacheFiled;
-import eu.clarin.sru.fcs.aggregator.cache.ScanCache;
+import eu.clarin.sru.fcs.aggregator.cache.SimpleInMemScanCache;
 import eu.clarin.sru.client.SRUThreadedClient;
 import eu.clarin.sru.client.fcs.ClarinFCSRecordParser;
+import eu.clarin.sru.fcs.aggregator.cache.EndpointUrlFilter;
 import eu.clarin.sru.fcs.aggregator.sopt.CenterRegistryI;
 import eu.clarin.sru.fcs.aggregator.sopt.CenterRegistryLive;
 import eu.clarin.sru.fcs.aggregator.sopt.Languages;
-import eu.clarin.sru.fcs.aggregator.cache.ScanCacheI;
+import eu.clarin.sru.fcs.aggregator.cache.ScanCache;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -89,8 +90,8 @@ public class WebAppListener implements WebAppInit, WebAppCleanup {
     }
 
     private String getScanDirectory() {
-        //File aggregatorDir = new File(System.getProperty("user.home"), "/." + AGGREGATOR_DIR_NAME);
-        File aggregatorDir = new File("/var/www", "/." + AGGREGATOR_DIR_NAME);
+        File aggregatorDir = new File(System.getProperty("user.home"), "/." + AGGREGATOR_DIR_NAME);
+        //File aggregatorDir = new File("/var/www", "/." + AGGREGATOR_DIR_NAME);
         
         if (!aggregatorDir.exists()) {
             aggregatorDir.mkdir();
@@ -109,13 +110,13 @@ public class WebAppListener implements WebAppInit, WebAppCleanup {
         ScanCacheFiled scanCacheFiled = new ScanCacheFiled(getScanDirectory());
         CenterRegistryI centerRegistry = new CenterRegistryLive();
         SRUThreadedClient sruScanClient = (SRUThreadedClient) webapp.getAttribute(WebAppListener.SHARED_SRU_CLIENT);
-        //EndpointUrlFilter filter = new EndpointUrlFilter();
+        EndpointUrlFilter filter = new EndpointUrlFilter();
         //filter.urlShouldContainAnyOf("leipzig", ".mpi.nl");
         //filter.urlShouldContainAnyOf("uni-tuebingen.de", ".mpi.nl");
-        //filter.urlShouldContainAnyOf("dspin.dwds.de", "lindat.");
-        //ScanCrawler scanCrawler = new ScanCrawler(centerRegistry, sruScanClient, filter, maxDepth);
-        ScanCrawler scanCrawler = new ScanCrawler(centerRegistry, sruScanClient, null, CACHE_MAX_DEPTH);
-        ScanCacheI scanCache;
+        filter.urlShouldContainAnyOf("dspin.dwds.de", "lindat.");
+        ScanCrawler scanCrawler = new ScanCrawler(centerRegistry, sruScanClient, filter, CACHE_MAX_DEPTH);
+        //ScanCrawler scanCrawler = new ScanCrawler(centerRegistry, sruScanClient, null, CACHE_MAX_DEPTH);
+        ScanCache scanCache;
 
         //synchronized (scanCrawler) {
             LOGGER.info("Start cache read");
@@ -124,14 +125,14 @@ public class WebAppListener implements WebAppInit, WebAppCleanup {
                 LOGGER.info("Finished cache read, number of root corpora: " + scanCache.getRootCorpora().size());
             } catch (Exception e) {
                 LOGGER.log(Level.SEVERE, "Error while reading the scan cache!", e);
-                scanCache = new ScanCache();
+                scanCache = new SimpleInMemScanCache();
             }
         //}
         webapp.setAttribute(CORPUS_CACHE, scanCache);
         webapp.setAttribute(CORPUS_CRAWLER, scanCrawler);
 
         scheduler.scheduleAtFixedRate(
-                new ScanCrawlerRunnable(scanCrawler, scanCacheFiled, webapp),
+                new ScanCrawlTask(scanCrawler, scanCacheFiled, webapp),
                 0, CACHE_UPDATE_INTERVAL, CACHE_UPDATE_INTERVAL_UNIT);
 
     }

@@ -6,7 +6,11 @@ import java.util.Set;
 import javax.ws.rs.core.Application;
 
 /**
- *
+ * RESTful service. At the moment does nothing useful and was added just to
+ * make sure that it would be possible to combine REST services with ZK app,
+ * and add to the aggregator the support for its usage as aggregated FCS
+ * server, as was planned in the initial FCS specification.
+ * 
  * @author yanapanchenko
  */
 public class AggregatorService  extends Application {

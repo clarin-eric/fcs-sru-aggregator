@@ -5,7 +5,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- *
+ * Filters for the cache of scan data (endpoint/resources descriptions) based
+ * on endpoint url. Only endpoints containing one of the specified string in the 
+ * endpoint url will be cached. Useful for testing the endpoints.
+ * 
  * @author yanapanchenko
  */
 public class EndpointUrlFilter implements EndpointFilter {

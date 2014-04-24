@@ -7,7 +7,7 @@ import java.util.*;
  * 
  * @author Yana Panchenko
  */
-    public class Institution implements InstitutionI {
+    public class Institution {
 
     private String name;
     private String link;
@@ -19,7 +19,6 @@ import java.util.*;
         this.endpoints = new ArrayList<Endpoint>();
     }
     
-    @Override
     public Endpoint add(String endpointUrl) {
         Endpoint ep = getEndpoint(endpointUrl);
         if (ep == null) {
@@ -29,23 +28,19 @@ import java.util.*;
         return ep;
     }
 
-    @Override
     public String getName() {
         return name;
     }
     
-    @Override
     public String getLink() {
         return link;
     }
     
-    @Override
    public List<Endpoint> getEndpoints() {
         return  this.endpoints;
     }
    
     
-    @Override
     public Endpoint getEndpoint(int index) {
         if (index >= endpoints.size()) {
             return null;
@@ -53,7 +48,6 @@ import java.util.*;
         return endpoints.get(index);
     }
     
-    @Override
     public Endpoint getEndpoint(String endpointUrl) {
         for (Endpoint ep : endpoints) {
             if (ep.getUrl().equals(endpointUrl)) {
@@ -63,7 +57,6 @@ import java.util.*;
         return null;
     }
     
-    @Override
     public String toString() {
         if (name != null && name.length() > 0) {
             return name;
@@ -71,6 +64,5 @@ import java.util.*;
         return link;
        }
     }
-    
     
 }

@@ -1,11 +1,8 @@
 package eu.clarin.sru.fcs.aggregator.cache;
 
-import eu.clarin.sru.fcs.aggregator.app.CacheCorporaScanIntoFileTask;
-import eu.clarin.sru.fcs.aggregator.cache.ScanCache;
 import eu.clarin.sru.fcs.aggregator.sopt.Corpus;
 import eu.clarin.sru.fcs.aggregator.sopt.Endpoint;
 import eu.clarin.sru.fcs.aggregator.sopt.Institution;
-import eu.clarin.sru.fcs.aggregator.sopt.InstitutionI;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.File;
@@ -22,6 +19,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
+ * Utility for reading/writing scan data (endpoints descriptions) from/to
+ * ScanCache from/to local files.
  *
  * @author yanapanchenko
  */
@@ -38,10 +37,22 @@ public class ScanCacheFiled {
     public static final String SPACE = " ";
     private static final Logger LOGGER = Logger.getLogger(ScanCacheFiled.class.getName());
 
+    /**
+     * Constructs ScanCache/files reading/writing utility.
+     * 
+     * @param scanDirectory path to local directory were files with 
+     * ScanCache data are/should be stored.
+     */
     public ScanCacheFiled(String scanDirectory) {
         this.scanDirectory = scanDirectory;
     }
 
+    /**
+     * Writes ScanCache data (endpoints and resources descriptions) in a special
+     * simple plain text format into the files.
+     * 
+     * @param cache ScanCache the data of which should be written into the files.
+     */
     public void write(ScanCache cache) {
 
         OutputStreamWriter os = null;
@@ -50,7 +61,7 @@ public class ScanCacheFiled {
             clearDir(scanDirectory);
             File sruInstitutionsFile = new File(scanDirectory, INSTITUTION_ENDPOINTS_FILENAME);
             os = new OutputStreamWriter(new BufferedOutputStream(new FileOutputStream(sruInstitutionsFile)), ENCODING);
-            for (InstitutionI institution : cache.getInstitutions()) {
+            for (Institution institution : cache.getInstitutions()) {
                 writeInstitutionInfo(os, institution);
                 for (Endpoint endp : institution.getEndpoints()) {
                     for (Corpus corpus : cache.getRootCorporaOfEndpoint(endp.getUrl())) {
@@ -94,7 +105,7 @@ public class ScanCacheFiled {
             os = new OutputStreamWriter(new BufferedOutputStream(new FileOutputStream(corpusInfoFile)), ENCODING);
             writeCorpusInfo(os, c);
 
-            List<Corpus> children = cache.getChildrenCorpora(c.getHandle());
+            List<Corpus> children = cache.getChildren(c);
             if (children != null) {
                 for (Corpus child : children) {
                     writeCorpusData(childCounter, corpusDir.getAbsolutePath(), child, cache);
@@ -120,7 +131,7 @@ public class ScanCacheFiled {
         }
     }
 
-    private void writeInstitutionInfo(Writer writer, InstitutionI institution) throws IOException {
+    private void writeInstitutionInfo(Writer writer, Institution institution) throws IOException {
 
         writer.write(I);
         writer.write(SEP);
@@ -181,8 +192,16 @@ public class ScanCacheFiled {
         writer.write(NL);
     }
 
+    /**
+     * Reads ScanCache data from the files in scanDirectory directory. The files 
+     * contain endpoint and resources descriptions in a special simple plain 
+     * text format, resulting from applying write(ScanCache scanCache) method.
+     * 
+     * @return ScanCache with the data read from the files containing endpoints 
+     * and resources descriptions.
+     */
     public ScanCache read() {
-        ScanCache cache = new ScanCache();
+        SimpleInMemScanCache cache = new SimpleInMemScanCache();
         File sruInstitutionsFile = new File(scanDirectory, INSTITUTION_ENDPOINTS_FILENAME);
         BufferedReader reader = null;
         Set<Institution> institutions = new HashSet<Institution>();
@@ -193,14 +212,14 @@ public class ScanCacheFiled {
             while ((line = reader.readLine()) != null) {
                 line = line.trim();
                 if (line.length() > 0) {
-                    String[] splitted = line.split("\\" + CacheCorporaScanIntoFileTask.SEP);
-                    if (splitted.length == 2 && splitted[0].equals(CacheCorporaScanIntoFileTask.I)) {
+                    String[] splitted = line.split("\\" + SEP);
+                    if (splitted.length == 2 && splitted[0].equals(I)) {
                         inst = new Institution(splitted[1], "");
                         if (!institutions.contains(inst)) {
                             institutions.add(inst);
                             cache.addInstitution(inst);
                         }
-                    } else if (inst != null && splitted.length == 3 && splitted[0].equals(CacheCorporaScanIntoFileTask.IE)) {
+                    } else if (inst != null && splitted.length == 3 && splitted[0].equals(IE)) {
                         Endpoint ep = inst.add(splitted[2]);
                         if (!splitted[1].trim().isEmpty()) {
                             // traverse the corresponding dir
@@ -228,7 +247,7 @@ public class ScanCacheFiled {
         return cache;
     }
 
-    private void readAndAddCorpus(String path, Corpus parentCorpus, InstitutionI inst, ScanCache cache) {
+    private void readAndAddCorpus(String path, Corpus parentCorpus, Institution inst, SimpleInMemScanCache cache) {
         File corpusFile = new File(path, CORPUS_INFO_FILENAME);
         BufferedReader reader = null;
         Corpus corpus = null;
@@ -257,7 +276,7 @@ public class ScanCacheFiled {
                     } else if (lineCount == 5) {
                         // corpus langs
                         Set<String> langs = new HashSet<String>();
-                        for (String lang : line.split("\\" + CacheCorporaScanIntoFileTask.SEP)) {
+                        for (String lang : line.split("\\" + SEP)) {
                             langs.add(lang);
                         }
                         corpus.setLanguages(langs);

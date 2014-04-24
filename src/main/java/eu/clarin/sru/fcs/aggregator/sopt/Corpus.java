@@ -12,7 +12,7 @@ public class Corpus {
 
     public static final String ROOT_HANDLE = "root";
     public static final Pattern HANDLE_WITH_SPECIAL_CHARS = Pattern.compile(".*[<>=/()\\s].*");
-    private InstitutionI institution;
+    private Institution institution;
     private String endpointUrl;
     private String handle;
     private Integer numberOfRecords;
@@ -27,7 +27,7 @@ public class Corpus {
         temp = true;
     }
 
-    public Corpus(InstitutionI institution, String endpointUrl) {
+    public Corpus(Institution institution, String endpointUrl) {
         this.institution = institution;
         this.endpointUrl = endpointUrl;
     }
@@ -64,7 +64,7 @@ public class Corpus {
         return endpointUrl;
     }
 
-    public InstitutionI getInstitution() {
+    public Institution getInstitution() {
         return institution;
     }
 
