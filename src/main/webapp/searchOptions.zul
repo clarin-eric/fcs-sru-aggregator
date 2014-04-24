@@ -1,6 +1,6 @@
 <panel apply="eu.clarin.sru.fcs.aggregator.app.SearchOptions">
     <panelchildren
-        style="margin-top:10px;margin-left:10px;margin-right:10px;border:0;overflow:auto;">
+        style="margin-top:10px;margin-left:10px;margin-right:10px;border:0;">
 
         <div align="center">
 
@@ -28,22 +28,25 @@
             <groupbox width="600px" open="false" mold="3d" id="allCorpora" sclass="ccsLightBlue"
                 contentStyle="border:0">
                 <caption label="Corpora" style="border:0;"/>
+                
                 <div style="text-align:right;">
                     <button id="selectAll" label="Select All" image="img/buttonSelectAll.png"
                         sclass="ccsDarkBlue"/>
                     <button id="deselectAll" label="Deselect All" image="img/buttonDeselectAll.png"
                         sclass="ccsDarkBlue"/>
                 </div>
+                
                 <tree id="tree" style="margin-top:2px;">
                     <treecols sizable="true">
                         <treecol id="nameCol" label="Name" style="margin-left:100px;" sort="auto"/>
                         <treecol label="" hflex="min"/>
                         <treecol label="Language" hflex="min"/>
-                        <!--<treecol label="Records" hflex="min"/>-->
+                        <treecol label="Records" hflex="min"/>
                         <treecol id="instCol" label="Institution" hflex="min" sort="auto"/>
                         <treecol label="Description"/>
                     </treecols>
                 </tree>
+                
             </groupbox>
 
             <separator/>

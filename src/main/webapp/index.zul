@@ -13,7 +13,7 @@
                     <div align="center">
                         <image src="img/clarindLogo.png"/>
                         <hlayout>
-                            <textbox id="searchString" value="Elefant" focus="true"
+                            <textbox id="searchString" placeholder="Elefant" focus="true"
                                 style="font-size:16px;margin:5px 0px 5px 10px;color:#0e4071;border: 1px solid #801418;width:468px;"/>
 
                             <button id="searchButton" label="Search" image="img/buttonSearch.png"

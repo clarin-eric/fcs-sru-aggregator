@@ -172,6 +172,10 @@ public class ScanCacheFiled {
             hasLangs = true;
         }
         writer.write(NL);
+        if (c.getNumberOfRecords() != null) {
+            writer.write(c.getNumberOfRecords().toString());
+        }
+        writer.write(NL);
     }
 
     private void writeEndpointCorpusInfo(int number, Writer writer, Corpus c) throws IOException {
@@ -280,7 +284,9 @@ public class ScanCacheFiled {
                             langs.add(lang);
                         }
                         corpus.setLanguages(langs);
-                    }
+                    } else if (lineCount == 6) {
+                        corpus.setNumberOfRecords(Integer.parseInt(line));
+                    } 
                 }
                 lineCount++;
             }

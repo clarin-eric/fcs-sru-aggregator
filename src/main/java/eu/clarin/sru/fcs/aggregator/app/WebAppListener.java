@@ -112,6 +112,7 @@ public class WebAppListener implements WebAppInit, WebAppCleanup {
         SRUThreadedClient sruScanClient = (SRUThreadedClient) webapp.getAttribute(WebAppListener.SHARED_SRU_CLIENT);
         EndpointUrlFilter filter = new EndpointUrlFilter();
         //filter.urlShouldContainAnyOf("leipzig", ".mpi.nl");
+        //filter.urlShouldContainAnyOf("uni-tuebingen.de");
         filter.urlShouldContainAnyOf("uni-tuebingen.de", ".mpi.nl");
         //filter.urlShouldContainAnyOf("dspin.dwds.de", "lindat.");
         ScanCrawler scanCrawler = new ScanCrawler(centerRegistry, sruScanClient, filter, CACHE_MAX_DEPTH);

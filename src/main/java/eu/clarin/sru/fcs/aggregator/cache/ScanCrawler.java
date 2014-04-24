@@ -153,7 +153,9 @@ public class ScanCrawler {
                     Corpus c = new Corpus(institution, endpointUrl);
                     c.setHandle(term.getValue());
                     c.setDisplayName(term.getDisplayTerm());
-                    c.setNumberOfRecords(term.getNumberOfRecords());
+                    if (term.getNumberOfRecords() > 0) {
+                        c.setNumberOfRecords(term.getNumberOfRecords());
+                    }
                     addExtraInfo(c, term);
                     cache.addCorpus(c, parentCorpus);
                     addCorpora(sruScanClient, c.getEndpointUrl(), c.getInstitution(),

@@ -9,6 +9,7 @@ import org.zkoss.zk.ui.event.Events;
 import org.zkoss.zul.A;
 import org.zkoss.zul.Checkbox;
 import org.zkoss.zul.DefaultTreeNode;
+import org.zkoss.zul.Groupbox;
 import org.zkoss.zul.Label;
 import org.zkoss.zul.Treecell;
 import org.zkoss.zul.Treechildren;
@@ -152,8 +153,8 @@ public class CorpusRendererCached implements TreeitemRenderer<DefaultTreeNode<Co
         dataRow.appendChild(cell4);
         Treecell cell2 = createCellForCorpusLanguage(data);
         dataRow.appendChild(cell2);
-        //Treecell cell6 = createCellForCorpusNumberOfRecords(data);
-        //dataRow.appendChild(cell6);
+        Treecell cell6 = createCellForCorpusNumberOfRecords(data);
+        dataRow.appendChild(cell6);
         Treecell cell5 = createCellForCorpusInstitution(data);
         dataRow.appendChild(cell5);
         Treecell cell3 = createCellForCorpusDescription(data);
@@ -253,9 +254,45 @@ public class CorpusRendererCached implements TreeitemRenderer<DefaultTreeNode<Co
         return cell;
     }
 
-    private Treecell createCellForCorpusLanguage(Corpus data) {
+//    private Treecell createCellForCorpusLanguage(Corpus data) {
+//        Treecell cell = new Treecell();
+//        if (!data.getLanguages().isEmpty()) {
+//            StringBuilder langs = new StringBuilder();
+//            for (String lang : data.getLanguages()) {
+//                String langName = languages.nameForCode(lang);
+//                if (langName != null) {
+//                    langs.append(langName);
+//                } else {
+//                    langs.append(lang);
+//                }
+//                langs.append("\n ");
+//
+//            }
+//            Label label = new Label(langs.toString());
+//            label.setMultiline(true);
+//            label.setParent(cell);
+//        } else {
+//            Label label = new Label("");
+//            label.setParent(cell);
+//        }
+//        return cell;
+//    }
+    
+     private Treecell createCellForCorpusLanguage(Corpus data) {
         Treecell cell = new Treecell();
-        if (!data.getLanguages().isEmpty()) {
+        if (data.getLanguages().isEmpty()) {
+            Label label = new Label("");
+            label.setParent(cell);
+        } else if (data.getLanguages().size() == 1) {
+            Label label = new Label(languages.nameForCode(data.getLanguages().iterator().next()));
+            label.setParent(cell);
+        } else {
+            Groupbox langPanel = new Groupbox();
+            langPanel.setMold("3d");
+            langPanel.setContentStyle("border:0");
+            langPanel.setClosable(true);
+            langPanel.setOpen(false);
+            langPanel.setTitle("multiple");
             StringBuilder langs = new StringBuilder();
             for (String lang : data.getLanguages()) {
                 String langName = languages.nameForCode(lang);
@@ -269,10 +306,9 @@ public class CorpusRendererCached implements TreeitemRenderer<DefaultTreeNode<Co
             }
             Label label = new Label(langs.toString());
             label.setMultiline(true);
-            label.setParent(cell);
-        } else {
-            Label label = new Label("");
-            label.setParent(cell);
+            label.setParent(langPanel);
+            langPanel.setParent(cell);
+            
         }
         return cell;
     }
@@ -280,21 +316,40 @@ public class CorpusRendererCached implements TreeitemRenderer<DefaultTreeNode<Co
     private Treecell createCellForCorpusDescription(Corpus data) {
         Treecell cell = new Treecell();
         if (data.getDescription() != null) {
-            //if (data.getDescription().length() > 40) {
-            //    String descrStart = data.getDescription().substring(0, 35) + " ...";
-            //    Label label = new Label(descrStart);
-            //    label.setTooltiptext(data.getDescription());
-            //    label.setParent(cell);
-            //} else {
+            int okLength = 125;
+            if (data.getDescription().length() > okLength) {
+                String descrStart = // data.getDescription().substring(0, 35) + " ...";
+                        getDisplayedText(data.getDescription(), okLength);
+                Label label = new Label(descrStart);
+                label.setTooltiptext(data.getDescription());
+                label.setParent(cell);
+            } else {
             Label label = new Label(data.getDescription());
             label.setMultiline(true);
             label.setParent(cell);
-            //}
+            
+            //ideally should contain html5 <details> element, but only
+            //chrome supports it as of now:
+            //<details>
+            //<summary>First sentence</summary>
+            //Rest sentences.
+	    //</details>
+            
+            
+            }
         } else {
             Label label = new Label("");
             label.setParent(cell);
         }
 
         return cell;
+    }
+
+    private String getDisplayedText(String description, int okLength) {
+        int dotIndex = description.indexOf(" ", okLength);
+        if (dotIndex < 0 || dotIndex > okLength + 50) {
+            dotIndex = okLength;
+        }
+        return description.substring(0, dotIndex) + "...";
     }
 }
