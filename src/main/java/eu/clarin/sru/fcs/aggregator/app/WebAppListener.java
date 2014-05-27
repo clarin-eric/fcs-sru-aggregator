@@ -6,7 +6,6 @@ import eu.clarin.sru.fcs.aggregator.cache.ScanCacheFiled;
 import eu.clarin.sru.fcs.aggregator.cache.SimpleInMemScanCache;
 import eu.clarin.sru.client.SRUThreadedClient;
 import eu.clarin.sru.client.fcs.ClarinFCSRecordParser;
-import eu.clarin.sru.fcs.aggregator.cache.EndpointUrlFilter;
 import eu.clarin.sru.fcs.aggregator.sopt.CenterRegistryI;
 import eu.clarin.sru.fcs.aggregator.sopt.CenterRegistryLive;
 import eu.clarin.sru.fcs.aggregator.sopt.Languages;
@@ -14,10 +13,8 @@ import eu.clarin.sru.fcs.aggregator.cache.ScanCache;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.Timer;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -26,9 +23,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
-import javax.servlet.ServletContext;
 import opennlp.tools.tokenize.TokenizerModel;
-import org.joda.time.DateTime;
 import org.zkoss.zk.ui.WebApp;
 import org.zkoss.zk.ui.util.WebAppCleanup;
 import org.zkoss.zk.ui.util.WebAppInit;
@@ -77,6 +72,7 @@ public class WebAppListener implements WebAppInit, WebAppCleanup {
         Languages languages = new Languages();
         webapp.setAttribute(LANGUAGES, languages);
 
+        // toggle following 2 comments to test user interface
         setUpScanCache(webapp);
         //setUpScanCacheForReadOnly(webapp);
 
@@ -102,7 +98,7 @@ public class WebAppListener implements WebAppInit, WebAppCleanup {
         File aggregatorDir = new File(dataLocation, aggregatorDirName);
         if (!aggregatorDir.exists()) {
             LOGGER.severe("Aggregator directory does not exist and cannot be created: "
-                        + aggregatorDir.getAbsolutePath());
+                    + aggregatorDir.getAbsolutePath());
         }
         File scanDir = new File(aggregatorDir, SCAN_DIR_NAME);
         if (!scanDir.exists()) {
@@ -143,13 +139,17 @@ public class WebAppListener implements WebAppInit, WebAppCleanup {
         ScanCacheFiled scanCacheFiled = new ScanCacheFiled(getScanDirectory());
         CenterRegistryI centerRegistry = new CenterRegistryLive();
         SRUThreadedClient sruScanClient = (SRUThreadedClient) webapp.getAttribute(WebAppListener.SHARED_SRU_CLIENT);
-        //EndpointUrlFilter filter = new EndpointUrlFilter();
-        //filter.urlShouldContainAnyOf("leipzig");
-        //filter.urlShouldContainAnyOf("uni-tuebingen.de");
-        //filter.urlShouldContainAnyOf("uni-tuebingen.de", ".mpi.nl");
-        //filter.urlShouldContainAnyOf("dspin.dwds.de", "lindat.");
-        //ScanCrawler scanCrawler = new ScanCrawler(centerRegistry, sruScanClient, filter, CACHE_MAX_DEPTH);
+
+        // Comment-out when testing:
         ScanCrawler scanCrawler = new ScanCrawler(centerRegistry, sruScanClient, null, cacheMaxDepth);
+
+        // For Testing:
+//        EndpointUrlFilter filter = new EndpointUrlFilter();
+//        //filter.urlShouldContainAnyOf("leipzig");
+//        //filter.urlShouldContainAnyOf("uni-tuebingen.de");
+//        filter.urlShouldContainAnyOf("uni-tuebingen.de", ".mpi.nl");
+//        //filter.urlShouldContainAnyOf("dspin.dwds.de", "lindat.");
+//        ScanCrawler scanCrawler = new ScanCrawler(centerRegistry, sruScanClient, filter, cacheMaxDepth);
         ScanCache scanCache;
 
         LOGGER.info("Start cache read");
@@ -195,11 +195,11 @@ public class WebAppListener implements WebAppInit, WebAppCleanup {
         pool.shutdown(); // Disable new tasks from being submitted
         try {
             // Wait a while for existing tasks to terminate
-            if (!pool.awaitTermination(WAITING_TIME_FOR_POOL_SHUTDOWN_MS, 
+            if (!pool.awaitTermination(WAITING_TIME_FOR_POOL_SHUTDOWN_MS,
                     TimeUnit.MILLISECONDS)) {
                 pool.shutdownNow(); // Cancel currently executing tasks
                 // Wait a while for tasks to respond to being cancelled
-                if (!pool.awaitTermination(WAITING_TIME_FOR_POOL_SHUTDOWN_MS, 
+                if (!pool.awaitTermination(WAITING_TIME_FOR_POOL_SHUTDOWN_MS,
                         TimeUnit.MILLISECONDS)) {
                     LOGGER.info("Pool did not terminate");
                 }
