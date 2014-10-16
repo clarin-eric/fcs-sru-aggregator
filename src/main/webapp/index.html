@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Aggregator2</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<!-- <link rel="stylesheet" type="text/css" href="//infra.clarin.eu/content/libs/bootstrap-3.2.0-dist/css/bootstrap.min.css" /> -->
+	<link href="lib/bootstrap.min.css" rel="stylesheet">
+	<link href="CLARIN.css" rel="stylesheet">
+	<link href="base.css" rel="stylesheet">
+</head>
+<body>
+	<noscript>
+		<div>Federated Content Search Aggregator requires JavaScript to be enabled!</div>
+	</noscript>
+
+	<div id="body">
+
+		<div class="container">
+			<div class="beta-tag">
+				<span>BETA</span>
+			</div>
+		</div>
+	
+		<div class="navbar navbar-default navbar-static-top" role="navigation">
+			<div class="container">
+				<div class="navbar-header">
+					<button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+						<span class="sr-only">Toggle navigation</span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+					</button>
+					<a class="navbar-brand" href="#" tabindex="-1"><header>Federated Content Search</header></a>
+				</div>
+				<div class="navbar-collapse collapse">
+					<ul class="nav navbar-nav">
+						<li class="active">
+							<a href="#" tabindex="-1">Aggregator</a>
+						</li>
+						<li>
+							<a href="help" tabindex="-1">Help</a>
+						</li>
+					</ul>
+					<ul id="CLARIN_header_right" class="nav navbar-nav navbar-right">
+						<li class="unauthenticated">
+							<a href="login" tabindex="-1"><span class="glyphicon glyphicon-log-in"></span> LOGIN</a>
+						</li>
+					</ul>
+				</div>
+			</div>
+		</div>
+
+		<div id="push">
+			<div class="container">
+				<div id="reactMain"></div>
+ 			</div>
+		</div>
+	</div>
+
+	<div id="footer" class="top-gap">
+		<div class="container">
+			<div id="CLARIN_footer_left">
+				<a title="about" id="aboutlink">
+					<span class="glyphicon glyphicon-info-sign"></span>
+					<!-- <span>VERSION ${pom.version} </span> -->
+					<span>VERSION 2.0.0-ALPHA </span>
+				</a>
+			</div>
+			<div id="CLARIN_footer_middle">
+				<a title="CLARIN ERIC" href="https://www.clarin.eu/">
+				<img src="img/clarindLogo.png" alt="CLARIN ERIC logo" style="height:80px"/>
+				</a>
+			</div>
+			<div id="CLARIN_footer_right">
+				<a title="contact" href="mailto:fcs@clarin.eu">
+					<span class="glyphicon glyphicon-envelope"></span>
+					<span> CONTACT</span>
+				</a>
+			</div>
+		</div>
+	</div>
+
+	<script src="lib/jquery-1.10.0.min.js"></script>
+	<!--[if lt IE 9]>
+		<script src="http://cdnjs.cloudflare.com/ajax/libs/es5-shim/3.4.0/es5-shim.js"></script>
+		<script src="http://cdnjs.cloudflare.com/ajax/libs/es5-shim/3.4.0/es5-sham.js"></script>
+	<![endif]-->   
+	<script src="lib/react-with-addons-0.11.2.js"></script>
+	<script src="lib/react-bootstrap.min.js"></script>
+	<script src="js/components.js"></script>
+	<script src="js/main.js"></script>
+</body>
+</html>

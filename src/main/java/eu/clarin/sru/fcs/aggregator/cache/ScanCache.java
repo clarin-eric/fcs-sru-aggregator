@@ -1,7 +1,7 @@
 package eu.clarin.sru.fcs.aggregator.cache;
 
-import eu.clarin.sru.fcs.aggregator.sopt.Corpus;
-import eu.clarin.sru.fcs.aggregator.sopt.Institution;
+import eu.clarin.sru.fcs.aggregator.registry.Corpus;
+import eu.clarin.sru.fcs.aggregator.registry.Institution;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;

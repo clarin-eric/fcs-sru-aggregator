@@ -1,431 +1,254 @@
 package eu.clarin.sru.fcs.aggregator.app;
 
+import eu.clarin.sru.fcs.aggregator.search.Search;
+import eu.clarin.sru.fcs.aggregator.cache.ScanCrawlTask;
+import eu.clarin.sru.fcs.aggregator.cache.ScanCrawler;
+import eu.clarin.sru.fcs.aggregator.cache.ScanCacheFile;
+import eu.clarin.sru.fcs.aggregator.cache.SimpleInMemScanCache;
+import eu.clarin.sru.client.SRUThreadedClient;
+import eu.clarin.sru.client.SRUVersion;
+import eu.clarin.sru.client.fcs.ClarinFCSRecordParser;
+import eu.clarin.sru.fcs.aggregator.cache.EndpointUrlFilter;
+import eu.clarin.sru.fcs.aggregator.registry.CenterRegistryLive;
+import eu.clarin.sru.fcs.aggregator.cache.ScanCache;
+import eu.clarin.sru.fcs.aggregator.registry.Corpus;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.logging.*;
-import org.zkoss.zk.ui.Component;
-import org.zkoss.zk.ui.Executions;
-import org.zkoss.zk.ui.event.Event;
-import org.zkoss.zk.ui.select.SelectorComposer;
-import org.zkoss.zk.ui.select.annotation.Listen;
-import org.zkoss.zk.ui.select.annotation.Wire;
-import org.zkoss.zul.Label;
-import org.zkoss.zul.Messagebox;
-import org.zkoss.zul.Textbox;
-import eu.clarin.sru.fcs.aggregator.sopt.Corpus;
-import eu.clarin.sru.fcs.aggregator.sopt.Languages;
-import eu.clarin.sru.fcs.aggregator.util.SRUCQL;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
-import org.zkoss.zul.A;
-import org.zkoss.zul.Div;
-import org.zkoss.zul.Menubar;
-import org.zkoss.zul.Menuitem;
-import org.zkoss.zul.North;
-import org.zkoss.zul.Popup;
-import org.zkoss.zul.Progressmeter;
-import org.zkoss.zul.South;
+import javax.servlet.ServletContextEvent;
+import javax.servlet.ServletContextListener;
+import opennlp.tools.tokenize.TokenizerModel;
 
 /**
- * Main component of the Aggregator application intended to provide
- * users access to CLARIN-FCS resources.
- * 
- * The webapp base URL corresponds to the default behavior of displaying
- * the main aggregator page, where the user can enter query, select the 
- * resources of CQL endpoints (as specified in the Clarin center registry), 
- * and search in these resources. The endpoints/resources selection is 
- * optional, by default all the endpoints root resources are selected.
- * 
- * If invoked with 'x-aggregation-context' and 'query' parameter, 
- * the aggregator will pre-select provided resources and fill in the query field.
- * This mechanism is currently used by VLO.
- * Example:
- * POST http://weblicht.sfs.uni-tuebingen.de/Aggregator HTTP/1.1
- * operation = searchRetrieve &
- * version = 1.2 &
- * query = bellen &
- * x-aggregation-context = {"http://fedora.clarin-d.uni-saarland.de/sru/":["hdl:11858/00-246C-0000-0008-5F2A-0"]}
- * 
- * 
- * Additionally, if run with the a URL query string parameter 'mode', the 
- * special behavior of the aggregator is triggered:
- * 
- * /?mode=testing
- * corresponds to the mode where the CQL endpoints are taken not from Clarin 
- * center repository, but from a hard-coded endpoints list; this functionality
- * is useful for testing the development instances of endpoints, before they
- * are moved to production. Was done to meet the request from MPI.
- * 
- * /?mode=search
- * corresponds to the mode where the aggregator page is requested with the 
- * already known query and (optionally) resources to search in, and if the
- * immediate search is desired. In this case the aggregator search results 
- * page is displayed and search results of the provided query start to fill
- * it in immediately (i.e. users don't need to click 'search' in the aggregator 
- * page). Was done to meet the request from CLARIN ERIC (Martin Wynne 
- * contacted us).
- * 
- * /?mode=live
- * corresponds to the mode where the information about corpora are taken not 
- * from the scan cache (crawled in advance), but loaded live, starting from
- * the request to center registry and then performing scan operation requests on 
- * each CQL  endpoint listed there. It takes time to get the corresponding 
- * responses from the endpoints, therefore the Aggregator page loads very slow 
- * in this mode. But this mode is useful for testing of the newly added or 
- * changed corpora without waiting for the next crawl.
+ * Main component of the Aggregator application intended to provide users access
+ * to CLARIN-FCS resources.
  *
- * 
+ * The webapp base URL corresponds to the default behavior of displaying the
+ * main aggregator page, where the user can enter query, select the resources of
+ * CQL endpoints (as specified in the Clarin center registry), and search in
+ * these resources. The endpoints/resources selection is optional, by default
+ * all the endpoints root resources are selected.
+ *
+ * If invoked with 'x-aggregation-context' and 'query' parameter, the aggregator
+ * will pre-select provided resources and fill in the query field. This
+ * mechanism is currently used by VLO. Example: POST
+ * http://weblicht.sfs.uni-tuebingen.de/Aggregator HTTP/1.1 operation =
+ * searchRetrieve & version = 1.2 & query = bellen & x-aggregation-context =
+ * {"http://fedora.clarin-d.uni-saarland.de/sru/":["hdl:11858/00-246C-0000-0008-5F2A-0"]}
+ *
+ *
+ * Additionally, if run with the a URL query string parameter 'mode', the
+ * special behavior of the aggregator is triggered:
+ *
+ * /?mode=testing corresponds to the mode where the CQL endpoints are taken not
+ * from Clarin center repository, but from a hard-coded endpoints list; this
+ * functionality is useful for testing the development instances of endpoints,
+ * before they are moved to production. Was done to meet the request from MPI.
+ *
+ * /?mode=search corresponds to the mode where the aggregator page is requested
+ * with the already known query and (optionally) resources to search in, and if
+ * the immediate search is desired. In this case the aggregator search results
+ * page is displayed and search results of the provided query start to fill it
+ * in immediately (i.e. users don't need to click 'search' in the aggregator
+ * page). Was done to meet the request from CLARIN ERIC (Martin Wynne contacted
+ * us).
+ *
+ * /?mode=live corresponds to the mode where the information about corpora are
+ * taken not from the scan cache (crawled in advance), but loaded live, starting
+ * from the request to center registry and then performing scan operation
+ * requests on each CQL endpoint listed there. It takes time to get the
+ * corresponding responses from the endpoints, therefore the Aggregator page
+ * loads very slow in this mode. But this mode is useful for testing of the
+ * newly added or changed corpora without waiting for the next crawl.
+ *
+ *
+ * Adds Application initialization and clean up: only one SRU threaded client is
+ * used in the application, it has to be shut down when the application stops.
+ * One Languages object instance is used within the application.
+ *
  * @author Yana Panchenko
+ * @author edima
  */
-public class Aggregator extends SelectorComposer<Component> {
+public class Aggregator implements ServletContextListener {
 
-    private static final Logger LOGGER = Logger.getLogger(Aggregator.class.getName());
-    @Wire
-    private Textbox searchString;
-    @Wire
-    private Popup wspaceSigninpop;
-    @Wire
-    private Textbox wspaceUserName;
-    @Wire
-    private Textbox wspaceUserPwd;
-    private int exportDataType = 1;
-    @Wire
-    private Div aboutDiv;
-    @Wire
-    private Label aboutLabel;
-    @Wire
-    private Div soDiv;
-    private SearchOptions searchOptionsComposer;
-    @Wire
-    private Label soLabel;
-    @Wire
-    private Div srDiv;
-    private SearchResults searchResultsComposer;
-    @Wire
-    private Label srLabel;
-    @Wire
-    private Div helpDiv;
-    @Wire
-    private Label helpLabel;
-    @Wire
-    private Progressmeter pMeter;
-    @Wire
-    private Menubar menubar;
-    @Wire
-    private North controls1;
-    @Wire
-    private South controls2;
-    @Wire
-    private A prevButton;
-    @Wire
-    private A nextButton;
-    @Wire
-    private Label tooltipPrevText;
-    @Wire
-    private Label tooltipNextText;
-    @Wire
-    private Menuitem weblichtTcf;
-    
-    private int[] searchOffset = new int[]{1, 0}; // start and size
-    private ControlsVisibility controlsVisibility;
-    private PagesVisibility pagesVisibility;
+	private static final Logger LOGGER = Logger.getLogger(Aggregator.class.getName());
 
-    private String weblichtUrl; // defined in web.xml
-    public static final String MODE_PARAM = "mode";
-    public static final String MODE_PARAM_VALUE_TEST = "testing";
-    public static final String MODE_PARAM_VALUE_SEARCH = "search";
-    public static final String MODE_PARAM_VALUE_LIVE = "live";
-    
-    
-    
-    @Override
-    public void doAfterCompose(Component comp) throws Exception {
-        super.doAfterCompose(comp);
-        processContext();
-        processParameters();
-        searchOptionsComposer = (SearchOptions) soDiv.getChildren().get(0).getChildren().get(0).getAttribute("$" + SearchOptions.class.getSimpleName());
-        searchOptionsComposer.setAggregatorController(this);
-        searchResultsComposer = (SearchResults) srDiv.getChildren().get(0).getChildren().get(0).getAttribute("$" + SearchResults.class.getSimpleName());
-        pagesVisibility = new PagesVisibility(aboutDiv, aboutLabel, soDiv, soLabel, srDiv, srLabel, helpDiv, helpLabel);
-        controlsVisibility = new ControlsVisibility(controls1, controls2, pMeter, menubar, prevButton, nextButton);
-        searchResultsComposer.setVisibilityControllers(pagesVisibility, controlsVisibility);
-    }
+	public static final int WAITING_TIME_FOR_SHUTDOWN_MS = 10000;
+	public static final String DE_TOK_MODEL = "/tokenizer/de-tuebadz-8.0-token.bin";
+	private static final String DEFAULT_DATA_LOCATION = "/data";
+	private static final String SCAN_DIR_NAME = "scan";
 
-    @Listen("onClick = #searchButton")
-    public void onExecuteSearch(Event ev) {
-        Map<String, Set<Corpus>> selectedCorpora = searchOptionsComposer.getSelectedCorpora();
-        boolean emptyCorpora = true;
-        for (Set<Corpus> corpora : selectedCorpora.values()) {
-            if (!corpora.isEmpty()) {
-                emptyCorpora = false;
-                break;
-            }
-        }
-        if (emptyCorpora) {
-            Messagebox.show("No corpora is selected. To perform the search, please select corus/corpora of interest by checking the corpora checkboxes.", "FCS", 0, Messagebox.INFORMATION);
-        } else if (searchString.getText().isEmpty()) {
-            Messagebox.show("No query is specified. To perform the search, please enter a keyword of interest in the search input field, e.g. Elefant, and press the 'Search' button.", "FCS", 0, Messagebox.INFORMATION);
-        } else {
-            int maxRecords = searchOptionsComposer.getMaxRecords();
-            String searchLang = searchOptionsComposer.getSearchLang();
-            //searchOffset = new int[]{1, 0};
-            searchOffset = new int[]{1, 0};
-            searchOffset[0] = searchOffset[0] + searchOffset[1];
-            searchOffset[1] = maxRecords;
-            searchResultsComposer.executeSearch(selectedCorpora, searchOffset[0], maxRecords, searchString.getText(), searchLang);
-            if (searchLang.equals(Languages.ANY_LANGUAGE_NAME)) {
-                this.weblichtTcf.setVisible(false);
-            } else {
-                this.weblichtTcf.setVisible(true);
-            }
-            onClickSearchResult(null);
-        }
-    }
+	private static final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+	private static Aggregator instance;
 
-    @Listen("onOK = #searchString")
-    public void onEnterSearchString(Event ev) {
-        onExecuteSearch(ev);
-    }
+	private AtomicReference<ScanCache> scanCacheAtom = new AtomicReference<ScanCache>();
+	private TokenizerModel model;
+	private SRUThreadedClient sruClient = null;
+	private Map<Long, Search> activeSearches = Collections.synchronizedMap(new HashMap<Long, Search>());
 
-    @Listen("onClick=#clearResults")
-    public void onClearResults(Event ev) {
-        this.searchResultsComposer.clearResults();
-    }
+	public static Aggregator getInstance() {
+		return instance;
+	}
 
-    @Listen("onClick=#downloadCSV")
-    public void onExportResultsCSV(Event ev) {
-        searchResultsComposer.exportCSV();
-    }
+	public ScanCache getScanCache() {
+		return scanCacheAtom.get();
+	}
 
-    @Listen("onClick=#downloadTCF")
-    public void onExportResultsTCF(Event ev) {
-        searchResultsComposer.exportTCF();
-    }
-    
-    @Listen("onClick=#downloadText")
-    public void onExportResultsText(Event ev) {
-        searchResultsComposer.exportText();
-    }
-    
-    @Listen("onClick=#downloadExcel")
-    public void onExportResultsExcel(Event ev) {
-        searchResultsComposer.exportExcel();
-    }
+	@Override
+	public void contextInitialized(ServletContextEvent servletContextEvent) {
+		LOGGER.info("Aggregator is starting now.");
+		instance = this;
+		try {
+			sruClient = new SRUThreadedClient();
+			sruClient.registerRecordParser(new ClarinFCSRecordParser());
 
-    @Listen("onClick=#exportPWCSV")
-    public void onExportResultsPWCSV(Event ev) {
-        exportDataType = 1;
-        wspaceSigninpop.open(srDiv, "top_center");
-    }
+			InitialContext context = new InitialContext();
+			Integer cacheMaxDepth = (Integer) context.lookup("java:comp/env/scan-max-depth");
+			EndpointUrlFilter filter //= null;
+					= new EndpointUrlFilter("uni-tuebingen.de", ".mpi.nl", "dspin.dwds.de", "lindat.");
+			ScanCrawler scanCrawler = new ScanCrawler(new CenterRegistryLive(), sruClient, filter, cacheMaxDepth);
 
-    @Listen("onClick=#exportPWTCF")
-    public void onExportResultsPWTCF(Event ev) {
-        exportDataType = 0;
-        wspaceSigninpop.open(srDiv, "top_center");
-    }
-    
-    @Listen("onClick=#exportPWText")
-    public void onExportResultsPWText(Event ev) {
-        exportDataType = 2;
-        wspaceSigninpop.open(srDiv, "top_center");
-    }
-    
-    @Listen("onClick=#exportPWExcel")
-    public void onExportResultsPWExcel(Event ev) {
-        exportDataType = 3;
-        wspaceSigninpop.open(srDiv, "top_center");
-    }
-    
-    @Listen("onClick=#weblichtText")
-    public void onUseWebLichtOnText(Event ev) {
-        String url = searchResultsComposer.useWebLichtOnText();
-        if (url != null) {
-            Executions.getCurrent().sendRedirect(weblichtUrl
-                + url, "_blank");
-        }
-    }
-    
-    @Listen("onClick=#weblichtTcf")
-    public void onUseWebLichtOnTcf(Event ev) {
-        String url = searchResultsComposer.useWebLichtOnToks();
-        if (url != null) {
-            Executions.getCurrent().sendRedirect(weblichtUrl
-                + url, "_blank");
-        }
-    }
+			ScanCacheFile scanCacheFile = new ScanCacheFile(getScanDirectory());
+			LOGGER.info("Start cache read");
+			try {
+				scanCacheAtom.set(scanCacheFile.read());
+				LOGGER.info("Finished cache read, number of root corpora: " + scanCacheAtom.get().getRootCorpora().size());
+			} catch (Exception e) {
+				LOGGER.log(Level.SEVERE, "Error while reading the scan cache!", e);
+				scanCacheAtom.set(new SimpleInMemScanCache());
+			}
 
-    @Listen("onClick=#wspaceSigninBtn")
-    public void onSignInExportResults(Event ev) {
-        String user = wspaceUserName.getValue();
-        String pswd = wspaceUserPwd.getValue();
-        wspaceUserPwd.setValue("");
-        if (user.isEmpty() || pswd.isEmpty()) {
-            Messagebox.show("Need user name and password!");
-        } else {
-            wspaceSigninpop.close();
-            if (exportDataType == 0) {
-                searchResultsComposer.exportPWTCF(user, pswd);
-            } else if (exportDataType == 1) {
-                searchResultsComposer.exportPWCSV(user, pswd);
-            } else if (exportDataType == 2) {
-                searchResultsComposer.exportPWText(user, pswd);
-            } else if (exportDataType == 3) {
-                searchResultsComposer.exportPWExcel(user, pswd);
-            }
-        }
-    }
+			String updateIntervalUnitString = (String) context.lookup("java:comp/env/update-interval-unit");
+			TimeUnit cacheUpdateIntervalUnit = TimeUnit.valueOf(updateIntervalUnitString);
+			Integer cacheUpdateInterval = (Integer) context.lookup("java:comp/env/update-interval");
+			scheduler.scheduleAtFixedRate(
+					new ScanCrawlTask(scanCrawler, scanCacheFile, scanCacheAtom),
+					0, cacheUpdateInterval, cacheUpdateIntervalUnit);
 
-    @Listen("onOK=#wspaceUserPwd")
-    public void onSignInExportResultsPwdOK(Event ev) {
-        onSignInExportResults(ev);
-    }
+			model = setUpTokenizers();
+			LOGGER.info("Aggregator initialization finished.");
+		} catch (Exception ex) {
+			LOGGER.log(Level.SEVERE, null, ex);
+			instance = null; // force crash
+		}
+	}
 
-    @Listen("onClick=#wspaceCancelBtn")
-    public void onSignInPWCancel(Event ev) {
-        wspaceUserPwd.setValue("");
-        wspaceSigninpop.close();
-    }
+	@Override
+	public void contextDestroyed(ServletContextEvent sce) {
+		LOGGER.info("Aggregator is shutting down.");
+		for (Search search : activeSearches.values()) {
+			search.shutdown();
+		}
+		shutdownAndAwaitTermination(sruClient, scheduler);
+		LOGGER.info("Aggregator shutdown complete.");
+	}
 
-    @Listen("onClick = #helpLabel")
-    public void onClickHelp(Event ev) {
-        this.pagesVisibility.openHelp();
-        this.controlsVisibility.disableControls1();
-        this.controlsVisibility.disableControls2();
-    }
+	public static SRUVersion getSRUVersion(String sruversion) {
+		SRUVersion version = SRUVersion.VERSION_1_2;
+		if (sruversion.equals("1.2")) {
+			version = SRUVersion.VERSION_1_2;
+		} else if (sruversion.equals("1.1")) {
+			version = SRUVersion.VERSION_1_1;
+		} else {
+			return null;
+		}
+		return version;
+	}
 
-    @Listen("onClick = #aboutLabel")
-    public void onClickAbout(Event ev) {
-        this.pagesVisibility.openAbout();
-        this.controlsVisibility.disableControls1();
-        this.controlsVisibility.disableControls2();
-    }
+	// this function should be thread-safe
+	public Search startSearch(SRUVersion version, List<Corpus> corpora, String searchString, String searchLang, int maxRecords) throws Exception {
+		if (corpora.isEmpty()) {
+			// No corpora
+			return null;
+		} else if (searchString.isEmpty()) {
+			// No query
+			return null;
+		} else {
+			Search sr = new Search(sruClient, version, corpora, searchString, searchLang, 1, maxRecords);
+			activeSearches.put(sr.getId(), sr);
+			return sr;
+		}
+	}
 
-    @Listen("onClick = #soLabel")
-    public void onClickAdvSearch(Event ev) {
-        this.pagesVisibility.openSearchOptions();
-        this.controlsVisibility.disableControls1();
-        this.controlsVisibility.disableControls2();
-    }
+	public Search getSearchById(Long id) {
+		return activeSearches.get(id);
+	}
 
-    @Listen("onClick = #srLabel")
-    public void onClickSearchResult(Event ev) {
-        setupPrevNextSearchTooltips();
-        this.pagesVisibility.openSearchResult();
-        if (this.searchResultsComposer.hasSearchInProgress()) {
-            this.controlsVisibility.enableControls2();
-        }
-        if (this.searchResultsComposer.hasResults()) {
-            this.controlsVisibility.enableControls1();
-            this.controlsVisibility.enableControls2();
-        }
-        
-    }
+	private static String getScanDirectory() throws NamingException {
+		InitialContext context = new InitialContext();
+		String dataLocationPropertyName = (String) context.lookup("java:comp/env/data-location-property");
+		String aggregatorDirName = (String) context.lookup("java:comp/env/aggregator-folder");
+		// see if data location is set in properties
+		String dataLocation = System.getProperty(dataLocationPropertyName);
+		if (dataLocation == null || !(new File(dataLocation, aggregatorDirName).exists())) {
+			dataLocation = DEFAULT_DATA_LOCATION;
+			if (!(new File(dataLocation, aggregatorDirName).exists())) {
+				dataLocation = System.getProperty("user.home");
+			}
+			if ((new File(dataLocation, aggregatorDirName).exists())) {
+				LOGGER.info(dataLocationPropertyName + " property is not defined, "
+						+ "setting to default: " + dataLocation);
+			} else {
+				LOGGER.info(dataLocationPropertyName + " property is not defined, "
+						+ "default location does not exist: " + dataLocation);
+				throw new RuntimeException("Data location not found");
+			}
+		}
 
-    @Listen("onClick = #prevButton")
-    public void onSearchPrev(Event ev) {
-        Map<String, Set<Corpus>> selectedCorpora = searchOptionsComposer.getSelectedCorpora();
-        boolean emptyCorpora = true;
-        for (Set<Corpus> corpora : selectedCorpora.values()) {
-            if (!corpora.isEmpty()) {
-                emptyCorpora = false;
-                break;
-            }
-        }
-        if (emptyCorpora) {
-            Messagebox.show("No corpora is selected. To perform the search, please select corus/corpora of interest by checking the corpora checkboxes.", "FCS", 0, Messagebox.INFORMATION);
-        } else if (searchString.getText().isEmpty()) {
-            Messagebox.show("No query is specified. To perform the search, please enter a keyword of interest in the search input field, e.g. Elefant, and press the 'Search' button.", "FCS", 0, Messagebox.INFORMATION);
-        } else {
-            int maxRecords = searchOptionsComposer.getMaxRecords();
-            String searchLang = searchOptionsComposer.getSearchLang();
-            //searchOffset[0] = searchOffset[0] - searchOffset[1];
-            searchOffset[0] = searchOffset[0] - maxRecords;
-            if (searchOffset[0] < 1) {
-                searchOffset[0] = 1;
-            }
-            searchOffset[1] = maxRecords;
-            searchResultsComposer.executeSearch(selectedCorpora, searchOffset[0], maxRecords, searchString.getText(), searchLang);
-            if (searchLang.equals(Languages.ANY_LANGUAGE_NAME)) {
-                this.weblichtTcf.setVisible(false);
-            } else {
-                this.weblichtTcf.setVisible(true);
-            }
-            onClickSearchResult(null);
-        }
-    }
+		File aggregatorDir = new File(dataLocation, aggregatorDirName);
+		if (!aggregatorDir.exists()) {
+			LOGGER.severe("Aggregator directory does not exist: "
+					+ aggregatorDir.getAbsolutePath());
+		}
+		File scanDir = new File(aggregatorDir, SCAN_DIR_NAME);
+		if (!scanDir.exists()) {
+			if (!scanDir.mkdir()) {
+				LOGGER.severe("Scan directory does not exist and cannot be created: "
+						+ aggregatorDir.getAbsolutePath());
+			}
+		}
+		String scanPath = scanDir.getAbsolutePath();
+		LOGGER.info("Scan data location: " + scanPath);
+		return scanPath;
+	}
 
+	private static void shutdownAndAwaitTermination(SRUThreadedClient sruClient, ExecutorService scheduler) {
+		try {
+			sruClient.shutdown();
+			scheduler.shutdown();
+			Thread.sleep(WAITING_TIME_FOR_SHUTDOWN_MS);
+			sruClient.shutdownNow();
+			scheduler.shutdownNow();
+			Thread.sleep(WAITING_TIME_FOR_SHUTDOWN_MS);
+		} catch (InterruptedException ie) {
+			sruClient.shutdownNow();
+			scheduler.shutdownNow();
+			Thread.currentThread().interrupt();
+		}
+	}
 
-    @Listen("onClick = #nextButton")
-    public void onSearchNext(Event ev) {
-        Map<String, Set<Corpus>> selectedCorpora = searchOptionsComposer.getSelectedCorpora();
-        boolean emptyCorpora = true;
-        for (Set<Corpus> corpora : selectedCorpora.values()) {
-            if (!corpora.isEmpty()) {
-                emptyCorpora = false;
-                break;
-            }
-        }
-        if (emptyCorpora) {
-            Messagebox.show("No corpora is selected. To perform the search, please select corus/corpora of interest by checking the corpora checkboxes.", "FCS", 0, Messagebox.INFORMATION);
-        } else if (searchString.getText().isEmpty()) {
-            Messagebox.show("No query is specified. To perform the search, please enter a keyword of interest in the search input field, e.g. Elefant, and press the 'Search' button.", "FCS", 0, Messagebox.INFORMATION);
-        } else {
-            int maxRecords = searchOptionsComposer.getMaxRecords();
-            String searchLang = searchOptionsComposer.getSearchLang();
-            searchOffset[0] = searchOffset[0] + searchOffset[1];
-            searchOffset[1] = maxRecords;
-            searchResultsComposer.executeSearch(selectedCorpora, searchOffset[0], maxRecords, searchString.getText(), searchLang);
-            if (searchLang.equals(Languages.ANY_LANGUAGE_NAME)) {
-                this.weblichtTcf.setVisible(false);
-            } else {
-                this.weblichtTcf.setVisible(true);
-            }
-            onClickSearchResult(null);
-        }
-    }
-
-    private void processParameters() {
-        String[] paramValue;
-        String query = null;
-        paramValue = Executions.getCurrent().getParameterMap().get(SRUCQL.SEARCH_QUERY_PARAMETER);
-        if (paramValue != null) {
-            query = paramValue[0].trim();
-            searchString.setValue(query);
-        }
-        LOGGER.log(Level.INFO, "Received parameter: query[{0}], ", query);
-        paramValue = Executions.getCurrent().getParameterMap().get(SRUCQL.OPERATION);
-        String operationString = null;
-        if (paramValue != null) {
-            operationString = paramValue[0].trim();
-            if (!operationString.equals(SRUCQL.SEARCH_RETRIEVE)) {
-                Messagebox.show("Not supported operation " + operationString, "FCS", 0, Messagebox.INFORMATION);
-            }
-        }
-        LOGGER.log(Level.INFO, "Received parameter: operation[{0}], ", operationString);
-    }
-
-    private void setupPrevNextSearchTooltips() {
-        int startHit = searchOffset[0] - searchOptionsComposer.getMaxRecords();
-        if (startHit < 1) {
-            startHit = 1;
-        }
-        int endHit = searchOffset[0] - 1;
-        tooltipPrevText.setValue("hits " + 
-                    startHit + "-" + endHit);
-        startHit = searchOffset[0] + searchOffset[1];
-        endHit = startHit + searchOptionsComposer.getMaxRecords() - 1;
-        tooltipNextText.setValue("hits " + 
-                    startHit + "-" + endHit);
-    }
-
-    private void processContext() {
-        InitialContext context;
-        try {
-            context = new InitialContext();
-            weblichtUrl = (String) context.lookup("java:comp/env/weblicht-url");
-        } catch (NamingException ex) {
-            LOGGER.log(Level.SEVERE, null, ex);
-        }
-    }
-
+	private static TokenizerModel setUpTokenizers() {
+		TokenizerModel model = null;
+		try {
+			InputStream tokenizerModelDeAsIS = Thread.currentThread().getContextClassLoader().getResourceAsStream(DE_TOK_MODEL);
+			model = new TokenizerModel(tokenizerModelDeAsIS);
+			tokenizerModelDeAsIS.close();
+		} catch (IOException ex) {
+			LOGGER.log(Level.SEVERE, "Failed to load tokenizer model", ex);
+		}
+		return model;
+	}
 }

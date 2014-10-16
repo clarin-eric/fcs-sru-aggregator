@@ -1,6 +1,6 @@
 package eu.clarin.sru.fcs.aggregator.cache;
 
-import eu.clarin.sru.fcs.aggregator.sopt.Endpoint;
+import eu.clarin.sru.fcs.aggregator.registry.Endpoint;
 
 /**
  * Filter for the cache of scan data (endpoint/resources descriptions) - for

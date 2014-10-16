@@ -1,0 +1,337 @@
+@font-face {
+  font-family: 'Roboto';
+  font-style: normal;
+  font-weight: 400;
+  src: local("Roboto Regular"), local("Roboto-Regular"), url("fonts/Roboto_with_European_character_sets.woff") format("woff");
+}
+body {
+  font-family: "Roboto", sans-serif;
+  /*font-family: "Courier New";*/
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color: #222;
+  /*font-size: 13px;*/
+  /*word-wrap: break-word;*/
+}
+
+a {
+  color: #806a52;
+  text-decoration: dotted !important;
+}
+a:hover, a:focus {
+  text-decoration: none !important;
+}
+a:visited {
+  color: #c0a37c;
+}
+
+div.navbar-header {
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+a.navbar-brand {
+  color: #806a52;
+  font-size: 1.6em;
+  text-overflow: ellipsis;
+  line-height: 1em;
+}
+
+h1, h2, h3, h4, h5, h6, label {
+  color: #666;
+  font-weight: normal;
+  line-height: 1.2em;
+}
+
+body, h1, h2, h3, h4, h5, h6 {
+  font-size-adjust: 0.5;
+}
+
+/* Based on http://typecast.com/blog/a-more-modern-scale-for-web-typography */
+#page {
+  font-size: 1em;
+  /* equivalent to 16px */
+  line-height: 1.25;
+  /* equivalent to 20px */
+}
+
+h1 {
+  font-size: 2em;
+  /* 2x body copy size = 32px */
+  line-height: 1.25;
+  /* 45px / 36px */
+  margin-top: 0px !important;
+  margin-bottom: 0px !important;
+}
+
+h2 {
+  font-size: 1.625em;
+  /* 1.625x body copy size = 26px */
+  line-height: 1.15384615;
+  /* 30px / 26px */
+}
+
+h3 {
+  font-size: 1.375em;
+  /* 1.375x body copy size = 22px */
+  line-height: 1.13636364;
+  /* 25px / 22px */
+}
+
+h4 {
+  font-size: 1.125em;
+  /* 1.125x body copy size = 18px */
+  line-height: 1.11111111;
+}
+
+blockquote {
+  font-size: 1.25em;
+  /* 20px / 16px */
+  line-height: 1.25;
+  /* 25px / 20px */
+}
+
+@media (min-width: 56.25em) {
+  h1 {
+    font-size: 3em;
+    /* 3x body copy size = 48px */
+    line-height: 1.05;
+    /* keep to a multiple of the 20px line height
+    and something more appropriate for display headings */
+  }
+
+  h2 {
+    font-size: 2.25em;
+    /* 2.25x body copy size = 36px */
+    line-height: 1.25;
+  }
+
+  h3 {
+    font-size: 1.75em;
+    /* 1.75x body copy size = 28px */
+    line-height: 1.25;
+  }
+}
+@media (min-width: 43.75em) {
+  #page {
+    font-size: 1em;
+    /* equivalent to 16px */
+    line-height: 1.375;
+    /* equivalent to 22px */
+  }
+
+  h1 {
+    font-size: 2.5em;
+    /* 2.5x body copy size = 40px */
+    line-height: 1.125;
+  }
+
+  h2 {
+    font-size: 2em;
+    /* 2x body copy size = 32px */
+    line-height: 1.25;
+  }
+
+  h3 {
+    font-size: 1.5em;
+    /* 1.5x body copy size = 24px */
+    line-height: 1.25;
+  }
+
+  h4 {
+    line-height: 1.22222222;
+    /* (22px / 18px */
+  }
+
+  blockquote {
+    font-size: 1.5em;
+    /* 24px / 16px = */
+    line-height: 1.45833333;
+    /* 35px / 24px */
+  }
+}
+p {
+  margin: 0 0 15px 0;
+}
+
+menu, ol, ul {
+  padding: 0 0 0 20px;
+}
+
+hr {
+  clear: both;
+}
+
+div.container {
+  z-index: -1 !important;
+}
+
+/*table.display {
+  border-collapse: collapse !important;
+  position: relative !important;
+  border-spacing: 0 !important;
+  border: 0px !important;
+  background-clip: padding-box;
+}
+table.display th, table.display td {
+  border: 0px !important;
+}
+table.display thead tr th {
+  background-color: #00406f !important;
+  border-collapse: collapse !important;
+  background-attachment: scroll !important;
+  color: #fff !important;
+}
+table.display thead tr th:first-child {
+  border-top-left-radius: 6px !important;
+  border-bottom-left-radius: 6px !important;
+  -webkit-border-top-left-radius: 6px !important;
+  -webkit-border-bottom-left-radius: 6px !important;
+  -moz-border-top-left-radius: 6px !important;
+  -moz-border-bottom-left-radius: 6px !important;
+}
+table.display thead tr {
+  padding: 7px 7px !important;
+  font-weight: bolder !important;
+  text-align: left !important;
+  border: 0px !important;
+}
+table.display thead tr th a {
+  color: #fff !important;
+  text-decoration: underline !important;
+}
+table.display thead tr th:last-child {
+  border-top-right-radius: 6px !important;
+  border-bottom-right-radius: 6px !important;
+  -webkit-border-top-right-radius: 6px !important;
+  -webkit-border-bottom-right-radius: 6px !important;
+  -moz-border-top-right-radius: 6px !important;
+  -moz-border-bottom-right-radius: 6px !important;
+}
+
+table tbody tr:nth-child(2n+1) td {
+  background-color: #e3e3e3 !important;
+}
+table tbody td:first-child {
+  -webkit-border-top-left-radius: 6px !important;
+  -webkit-border-bottom-left-radius: 6px !important;
+  -moz-border-top-left-radius: 6px !important;
+  -moz-border-bottom-left-radius: 6px !important;
+  border-top-left-radius: 6px !important;
+  border-bottom-left-radius: 6px !important;
+}
+table tbody td:last-child {
+  -webkit-border-top-right-radius: 6px !important;
+  -webkit-border-bottom-right-radius: 6px !important;
+  -moz-border-top-right-radius: 6px !important;
+  -moz-border-bottom-right-radius: 6px !important;
+  border-top-right-radius: 6px !important;
+  border-bottom-right-radius: 6px !important;
+}
+table tbody tr {
+  vertical-align: middle !important;
+}
+table tbody tr:last-child td:first-child {
+  -webkit-border-bottom-left-radius: 6px !important;
+  -moz-border-bottom-left-radius: 6px !important;
+  border-bottom-left-radius: 6px !important;
+}
+table tbody tr:last-child td:last-child {
+  -webkit-border-bottom-right-radius: 6px !important;
+  -moz-border-bottom-right-radius: 6px !important;
+  border-bottom-right-radius: 6px !important;
+}
+table tbody tr:last-child {
+  border-bottom: 1px solid #00406f !important;
+}
+
+table:not(.display) tr:first-child {
+  border-top: 1px solid #00406f !important;
+}
+table:not(.display) td, table:not(.display) th {
+  padding: 5px;
+}
+table:not(.display) th {
+  background-color: #e3e3e3;
+  border-right: 1px dotted black;
+}
+*/
+
+html body ul#nav ul, html body ul#nav ul li {
+  width: 200px;
+}
+
+html body ul#nav ul ul {
+  margin: 0 0 0 200px;
+}
+div#body {
+  min-height: 100%;
+  height: auto;
+  /* Pad top and bottom to prevent overflow over body div if using fixed-top navbar. */
+}
+
+div#footer {
+  background-color: #f5f5f5;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  border-top: 1px solid #e7e7e7;
+}
+div#footer div.container {
+  height: 100%;
+  display: flex;
+  flex-flow: row wrap;
+  justify-content: space-between;
+  align-items: center;
+  align-content: space-around;
+}
+div#footer div.container div#CLARIN_footer_left {
+  order: 1;
+  display: flex !important;
+  text-align: left;
+  vertical-align: middle;
+  margin: 0;
+  align-content: space-around;
+}
+div#footer div.container div#CLARIN_footer_middle {
+  order: 2;
+  display: flex !important;
+  text-align: center;
+  margin: auto;
+  align-content: space-around;
+}
+div#footer div.container div#CLARIN_footer_middle img {
+  display: inline-block;
+  max-width: 100%;
+  max-height: 100%;
+  overflow: hidden;
+}
+div#footer div.container div#CLARIN_footer_right {
+  order: 3;
+  text-align: right;
+  vertical-align: middle;
+  display: flex !important;
+  margin: 0;
+  align-content: space-around;
+}
+
+ul#CLARIN_header_right, div#CLARIN_footer_left, div#CLARIN_footer_right {
+  margin: 0px 4px 0 p x 4px;
+  color: #806a52;
+}
+ul#CLARIN_header_right :not(.glyphicon), div#CLARIN_footer_left :not(.glyphicon), div#CLARIN_footer_right :not(.glyphicon) {
+  font-size: 12px;
+  font-variant: small-caps;
+}
+ul#CLARIN_header_right a, div#CLARIN_footer_left a, div#CLARIN_footer_right a {
+  color: #806a52;
+  text-decoration: none;
+}
+ul#CLARIN_header_right a:hover, ul#CLARIN_header_right a:focus, div#CLARIN_footer_left a:hover, div#CLARIN_footer_left a:focus, div#CLARIN_footer_right a:hover, div#CLARIN_footer_right a:focus {
+  color: inherit !important;
+  text-decoration: none !important;
+}
+ul#CLARIN_header_right a:visited, div#CLARIN_footer_left a:visited, div#CLARIN_footer_right a:visited {
+  color: inherit !important;
+  text-decoration: none !important;
+}

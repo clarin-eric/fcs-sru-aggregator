@@ -1,9 +1,8 @@
 package eu.clarin.sru.fcs.aggregator.cache;
 
-import static eu.clarin.sru.fcs.aggregator.app.WebAppListener.CORPUS_CACHE;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.zkoss.zk.ui.WebApp;
 
 /**
  * A task for crawling endpoint scan operation responses of FCS specification.
@@ -18,14 +17,13 @@ public class ScanCrawlTask implements Runnable {
     private static final Logger logger = Logger.getLogger(ScanCrawlTask.class.getName());
     
     private final ScanCrawler scanCrawler;
-    private ScanCacheFiled scanCacheFiled;
-    private WebApp webapp;
+	private ScanCacheFile scanCacheFiled;
+	private AtomicReference<ScanCache> scanCacheAtom;
 
-    public ScanCrawlTask(
-            ScanCrawler scanCrawler, ScanCacheFiled scanCacheFiled, WebApp webapp) {
+	public ScanCrawlTask(ScanCrawler scanCrawler, ScanCacheFile scanCacheFiled, AtomicReference<ScanCache> scanCacheAtom) {
         this.scanCrawler = scanCrawler;
-        this.scanCacheFiled = scanCacheFiled;
-        this.webapp = webapp;
+		this.scanCacheFiled = scanCacheFiled;
+		this.scanCacheAtom = scanCacheAtom;
     }
 
     @Override
@@ -41,8 +39,8 @@ public class ScanCrawlTask implements Runnable {
                 logger.log(Level.INFO, "New cache is empty, no cache update performed");
             } else {
                 logger.log(Level.INFO, "Started cache write into the file");
-                scanCacheFiled.write(cacheNew);
-                webapp.setAttribute(CORPUS_CACHE, cacheNew);
+				scanCacheFiled.write(cacheNew);
+				scanCacheAtom.set(cacheNew);
                 logger.log(Level.INFO, "Finished cache write into the file");
             }
         }

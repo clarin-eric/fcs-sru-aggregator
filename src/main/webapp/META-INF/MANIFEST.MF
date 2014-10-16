@@ -1,5 +1,0 @@
-Manifest-Version: 1.0
-Specification-Title: Aggregator
-Specification-Version: 1.0-SNAPSHOT
-Implementation-Title: eu.clarin.sru.fcs.aggregator
-Implementation-Version: 1.0-SNAPSHOT

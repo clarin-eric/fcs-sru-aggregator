@@ -1,3 +1,0 @@
-<vlayout apply="eu.clarin.sru.fcs.aggregator.app.SearchResults">
-    <vlayout id="resultsBox" style="overflow:auto;"> </vlayout>
-</vlayout>
