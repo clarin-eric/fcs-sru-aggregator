@@ -3,10 +3,11 @@
 window.MyReact = {};
 var PT = React.PropTypes;
 var ReactCSSTransitionGroup = React.addons.ReactCSSTransitionGroup;
+var ReactTransitionGroup = React.addons.TransitionGroup;
 
 window.MyReact.Panel = React.createClass({
 	propTypes: {
-		key: PT.number.isRequired,
+		key:  PT.oneOfType([PT.string, PT.number]).isRequired,
 		header: PT.string.isRequired,
 	},
  
@@ -19,11 +20,10 @@ window.MyReact.Panel = React.createClass({
 	toggleState: function(e) {
 		this.setState({open: !this.state.open});
 	},
- 
+
 	render: function() {
-		var open = this.state.open;
-		var chevron = "glyphicon glyphicon-chevron-" + (open ? "down":"right");
-		var chevronStyle={fontSize:"12px"};
+		var chevron = "glyphicon glyphicon-chevron-" + (this.state.open ? "down":"right");
+		var chevronStyle={fontSize:12};
 		return 	<div key={this.props.key} className="bs-callout bs-callout-info"> 
 					<div className="panel">
 						<div className="panel-heading unselectable" onClick={this.toggleState}>
@@ -32,9 +32,11 @@ window.MyReact.Panel = React.createClass({
 								{this.props.header}
 							</p>
 						</div>
-							<div className={"panel-collapse collapse " + (open ? "in":"")}>
-								<div className="panel-body">{this.props.children}</div>
-							</div>
+						<div className="panel-body">
+							<ReactTransitionGroup transitionName="display">
+								{this.state.open ? this.props.children : false}
+							</ReactTransitionGroup>
+						</div>
 					</div>
 				</div>;
 	}
@@ -42,9 +44,6 @@ window.MyReact.Panel = React.createClass({
 
 window.MyReact.PanelGroup = React.createClass({
 	render: function() {
-		return	<div className="panel-group">
-					{this.props.children}
-				</div>;
+		return	<div className="panel-group"> {this.props.children} </div>;
 	},
 });
-

@@ -1,6 +1,8 @@
 /** @jsx React.DOM */
 
 var PT = React.PropTypes;
+var ReactCSSTransitionGroup = window.React.addons.CSSTransitionGroup;
+
 // react bootstrap components
 var RBAccordion = window.ReactBootstrap.Accordion;
 var RBPanel = window.ReactBootstrap.Panel;
@@ -110,12 +112,11 @@ var LanguageSelection = React.createClass({displayName: 'LanguageSelection',
 	render: function() {
 		var options = this.props.languages.map(function(lang) {
 			var desc = lang.name + " [" + lang.code + "]";
-			console.log(desc);
-			return React.DOM.option({value: lang.code}, desc);
+			return React.DOM.option({value: lang.code, key: lang.code}, desc);
 		});
 		var style={width:"240px"};
 		return	RBInput({type: "select", defaultValue: "ALL", style: style}, 
-					React.DOM.option({value: "ALL"}, "All languages"), 
+					React.DOM.option({value: "ALL", key: "ALL"}, "All languages"), 
 					options
 				);
 	}
@@ -136,7 +137,7 @@ var HitNumber = React.createClass({displayName: 'HitNumber',
 		return (
 			React.DOM.div({className: "input-group", style: fifty}, 
 				React.DOM.input({id: "hits", type: "number", className: "input", name: "maxResults", min: "10", max: "50", 
-					value: this.props.numberOfResults})
+					value: this.props.numberOfResults, onChange: this.handleChange})
 			) );
 	}
 });
@@ -189,29 +190,30 @@ var Results = React.createClass({displayName: 'Results',
 
 		var resultPanels = this.props.results.map(function(corpusHit) {
 			var rows = corpusHit.kwics.map(function(hit,i) {
-				return	React.DOM.tr({key: i}, 
-							React.DOM.td({style: sright}, hit.left), 
-							React.DOM.td({style: scenter, className: "keyword"}, hit.keyword), 
-							React.DOM.td({style: sleft}, hit.right)
-						);
+				var spans = hit.fragments.map(function(tf, j) {
+					return React.DOM.span({key: j, className: tf.hit?"keyword":""}, tf.text);
+				});
+				return	React.DOM.p({key: i}, spans);
 			});
 			if (corpusHit.kwics.length === 0) {
-				return React.DOM.span(null);
+				return React.DOM.span({key: corpusHit.corpus.displayName});
 			}
 			return 	Panel({header: corpusHit.corpus.displayName, key: corpusHit.corpus.displayName}, 
-						React.DOM.table({key: "0", className: "table table-condensed table-hover", style: fulllength}, 
-							React.DOM.tbody(null, rows)
-						)
+						rows
 					);
 		});
 		var noHits = this.props.results.filter(function(corpusHit) { return corpusHit.kwics.length === 0; });
-		var message = noHits.length > 0 ? (noHits.length + " other collections have been searched without success") : "";
+		var message = noHits.length > 0 ? (noHits.length + " other collections returned no results") : "";
 		var percents = 100 * this.props.results.length / (this.props.requests.length + this.props.results.length);
-		var progress = this.props.requests.length > 0 ? RBProgressBar({active: true, now: percents}) : React.DOM.span(null);
+		var progress = this.props.requests.length > 0 ? 
+			RBProgressBar({active: true, now: percents, label: "%(percent)s%"}) : 
+			React.DOM.span(null);
 		return 	React.DOM.div(null, 
-					resultPanels, 
-					React.DOM.div({style: margintop}, message, " "), 
-					React.DOM.div({style: margintop}, progress)
+					ReactCSSTransitionGroup({transitionName: "fade"}, 
+						resultPanels, 
+						React.DOM.div({key: "-message-", style: margintop}, message, " "), 
+						React.DOM.div({key: "-progress-", style: margintop}, progress)
+					)
 				);
 	}
 });
@@ -281,7 +283,6 @@ var Container = React.createClass({displayName: 'Container',
 	},
 
 	refreshSearchResults: function() {
-		console.log("refreshing search results");
 		var that = this;
 		jQuery.ajax({
 			url: 'rest/search/'+that.state.searchId,
@@ -336,6 +337,8 @@ var Container = React.createClass({displayName: 'Container',
 	}
 });
 
-var container = React.renderComponent(Container(null), document.getElementById('reactMain') );
-container.refreshCorpora();
-setTimeout(container.refreshLanguages, 3000);
+(function() {
+	var container = React.renderComponent(Container(null), document.getElementById('reactMain') );
+	container.refreshCorpora();
+	container.refreshLanguages();
+})();

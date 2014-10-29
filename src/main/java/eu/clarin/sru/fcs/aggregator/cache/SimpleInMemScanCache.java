@@ -17,12 +17,12 @@ import java.util.logging.Logger;
  * the cache in memory in maps.
  *
  * @author yanapanchenko
+ * @author edima
  */
 public class SimpleInMemScanCache implements ScanCache {
 
 	private Map<String, List<Corpus>> enpUrlToRootCorpora = new LinkedHashMap<String, List<Corpus>>(30);
 	private Map<String, List<Corpus>> corpusToChildren = new HashMap<String, List<Corpus>>();
-	//private Map<String, String> childToParent = new HashMap<String, String>();
 	private Map<String, Corpus> handleToCorpus = new HashMap<String, Corpus>();
 	private Map<String, Set<Corpus>> langToRootCorpora = new HashMap<String, Set<Corpus>>();
 	private Map<String, Set<Corpus>> langToTopUniqueCorpora = new HashMap<String, Set<Corpus>>();
@@ -50,12 +50,21 @@ public class SimpleInMemScanCache implements ScanCache {
 	}
 
 	@Override
-	public void addCorpus(Corpus c) {
-		addCorpus(c, null);
+	public synchronized Corpus getCorpus(String handle) {
+		return handleToCorpus.get(handle);
 	}
 
 	@Override
-	public void addCorpus(Corpus c, Corpus parentCorpus) {
+	public synchronized boolean addCorpus(Corpus c) {
+		return addCorpus(c, null);
+	}
+
+	@Override
+	public synchronized boolean addCorpus(Corpus c, Corpus parentCorpus) {
+		if (handleToCorpus.containsKey(c.getHandle())) {
+			// cyclic reference
+			return false;
+		}
 
 		handleToCorpus.put(c.getHandle(), c);
 
@@ -72,13 +81,11 @@ public class SimpleInMemScanCache implements ScanCache {
 				enpUrlToRootCorpora.put(c.getEndpointUrl(), new ArrayList<Corpus>());
 			}
 			enpUrlToRootCorpora.get(c.getEndpointUrl()).add(c);
-			//childToParent.put(c.getHandle(), Corpus.ROOT_HANDLE);
 		} else {
 			if (!corpusToChildren.containsKey(parentCorpus.getHandle())) {
 				corpusToChildren.put(parentCorpus.getHandle(), new ArrayList<Corpus>());
 			}
 			corpusToChildren.get(parentCorpus.getHandle()).add(c);
-			//childToParent.put(c.getHandle(), parentCorpus.getHandle());
 		}
 
 		// index top corpora with unique language as for their languages
@@ -90,6 +97,7 @@ public class SimpleInMemScanCache implements ScanCache {
 			}
 			langToTopUniqueCorpora.get(lang).add(c);
 		}
+		return true;
 	}
 
 	@Override
@@ -106,7 +114,7 @@ public class SimpleInMemScanCache implements ScanCache {
 	}
 
 	@Override
-	public List<Corpus> getRootCorpora() {
+	public synchronized List<Corpus> getRootCorpora() {
 		List<Corpus> rootCorpora = new ArrayList<Corpus>(enpUrlToRootCorpora.size());
 		for (List<Corpus> corpora : this.enpUrlToRootCorpora.values()) {
 			rootCorpora.addAll(corpora);
@@ -160,11 +168,6 @@ public class SimpleInMemScanCache implements ScanCache {
 		ArrayList<Corpus> corpora = new ArrayList<Corpus>(langToTopUniqueCorpora.get(lang).size());
 		corpora.addAll(langToTopUniqueCorpora.get(lang));
 		return corpora;
-	}
-
-	@Override
-	public Corpus getCorpus(String handle) {
-		return this.handleToCorpus.get(handle);
 	}
 
 	private String getElementOfStringUnitset(Set<String> stringUnitSet) {

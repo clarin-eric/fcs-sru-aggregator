@@ -36,7 +36,7 @@ import java.util.logging.Logger;
  *
  * @author yanapanchenko
  */
-public class ScanCacheFile {
+public class ScanCachePersistence {
 
     private String scanDirectory;
     private static final String INSTITUTION_ENDPOINTS_FILENAME = "inst.txt";
@@ -47,7 +47,7 @@ public class ScanCacheFile {
     public static final String SEP = "|";
     public static final String NL = "\n";
     public static final String SPACE = " ";
-    private static final Logger LOGGER = Logger.getLogger(ScanCacheFile.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(ScanCachePersistence.class.getName());
 
     /**
      * Constructs ScanCache/files reading/writing utility.
@@ -55,7 +55,7 @@ public class ScanCacheFile {
      * @param scanDirectory path to local directory were files with 
      * ScanCache data are/should be stored.
      */
-    public ScanCacheFile(String scanDirectory) {
+    public ScanCachePersistence(String scanDirectory) {
         this.scanDirectory = scanDirectory;
     }
 

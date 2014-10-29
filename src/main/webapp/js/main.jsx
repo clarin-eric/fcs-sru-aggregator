@@ -1,6 +1,8 @@
 /** @jsx React.DOM */
 
 var PT = React.PropTypes;
+var ReactCSSTransitionGroup = window.React.addons.CSSTransitionGroup;
+
 // react bootstrap components
 var RBAccordion = window.ReactBootstrap.Accordion;
 var RBPanel = window.ReactBootstrap.Panel;
@@ -110,12 +112,11 @@ var LanguageSelection = React.createClass({
 	render: function() {
 		var options = this.props.languages.map(function(lang) {
 			var desc = lang.name + " [" + lang.code + "]";
-			console.log(desc);
-			return <option value={lang.code}>{desc}</option>;
+			return <option value={lang.code} key={lang.code}>{desc}</option>;
 		});
 		var style={width:"240px"};
 		return	<RBInput type="select" defaultValue="ALL" style={style}>
-					<option value="ALL">All languages</option>
+					<option value="ALL" key="ALL">All languages</option>
 					{options}
 				</RBInput>;
 	}
@@ -136,7 +137,7 @@ var HitNumber = React.createClass({
 		return (
 			<div className="input-group"  style={fifty}>
 				<input id="hits" type="number" className="input" name="maxResults" min="10" max="50" 
-					value={this.props.numberOfResults}></input>
+					value={this.props.numberOfResults} onChange={this.handleChange}></input>
 			</div> );
 	}
 });
@@ -189,29 +190,30 @@ var Results = React.createClass({
 
 		var resultPanels = this.props.results.map(function(corpusHit) {
 			var rows = corpusHit.kwics.map(function(hit,i) {
-				return	<tr key={i}>
-							<td style={sright}>{hit.left}</td>
-							<td style={scenter} className="keyword">{hit.keyword}</td>
-							<td style={sleft}>{hit.right}</td>
-						</tr>;
+				var spans = hit.fragments.map(function(tf, j) {
+					return <span key={j} className={tf.hit?"keyword":""}>{tf.text}</span>;
+				});
+				return	<p key={i}>{spans}</p>;
 			});
 			if (corpusHit.kwics.length === 0) {
-				return <span></span>;
+				return <span key={corpusHit.corpus.displayName}></span>;
 			}
 			return 	<Panel header={corpusHit.corpus.displayName} key={corpusHit.corpus.displayName}>
-						<table key="0" className="table table-condensed table-hover" style={fulllength}>
-							<tbody>{rows}</tbody>
-						</table>
+						{rows}
 					</Panel>;
 		});
 		var noHits = this.props.results.filter(function(corpusHit) { return corpusHit.kwics.length === 0; });
-		var message = noHits.length > 0 ? (noHits.length + " other collections have been searched without success") : "";
+		var message = noHits.length > 0 ? (noHits.length + " other collections returned no results") : "";
 		var percents = 100 * this.props.results.length / (this.props.requests.length + this.props.results.length);
-		var progress = this.props.requests.length > 0 ? <RBProgressBar active now={percents} /> : <span />;
+		var progress = this.props.requests.length > 0 ? 
+			<RBProgressBar active now={percents} label="%(percent)s%" /> : 
+			<span />;
 		return 	<div> 
-					{resultPanels} 
-					<div style={margintop}>{message} </div>
-					<div style={margintop}>{progress}</div>
+					<ReactCSSTransitionGroup transitionName="fade">
+						{resultPanels} 
+						<div key="-message-" style={margintop}>{message} </div>
+						<div key="-progress-" style={margintop}>{progress}</div>
+					</ReactCSSTransitionGroup>
 				</div>;
 	}
 });
@@ -281,7 +283,6 @@ var Container = React.createClass({
 	},
 
 	refreshSearchResults: function() {
-		console.log("refreshing search results");
 		var that = this;
 		jQuery.ajax({
 			url: 'rest/search/'+that.state.searchId,
@@ -336,6 +337,8 @@ var Container = React.createClass({
 	}
 });
 
-var container = React.renderComponent(<Container />, document.getElementById('reactMain') );
-container.refreshCorpora();
-setTimeout(container.refreshLanguages, 3000);
+(function() {
+	var container = React.renderComponent(<Container />, document.getElementById('reactMain') );
+	container.refreshCorpora();
+	container.refreshLanguages();
+})();

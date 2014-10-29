@@ -1,5 +1,7 @@
 package eu.clarin.sru.fcs.aggregator.cache;
 
+import eu.clarin.sru.client.SRUCallback;
+import eu.clarin.sru.client.SRUClientException;
 import eu.clarin.sru.client.SRUScanRequest;
 import eu.clarin.sru.client.SRUScanResponse;
 import eu.clarin.sru.client.SRUTerm;
@@ -9,13 +11,7 @@ import eu.clarin.sru.fcs.aggregator.registry.Corpus;
 import eu.clarin.sru.fcs.aggregator.registry.Endpoint;
 import eu.clarin.sru.fcs.aggregator.registry.Institution;
 import eu.clarin.sru.fcs.aggregator.util.SRUCQL;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.DocumentFragment;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -29,111 +25,108 @@ import org.w3c.dom.NodeList;
  */
 public class ScanCrawler {
 
-	private static final Logger LOGGER = Logger.getLogger(ScanCrawler.class.getName());
-	private CenterRegistryI cr;
-	private SRUThreadedClient sruScanClient;
-	private int maxDepth = 1;
-	private EndpointFilter filter = null;
+	private static final org.slf4j.Logger log = LoggerFactory.getLogger(ScanCrawler.class);
 
-	public ScanCrawler(CenterRegistryI centerRegistry, SRUThreadedClient sruScanClient) {
-		cr = centerRegistry;
-		this.sruScanClient = sruScanClient;
-	}
+	private final CenterRegistryI cr;
+	private final SRUThreadedClient sruScanClient;
+	private final int maxDepth;
+	private final EndpointFilter filter;
+	private CounterLatch latch = new CounterLatch();
 
 	public ScanCrawler(CenterRegistryI centerRegistry, SRUThreadedClient sruScanClient, EndpointFilter filter, int maxDepth) {
-		this(centerRegistry, sruScanClient);
+		cr = centerRegistry;
+		this.sruScanClient = sruScanClient;
 		this.maxDepth = maxDepth;
 		this.filter = filter;
 	}
 
-	/**
-	 * Crawler of scan operation of FCS specification. Collects all the
-	 * endpoints and resources descriptions into the provided cache.
-	 *
-	 * @param cache cache into which the endpoints and resources descriptions
-	 * from scan operation responses should be collected.
-	 */
-	public void crawl(ScanCache cache) {
-		List<Institution> institutions = cr.getCQLInstitutions();
-		for (Institution institution : institutions) {
+	public ScanCache crawl() {
+		SimpleInMemScanCache cache = new SimpleInMemScanCache();
+		for (Institution institution : cr.getCQLInstitutions()) {
 			cache.addInstitution(institution);
 			Iterable<Endpoint> endpoints = institution.getEndpoints();
 			if (filter != null) {
 				endpoints = filter.filter(endpoints);
 			}
 			for (Endpoint endp : endpoints) {
-				Corpus parentCorpus = null;// i.e. it's root
-				addCorpora(sruScanClient, endp.getUrl(), institution, 0, parentCorpus, cache);
+				addCorpora(endp.getUrl(), institution, null, cache, 0);
 			}
 		}
 
+		try {
+			latch.await();
+		} catch (InterruptedException e) {
+			log.error("INTERRUPTED wait for {} scan task(s), are we shutting down?", latch.get());
+		}
+
+		return cache;
 	}
 
-	private void addCorpora(SRUThreadedClient sruScanClient, String endpointUrl,
-			Institution institution, int depth, Corpus parentCorpus, ScanCache cache) {
-		depth++;
+	private void addCorpora(final String endpointUrl, final Institution institution,
+			final Corpus parentCorpus, final ScanCache cache, final int depth) {
 		if (depth > maxDepth) {
 			return;
 		}
 
-		List<Corpus> childrenCorpora = doScan(sruScanClient, endpointUrl, institution, parentCorpus);
-
-		for (Corpus c : childrenCorpora) {
-			// don't add corpus that introduces cyclic references
-			// as of March 2014, there are 2 such endpoints...
-			if (cache.getCorpus(c.getHandle()) != null) {
-				LOGGER.warning("Cyclic reference in corpus " + c.getHandle() + " of endpoint " + endpointUrl);
-				continue;
-			}
-			cache.addCorpus(c, parentCorpus);
-			addCorpora(sruScanClient, c.getEndpointUrl(), c.getInstitution(),
-					depth, c, cache);
-		}
-	}
-
-	public static List<Corpus> doScan(SRUThreadedClient sruScanClient,
-			String endpointUrl, Institution institution, Corpus parentCorpus) {
-
-		List<Corpus> corpora = new ArrayList<Corpus>();
-		Future<SRUScanResponse> corporaResponse = null;
-		SRUScanResponse response = null;
+		SRUScanRequest scanRequest = null;
 		try {
-			SRUScanRequest corporaRequest = new SRUScanRequest(endpointUrl);
+			scanRequest = new SRUScanRequest(endpointUrl);
 			StringBuilder scanClause = new StringBuilder(SRUCQL.SCAN_RESOURCE_PARAMETER);
 			scanClause.append("=");
 			String normalizedHandle = normalizeHandle(parentCorpus, parentCorpus == null);
 			scanClause.append(normalizedHandle);
-			corporaRequest.setScanClause(scanClause.toString());
-			corporaRequest.setExtraRequestData(SRUCQL.SCAN_RESOURCE_INFO_PARAMETER,
+			scanRequest.setScanClause(scanClause.toString());
+			scanRequest.setExtraRequestData(SRUCQL.SCAN_RESOURCE_INFO_PARAMETER,
 					SRUCQL.SCAN_RESOURCE_INFO_PARAMETER_DEFAULT_VALUE);
-			corporaResponse = sruScanClient.scan(corporaRequest);
-			Thread.sleep(5000);
-			response = corporaResponse.get(600, TimeUnit.SECONDS);
-		} catch (TimeoutException ex) {
-			LOGGER.log(Level.SEVERE, "Timeout scanning corpora {0} at {1} {2} {3}",
-					new String[]{Corpus.ROOT_HANDLE, endpointUrl, ex.getClass().getName(), ex.getMessage()});
 		} catch (Exception ex) {
-			LOGGER.log(Level.SEVERE, "Error accessing corpora {0} at {1} {2} {3}",
-					new String[]{Corpus.ROOT_HANDLE, endpointUrl, ex.getClass().getName(), ex.getMessage()});
-		} finally {
-			if (corporaResponse != null && !corporaResponse.isDone()) {
-				corporaResponse.cancel(true);
-			}
+			log.error("Exception creating scan request for {}: {}", endpointUrl, ex.getMessage());
+		}
+		if (scanRequest == null) {
+			return;
 		}
 
-		if (response != null && response.hasTerms()) {
-			for (SRUTerm term : response.getTerms()) {
-				Corpus c = createCorpus(institution, endpointUrl, term);
-				corpora.add(c);
-			}
-		} else {
-			if (parentCorpus == null) { // means root
-				// create default root corpus:
-				Corpus c = new Corpus(institution, endpointUrl);
-				corpora.add(c);
-			}
+		log.info("{} Start scan: {}", latch.get(), endpointUrl);
+		latch.increment();
+		try {
+			sruScanClient.scan(scanRequest, new SRUCallback<SRUScanRequest, SRUScanResponse>() {
+				@Override
+				public void onSuccess(SRUScanResponse response) {
+					try {
+						if (response != null && response.hasTerms()) {
+							for (SRUTerm term : response.getTerms()) {
+								Corpus c = createCorpus(institution, endpointUrl, term);
+								checkedAdd(cache, parentCorpus, c, depth);
+							}
+						} else if (parentCorpus == null) {
+							// create default root corpus
+							Corpus c = new Corpus(institution, endpointUrl);
+							checkedAdd(cache, parentCorpus, c, depth);
+						}
+
+						log.info("{} Finished scan: {}", latch.get(), endpointUrl);
+					} finally {
+						latch.decrement();
+					}
+				}
+
+				@Override
+				public void onError(SRUScanRequest request, SRUClientException error) {
+					latch.decrement();
+					log.error("{} Error while scanning {}: {}", latch.get(), endpointUrl, error);
+				}
+			});
+		} catch (SRUClientException ex) {
+			latch.decrement();
+			log.error("{} Exception in scan request for {}: {}", latch.get(), endpointUrl, ex.getMessage());
 		}
-		return corpora;
+	}
+
+	private void checkedAdd(ScanCache cache, Corpus parentCorpus, Corpus c, int depth) {
+		if (cache.addCorpus(c, parentCorpus)) {
+			addCorpora(c.getEndpointUrl(), c.getInstitution(), c, cache, depth + 1);
+		} else {
+			// log.warn("Cyclic reference in corpus " + c.getHandle() + " of endpoint " + c.getEndpointUrl());
+		}
 	}
 
 	private static String normalizeHandle(Corpus corpus, boolean root) {

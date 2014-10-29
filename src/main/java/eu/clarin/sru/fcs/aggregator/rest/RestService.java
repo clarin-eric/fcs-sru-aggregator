@@ -1,5 +1,9 @@
 package eu.clarin.sru.fcs.aggregator.rest;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
 import eu.clarin.sru.client.SRUVersion;
 import eu.clarin.sru.fcs.aggregator.app.Aggregator;
 import eu.clarin.sru.fcs.aggregator.registry.Corpus;
@@ -39,11 +43,17 @@ public class RestService {
 	@Context
 	ServletContext servletContext;
 
+	private String toJson(Object o) {
+		JsonParser parser = new JsonParser();
+		Gson gson = new GsonBuilder().setPrettyPrinting().create();
+		return gson.toJson(o);
+	}
+
 	@GET
 	@Path("corpora")
 	public Response getCorpora() throws IOException {
 		List<Corpus> corpora = Aggregator.getInstance().getScanCache().getRootCorpora();
-		return Response.ok(corpora).build();
+		return Response.ok(toJson(corpora)).build();
 	}
 
 	public static class JsonLang {
@@ -78,7 +88,7 @@ public class RestService {
 				return l1.name.compareToIgnoreCase(l2.name);
 			}
 		});
-		return Response.ok(languages).build();
+		return Response.ok(toJson(languages)).build();
 	}
 
 	@POST
@@ -119,6 +129,14 @@ public class RestService {
 		if (search == null) {
 			return Response.status(Response.Status.NOT_FOUND).entity("Search job not found").build();
 		}
+//		for (Request r : search.getRequests()) {
+//			System.out.println("request: " + toJson(r));
+//		}
+//		for (Result r : search.getResults()) {
+//			System.out.println("result: ");
+//			System.out.println("    kwics: " + toJson(r.getKwics()));
+//			System.out.println("    exc: " + r.getException());
+//		}
 		JsonSearch js = new JsonSearch(search.getRequests(), search.getResults());
 		return Response.ok(js).build();
 	}

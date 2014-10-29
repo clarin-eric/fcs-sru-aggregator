@@ -1,43 +1,110 @@
 package eu.clarin.sru.fcs.aggregator.search;
 
-import eu.clarin.sru.client.fcs.DataViewKWIC;
+import eu.clarin.sru.client.fcs.DataViewHits;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- * Represents keyword in context data view and information about its
- * PID and reference.
- * 
+ * Represents keyword in context data view and information about its PID and
+ * reference.
+ *
  * @author Yana Panchenko
  */
 public class Kwic {
-    
-    private DataViewKWIC kw;
-    private String pid;
-    private String reference;
 
-    public Kwic(DataViewKWIC kw, String pid, String reference) {
-        this.kw = kw;
-        this.pid = pid;
-        this.reference = reference;
-    }
+	public static class TextFragment {
 
-    public String getLeft() {
-        return kw.getLeft();
-    }
-    
-    public String getKeyword() {
-        return kw.getKeyword();
-    }
-    
-    public String getRight() {
-        return kw.getRight();
-    }
+		String text;
+		boolean isHit;
 
-    public String getPid() {
-        return pid;
-    }
+		public TextFragment(String text, boolean isHit) {
+			this.text = text;
+			this.isHit = isHit;
+		}
 
-    public String getReference() {
-        return reference;
-    }
+		public String getText() {
+			return text;
+		}
 
+		public boolean isHit() {
+			return isHit;
+		}
+
+		@Override
+		public String toString() {
+			return (isHit ? "[" : "") + text + (isHit ? "]" : "");
+		}
+	}
+
+	private String pid;
+	private String reference;
+	private List<TextFragment> fragments = new ArrayList<TextFragment>();
+
+	public Kwic(DataViewHits hits, String pid, String reference) {
+		this.pid = pid;
+		this.reference = reference;
+
+		String text = hits.getText();
+		int lastOffset = 0;
+		for (int i = 0; i < hits.getHitCount(); i++) {
+			int[] offsets = hits.getHitOffsets(i);
+			if (lastOffset < offsets[0]) {
+				fragments.add(new TextFragment(text.substring(lastOffset, offsets[0]), false));
+			}
+			if (offsets[0] < offsets[1]) {
+				fragments.add(new TextFragment(text.substring(offsets[0], offsets[1]), true));
+			}
+			lastOffset = offsets[1];
+		}
+		if (lastOffset < text.length()) {
+			fragments.add(new TextFragment(text.substring(lastOffset, text.length()), false));
+		}
+	}
+
+	public List<TextFragment> getFragments() {
+		return fragments;
+	}
+
+	public String getPid() {
+		return pid;
+	}
+
+	public String getReference() {
+		return reference;
+	}
+
+	@Deprecated
+	public String getLeft() {
+		for (TextFragment tf : fragments) {
+			if (!tf.isHit) {
+				return tf.text;
+			}
+		}
+		return "";
+	}
+
+	@Deprecated
+	public String getKeyword() {
+		for (TextFragment tf : fragments) {
+			if (tf.isHit) {
+				return tf.text;
+			}
+		}
+		return "";
+	}
+
+	@Deprecated
+	public String getRight() {
+		StringBuilder sb = new StringBuilder();
+		boolean pastHit = false;
+		for (TextFragment tf : fragments) {
+			if (pastHit) {
+				sb.append(tf.text);
+			}
+			if (tf.isHit) {
+				pastHit = true;
+			}
+		}
+		return sb.toString();
+	}
 }

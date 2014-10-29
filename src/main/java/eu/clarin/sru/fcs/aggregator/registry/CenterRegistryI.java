@@ -17,6 +17,5 @@ public interface CenterRegistryI {
         
     public List<Institution> getCQLInstitutions();
 
-    public Institution getCQLInstitution(int index);
-
+	public Institution getCQLInstitution(int index);
 }

@@ -108,8 +108,9 @@ public interface ScanCache {
      * Same as addCorpus(c, null)
      * 
      * @param c root corpus to be added
-     */
-    public void addCorpus(Corpus c);
+	 * @return true if the corpus has been added, false if it's a duplicate
+	 */
+	public boolean addCorpus(Corpus c);
 
     
     /**
@@ -117,8 +118,9 @@ public interface ScanCache {
      * 
      * @param c corpus to be added
      * @param parentCorpus parent of the corpus to be added
-     */
-    public void addCorpus(Corpus c, Corpus parentCorpus);
+	 * @return true if the corpus has been added, false if it's a duplicate
+	 */
+	public boolean addCorpus(Corpus c, Corpus parentCorpus);
 
     
     /**

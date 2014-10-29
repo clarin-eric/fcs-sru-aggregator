@@ -7,12 +7,14 @@ import eu.clarin.sru.client.SRUSearchRetrieveResponse;
 import eu.clarin.sru.client.SRUSurrogateRecordData;
 import eu.clarin.sru.client.fcs.ClarinFCSRecordData;
 import eu.clarin.sru.client.fcs.DataView;
-import eu.clarin.sru.client.fcs.DataViewKWIC;
+import eu.clarin.sru.client.fcs.DataViewGenericDOM;
+import eu.clarin.sru.client.fcs.DataViewGenericString;
+import eu.clarin.sru.client.fcs.DataViewHits;
 import eu.clarin.sru.client.fcs.Resource;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import org.w3c.dom.Node;
+import org.slf4j.LoggerFactory;
 
 /**
  * Represents the results of a SRU search-retrieve operation request. It
@@ -23,7 +25,8 @@ import java.util.logging.Logger;
  * @author edima
  */
 public final class Result {
-	private static final Logger LOGGER = Logger.getLogger(Result.class.getName());
+
+	private static final org.slf4j.Logger log = LoggerFactory.getLogger(Result.class);
 
 	private Request request;
 	private List<Kwic> kwics = new ArrayList<Kwic>();
@@ -36,7 +39,7 @@ public final class Result {
 	public Result(Request request, SRUSearchRetrieveResponse response, SRUClientException xc) {
 		this.request = request;
 		this.exception = xc;
-		if (response != null) {
+		if (response != null && response.hasRecords()) {
 			setResponse(response);
 		}
 	}
@@ -47,15 +50,14 @@ public final class Result {
 				ClarinFCSRecordData rd = (ClarinFCSRecordData) record.getRecordData();
 				Resource resource = rd.getResource();
 				setClarinRecord(resource);
-				LOGGER.log(Level.FINE,
-						"Resource ref={0}, pid={1}, dataViews={2}",
+				log.debug("Resource ref={0}, pid={1}, dataViews={2}",
 						new Object[]{resource.getRef(), resource.getPid(), resource.hasDataViews()});
 			} else if (record.isRecordSchema(SRUSurrogateRecordData.RECORD_SCHEMA)) {
 				SRUSurrogateRecordData r = (SRUSurrogateRecordData) record.getRecordData();
-				LOGGER.log(Level.INFO, "Surrogate diagnostic: uri={0}, message={1}, detail={2}",
+				log.info("Surrogate diagnostic: uri={0}, message={1}, detail={2}",
 						new Object[]{r.getURI(), r.getMessage(), r.getDetails()});
 			} else {
-				LOGGER.log(Level.INFO, "Unsupported schema: {0}", record.getRecordSchema());
+				log.info("Unsupported schema: {0}", record.getRecordSchema());
 			}
 		}
 	}
@@ -70,7 +72,7 @@ public final class Result {
 
 		if (resource.hasResourceFragments()) {
 			for (Resource.ResourceFragment fragment : resource.getResourceFragments()) {
-				LOGGER.log(Level.FINE, "ResourceFragment: ref={0}, pid={1}, dataViews={2}",
+				log.debug("ResourceFragment: ref={0}, pid={1}, dataViews={2}",
 						new Object[]{fragment.getRef(), fragment.getPid(), fragment.hasDataViews()});
 				if (fragment.hasDataViews()) {
 					processDataViews(fragment.getDataViews(),
@@ -83,11 +85,22 @@ public final class Result {
 
 	private void processDataViews(List<DataView> dataViews, String pid, String reference) {
 		for (DataView dataview : dataViews) {
-			if (dataview.isMimeType(DataViewKWIC.TYPE)) {
-				DataViewKWIC kw = (DataViewKWIC) dataview;
-				Kwic kwic = new Kwic(kw, pid, reference);
-				this.kwics.add(kwic);
-				LOGGER.log(Level.FINE, "DataViewKwic: {0} -> {2}", new Object[]{kw.getLeft(), kw.getRight()});
+			if (dataview instanceof DataViewGenericDOM) {
+				final DataViewGenericDOM view = (DataViewGenericDOM) dataview;
+				final Node root = view.getDocument().getFirstChild();
+				log.info("DataView (generic dom): root element <{}> / {}",
+						root.getNodeName(),
+						root.getOwnerDocument().hashCode());
+			} else if (dataview instanceof DataViewGenericString) {
+				final DataViewGenericString view
+						= (DataViewGenericString) dataview;
+				log.info("DataView (generic string): data = {}",
+						view.getContent());
+			} else if (dataview instanceof DataViewHits) {
+				final DataViewHits hits = (DataViewHits) dataview;
+				Kwic kwic = new Kwic(hits, pid, reference);
+				kwics.add(kwic);
+				log.info("DataViewHits: {}", kwic.getFragments());
 			}
 		}
 	}

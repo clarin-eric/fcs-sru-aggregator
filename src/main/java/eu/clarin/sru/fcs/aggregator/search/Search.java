@@ -3,7 +3,6 @@ package eu.clarin.sru.fcs.aggregator.search;
 import eu.clarin.sru.client.SRUCallback;
 import eu.clarin.sru.client.SRUVersion;
 import java.util.List;
-import java.util.logging.*;
 import eu.clarin.sru.client.SRUClientException;
 import eu.clarin.sru.client.SRUSearchRetrieveRequest;
 import eu.clarin.sru.client.SRUSearchRetrieveResponse;
@@ -15,6 +14,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import opennlp.tools.tokenize.TokenizerModel;
 
 /**
@@ -88,11 +89,19 @@ public class Search {
 	}
 
 	public List<Request> getRequests() {
-		return requests;
+		List<Request> copy = new ArrayList<>();
+		synchronized (requests) {
+			copy.addAll(requests);
+		}
+		return copy;
 	}
 
 	public List<Result> getResults() {
-		return results;
+		List<Result> copy = new ArrayList<>();
+		synchronized (results) {
+			copy.addAll(results);
+		}
+		return copy;
 	}
 
 	public void exportTCF(TokenizerModel tokenizerModel) throws ExportException {

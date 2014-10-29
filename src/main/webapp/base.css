@@ -144,9 +144,12 @@ div.panel-heading {
 }
 
 
-.keyword {
-	color: #000;
-	/*color: #806a52;*/
+.panel span {
+	color: #222;
+}
+ 
+.panel span.keyword {
+	color: #00406F;
 }
  
 .bs-callout {
@@ -167,6 +170,44 @@ div.panel-heading {
 	border-top: 1px solid #ddd;	
 }
 
+/* transitions css */
+.fade-enter {
+  opacity: 0.01;
+  transition: all .2s ease-in;
+}
+
+.fade-enter.fade-enter-active {
+  opacity: 1;
+}
+
+.fade-leave {
+  opacity: 1;
+  transition: all .2s ease-in;
+}
+
+.fade-leave.fade-leave-active {
+  opacity: 0.01;
+}
+
+.display-enter {
+  opacity: 0.01;
+  transition: all 2s ease-in;
+}
+
+.display-enter.display-enter-active {
+  opacity: 1;
+}
+
+.display-leave {
+  opacity: 1;
+  transition: all 2s ease-in;
+}
+
+.display-leave.display-leave-active {
+  opacity: 0.01;
+}
+
+/* beta */
 .beta-tag {
 	position:absolute; 
 	/*color:rgba(17, 65, 111, 0.1); */
@@ -180,6 +221,7 @@ div.panel-heading {
 	-o-transform: rotate(-30deg);
 }
 
+/* file uploads */
 .btn-file {
     position: relative;
     overflow: hidden;

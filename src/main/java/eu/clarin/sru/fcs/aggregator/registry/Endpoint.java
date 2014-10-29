@@ -5,15 +5,14 @@ package eu.clarin.sru.fcs.aggregator.registry;
  * Institution.
  * 
  * @author Yana Panchenko
+ * @author edima
  */
 public class Endpoint {
 
     private String url;
-//    private Institution institution;
 
     public Endpoint(String url, Institution institution) {
         this.url = url;
-//        this.institution = institution;
     }
 
     public String getUrl() {
@@ -23,14 +22,6 @@ public class Endpoint {
     public void setUrl(String url) {
         this.url = url;
     }
-
-//    public Institution getInstitution() {
-//        return institution;
-//    }
-//
-//    public void setInstitution(Institution institution) {
-//        this.institution = institution;
-//    }
 
     @Override
     public String toString() {

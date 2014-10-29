@@ -1,7 +1,7 @@
 package eu.clarin.sru.fcs.aggregator.app;
 
 import eu.clarin.sru.fcs.aggregator.cache.ScanCache;
-import eu.clarin.sru.fcs.aggregator.cache.ScanCacheFile;
+import eu.clarin.sru.fcs.aggregator.cache.ScanCachePersistence;
 import eu.clarin.sru.fcs.aggregator.registry.Corpus;
 import eu.clarin.sru.fcs.aggregator.registry.Endpoint;
 import java.io.File;
@@ -26,13 +26,13 @@ public class ScanCacheFileTest {
 			scanDir2.mkdir();
 		}
 
-		ScanCacheFile scanFiled1 = new ScanCacheFile(scanPath1);
+		ScanCachePersistence scanFiled1 = new ScanCachePersistence(scanPath1);
 		ScanCache cacheOrig = scanFiled1.read();
 
-		ScanCacheFile scanFiled2 = new ScanCacheFile(scanPath2);
+		ScanCachePersistence scanFiled2 = new ScanCachePersistence(scanPath2);
 		scanFiled2.write(cacheOrig);
 
-		ScanCacheFile scanFiled3 = new ScanCacheFile(scanPath2);
+		ScanCachePersistence scanFiled3 = new ScanCachePersistence(scanPath2);
 		ScanCache cacheRewritten = scanFiled3.read();
 
 		//make sure caches contain the same info after read-write
@@ -66,13 +66,13 @@ public class ScanCacheFileTest {
 			scanDir2.mkdir();
 		}
 
-		ScanCacheFile scanFiled1 = new ScanCacheFile(scanPath1);
+		ScanCachePersistence scanFiled1 = new ScanCachePersistence(scanPath1);
 		ScanCache cacheOrig = scanFiled1.read();
 
-		ScanCacheFile scanFiled2 = new ScanCacheFile(scanPath2);
+		ScanCachePersistence scanFiled2 = new ScanCachePersistence(scanPath2);
 		scanFiled2.write(cacheOrig);
 
-		ScanCacheFile scanFiled3 = new ScanCacheFile(scanPath2);
+		ScanCachePersistence scanFiled3 = new ScanCachePersistence(scanPath2);
 		ScanCache cacheRewritten = scanFiled3.read();
 
 		//make sure caches contain the same info after read-write
@@ -107,13 +107,13 @@ public class ScanCacheFileTest {
 			scanDir2.mkdir();
 		}
 
-		ScanCacheFile scanFiled1 = new ScanCacheFile(scanPath1);
+		ScanCachePersistence scanFiled1 = new ScanCachePersistence(scanPath1);
 		ScanCache cacheOrig = scanFiled1.read();
 
-		ScanCacheFile scanFiled2 = new ScanCacheFile(scanPath2);
+		ScanCachePersistence scanFiled2 = new ScanCachePersistence(scanPath2);
 		scanFiled2.write(cacheOrig);
 
-		ScanCacheFile scanFiled3 = new ScanCacheFile(scanPath2);
+		ScanCachePersistence scanFiled3 = new ScanCachePersistence(scanPath2);
 		ScanCache cacheRewritten = scanFiled3.read();
 
 		//make sure caches contain the same info after read-write
@@ -143,13 +143,13 @@ public class ScanCacheFileTest {
 			scanDir2.mkdir();
 		}
 
-		ScanCacheFile scanFiled1 = new ScanCacheFile(scanPath1);
+		ScanCachePersistence scanFiled1 = new ScanCachePersistence(scanPath1);
 		ScanCache cacheOrig = scanFiled1.read();
 
-		ScanCacheFile scanFiled2 = new ScanCacheFile(scanPath2);
+		ScanCachePersistence scanFiled2 = new ScanCachePersistence(scanPath2);
 		scanFiled2.write(cacheOrig);
 
-		ScanCacheFile scanFiled3 = new ScanCacheFile(scanPath2);
+		ScanCachePersistence scanFiled3 = new ScanCachePersistence(scanPath2);
 		ScanCache cacheRewritten = scanFiled3.read();
 
 		//make sure caches contain the same info after read-write
