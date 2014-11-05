@@ -1,12 +1,13 @@
 package eu.clarin.sru.fcs.aggregator.cache;
 
+import eu.clarin.sru.fcs.aggregator.util.CounterLatch;
 import eu.clarin.sru.client.SRUCallback;
 import eu.clarin.sru.client.SRUClientException;
 import eu.clarin.sru.client.SRUScanRequest;
 import eu.clarin.sru.client.SRUScanResponse;
 import eu.clarin.sru.client.SRUTerm;
 import eu.clarin.sru.client.SRUThreadedClient;
-import eu.clarin.sru.fcs.aggregator.registry.CenterRegistryI;
+import eu.clarin.sru.fcs.aggregator.registry.CenterRegistry;
 import eu.clarin.sru.fcs.aggregator.registry.Corpus;
 import eu.clarin.sru.fcs.aggregator.registry.Endpoint;
 import eu.clarin.sru.fcs.aggregator.registry.Institution;
@@ -22,27 +23,29 @@ import org.w3c.dom.NodeList;
  * specification. Collects all the endpoints and resources descriptions.
  *
  * @author yanapanchenko
+ * @author edima
  */
 public class ScanCrawler {
 
 	private static final org.slf4j.Logger log = LoggerFactory.getLogger(ScanCrawler.class);
 
-	private final CenterRegistryI cr;
+	private final CenterRegistry centerRegistry;
 	private final SRUThreadedClient sruScanClient;
 	private final int maxDepth;
 	private final EndpointFilter filter;
-	private CounterLatch latch = new CounterLatch();
+	private final CounterLatch latch;
 
-	public ScanCrawler(CenterRegistryI centerRegistry, SRUThreadedClient sruScanClient, EndpointFilter filter, int maxDepth) {
-		cr = centerRegistry;
+	public ScanCrawler(CenterRegistry centerRegistry, SRUThreadedClient sruScanClient, EndpointFilter filter, int maxDepth) {
+		this.centerRegistry = centerRegistry;
 		this.sruScanClient = sruScanClient;
 		this.maxDepth = maxDepth;
 		this.filter = filter;
+		this.latch = new CounterLatch();
 	}
 
-	public ScanCache crawl() {
-		SimpleInMemScanCache cache = new SimpleInMemScanCache();
-		for (Institution institution : cr.getCQLInstitutions()) {
+	public Corpora crawl() {
+		Corpora cache = new Corpora();
+		for (Institution institution : centerRegistry.getCQLInstitutions()) {
 			cache.addInstitution(institution);
 			Iterable<Endpoint> endpoints = institution.getEndpoints();
 			if (filter != null) {
@@ -54,16 +57,18 @@ public class ScanCrawler {
 		}
 
 		try {
+			log.info("awaiting");
 			latch.await();
 		} catch (InterruptedException e) {
 			log.error("INTERRUPTED wait for {} scan task(s), are we shutting down?", latch.get());
 		}
 
+		log.info("done crawling");
 		return cache;
 	}
 
 	private void addCorpora(final String endpointUrl, final Institution institution,
-			final Corpus parentCorpus, final ScanCache cache, final int depth) {
+			final Corpus parentCorpus, final Corpora corpora, final int depth) {
 		if (depth > maxDepth) {
 			return;
 		}
@@ -95,15 +100,18 @@ public class ScanCrawler {
 						if (response != null && response.hasTerms()) {
 							for (SRUTerm term : response.getTerms()) {
 								Corpus c = createCorpus(institution, endpointUrl, term);
-								checkedAdd(cache, parentCorpus, c, depth);
+								checkedAdd(corpora, parentCorpus, c, depth);
 							}
 						} else if (parentCorpus == null) {
 							// create default root corpus
 							Corpus c = new Corpus(institution, endpointUrl);
-							checkedAdd(cache, parentCorpus, c, depth);
+							checkedAdd(corpora, parentCorpus, c, depth);
 						}
 
 						log.info("{} Finished scan: {}", latch.get(), endpointUrl);
+					} catch (Exception xc) {
+						log.error("{} Exception in callback {}", latch.get(), endpointUrl);
+						log.error("--> ", xc);
 					} finally {
 						latch.decrement();
 					}
@@ -112,7 +120,7 @@ public class ScanCrawler {
 				@Override
 				public void onError(SRUScanRequest request, SRUClientException error) {
 					latch.decrement();
-					log.error("{} Error while scanning {}: {}", latch.get(), endpointUrl, error);
+					log.error("{} Error while scanning {}: {} : {}", latch.get(), endpointUrl, error, error.getCause());
 				}
 			});
 		} catch (SRUClientException ex) {
@@ -121,9 +129,9 @@ public class ScanCrawler {
 		}
 	}
 
-	private void checkedAdd(ScanCache cache, Corpus parentCorpus, Corpus c, int depth) {
-		if (cache.addCorpus(c, parentCorpus)) {
-			addCorpora(c.getEndpointUrl(), c.getInstitution(), c, cache, depth + 1);
+	private void checkedAdd(Corpora corpora, Corpus parentCorpus, Corpus c, int depth) {
+		if (corpora.addSubCorpus(c, parentCorpus)) {
+			addCorpora(c.getEndpointUrl(), c.getInstitution(), c, corpora, depth + 1);
 		} else {
 			// log.warn("Cyclic reference in corpus " + c.getHandle() + " of endpoint " + c.getEndpointUrl());
 		}

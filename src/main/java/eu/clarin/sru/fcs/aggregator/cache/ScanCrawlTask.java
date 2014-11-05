@@ -1,55 +1,66 @@
 package eu.clarin.sru.fcs.aggregator.cache;
 
 import eu.clarin.sru.client.SRUThreadedClient;
+import eu.clarin.sru.fcs.aggregator.registry.CenterRegistry;
 import eu.clarin.sru.fcs.aggregator.registry.CenterRegistryLive;
+import java.io.File;
+import java.io.IOException;
 import java.util.concurrent.atomic.AtomicReference;
+import org.codehaus.jackson.map.ObjectMapper;
 import org.slf4j.LoggerFactory;
 
 /**
- * A task for crawling endpoint scan operation responses of FCS specification.
- * If successful, saves found endpoints and resources descriptions into a new
- * ScanCache and updates the web application contexts with this new cache, as
- * well as rewrites the previously scanned data saved on the disk.
- *
  * @author yanapanchenko
  * @author edima
  */
 public class ScanCrawlTask implements Runnable {
-	
+
 	private static final org.slf4j.Logger log = LoggerFactory.getLogger(ScanCrawlTask.class);
-	
+
 	private SRUThreadedClient sruClient;
-	private ScanCachePersistence scanCachePersistence;
-	private AtomicReference<ScanCache> scanCacheAtom;
 	private int cacheMaxDepth;
 	private EndpointFilter filter;
-	
-	public ScanCrawlTask(SRUThreadedClient sruClient, int cacheMaxDepth, EndpointFilter filter,
-			ScanCachePersistence scanCachePersistence, AtomicReference<ScanCache> scanCacheAtom) {
+	private AtomicReference<Corpora> corporaAtom;
+	private File cachedCorpora;
+	private String centerRegistryUrl;
+
+	public ScanCrawlTask(SRUThreadedClient sruClient, String centerRegistryUrl,
+			int cacheMaxDepth, EndpointFilter filter,
+			AtomicReference<Corpora> corporaAtom, File cachedCorpora) {
 		this.sruClient = sruClient;
+		this.centerRegistryUrl = centerRegistryUrl;
 		this.cacheMaxDepth = cacheMaxDepth;
 		this.filter = filter;
-		this.scanCachePersistence = scanCachePersistence;
-		this.scanCacheAtom = scanCacheAtom;
+		this.corporaAtom = corporaAtom;
+		this.cachedCorpora = cachedCorpora;
 	}
-	
+
 	@Override
 	public void run() {
 		try {
-			log.info("STARTING CACHING CORPORA SCAN");
 			long time0 = System.currentTimeMillis();
-			
-			ScanCrawler scanCrawler = new ScanCrawler(new CenterRegistryLive(), sruClient, filter, cacheMaxDepth);
-			ScanCache cache = scanCrawler.crawl();
-			
-			log.info("New Cache, number of root corpora: " + cache.getRootCorpora().size());
-			scanCachePersistence.write(cache);
-			scanCacheAtom.set(cache);
+
+			log.info("ScanCrawlTask: Initiating crawl");
+			CenterRegistry centerRegistry = new CenterRegistryLive(centerRegistryUrl);
+			ScanCrawler scanCrawler = new ScanCrawler(centerRegistry, sruClient, filter, cacheMaxDepth);
+
+			log.info("ScanCrawlTask: Starting crawl");
+			Corpora corpora = scanCrawler.crawl();
+
+			corporaAtom.set(corpora);
 			long time = System.currentTimeMillis() - time0;
-			
-			log.info("FINISHED CACHING CORPORA SCAN ({}s)", time / 1000.);
-		} catch (Exception xc) {
-			log.error("!!! Scan Crawler task exception", xc);
+
+			log.info("ScanCrawlTask: crawl done in {}s, number of root corpora: {}",
+					time / 1000., corpora.getCorpora().size());
+
+			ObjectMapper mapper = new ObjectMapper();
+			mapper.writerWithDefaultPrettyPrinter().writeValue(cachedCorpora, corpora);
+			log.info("ScanCrawlTask: wrote to disk, finished");
+		} catch (IOException xc) {
+			log.error("!!! Scan Crawler task IO exception", xc);
+		} catch (Throwable xc) {
+			log.error("!!! Scan Crawler task throwable exception", xc);
+			throw xc;
 		}
 	}
 }

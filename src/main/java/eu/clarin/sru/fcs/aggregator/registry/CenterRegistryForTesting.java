@@ -14,7 +14,7 @@ import java.util.logging.Logger;
  *
  * @author Yana Panchenko
  */
-public class CenterRegistryForTesting implements CenterRegistryI {
+public class CenterRegistryForTesting implements CenterRegistry {
 
     private static final Logger logger = Logger.getLogger(CenterRegistryForTesting.class.getName());
     private boolean hasChildrenLoaded = false;

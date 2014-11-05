@@ -9,7 +9,7 @@ import java.util.List;
  *
  * @author Yana Panchenko
  */
-public interface CenterRegistryI {
+public interface CenterRegistry {
 
     public boolean hasCQLInstitutionsLoaded();
 

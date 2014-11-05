@@ -2,13 +2,11 @@ package eu.clarin.sru.fcs.aggregator.app;
 
 import eu.clarin.sru.fcs.aggregator.search.Search;
 import eu.clarin.sru.fcs.aggregator.cache.ScanCrawlTask;
-import eu.clarin.sru.fcs.aggregator.cache.ScanCachePersistence;
-import eu.clarin.sru.fcs.aggregator.cache.SimpleInMemScanCache;
+import eu.clarin.sru.fcs.aggregator.cache.Corpora;
 import eu.clarin.sru.client.SRUThreadedClient;
 import eu.clarin.sru.client.SRUVersion;
 import eu.clarin.sru.client.fcs.ClarinFCSClientBuilder;
 import eu.clarin.sru.fcs.aggregator.cache.EndpointUrlFilter;
-import eu.clarin.sru.fcs.aggregator.cache.ScanCache;
 import eu.clarin.sru.fcs.aggregator.registry.Corpus;
 import java.io.File;
 import java.io.IOException;
@@ -21,10 +19,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
-import javax.naming.NamingException;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 import opennlp.tools.tokenize.TokenizerModel;
+import org.codehaus.jackson.map.ObjectMapper;
 import org.slf4j.LoggerFactory;
 
 /**
@@ -76,20 +74,41 @@ import org.slf4j.LoggerFactory;
  *
  * @author Yana Panchenko
  * @author edima
+ *
+ * TODO: result panes with animation and more info
+ *
+ * TODO: highlighted/kwic hits: toggle for now
+ *
+ * TODO: show multiple hits on the same result in multiple rows, linked visually
+ *
+ * TODO: new UI element to specify layer we search in
+ *
+ * TODO: good UI for tree view corpus selection, with instant search form
+ *
+ * TODO: zoom into the results from a corpus, allow functionality only for the
+ * view
+ *
+ * TODO: websockets, selfhosting
+ *
+ * TODO: add statistics menu option w/ page
+ *
+ * TODO: atomic replace of cached corpora (file)
+ *
+ * TODO: test json deserialization
+ *
  */
 public class Aggregator implements ServletContextListener {
 
 	private static final org.slf4j.Logger log = LoggerFactory.getLogger(Aggregator.class);
 
-	public static final int WAITING_TIME_FOR_SHUTDOWN_MS = 10000;
+	public static final int WAITING_TIME_FOR_SHUTDOWN_MS = 2000;
 	public static final String DE_TOK_MODEL = "/tokenizer/de-tuebadz-8.0-token.bin";
 	private static final String DEFAULT_DATA_LOCATION = "/data";
-	private static final String SCAN_DIR_NAME = "scan";
 
 	private static final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 	private static Aggregator instance;
 
-	private AtomicReference<ScanCache> scanCacheAtom = new AtomicReference<ScanCache>(new SimpleInMemScanCache());
+	private AtomicReference<Corpora> scanCacheAtom = new AtomicReference<Corpora>(new Corpora());
 	private TokenizerModel model;
 	private SRUThreadedClient sruClient = null;
 	private Map<Long, Search> activeSearches = Collections.synchronizedMap(new HashMap<Long, Search>());
@@ -99,7 +118,7 @@ public class Aggregator implements ServletContextListener {
 		return instance;
 	}
 
-	public ScanCache getScanCache() {
+	public Corpora getCorpora() {
 		return scanCacheAtom.get();
 	}
 
@@ -121,22 +140,22 @@ public class Aggregator implements ServletContextListener {
 					.enableLegacySupport()
 					.buildThreadedClient();
 
-			String scanDir = getScanDirectory(params.dataLocationPropertyName, params.aggregatorDirName);
-			ScanCachePersistence scanCachePersistence = new ScanCachePersistence(scanDir);
+			File corporaCacheFile = new File(params.aggregatorFilePath);
 			try {
-//				scanCacheAtom.set(scanCachePersistence.read());
-				log.info("ScanCache read from file; number of root corpora: " + scanCacheAtom.get().getRootCorpora().size());
+				Corpora corpora = new ObjectMapper().readValue(corporaCacheFile, Corpora.class);
+				scanCacheAtom.set(corpora);
+				log.info("corpus list read from file; number of root corpora: " + scanCacheAtom.get().getCorpora().size());
 			} catch (Exception e) {
-				log.error("Error while reading ScanCache:", e);
+				log.error("Error while reading cached corpora:", e);
 			}
 
-			EndpointUrlFilter filter = new EndpointUrlFilter();
-			filter.deny("leipzig", "mpi.", "phonetik.uni-muenchen");
-			scheduler.scheduleAtFixedRate(
-					new ScanCrawlTask(sruClient, params.cacheMaxDepth, filter, scanCachePersistence, scanCacheAtom),
-					0, params.cacheUpdateInterval, params.cacheUpdateIntervalUnit);
-
 			model = setUpTokenizers();
+
+			EndpointUrlFilter filter = new EndpointUrlFilter();//.deny("leipzig"); // ~5k corpora
+			ScanCrawlTask task = new ScanCrawlTask(sruClient, params.centerRegistryUrl,
+					params.cacheMaxDepth, filter, scanCacheAtom, corporaCacheFile);
+			scheduler.scheduleAtFixedRate(task, 0, params.cacheUpdateInterval, params.cacheUpdateIntervalUnit);
+
 			log.info("Aggregator initialization finished.");
 		} catch (Exception ex) {
 			log.error("INIT EXCEPTION", ex);
@@ -182,41 +201,6 @@ public class Aggregator implements ServletContextListener {
 		return activeSearches.get(id);
 	}
 
-	private static String getScanDirectory(String dataLocationPropertyName, String aggregatorDirName) throws NamingException {
-		// see if data location is set in properties
-		String dataLocation = System.getProperty(dataLocationPropertyName);
-		if (dataLocation == null || !(new File(dataLocation, aggregatorDirName).exists())) {
-			dataLocation = DEFAULT_DATA_LOCATION;
-			if (!(new File(dataLocation, aggregatorDirName).exists())) {
-				dataLocation = System.getProperty("user.home");
-			}
-			if ((new File(dataLocation, aggregatorDirName).exists())) {
-				log.info(dataLocationPropertyName + " property is not defined, "
-						+ "setting to default: " + dataLocation);
-			} else {
-				log.info(dataLocationPropertyName + " property is not defined, "
-						+ "default location does not exist: " + dataLocation);
-				throw new RuntimeException("Data location not found");
-			}
-		}
-
-		File aggregatorDir = new File(dataLocation, aggregatorDirName);
-		if (!aggregatorDir.exists()) {
-			log.error("Aggregator directory does not exist: "
-					+ aggregatorDir.getAbsolutePath());
-		}
-		File scanDir = new File(aggregatorDir, SCAN_DIR_NAME);
-		if (!scanDir.exists()) {
-			if (!scanDir.mkdir()) {
-				log.error("Scan directory does not exist and cannot be created: "
-						+ aggregatorDir.getAbsolutePath());
-			}
-		}
-		String scanPath = scanDir.getAbsolutePath();
-		log.info("Scan data location: " + scanPath);
-		return scanPath;
-	}
-
 	private static void shutdownAndAwaitTermination(SRUThreadedClient sruClient, ExecutorService scheduler) {
 		try {
 			sruClient.shutdown();
@@ -235,9 +219,9 @@ public class Aggregator implements ServletContextListener {
 	private static TokenizerModel setUpTokenizers() {
 		TokenizerModel model = null;
 		try {
-			InputStream tokenizerModelDeAsIS = Thread.currentThread().getContextClassLoader().getResourceAsStream(DE_TOK_MODEL);
-			model = new TokenizerModel(tokenizerModelDeAsIS);
-			tokenizerModelDeAsIS.close();
+			try (InputStream tokenizerModelDeAsIS = Thread.currentThread().getContextClassLoader().getResourceAsStream(DE_TOK_MODEL)) {
+				model = new TokenizerModel(tokenizerModelDeAsIS);
+			}
 		} catch (IOException ex) {
 			log.error("Failed to load tokenizer model", ex);
 		}

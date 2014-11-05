@@ -12,26 +12,23 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.naming.InitialContext;
-import javax.naming.NamingException;
 
 /**
  * Center registry node. Its children are centers (institutions).
  *
  * @author Yana Panchenko
+ * @author edima
  */
-public class CenterRegistryLive implements CenterRegistryI {
+public class CenterRegistryLive implements CenterRegistry {
 
 	private static final Logger LOGGER = Logger.getLogger(CenterRegistryLive.class.getName());
-	//private static final String CENTER_REGISTRY_URL = "http://130.183.206.32/restxml/";
-	private String centerRegistryUrl; //defined in web.xml
-	//https://centerregistry-clarin.esc.rzg.mpg.de/restxml/
+	private String centerRegistryUrl;
 	private boolean hasInstitutionsLoaded = false;
 	private List<Institution> centers = new ArrayList<Institution>();
 
-	public CenterRegistryLive() {
+	public CenterRegistryLive(String centerRegistryUrl) {
 		super();
-		processContext();
+		this.centerRegistryUrl = centerRegistryUrl;
 	}
 
 	@Override
@@ -47,8 +44,7 @@ public class CenterRegistryLive implements CenterRegistryI {
 		}
 		hasInstitutionsLoaded = true;
 		URI url = URI.create(centerRegistryUrl);
-		CenterRegistryConnector connector = new CenterRegistryConnector(url, 30000);
-		try {
+		try (CenterRegistryConnector connector = new CenterRegistryConnector(url, 30000)) {
 			List<Center> regCenters = connector.retrieveCenters();
 			for (Center regCenter : regCenters) {
 				String institutionUrl = regCenter.getId();
@@ -76,8 +72,6 @@ public class CenterRegistryLive implements CenterRegistryI {
 
 		} catch (ConnectorException ex) {
 			Logger.getLogger(CenterRegistryLive.class.getName()).log(Level.SEVERE, null, ex);
-		} finally {
-			connector.close();
 		}
 		LOGGER.log(Level.FINE, "Number of Centers: {0}", centers.size());
 	}
@@ -96,15 +90,4 @@ public class CenterRegistryLive implements CenterRegistryI {
 		}
 		return centers.get(index);
 	}
-
-	private void processContext() {
-		InitialContext context;
-		try {
-			context = new InitialContext();
-			centerRegistryUrl = (String) context.lookup("java:comp/env/center-registry-url");
-		} catch (NamingException ex) {
-			LOGGER.log(Level.SEVERE, null, ex);
-		}
-	}
-
 }

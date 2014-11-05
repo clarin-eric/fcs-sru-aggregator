@@ -28,20 +28,12 @@
 		<env-entry-type>java.lang.Integer</env-entry-type>
 		<env-entry-value>3</env-entry-value>
 	</env-entry>
-	<!-- Value of this property (data.location) should be specified in CATALINA_OPT
-	(e.g. inside /etc/init.d/tomcat7*), unless the default is used.
-	Currently defaults to /data/ or user.home -->
-	<env-entry>
-		<env-entry-name>data-location-property</env-entry-name>
-		<env-entry-type>java.lang.String</env-entry-type>
-		<env-entry-value>data.location</env-entry-value>
-	</env-entry>
-	<!-- Folder for the data specific to the current Aggregator application,
+	<!-- Filepath for the data specific to the current Aggregator application,
 	supposed to be inside the data location folder above  -->
 	<env-entry>
-		<env-entry-name>aggregator-folder</env-entry-name>
+		<env-entry-name>aggregator-file-path</env-entry-name>
 		<env-entry-type>java.lang.String</env-entry-type>
-		<env-entry-value>fcsAggregator</env-entry-value>
+		<env-entry-value>/data/fcsAggregator/fcsAggregatorCorpora.json</env-entry-value>
 	</env-entry>
 
 

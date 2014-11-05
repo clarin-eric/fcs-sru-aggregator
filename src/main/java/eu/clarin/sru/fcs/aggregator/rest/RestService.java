@@ -52,7 +52,7 @@ public class RestService {
 	@GET
 	@Path("corpora")
 	public Response getCorpora() throws IOException {
-		List<Corpus> corpora = Aggregator.getInstance().getScanCache().getRootCorpora();
+		List<Corpus> corpora = Aggregator.getInstance().getCorpora().getCorpora();
 		return Response.ok(toJson(corpora)).build();
 	}
 
@@ -77,7 +77,7 @@ public class RestService {
 	@GET
 	@Path("languages")
 	public Response getLanguages() throws IOException {
-		Set<String> codes = Aggregator.getInstance().getScanCache().getLanguages();
+		Set<String> codes = Aggregator.getInstance().getCorpora().getLanguages();
 		List<JsonLang> languages = new ArrayList<JsonLang>();
 		for (String code : codes) {
 			languages.add(new JsonLang(Languages.getInstance().nameForCode(code), code));
@@ -97,7 +97,7 @@ public class RestService {
 		if (query == null || query.isEmpty()) {
 			return Response.status(400).entity("'query' parameter expected").build();
 		}
-		List<Corpus> corpora = Aggregator.getInstance().getScanCache().getRootCorpora();
+		List<Corpus> corpora = Aggregator.getInstance().getCorpora().getCorpora();
 		Search search = Aggregator.getInstance().startSearch(SRUVersion.VERSION_1_2, corpora, query, "eng", 10);
 		URI uri = URI.create("" + search.getId());
 		return Response.created(uri).entity(uri).build();

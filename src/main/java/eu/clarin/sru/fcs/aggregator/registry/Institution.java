@@ -14,6 +14,10 @@ public class Institution {
 	private String link;
 	private ArrayList<Endpoint> endpoints;
 
+	// for JSON deserialization
+	public Institution() {
+	}
+
 	public Institution(String name, String link) {
 		this.name = name;
 		this.link = link;

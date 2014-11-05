@@ -3,7 +3,6 @@ package eu.clarin.sru.fcs.aggregator.registry;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -44,8 +43,8 @@ public class Corpus {
 		subCorpora.add(c);
 	}
 
-	public Iterator<Corpus> getSubCorpora() {
-		return subCorpora.iterator();
+	public List<Corpus> getSubCorpora() {
+		return Collections.unmodifiableList(subCorpora);
 	}
 
 	public boolean isTemporary() {

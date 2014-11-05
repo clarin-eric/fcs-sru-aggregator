@@ -14,7 +14,7 @@ fi
 
 JSDIR=src/main/webapp/js
 for f in $JSDIR/*.jsx; do 
-	cp $f $JSDIR/`basename $f .jsx`.js; 
+	cp -v $f $JSDIR/`basename $f .jsx`.js; 
 done
 node_modules/react-tools/bin/jsx --no-cache-dir $JSDIR $JSDIR
 

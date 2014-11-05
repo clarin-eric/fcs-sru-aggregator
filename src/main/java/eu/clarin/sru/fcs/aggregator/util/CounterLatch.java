@@ -1,21 +1,12 @@
-package eu.clarin.sru.fcs.aggregator.cache;
+package eu.clarin.sru.fcs.aggregator.util;
 
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.IntUnaryOperator;
 
 /**
  *
  * @author edima
  */
 public class CounterLatch {
-
-	private static final IntUnaryOperator countDown = new IntUnaryOperator() {
-		@Override
-		public int applyAsInt(int operand) {
-			return (operand > 0) ? operand - 1 : 0;
-		}
-	};
-
 	private final AtomicInteger counter = new AtomicInteger();
 	private final Object lock = new Object();
 
@@ -29,8 +20,8 @@ public class CounterLatch {
 
 	public int decrement() {
 		synchronized (lock) {
-			int ret = counter.updateAndGet(countDown);
-			if (0 == ret) {
+			int ret = counter.decrementAndGet();
+			if (ret <= 0) {
 				lock.notifyAll();
 			}
 			return ret;

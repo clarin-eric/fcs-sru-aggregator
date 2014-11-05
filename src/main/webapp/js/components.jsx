@@ -1,10 +1,10 @@
 /** @jsx React.DOM */
 
-window.MyReact = {};
 var PT = React.PropTypes;
 var ReactCSSTransitionGroup = React.addons.ReactCSSTransitionGroup;
 var ReactTransitionGroup = React.addons.TransitionGroup;
 
+window.MyReact = {};
 window.MyReact.Panel = React.createClass({
 	propTypes: {
 		key:  PT.oneOfType([PT.string, PT.number]).isRequired,
