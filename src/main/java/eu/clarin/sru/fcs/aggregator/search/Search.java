@@ -17,6 +17,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import opennlp.tools.tokenize.TokenizerModel;
+import org.slf4j.LoggerFactory;
 
 /**
  * Class representing a search operation
@@ -26,7 +27,7 @@ import opennlp.tools.tokenize.TokenizerModel;
  */
 public class Search {
 
-	private static final Logger LOGGER = Logger.getLogger(Search.class.getName());
+	private static final org.slf4j.Logger log = LoggerFactory.getLogger(Search.class);
 
 	private static final String SEARCH_RESULTS_ENCODING = "UTF-8";
 
@@ -49,8 +50,7 @@ public class Search {
 
 	private Request executeSearch(SRUThreadedClient searchClient, SRUVersion version, Corpus corpus, String searchString, int startRecord, int maxRecords) {
 		final Request request = new Request(corpus, searchString, startRecord, startRecord + maxRecords - 1);
-		LOGGER.log(Level.INFO, "Executing search for {0} query={1} maxRecords={2}",
-				new Object[]{corpus.toString(), searchString, maxRecords});
+		log.info("Executing search for {0} query={1} maxRecords={2}", corpus, searchString, maxRecords);
 
 		SRUSearchRetrieveRequest searchRequest = new SRUSearchRetrieveRequest(corpus.getEndpointUrl());
 		searchRequest.setVersion(version);
@@ -78,8 +78,9 @@ public class Search {
 				}
 			});
 		} catch (SRUClientException ex) {
-			LOGGER.log(Level.SEVERE, "SearchRetrieve failed for {0} {1} {2}",
-					new String[]{corpus.getEndpointUrl(), ex.getClass().getName(), ex.getMessage()});
+			log.error("SearchRetrieve exception for " + corpus.getEndpointUrl(), ex);
+		} catch (Throwable xc) {
+			log.error("SearchRetrieve error for " + corpus.getEndpointUrl(), xc);
 		}
 		return request;
 	}

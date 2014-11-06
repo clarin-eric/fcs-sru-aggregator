@@ -8,6 +8,8 @@ var LanguageSelection = window.MyAggregator.LanguageSelection;
 var HitNumber = window.MyAggregator.HitNumber;
 var Results = window.MyAggregator.Results;
 
+var globals = {};
+
 var Main = React.createClass({displayName: 'Main',
 	getInitialState: function () {
 		return {
@@ -29,6 +31,7 @@ var Main = React.createClass({displayName: 'Main',
 			url: 'rest/corpora',
 			success: function(json, textStatus, jqXHR) {
 				that.setState({corpora:json});
+				console.log("corpora", json);
 			},
 			error: function(jqXHR, textStatus, error) {
 				console.log("corpora err", jqXHR, textStatus, error);
@@ -60,7 +63,8 @@ var Main = React.createClass({displayName: 'Main',
 			success: function(searchId, textStatus, jqXHR) {
 				console.log("search ["+query+"] ok: ", searchId);
 				that.setState({searchId : searchId});
-				that.setState({timerId : setInterval(that.refreshSearchResults, 1000)});
+				globals.timeout = 250;
+				setTimeout(that.refreshSearchResults, globals.timeout);
 			},
 			error: function(jqXHR, textStatus, error) {
 				console.log("search ["+query+"] err: ", jqXHR, textStatus, error);
@@ -78,10 +82,14 @@ var Main = React.createClass({displayName: 'Main',
 			url: 'rest/search/'+that.state.searchId,
 			success: function(json, textStatus, jqXHR) {
 				if (json.requests.length === 0) {
-					clearInterval(that.state.timerId);
-					console.log("cleaned up timer");
+					console.log("search ended");
+				} else {
+					globals.timeout = 1.5 * globals.timeout;
+					setTimeout(that.refreshSearchResults, globals.timeout);
+					// console.log("new search in: " + globals.timeout+ "ms");
 				}
 				that.setState({hits:json});
+				console.log("hits:", json);
 			},
 			error: function(jqXHR, textStatus, error) {
 				console.log("search result err", jqXHR, textStatus, error);
@@ -113,11 +121,11 @@ var Main = React.createClass({displayName: 'Main',
 					React.createElement("div", {className: "center-block aligncenter"}, 
 						React.createElement("div", {style: margin}, 
 							React.createElement("form", {className: "form-inline", role: "form"}, 
-								React.createElement("label", {htmlFor: "dropdownCorpus", className: "muted"}, "search in "), 
+								React.createElement("label", {className: "muted"}, "search in "), 
 								React.createElement("div", {id: "corpusSelection", style: inlinew}, 
 									this.renderCorpusSelection()
 								), 
-								React.createElement("label", {htmlFor: "dropdownLanguage", className: "muted"}, " for results in "), 
+								React.createElement("label", {className: "muted"}, " for results in "), 
 								React.createElement("div", {id: "languageSelection", style: inlinew}, 
 									React.createElement(LanguageSelection, {languages: this.state.languages})
 								), 
@@ -125,7 +133,7 @@ var Main = React.createClass({displayName: 'Main',
 								React.createElement("div", {style: inline}, 
 									React.createElement(HitNumber, {onChange: this.setNumberOfResults, numberOfResults: this.state.numberOfResults})
 								), 
-								React.createElement("label", {htmlFor: "hits", className: "muted"}, " hits")
+								React.createElement("label", {className: "muted"}, " hits")
 							)
 						)
 					), 

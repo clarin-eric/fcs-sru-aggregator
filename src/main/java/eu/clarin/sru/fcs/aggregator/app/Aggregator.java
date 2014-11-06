@@ -75,14 +75,6 @@ import org.slf4j.LoggerFactory;
  * @author Yana Panchenko
  * @author edima
  *
- * TODO: result panes with animation and more info
- *
- * TODO: highlighted/kwic hits: toggle for now
- *
- * TODO: show multiple hits on the same result in multiple rows, linked visually
- *
- * TODO: new UI element to specify layer we search in
- *
  * TODO: good UI for tree view corpus selection, with instant search form
  *
  * TODO: zoom into the results from a corpus, allow functionality only for the
@@ -94,6 +86,10 @@ import org.slf4j.LoggerFactory;
  *
  * TODO: atomic replace of cached corpora (file)
  *
+ * TODO: show multiple hits on the same result in multiple rows, linked visually
+ *
+ * TODO: new UI element to specify layer we search in
+ *
  * TODO: test json deserialization
  *
  */
@@ -101,12 +97,14 @@ public class Aggregator implements ServletContextListener {
 
 	private static final org.slf4j.Logger log = LoggerFactory.getLogger(Aggregator.class);
 
-	public static final int WAITING_TIME_FOR_SHUTDOWN_MS = 2000;
 	public static final String DE_TOK_MODEL = "/tokenizer/de-tuebadz-8.0-token.bin";
-	private static final String DEFAULT_DATA_LOCATION = "/data";
 
 	private static final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 	private static Aggregator instance;
+
+	public static int ENDPOINTS_TIMEOUT_MS = 50 * 1000;
+	public static int EXECUTOR_SHUTDOWN_TIMEOUT_MS = (50 + 10) * 1000;
+	private final EndpointUrlFilter filter = new EndpointUrlFilter();
 
 	private AtomicReference<Corpora> scanCacheAtom = new AtomicReference<Corpora>(new Corpora());
 	private TokenizerModel model;
@@ -128,14 +126,15 @@ public class Aggregator implements ServletContextListener {
 
 	@Override
 	public void contextInitialized(ServletContextEvent servletContextEvent) {
-		log.info("Aggregator is starting now.");
+		log.info("Aggregator initialization started.");
 		instance = this;
 		try {
 			params = new Params();
+			detectAndConfigureEnvironment();
 
 			sruClient = new ClarinFCSClientBuilder()
-					.setConnectTimeout(5000)
-					.setSocketTimeout(5000)
+					.setConnectTimeout(ENDPOINTS_TIMEOUT_MS)
+					.setSocketTimeout(ENDPOINTS_TIMEOUT_MS)
 					.addDefaultDataViewParsers()
 					.enableLegacySupport()
 					.buildThreadedClient();
@@ -151,7 +150,6 @@ public class Aggregator implements ServletContextListener {
 
 			model = setUpTokenizers();
 
-			EndpointUrlFilter filter = new EndpointUrlFilter();//.deny("leipzig"); // ~5k corpora
 			ScanCrawlTask task = new ScanCrawlTask(sruClient, params.centerRegistryUrl,
 					params.cacheMaxDepth, filter, scanCacheAtom, corporaCacheFile);
 			scheduler.scheduleAtFixedRate(task, 0, params.cacheUpdateInterval, params.cacheUpdateIntervalUnit);
@@ -205,10 +203,10 @@ public class Aggregator implements ServletContextListener {
 		try {
 			sruClient.shutdown();
 			scheduler.shutdown();
-			Thread.sleep(WAITING_TIME_FOR_SHUTDOWN_MS);
+			Thread.sleep(EXECUTOR_SHUTDOWN_TIMEOUT_MS);
 			sruClient.shutdownNow();
 			scheduler.shutdownNow();
-			Thread.sleep(WAITING_TIME_FOR_SHUTDOWN_MS);
+			Thread.sleep(EXECUTOR_SHUTDOWN_TIMEOUT_MS);
 		} catch (InterruptedException ie) {
 			sruClient.shutdownNow();
 			scheduler.shutdownNow();
@@ -226,5 +224,21 @@ public class Aggregator implements ServletContextListener {
 			log.error("Failed to load tokenizer model", ex);
 		}
 		return model;
+	}
+
+	private void detectAndConfigureEnvironment() {
+		if (!"Development".equals(System.getProperty("Environment"))) {
+			log.info(" *** Production Environment detected, using default settings *** ");
+			return;
+		}
+
+		log.warn(" *** Development Environment detected, using custom settings *** ");
+
+		ENDPOINTS_TIMEOUT_MS = 10 * 1000;
+		EXECUTOR_SHUTDOWN_TIMEOUT_MS = 1000;
+
+		filter.deny("leipzig"); // ~5k corpora
+		params.aggregatorFilePath = System.getProperty("user.home") + File.separator + "fcsAggregatorCorpora.json";
+		params.cacheMaxDepth = 1;
 	}
 }

@@ -1,6 +1,5 @@
 package eu.clarin.sru.fcs.aggregator.cache;
 
-import eu.clarin.sru.fcs.aggregator.registry.Endpoint;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -30,21 +29,21 @@ public class EndpointUrlFilter implements EndpointFilter {
 	}
 
 	@Override
-	public Iterable<Endpoint> filter(Iterable<Endpoint> endpoints) {
-		List<Endpoint> filtered = new ArrayList<Endpoint>();
+	public Iterable<String> filter(Iterable<String> endpoints) {
+		List<String> filtered = new ArrayList<String>();
 
-		for (Endpoint endp : endpoints) {
+		for (String endp : endpoints) {
 			if (allow.isEmpty()) {
 				filtered.add(endp);
 			}
 			for (String urlSubstring : allow) {
-				if (endp.getUrl().contains(urlSubstring)) {
+				if (endp.contains(urlSubstring)) {
 					filtered.add(endp);
 					break;
 				}
 			}
 			for (String urlSubstring : deny) {
-				if (endp.getUrl().contains(urlSubstring)) {
+				if (endp.contains(urlSubstring)) {
 					filtered.remove(endp);
 				}
 			}

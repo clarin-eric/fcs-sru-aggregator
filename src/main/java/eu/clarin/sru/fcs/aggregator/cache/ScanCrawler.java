@@ -9,7 +9,6 @@ import eu.clarin.sru.client.SRUTerm;
 import eu.clarin.sru.client.SRUThreadedClient;
 import eu.clarin.sru.fcs.aggregator.registry.CenterRegistry;
 import eu.clarin.sru.fcs.aggregator.registry.Corpus;
-import eu.clarin.sru.fcs.aggregator.registry.Endpoint;
 import eu.clarin.sru.fcs.aggregator.registry.Institution;
 import eu.clarin.sru.fcs.aggregator.util.SRUCQL;
 import org.slf4j.LoggerFactory;
@@ -47,12 +46,12 @@ public class ScanCrawler {
 		Corpora cache = new Corpora();
 		for (Institution institution : centerRegistry.getCQLInstitutions()) {
 			cache.addInstitution(institution);
-			Iterable<Endpoint> endpoints = institution.getEndpoints();
+			Iterable<String> endpoints = institution.getEndpoints();
 			if (filter != null) {
 				endpoints = filter.filter(endpoints);
 			}
-			for (Endpoint endp : endpoints) {
-				addCorpora(endp.getUrl(), institution, null, cache, 0);
+			for (String endp : endpoints) {
+				addCorpora(institution, endp, null, cache, 0);
 			}
 		}
 
@@ -67,7 +66,7 @@ public class ScanCrawler {
 		return cache;
 	}
 
-	private void addCorpora(final String endpointUrl, final Institution institution,
+	private void addCorpora(final Institution institution, final String endpointUrl,
 			final Corpus parentCorpus, final Corpora corpora, final int depth) {
 		if (depth > maxDepth) {
 			return;
@@ -76,11 +75,8 @@ public class ScanCrawler {
 		SRUScanRequest scanRequest = null;
 		try {
 			scanRequest = new SRUScanRequest(endpointUrl);
-			StringBuilder scanClause = new StringBuilder(SRUCQL.SCAN_RESOURCE_PARAMETER);
-			scanClause.append("=");
-			String normalizedHandle = normalizeHandle(parentCorpus, parentCorpus == null);
-			scanClause.append(normalizedHandle);
-			scanRequest.setScanClause(scanClause.toString());
+			scanRequest.setScanClause(SRUCQL.SCAN_RESOURCE_PARAMETER
+					+ "=" + normalizeHandle(parentCorpus));
 			scanRequest.setExtraRequestData(SRUCQL.SCAN_RESOURCE_INFO_PARAMETER,
 					SRUCQL.SCAN_RESOURCE_INFO_PARAMETER_DEFAULT_VALUE);
 		} catch (Exception ex) {
@@ -100,12 +96,15 @@ public class ScanCrawler {
 						if (response != null && response.hasTerms()) {
 							for (SRUTerm term : response.getTerms()) {
 								Corpus c = createCorpus(institution, endpointUrl, term);
-								checkedAdd(corpora, parentCorpus, c, depth);
+								if (corpora.addCorpus(c, parentCorpus)) {
+									addCorpora(institution, endpointUrl, c, corpora, depth + 1);
+								}
 							}
 						} else if (parentCorpus == null) {
-							// create default root corpus
-							Corpus c = new Corpus(institution, endpointUrl);
-							checkedAdd(corpora, parentCorpus, c, depth);
+							Corpus c = createCorpus(institution, endpointUrl, null);
+							if (corpora.addCorpus(c, parentCorpus)) {
+								addCorpora(institution, endpointUrl, c, corpora, depth + 1);
+							}
 						}
 
 						log.info("{} Finished scan: {}", latch.get(), endpointUrl);
@@ -118,27 +117,21 @@ public class ScanCrawler {
 				}
 
 				@Override
+
 				public void onError(SRUScanRequest request, SRUClientException error) {
 					latch.decrement();
 					log.error("{} Error while scanning {}: {} : {}", latch.get(), endpointUrl, error, error.getCause());
 				}
-			});
+			}
+			);
 		} catch (SRUClientException ex) {
 			latch.decrement();
 			log.error("{} Exception in scan request for {}: {}", latch.get(), endpointUrl, ex.getMessage());
 		}
 	}
 
-	private void checkedAdd(Corpora corpora, Corpus parentCorpus, Corpus c, int depth) {
-		if (corpora.addSubCorpus(c, parentCorpus)) {
-			addCorpora(c.getEndpointUrl(), c.getInstitution(), c, corpora, depth + 1);
-		} else {
-			// log.warn("Cyclic reference in corpus " + c.getHandle() + " of endpoint " + c.getEndpointUrl());
-		}
-	}
-
-	private static String normalizeHandle(Corpus corpus, boolean root) {
-		if (root) {
+	private static String normalizeHandle(Corpus corpus) {
+		if (corpus == null) {
 			return Corpus.ROOT_HANDLE;
 		}
 		String handle = corpus.getHandle();
@@ -151,12 +144,16 @@ public class ScanCrawler {
 
 	private static Corpus createCorpus(Institution institution, String endpointUrl, SRUTerm term) {
 		Corpus c = new Corpus(institution, endpointUrl);
-		c.setHandle(term.getValue());
-		c.setDisplayName(term.getDisplayTerm());
-		if (term.getNumberOfRecords() > 0) {
-			c.setNumberOfRecords(term.getNumberOfRecords());
+		if (term == null) {
+			c.setDisplayName("[" + endpointUrl + "]");
+		} else {
+			c.setDisplayName(term.getDisplayTerm());
+			c.setHandle(term.getValue());
+			if (term.getNumberOfRecords() > 0) {
+				c.setNumberOfRecords(term.getNumberOfRecords());
+			}
+			addExtraInfo(c, term);
 		}
-		addExtraInfo(c, term);
 		return c;
 	}
 

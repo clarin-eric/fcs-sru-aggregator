@@ -130,6 +130,10 @@ div.panel-heading {
 	cursor: pointer;
 }
 
+div.panel-title {
+	font-size:16px;
+}
+
 .unselectable {
 	-webkit-touch-callout: none;
 	-webkit-user-select: none;
@@ -144,30 +148,45 @@ div.panel-heading {
 }
 
 
-.panel span {
+.panel-body span {
 	color: #222;
 }
  
-.panel span.keyword {
+.panel-body span.keyword {
+	/*color: #00406F;*/
+	/*font-weight: bold*/
+	font-size: 12px;
+	color: #fff;
+	background-color: #00406F;
+}
+ 
+.panel-body td.keyword {
 	color: #00406F;
+	font-weight: bold
 }
  
 .bs-callout {
 	padding: 0 20px;
-	margin: 20px 0;
+	margin: 0 0 20px 0;
 	border: 1px solid #ddd;
 	/*border-left: 5px solid rgb(17, 65, 111);*/
 	border-left: 5px solid #806a52;
 	border-radius: 4px;
 }
 .bs-callout .panel-heading {
-	color: #806a52;
-	/*color: #222;*/
 	margin-top: 0;
 	margin-bottom: 5px;
 }
+.bs-callout .panel-title {
+	color: #806a52;
+	/*color: #222;*/
+}
 .panel-body {
 	border-top: 1px solid #ddd;	
+}
+
+div.popover {
+	max-width:552px;
 }
 
 /* transitions css */

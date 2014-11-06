@@ -93,12 +93,24 @@ public class RestService {
 
 	@POST
 	@Path("search")
-	public Response postSearch(@FormParam("query") String query) throws Exception {
+	public Response postSearch(
+			@FormParam("query") String query,
+			@FormParam("language") String language,
+			@FormParam("numHits") Integer numHits) throws Exception {
 		if (query == null || query.isEmpty()) {
 			return Response.status(400).entity("'query' parameter expected").build();
 		}
 		List<Corpus> corpora = Aggregator.getInstance().getCorpora().getCorpora();
-		Search search = Aggregator.getInstance().startSearch(SRUVersion.VERSION_1_2, corpora, query, "eng", 10);
+		if (corpora == null || corpora.isEmpty()) {
+			return Response.status(503).entity("No corpora, please wait for the server to finish scanning").build();
+		}
+		if (numHits == null || numHits < 10) {
+			numHits = 10;
+		}
+		Search search = Aggregator.getInstance().startSearch(SRUVersion.VERSION_1_2, corpora, query, language, numHits);
+		if (search == null) {
+			return Response.status(500).entity("Initiating search failed").build();
+		}
 		URI uri = URI.create("" + search.getId());
 		return Response.created(uri).entity(uri).build();
 	}

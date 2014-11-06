@@ -12,7 +12,7 @@ public class Institution {
 
 	private String name;
 	private String link;
-	private ArrayList<Endpoint> endpoints;
+	private Set<String> endpoints;
 
 	// for JSON deserialization
 	public Institution() {
@@ -21,16 +21,12 @@ public class Institution {
 	public Institution(String name, String link) {
 		this.name = name;
 		this.link = link;
-		this.endpoints = new ArrayList<Endpoint>();
+		this.endpoints = new LinkedHashSet<String>();
 	}
 
-	public Endpoint add(String endpointUrl) {
-		Endpoint ep = getEndpoint(endpointUrl);
-		if (ep == null) {
-			ep = new Endpoint(endpointUrl, this);
-			endpoints.add(ep);
-		}
-		return ep;
+	public String add(String endpointUrl) {
+		endpoints.add(endpointUrl);
+		return endpointUrl;
 	}
 
 	public String getName() {
@@ -41,24 +37,8 @@ public class Institution {
 		return link;
 	}
 
-	public List<Endpoint> getEndpoints() {
+	public Set<String> getEndpoints() {
 		return this.endpoints;
-	}
-
-	public Endpoint getEndpoint(int index) {
-		if (index >= endpoints.size()) {
-			return null;
-		}
-		return endpoints.get(index);
-	}
-
-	public Endpoint getEndpoint(String endpointUrl) {
-		for (Endpoint ep : endpoints) {
-			if (ep.getUrl().equals(endpointUrl)) {
-				return ep;
-			}
-		}
-		return null;
 	}
 
 	@Override

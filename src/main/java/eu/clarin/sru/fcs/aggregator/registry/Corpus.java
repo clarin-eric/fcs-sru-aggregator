@@ -22,16 +22,14 @@ public class Corpus {
 	private String endpointUrl;
 	private String handle;
 	private Integer numberOfRecords;
-	private String displayTerm;
+	private String displayName;
 	private Set<String> languages = new HashSet<String>();
 	private String landingPage;
 	private String title;
 	private String description;
-	boolean temp = false;
 	public List<Corpus> subCorpora = Collections.synchronizedList(new ArrayList<Corpus>());
 
 	public Corpus() {
-		temp = true;
 	}
 
 	public Corpus(Institution institution, String endpointUrl) {
@@ -47,9 +45,10 @@ public class Corpus {
 		return Collections.unmodifiableList(subCorpora);
 	}
 
-	public boolean isTemporary() {
-		return temp;
+	public void setSubCorpora(List<Corpus> subCorpora) {
+		this.subCorpora = subCorpora;
 	}
+
 
 	public String getHandle() {
 		return handle;
@@ -59,28 +58,36 @@ public class Corpus {
 		this.handle = value;
 	}
 
-	public void setNumberOfRecords(int numberOfRecords) {
-		this.numberOfRecords = numberOfRecords;
-	}
-
 	public Integer getNumberOfRecords() {
 		return numberOfRecords;
 	}
 
+	public void setNumberOfRecords(Integer numberOfRecords) {
+		this.numberOfRecords = numberOfRecords;
+	}
+
 	public String getDisplayName() {
-		return displayTerm;
+		return displayName;
 	}
 
 	public void setDisplayName(String displayName) {
-		this.displayTerm = displayName;
+		this.displayName = displayName;
 	}
 
 	public String getEndpointUrl() {
 		return endpointUrl;
 	}
 
+	public void setEndpointUrl(String endpointUrl) {
+		this.endpointUrl = endpointUrl;
+	}
+
 	public Institution getInstitution() {
 		return institution;
+	}
+
+	public void setInstitution(Institution institution) {
+		this.institution = institution;
 	}
 
 	public Set<String> getLanguages() {

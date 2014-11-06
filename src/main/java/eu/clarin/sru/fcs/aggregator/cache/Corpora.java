@@ -3,6 +3,7 @@ package eu.clarin.sru.fcs.aggregator.cache;
 import eu.clarin.sru.fcs.aggregator.registry.Corpus;
 import eu.clarin.sru.fcs.aggregator.registry.Institution;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -28,38 +29,29 @@ public class Corpora {
 	private List<Corpus> corpora = new ArrayList<Corpus>();
 
 	public List<Institution> getInstitutions() {
-		return institutions;
+		return Collections.unmodifiableList(institutions);
 	}
 
 	public List<Corpus> getCorpora() {
-		return corpora;
+		return Collections.unmodifiableList(corpora);
 	}
 
-	public void addInstitution(Institution institution) {
+	public synchronized void addInstitution(Institution institution) {
 		institutions.add(institution);
 	}
 
-	public synchronized boolean addRootCorpus(final Corpus c) {
+	public synchronized boolean addCorpus(Corpus c, Corpus parentCorpus) {
 		if (findByHandle(c.getHandle()) != null) {
 			return false;
 		}
-		corpora.add(c);
-		for (String lang : c.getLanguages()) {
-			if (!langToRootCorpora.containsKey(lang)) {
-				langToRootCorpora.put(lang, new HashSet<Corpus>());
-			}
-			langToRootCorpora.get(lang).add(c);
-		}
-		return true;
-	}
-
-	public synchronized boolean addSubCorpus(Corpus c, Corpus parentCorpus) {
-		if (findByHandle(c.getHandle()) != null) {
-			return false;
-		}
-
 		if (parentCorpus == null) { //i.e it's a root corpus
-			addRootCorpus(c);
+			corpora.add(c);
+			for (String lang : c.getLanguages()) {
+				if (!langToRootCorpora.containsKey(lang)) {
+					langToRootCorpora.put(lang, new HashSet<Corpus>());
+				}
+				langToRootCorpora.get(lang).add(c);
+			}
 		} else {
 			parentCorpus.addCorpus(c);
 		}

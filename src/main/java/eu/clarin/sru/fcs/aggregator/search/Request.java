@@ -39,9 +39,6 @@ public class Request {
 	}
 
 	public boolean hasCorpusHandler() {
-		if (corpus != null && corpus.getHandle() != null) {
-			return true;
-		}
-		return false;
+		return corpus != null && corpus.getHandle() != null;
 	}
 }

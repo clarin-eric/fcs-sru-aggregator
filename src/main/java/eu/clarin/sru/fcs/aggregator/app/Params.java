@@ -14,10 +14,10 @@ public class Params {
 	private static final org.slf4j.Logger log = LoggerFactory.getLogger(Params.class);
 
 	public final String centerRegistryUrl;
-	public final int cacheMaxDepth;
 	public final TimeUnit cacheUpdateIntervalUnit;
 	public final int cacheUpdateInterval;
-	public final String aggregatorFilePath;
+	public int cacheMaxDepth;
+	public String aggregatorFilePath;
 
 	public Params() throws NamingException {
 		InitialContext context = new InitialContext();
