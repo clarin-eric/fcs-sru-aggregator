@@ -4,6 +4,47 @@ var PT = React.PropTypes;
 var ReactCSSTransitionGroup = React.addons.ReactCSSTransitionGroup;
 var ReactTransitionGroup = React.addons.TransitionGroup;
 
+window.MyReact = {};
+
+window.MyReact.Modal = React.createClass({displayName: 'Modal',
+	propTypes: {
+		title: PT.string.isRequired,
+	},
+	componentDidMount: function() {
+		$(this.getDOMNode()).modal({background: true, keyboard: true, show: false});
+	},
+	componentWillUnmount: function() {
+		$(this.getDOMNode()).off('hidden');
+	},
+	handleClick: function(e) {
+		e.stopPropagation();
+	},
+	render: function() {
+		return (
+			React.createElement("div", {onClick: this.handleClick, className: "modal fade", role: "dialog", 'aria-hidden': "true"}, 
+				React.createElement("div", {className: "modal-dialog"}, 
+					React.createElement("div", {className: "modal-content"}, 
+						React.createElement("div", {className: "modal-header"}, 
+							React.createElement("button", {type: "button", className: "close", 'data-dismiss': "modal"}, 
+								React.createElement("span", {'aria-hidden': "true"}, "×"), 
+								React.createElement("span", {className: "sr-only"}, "Close")
+							), 
+							React.createElement("h2", {className: "modal-title"}, this.props.title)
+						), 
+						React.createElement("div", {className: "modal-body"}, 
+							this.props.children
+						), 
+						React.createElement("div", {className: "modal-footer"}, 
+							React.createElement("button", {type: "button", className: "btn btn-default", 'data-dismiss': "modal"}, "Close")
+						)
+					)
+				)
+			)
+		);
+	}
+});
+
+
 var PopoverMixin = {
 	getDefaultProps: function(){
 		return {hasPopover: true};
@@ -43,7 +84,7 @@ var InfoPopover = React.createClass({displayName: 'InfoPopover',
 	}
 });
 
-window.MyReact = {};
+
 window.MyReact.Panel = React.createClass({displayName: 'Panel',
 	propTypes: {
 		corpus:PT.object.isRequired,

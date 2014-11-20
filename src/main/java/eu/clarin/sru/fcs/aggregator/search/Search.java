@@ -50,7 +50,7 @@ public class Search {
 
 	private Request executeSearch(SRUThreadedClient searchClient, SRUVersion version, Corpus corpus, String searchString, int startRecord, int maxRecords) {
 		final Request request = new Request(corpus, searchString, startRecord, startRecord + maxRecords - 1);
-		log.info("Executing search for {0} query={1} maxRecords={2}", corpus, searchString, maxRecords);
+		log.info("Executing search in '{}' query='{}' maxRecords='{}'", corpus, searchString, maxRecords);
 
 		SRUSearchRetrieveRequest searchRequest = new SRUSearchRetrieveRequest(corpus.getEndpointUrl());
 		searchRequest.setVersion(version);

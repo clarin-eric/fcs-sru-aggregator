@@ -1,6 +1,7 @@
 package eu.clarin.sru.fcs.aggregator.cache;
 
 import eu.clarin.sru.fcs.aggregator.registry.Corpus;
+import eu.clarin.sru.fcs.aggregator.registry.Diagnostic;
 import eu.clarin.sru.fcs.aggregator.registry.Institution;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -25,7 +26,8 @@ public class Corpora {
 
 	private Map<String, Set<Corpus>> langToRootCorpora = new HashMap<String, Set<Corpus>>();
 	private Map<String, Set<Corpus>> langToTopUniqueCorpora = new HashMap<String, Set<Corpus>>();
-	private List<Institution> institutions = new ArrayList<Institution>();
+	private Map<String, Diagnostic> endpointDiagnostics = Collections.synchronizedMap(new HashMap<String, Diagnostic>());
+	private List<Institution> institutions = Collections.synchronizedList(new ArrayList<Institution>());
 	private List<Corpus> corpora = new ArrayList<Corpus>();
 
 	public List<Institution> getInstitutions() {
@@ -36,7 +38,11 @@ public class Corpora {
 		return Collections.unmodifiableList(corpora);
 	}
 
-	public synchronized void addInstitution(Institution institution) {
+	public Map<String, Diagnostic> getEndpointDiagnostics() {
+		return Collections.unmodifiableMap(endpointDiagnostics);
+	}
+
+	public void addInstitution(Institution institution) {
 		institutions.add(institution);
 	}
 
@@ -66,6 +72,10 @@ public class Corpora {
 			langToTopUniqueCorpora.get(lang).add(c);
 		}
 		return true;
+	}
+
+	public void addEndpointDiagnostic(String endpoint, Diagnostic diagnostic) {
+		endpointDiagnostics.put(endpoint, diagnostic);
 	}
 
 	public Set<String> getLanguages() {

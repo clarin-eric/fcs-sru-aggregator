@@ -53,9 +53,13 @@ public class ScanCrawlTask implements Runnable {
 			log.info("ScanCrawlTask: crawl done in {}s, number of root corpora: {}",
 					time / 1000., corpora.getCorpora().size());
 
-			ObjectMapper mapper = new ObjectMapper();
-			mapper.writerWithDefaultPrettyPrinter().writeValue(cachedCorpora, corpora);
-			log.info("ScanCrawlTask: wrote to disk, finished");
+			if (corpora.getCorpora().isEmpty()) {
+				log.warn("ScanCrawlTask: Skipped writing to disk (no corpora). Finished.");
+			} else {
+				ObjectMapper mapper = new ObjectMapper();
+				mapper.writerWithDefaultPrettyPrinter().writeValue(cachedCorpora, corpora);
+				log.info("ScanCrawlTask: wrote to disk, finished");
+			}
 		} catch (IOException xc) {
 			log.error("!!! Scan Crawler task IO exception", xc);
 		} catch (Throwable xc) {

@@ -7,6 +7,8 @@ var CorpusSelection = window.MyAggregator.CorpusSelection;
 var LanguageSelection = window.MyAggregator.LanguageSelection;
 var HitNumber = window.MyAggregator.HitNumber;
 var Results = window.MyAggregator.Results;
+var CorpusView = window.MyAggregator.CorpusView;
+var Modal = window.MyReact.Modal;
 
 var globals = {};
 
@@ -21,22 +23,7 @@ var Main = React.createClass({displayName: 'Main',
 			},
 			numberOfResults: 10,
 			searchId: null,
-			showCorpora: false,
 		};
-	},
-
-	refreshCorpora: function() {
-		var that = this;
-		jQuery.ajax({
-			url: 'rest/corpora',
-			success: function(json, textStatus, jqXHR) {
-				that.setState({corpora:json});
-				console.log("corpora", json);
-			},
-			error: function(jqXHR, textStatus, error) {
-				console.log("corpora err", jqXHR, textStatus, error);
-			},
-		});
 	},
 
 	refreshLanguages: function() {
@@ -98,7 +85,7 @@ var Main = React.createClass({displayName: 'Main',
 	},
 
 	toggleCorpusSelection: function(e) {
-		this.setState({showCorpora:!this.state.showCorpora});
+        $(this.refs.corporaModal.getDOMNode()).modal();
 		e.preventDefault();
 		e.stopPropagation();
 	},
@@ -114,42 +101,46 @@ var Main = React.createClass({displayName: 'Main',
 		var margin = {marginTop:"0", padding:"20px"};
 		var inline = {display:"inline-block", margin:"0 5px 0 0"};
 		var inlinew = {display:"inline-block", margin:"0 5px 0 0", width:"240px;"};
-		return	React.createElement("div", null, 
-					React.createElement("div", {className: "center-block top-gap"}, 
-						React.createElement(SearchBox, {search: this.search})
-					), 
-					React.createElement("div", {className: "center-block aligncenter"}, 
-						React.createElement("div", {style: margin}, 
-							React.createElement("form", {className: "form-inline", role: "form"}, 
-								React.createElement("label", {className: "muted"}, "search in "), 
-								React.createElement("div", {id: "corpusSelection", style: inlinew}, 
-									this.renderCorpusSelection()
-								), 
-								React.createElement("label", {className: "muted"}, " for results in "), 
-								React.createElement("div", {id: "languageSelection", style: inlinew}, 
-									React.createElement(LanguageSelection, {languages: this.state.languages})
-								), 
-								React.createElement("label", {className: "muted"}, " and show maximum "), 
-								React.createElement("div", {style: inline}, 
-									React.createElement(HitNumber, {onChange: this.setNumberOfResults, numberOfResults: this.state.numberOfResults})
-								), 
-								React.createElement("label", {className: "muted"}, " hits")
-							)
+		return	(
+			React.createElement("div", null, 
+				React.createElement("div", {className: "center-block top-gap"}, 
+					React.createElement(SearchBox, {search: this.search})
+				), 
+				React.createElement("div", {className: "center-block aligncenter"}, 
+					React.createElement("div", {style: margin}, 
+						React.createElement("form", {className: "form-inline", role: "form"}, 
+							React.createElement("label", {className: "muted"}, "search in "), 
+							React.createElement("div", {id: "corpusSelection", style: inlinew}, 
+								this.renderCorpusSelection()
+							), 
+							React.createElement("label", {className: "muted"}, " for results in "), 
+							React.createElement("div", {id: "languageSelection", style: inlinew}, 
+								React.createElement(LanguageSelection, {languages: this.state.languages})
+							), 
+							React.createElement("label", {className: "muted"}, " and show maximum "), 
+							React.createElement("div", {style: inline}, 
+								React.createElement(HitNumber, {onChange: this.setNumberOfResults, numberOfResults: this.state.numberOfResults})
+							), 
+							React.createElement("label", {className: "muted"}, " hits")
 						)
-					), 
-
-					React.createElement("div", {className: "top-gap"}, 
-						 this.state.showCorpora ? 
-							React.createElement(CorpusView, {corpora: this.state.corpora}) :
-							React.createElement(Results, {requests: this.state.hits.requests, results: this.state.hits.results})
-						
 					)
-				) ;
+				), 
+
+	            React.createElement(Modal, {ref: "corporaModal", title: "Collections"}, 
+					React.createElement(CorpusView, {ref: "corpusView"})
+	            ), 
+
+				React.createElement("div", {className: "top-gap"}, 
+					React.createElement(Results, {requests: this.state.hits.requests, results: this.state.hits.results})
+				)
+			)
+			);
 	}
 });
 
 (function() {
 	var container = React.render(React.createElement(Main, null), document.getElementById('reactMain') );
-	container.refreshCorpora();
 	container.refreshLanguages();
+	console.log(container.refs.corpusView);
+	container.refs.corpusView.refreshCorpora();
 })();

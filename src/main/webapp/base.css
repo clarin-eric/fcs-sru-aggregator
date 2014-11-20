@@ -9,33 +9,45 @@ button.search {
 	text-align: center;
 }
 
-div.progress {
-	margin-bottom: 0;
-	height: 6px;
-}
-
-table.table {
-	margin-bottom: 0;
-}
-
-.collapse.in {
-	/*opacity: 0.1;*/
-	transition: all .5s ease-in;
-}
-
-div.modal-dialog {
-	width:auto;
-	max-width: 1024px;
-}
-
-div.panel {
-	margin-bottom: 0;
-}
 
 label {
 	color: #222;
 }
 
+
+.muted {
+	font-weight:300;
+	color: #888;
+}
+
+.unselectable {
+	-webkit-touch-callout: none;
+	-webkit-user-select: none;
+	-khtml-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+}
+
+.top-gap {
+	margin-top: 64px;
+}
+
+.inline {
+	display:inline-block;
+}
+
+.vcenter {
+    display: inline-block;
+    vertical-align: middle;
+    float: none;
+}
+
+.float-right {
+    float: right;
+}
+
+/*** SEARCH ***/
 
 .search::-webkit-input-placeholder { /* WebKit browsers */
     color:    #aaa;
@@ -52,6 +64,8 @@ label {
    color:    #aaa;
 }
 
+
+/*** input ***/
 
 input, select, textarea {
   -webkit-transition: all 0.30s ease-in-out;
@@ -111,17 +125,65 @@ p.input {
 	border-radius: 4px;
 }
 
-td {
-	border: none !important;
+/*** corpus selection panel ***/
+
+div.corpus-container {
+	margin: 10px 0;
+}
+div.corpus-container:hover {
+	background-color: #F5F5F5;
+}
+div.corpus-container.dimmed {
+	font-weight: 300;
+	opacity: 0.4;
 }
 
-.muted {
-	font-weight:300;
-	color: #888;
+div.modal-dialog input {
+	border-radius:6px;
 }
 
-.panel {
+div.corpus h3 {
+	margin-top: 10px;
+	font-size: 18px;
+}
+
+div.corpus button {
+	/*border: none;*/
+}
+
+div.corpus button .glyphicon.glyphicon-check {
+	font-size: 20px;
+	color: rgb(128,107,82); /*gold*/
+}
+div.corpus button .glyphicon.glyphicon-unchecked {
+	font-size: 20px;
+	color: rgb(0,64,111); /*blue*/
+}
+
+div.corpus .fa.fa-institution {
+	font-size: 12px;
+}
+
+div.corpus p {
+	margin: 5px 0;
+}
+
+div.corpus div.expansion-handle {
+	margin: 5px 0;
+	cursor: pointer;
+}
+
+
+/*** search results panel ***/
+
+div.panel {
 	box-shadow: none !important;
+	margin-bottom: 0;
+}
+
+div.modal-dialog {
+	width:auto;
+	max-width: 1024px;
 }
 
 div.panel-heading {
@@ -134,43 +196,39 @@ div.panel-title {
 	font-size:16px;
 }
 
-.unselectable {
-	-webkit-touch-callout: none;
-	-webkit-user-select: none;
-	-khtml-user-select: none;
-	-moz-user-select: none;
-	-ms-user-select: none;
-	user-select: none;
-}
-
-.top-gap {
-	margin-top: 64px;
-}
-
-
 .panel-body span {
 	color: #222;
 }
  
 .panel-body span.keyword {
-	/*color: #00406F;*/
-	/*font-weight: bold*/
+	font-weight: bold;
 	font-size: 12px;
-	color: #fff;
-	background-color: #00406F;
+	/*color: #fff;*/
+	/*background-color: #00406F;*/ /*blue*/
+	background-color: rgb(223, 184, 155); /*gold*/
+	/*color: #00406F;*/
+	/*color: rgb(215, 180, 105);*/
+	font-weight: bold;
+	padding: .15em .5em .25em;
+	white-space: nowrap;
+	border-radius: .25em;
+	/*display: inline;*/
 }
  
 .panel-body td.keyword {
 	color: #00406F;
-	font-weight: bold
+	font-weight: bold;
+	font-size: 12px;
+	font-weight: bold;
+	white-space: nowrap;
 }
  
 .bs-callout {
 	padding: 0 20px;
 	margin: 0 0 20px 0;
 	border: 1px solid #ddd;
-	/*border-left: 5px solid rgb(17, 65, 111);*/
-	border-left: 5px solid #806a52;
+	/*border-left: 5px solid #806a52;*/ /*brown*/
+	border-left: 5px solid rgb(191, 133, 64); /*other gold*/
 	border-radius: 4px;
 }
 .bs-callout .panel-heading {
@@ -185,11 +243,39 @@ div.panel-title {
 	border-top: 1px solid #ddd;	
 }
 
+.collapse.in {
+	/*opacity: 0.1;*/
+	transition: all .5s ease-in;
+}
+
+
+table.table {
+	margin-bottom: 0;
+}
+
+td {
+	border: none !important;
+}
+
+.panel-body .table-hover > tbody > tr.hitrow:hover {
+    background-color: #F5F5F5;
+}
+
+.panel-body div > p.hitrow {
+	margin:0;
+	padding: 5px 0;
+}
+
+.panel-body div > p.hitrow:hover {
+    background-color: #F5F5F5;
+}
+
 div.popover {
 	max-width:552px;
 }
 
-/* transitions css */
+/*** transitions css ***/
+
 .fade-enter {
   opacity: 0.01;
   transition: all .2s ease-in;
@@ -226,7 +312,15 @@ div.popover {
   opacity: 0.01;
 }
 
-/* beta */
+/*** BOTTOM  ***/
+
+div.progress {
+	margin-bottom: 0;
+	height: 6px;
+}
+
+/*** BETA ***/
+
 .beta-tag {
 	position:absolute; 
 	/*color:rgba(17, 65, 111, 0.1); */
@@ -240,7 +334,8 @@ div.popover {
 	-o-transform: rotate(-30deg);
 }
 
-/* file uploads */
+/*** file uploads ***/
+
 .btn-file {
     position: relative;
     overflow: hidden;

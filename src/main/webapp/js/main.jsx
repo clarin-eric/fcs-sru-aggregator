@@ -7,6 +7,8 @@ var CorpusSelection = window.MyAggregator.CorpusSelection;
 var LanguageSelection = window.MyAggregator.LanguageSelection;
 var HitNumber = window.MyAggregator.HitNumber;
 var Results = window.MyAggregator.Results;
+var CorpusView = window.MyAggregator.CorpusView;
+var Modal = window.MyReact.Modal;
 
 var globals = {};
 
@@ -21,22 +23,7 @@ var Main = React.createClass({
 			},
 			numberOfResults: 10,
 			searchId: null,
-			showCorpora: false,
 		};
-	},
-
-	refreshCorpora: function() {
-		var that = this;
-		jQuery.ajax({
-			url: 'rest/corpora',
-			success: function(json, textStatus, jqXHR) {
-				that.setState({corpora:json});
-				console.log("corpora", json);
-			},
-			error: function(jqXHR, textStatus, error) {
-				console.log("corpora err", jqXHR, textStatus, error);
-			},
-		});
 	},
 
 	refreshLanguages: function() {
@@ -98,7 +85,7 @@ var Main = React.createClass({
 	},
 
 	toggleCorpusSelection: function(e) {
-		this.setState({showCorpora:!this.state.showCorpora});
+        $(this.refs.corporaModal.getDOMNode()).modal();
 		e.preventDefault();
 		e.stopPropagation();
 	},
@@ -114,42 +101,46 @@ var Main = React.createClass({
 		var margin = {marginTop:"0", padding:"20px"};
 		var inline = {display:"inline-block", margin:"0 5px 0 0"};
 		var inlinew = {display:"inline-block", margin:"0 5px 0 0", width:"240px;"};
-		return	<div>
-					<div className="center-block top-gap">
-						<SearchBox search={this.search} />
+		return	(
+			<div>
+				<div className="center-block top-gap">
+					<SearchBox search={this.search} />
+				</div>
+				<div className="center-block aligncenter">
+					<div style={margin}>
+						<form className="form-inline" role="form">
+							<label className="muted">search in&nbsp;</label>
+							<div id="corpusSelection" style={inlinew}>
+								{this.renderCorpusSelection()}
+							</div>
+							<label className="muted">&nbsp;for results in&nbsp;</label>
+							<div id="languageSelection" style={inlinew}>
+								<LanguageSelection languages={this.state.languages} />
+							</div>
+							<label className="muted">&nbsp;and show maximum&nbsp;</label>
+							<div style={inline}>
+								<HitNumber onChange={this.setNumberOfResults} numberOfResults={this.state.numberOfResults} />
+							</div>
+							<label className="muted"> hits</label>
+						</form>
 					</div>
-					<div className="center-block aligncenter">
-						<div style={margin}>
-							<form className="form-inline" role="form">
-								<label className="muted">search in </label>
-								<div id="corpusSelection" style={inlinew}>
-									{this.renderCorpusSelection()}
-								</div>
-								<label className="muted"> for results in </label>
-								<div id="languageSelection" style={inlinew}>
-									<LanguageSelection languages={this.state.languages} />
-								</div>
-								<label className="muted"> and show maximum </label>
-								<div style={inline}>
-									<HitNumber onChange={this.setNumberOfResults} numberOfResults={this.state.numberOfResults} />
-								</div>
-								<label className="muted"> hits</label>
-							</form>
-						</div>
-					</div>
+				</div>
 
-					<div className="top-gap">
-						{ this.state.showCorpora ? 
-							<CorpusView corpora={this.state.corpora} /> :
-							<Results requests={this.state.hits.requests} results={this.state.hits.results} />
-						}
-					</div>
-				</div> ;
+	            <Modal ref="corporaModal" title="Collections">
+					<CorpusView ref="corpusView"/>
+	            </Modal>
+
+				<div className="top-gap">
+					<Results requests={this.state.hits.requests} results={this.state.hits.results} />
+				</div>
+			</div>
+			);
 	}
 });
 
 (function() {
 	var container = React.render(<Main />, document.getElementById('reactMain') );
-	container.refreshCorpora();
 	container.refreshLanguages();
+	console.log(container.refs.corpusView);
+	container.refs.corpusView.refreshCorpora();
 })();

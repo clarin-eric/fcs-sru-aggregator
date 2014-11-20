@@ -75,10 +75,16 @@ import org.slf4j.LoggerFactory;
  * @author Yana Panchenko
  * @author edima
  *
- * TODO: good UI for tree view corpus selection, with instant search form
+ * TODO: new UI element to specify layer we search in
  *
  * TODO: zoom into the results from a corpus, allow functionality only for the
  * view
+ *
+ * TODO: use corpus/language selection for search
+ *
+ * TODO: scan rate limiter (MPI complained about us hitting corpus1.mpi.nl)
+ *
+ * TODO: use SRUClient's extraResponseData POJOs
  *
  * TODO: websockets, selfhosting
  *
@@ -87,8 +93,6 @@ import org.slf4j.LoggerFactory;
  * TODO: atomic replace of cached corpora (file)
  *
  * TODO: show multiple hits on the same result in multiple rows, linked visually
- *
- * TODO: new UI element to specify layer we search in
  *
  * TODO: test json deserialization
  *
@@ -102,13 +106,15 @@ public class Aggregator implements ServletContextListener {
 	private static final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 	private static Aggregator instance;
 
-	public static int ENDPOINTS_TIMEOUT_MS = 50 * 1000;
-	public static int EXECUTOR_SHUTDOWN_TIMEOUT_MS = (50 + 10) * 1000;
+	public static int ENDPOINTS_SEARCH_TIMEOUT_MS = 10 * 1000;
+	public static int ENDPOINTS_SCAN_TIMEOUT_MS = 60 * 1000;
+	public static int EXECUTOR_SHUTDOWN_TIMEOUT_MS = (60 + 10) * 1000;
 	private final EndpointUrlFilter filter = new EndpointUrlFilter();
 
 	private AtomicReference<Corpora> scanCacheAtom = new AtomicReference<Corpora>(new Corpora());
 	private TokenizerModel model;
-	private SRUThreadedClient sruClient = null;
+	private SRUThreadedClient sruSearchClient = null;
+	private SRUThreadedClient sruScanClient = null;
 	private Map<Long, Search> activeSearches = Collections.synchronizedMap(new HashMap<Long, Search>());
 	private Params params;
 
@@ -132,9 +138,16 @@ public class Aggregator implements ServletContextListener {
 			params = new Params();
 			detectAndConfigureEnvironment();
 
-			sruClient = new ClarinFCSClientBuilder()
-					.setConnectTimeout(ENDPOINTS_TIMEOUT_MS)
-					.setSocketTimeout(ENDPOINTS_TIMEOUT_MS)
+			sruScanClient = new ClarinFCSClientBuilder()
+					.setConnectTimeout(ENDPOINTS_SCAN_TIMEOUT_MS)
+					.setSocketTimeout(ENDPOINTS_SCAN_TIMEOUT_MS)
+					.addDefaultDataViewParsers()
+					.enableLegacySupport()
+					.setThreadCount(8)
+					.buildThreadedClient();
+			sruSearchClient = new ClarinFCSClientBuilder()
+					.setConnectTimeout(ENDPOINTS_SEARCH_TIMEOUT_MS)
+					.setSocketTimeout(ENDPOINTS_SEARCH_TIMEOUT_MS)
 					.addDefaultDataViewParsers()
 					.enableLegacySupport()
 					.buildThreadedClient();
@@ -150,7 +163,7 @@ public class Aggregator implements ServletContextListener {
 
 			model = setUpTokenizers();
 
-			ScanCrawlTask task = new ScanCrawlTask(sruClient, params.centerRegistryUrl,
+			ScanCrawlTask task = new ScanCrawlTask(sruScanClient, params.centerRegistryUrl,
 					params.cacheMaxDepth, filter, scanCacheAtom, corporaCacheFile);
 			scheduler.scheduleAtFixedRate(task, 0, params.cacheUpdateInterval, params.cacheUpdateIntervalUnit);
 
@@ -167,7 +180,8 @@ public class Aggregator implements ServletContextListener {
 		for (Search search : activeSearches.values()) {
 			search.shutdown();
 		}
-		shutdownAndAwaitTermination(sruClient, scheduler);
+		shutdownAndAwaitTermination(sruScanClient, scheduler);
+		shutdownAndAwaitTermination(sruSearchClient, scheduler);
 		log.info("Aggregator shutdown complete.");
 	}
 
@@ -189,7 +203,7 @@ public class Aggregator implements ServletContextListener {
 			// No query
 			return null;
 		} else {
-			Search sr = new Search(sruClient, version, corpora, searchString, searchLang, 1, maxRecords);
+			Search sr = new Search(sruSearchClient, version, corpora, searchString, searchLang, 1, maxRecords);
 			activeSearches.put(sr.getId(), sr);
 			return sr;
 		}
@@ -229,15 +243,20 @@ public class Aggregator implements ServletContextListener {
 	private void detectAndConfigureEnvironment() {
 		if (!"Development".equals(System.getProperty("Environment"))) {
 			log.info(" *** Production Environment detected, using default settings *** ");
+			params.cacheMaxDepth = 1;
 			return;
 		}
 
 		log.warn(" *** Development Environment detected, using custom settings *** ");
 
-		ENDPOINTS_TIMEOUT_MS = 10 * 1000;
+		ENDPOINTS_SEARCH_TIMEOUT_MS = 5 * 1000;
+		ENDPOINTS_SCAN_TIMEOUT_MS = 15 * 1000;
 		EXECUTOR_SHUTDOWN_TIMEOUT_MS = 1000;
 
-		filter.deny("leipzig"); // ~5k corpora
+//		filter.allow("lindat");
+//		filter.deny("leipzig");
+//		filter.allow("leipzig", "mpi.nl");
+//		filter.allow("lindat");
 		params.aggregatorFilePath = System.getProperty("user.home") + File.separator + "fcsAggregatorCorpora.json";
 		params.cacheMaxDepth = 1;
 	}

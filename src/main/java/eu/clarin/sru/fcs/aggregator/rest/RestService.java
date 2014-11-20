@@ -2,11 +2,11 @@ package eu.clarin.sru.fcs.aggregator.rest;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import eu.clarin.sru.client.SRUVersion;
 import eu.clarin.sru.fcs.aggregator.app.Aggregator;
 import eu.clarin.sru.fcs.aggregator.registry.Corpus;
+import eu.clarin.sru.fcs.aggregator.registry.Diagnostic;
 import eu.clarin.sru.fcs.aggregator.registry.Languages;
 import eu.clarin.sru.fcs.aggregator.search.Request;
 import eu.clarin.sru.fcs.aggregator.search.Result;
@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
@@ -89,6 +90,13 @@ public class RestService {
 			}
 		});
 		return Response.ok(toJson(languages)).build();
+	}
+
+	@GET
+	@Path("diagnostics")
+	public Response getDiagnostics() throws IOException {
+		Map<String, Diagnostic> diagnostics = Aggregator.getInstance().getCorpora().getEndpointDiagnostics();
+		return Response.ok(toJson(diagnostics)).build();
 	}
 
 	@POST

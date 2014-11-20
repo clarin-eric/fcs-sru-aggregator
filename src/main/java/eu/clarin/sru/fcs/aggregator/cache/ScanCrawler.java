@@ -3,14 +3,18 @@ package eu.clarin.sru.fcs.aggregator.cache;
 import eu.clarin.sru.fcs.aggregator.util.CounterLatch;
 import eu.clarin.sru.client.SRUCallback;
 import eu.clarin.sru.client.SRUClientException;
+import eu.clarin.sru.client.SRUDiagnostic;
 import eu.clarin.sru.client.SRUScanRequest;
 import eu.clarin.sru.client.SRUScanResponse;
 import eu.clarin.sru.client.SRUTerm;
 import eu.clarin.sru.client.SRUThreadedClient;
+import eu.clarin.sru.client.SRUVersion;
 import eu.clarin.sru.fcs.aggregator.registry.CenterRegistry;
 import eu.clarin.sru.fcs.aggregator.registry.Corpus;
+import eu.clarin.sru.fcs.aggregator.registry.Diagnostic;
 import eu.clarin.sru.fcs.aggregator.registry.Institution;
 import eu.clarin.sru.fcs.aggregator.util.SRUCQL;
+import java.net.SocketTimeoutException;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.DocumentFragment;
 import org.w3c.dom.Element;
@@ -51,7 +55,8 @@ public class ScanCrawler {
 				endpoints = filter.filter(endpoints);
 			}
 			for (String endp : endpoints) {
-				addCorpora(institution, endp, null, cache, 0);
+				ScanTask st = new ScanTask(institution, endp, null, cache, 0);
+				scanForCorpora(st);
 			}
 		}
 
@@ -66,67 +71,113 @@ public class ScanCrawler {
 		return cache;
 	}
 
-	private void addCorpora(final Institution institution, final String endpointUrl,
-			final Corpus parentCorpus, final Corpora corpora, final int depth) {
-		if (depth > maxDepth) {
+	private void scanForCorpora(ScanTask st) {
+		if (st.depth > maxDepth) {
 			return;
 		}
 
 		SRUScanRequest scanRequest = null;
 		try {
-			scanRequest = new SRUScanRequest(endpointUrl);
+			scanRequest = new SRUScanRequest(st.endpointUrl);
 			scanRequest.setScanClause(SRUCQL.SCAN_RESOURCE_PARAMETER
-					+ "=" + normalizeHandle(parentCorpus));
+					+ "=" + normalizeHandle(st.parentCorpus));
 			scanRequest.setExtraRequestData(SRUCQL.SCAN_RESOURCE_INFO_PARAMETER,
 					SRUCQL.SCAN_RESOURCE_INFO_PARAMETER_DEFAULT_VALUE);
-		} catch (Exception ex) {
-			log.error("Exception creating scan request for {}: {}", endpointUrl, ex.getMessage());
+		} catch (Throwable ex) {
+			log.error("Exception creating scan request for {}: {}", st.endpointUrl, ex.getMessage());
+			log.error("--> ", ex);
 		}
 		if (scanRequest == null) {
 			return;
 		}
 
-		log.info("{} Start scan: {}", latch.get(), endpointUrl);
+		log.info("{} Start scan: {}", latch.get(), st.endpointUrl);
 		latch.increment();
 		try {
-			sruScanClient.scan(scanRequest, new SRUCallback<SRUScanRequest, SRUScanResponse>() {
-				@Override
-				public void onSuccess(SRUScanResponse response) {
-					try {
-						if (response != null && response.hasTerms()) {
-							for (SRUTerm term : response.getTerms()) {
-								Corpus c = createCorpus(institution, endpointUrl, term);
-								if (corpora.addCorpus(c, parentCorpus)) {
-									addCorpora(institution, endpointUrl, c, corpora, depth + 1);
-								}
-							}
-						} else if (parentCorpus == null) {
-							Corpus c = createCorpus(institution, endpointUrl, null);
+			sruScanClient.scan(scanRequest, st);
+		} catch (SRUClientException ex) {
+			latch.decrement();
+			log.error("{} Exception in scan request for {}: {}", latch.get(), st.endpointUrl, ex.getMessage());
+			log.error("--> ", ex);
+		}
+	}
+
+	class ScanTask implements SRUCallback<SRUScanRequest, SRUScanResponse> {
+
+		final Institution institution;
+		final String endpointUrl;
+		final Corpus parentCorpus;
+		final Corpora corpora;
+		final int depth;
+
+		ScanTask(final Institution institution, final String endpointUrl,
+				final Corpus parentCorpus, final Corpora corpora, final int depth) {
+			this.institution = institution;
+			this.endpointUrl = endpointUrl;
+			this.parentCorpus = parentCorpus;
+			this.corpora = corpora;
+			this.depth = depth;
+		}
+
+		@Override
+		public void onSuccess(SRUScanResponse response) {
+			try {
+				if (response != null && response.hasTerms()) {
+					for (SRUTerm term : response.getTerms()) {
+						if (term == null) {
+							log.warn("null term for scan at endpoint {}", endpointUrl);
+						} else {
+							Corpus c = createCorpus(institution, endpointUrl, term);
 							if (corpora.addCorpus(c, parentCorpus)) {
-								addCorpora(institution, endpointUrl, c, corpora, depth + 1);
+								ScanTask st = new ScanTask(institution, endpointUrl, c, corpora, depth + 1);
+								scanForCorpora(st);
 							}
 						}
-
-						log.info("{} Finished scan: {}", latch.get(), endpointUrl);
-					} catch (Exception xc) {
-						log.error("{} Exception in callback {}", latch.get(), endpointUrl);
-						log.error("--> ", xc);
-					} finally {
-						latch.decrement();
+					}
+				} else if (parentCorpus == null) {
+					Corpus c = createCorpus(institution, endpointUrl, null);
+					if (corpora.addCorpus(c, parentCorpus)) {
+						ScanTask st = new ScanTask(institution, endpointUrl, c, corpora, depth + 1);
+						scanForCorpora(st);
 					}
 				}
 
-				@Override
+				if (response.hasDiagnostics()) {
+					for (SRUDiagnostic d : response.getDiagnostics()) {
+						String context = SRUCQL.SCAN_RESOURCE_PARAMETER + "=" + normalizeHandle(parentCorpus);
+						Diagnostic diag = new Diagnostic(d.getURI(), context, d.getMessage(), d.getDetails());
+						corpora.addEndpointDiagnostic(endpointUrl, diag);
+						log.info("Diagnostic: {}: {}: {}", d.getURI(), context, d.getMessage(), d.getDetails());
+					}
+				}
 
-				public void onError(SRUScanRequest request, SRUClientException error) {
-					latch.decrement();
-					log.error("{} Error while scanning {}: {} : {}", latch.get(), endpointUrl, error, error.getCause());
+				log.info("{} Finished scan: {}", latch.get(), endpointUrl);
+			} catch (Exception xc) {
+				log.error("{} Exception in callback {}", latch.get(), endpointUrl);
+				log.error("--> ", xc);
+			} finally {
+				latch.decrement();
+			}
+		}
+
+		@Override
+
+		public void onError(SRUScanRequest request, SRUClientException error) {
+			latch.decrement();
+			log.error("{} Error while scanning {}: {} : {}", latch.get(), endpointUrl, error, error.getCause());
+			Throwable xc = error;
+			while (xc != null) {
+				if (xc instanceof SocketTimeoutException) {
+					return;
+				} else {
+					xc = xc.getCause();
 				}
 			}
-			);
-		} catch (SRUClientException ex) {
-			latch.decrement();
-			log.error("{} Exception in scan request for {}: {}", latch.get(), endpointUrl, ex.getMessage());
+			try {
+				log.error("--> " + request.makeURI(SRUVersion.VERSION_1_2) + " --> ", error);
+			} catch (SRUClientException nestedxc) {
+				log.error(" xc on xc ", nestedxc);
+			}
 		}
 	}
 
@@ -136,7 +187,6 @@ public class ScanCrawler {
 		}
 		String handle = corpus.getHandle();
 		if (Corpus.HANDLE_WITH_SPECIAL_CHARS.matcher(handle).matches()) {
-			//resourceValue = "%22" + resourceValue + "%22";
 			handle = "\"" + handle + "\"";
 		}
 		return handle;
@@ -144,16 +194,17 @@ public class ScanCrawler {
 
 	private static Corpus createCorpus(Institution institution, String endpointUrl, SRUTerm term) {
 		Corpus c = new Corpus(institution, endpointUrl);
-		if (term == null) {
-			c.setDisplayName("[" + endpointUrl + "]");
-		} else {
-			c.setDisplayName(term.getDisplayTerm());
-			c.setHandle(term.getValue());
-			if (term.getNumberOfRecords() > 0) {
-				c.setNumberOfRecords(term.getNumberOfRecords());
-			}
-			addExtraInfo(c, term);
+		c.setDisplayName(term.getDisplayTerm());
+		String handle = term.getValue();
+		if (handle == null) {
+			log.error("null handle for corpus: {} : {}", endpointUrl, term.getDisplayTerm());
+			handle = "";
 		}
+		c.setHandle(handle);
+		if (term.getNumberOfRecords() > 0) {
+			c.setNumberOfRecords(term.getNumberOfRecords());
+		}
+		addExtraInfo(c, term);
 		return c;
 	}
 
@@ -172,7 +223,8 @@ public class ScanCrawler {
 				} else if (infoNode.getNodeType() == Node.ELEMENT_NODE && infoNode.getLocalName().equals("Languages")) {
 					NodeList languageNodes = infoNode.getChildNodes();
 					for (int j = 0; j < languageNodes.getLength(); j++) {
-						if (languageNodes.item(j).getNodeType() == Node.ELEMENT_NODE && languageNodes.item(j).getLocalName().equals("Language")) {
+						if (languageNodes.item(j).getNodeType() == Node.ELEMENT_NODE
+								&& languageNodes.item(j).getLocalName().equals("Language")) {
 							Element languageNode = (Element) languageNodes.item(j);
 							String languageText = languageNode.getTextContent().trim();
 							if (!languageText.isEmpty()) {

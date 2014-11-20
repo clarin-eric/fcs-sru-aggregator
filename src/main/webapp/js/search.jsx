@@ -82,72 +82,12 @@ var SearchBox = React.createClass({
 					<input name="query" type="text" className="form-control input-lg search" 
 						value={this.state.query} placeholder="Search" tabIndex="1" 
 						onChange={this.handleChange}
-						onKeyDown={this.handleKey}
-						></input>
+						onKeyDown={this.handleKey} />
 					<div className="input-group-btn">
 						<button className="btn btn-default input-lg search" type="submit" tabIndex="2" onClick={this.search}>
 							<i className="glyphicon glyphicon-search"></i>
 						</button>
 					</div>
-				</div>;
-	}
-});
-
-/////////////////////////////////
-
-var CorpusView = React.createClass({
-	propTypes: {
-		corpora: PT.array.isRequired,
-	},
-
-	renderCheckbox: function(checked, label, onChangeFn) {
-		return	<div className="form-group">
-					<div className="checkbox">
-						{ checked ?
-							<input type="checkbox" checked onChange={onChangeFn} /> : 
-							<input type="checkbox" onChange={onChangeFn} />
-						}
-						<label>{label}</label>
-					</div>
-				</div>;
-	},
-
-	renderCorpus: function(level, corpus) {
-		var that = this;
-
-		if (corpus.subCorpora.length > 0) {
-			console.log("big corpus: ", corpus);
-		}
-		function toggle() {
-			corpus.checked = !corpus.checked;
-			that.setState({corpora : corpora});
-		}
-		var bold = {fontWeight:"bold"};
-		var spaced = {marginRight:"20px"};
-		var topline = {borderTop:"1px solid #ddd", paddingTop:10};
-		return	<div style={topline} key={corpus.displayName}>
-					<div className="row">
-						<div className="col-sm-2">{that.renderCheckbox(corpus.checked, corpus.displayName, toggle)}</div>
-						<div className="col-sm-6">
-							<p>{level} {corpus.description}</p>
-						</div>
-						<div className="col-sm-4">
-							<p>	<span style={bold}>Institution:</span> <span style={spaced}>{corpus.institution.name}</span></p>
-							<p>	<span style={bold}>Language:</span> <span style={spaced}>{corpus.languages}</span></p>
-							<p>	<span>{corpus.numberOfRecords ? (corpus.numberOfRecords+" records") : ""}</span></p>
-						</div>
-					</div>
-					{corpus.subCorpora.map(this.renderCorpus.bind(this,level+1))}
-				</div>;
-	},
-
-	render: function() {
-		return	<div className="container">
-					<div className="row">
-						<div className="col-sm-2"><h3>Collection</h3></div>
-						<div className="col-sm-10"><h3>Description</h3></div>
-					</div>
-					{this.props.corpora.map(this.renderCorpus.bind(this,0))}
 				</div>;
 	}
 });
@@ -168,38 +108,43 @@ var Results = React.createClass({
 		this.setState({displayKwic:!this.state.displayKwic});
 	},
 
+	renderRowsAsHits: function(hit,i) {
+		function renderTextFragments(tf, idx) {
+			return <span key={idx} className={tf.hit?"keyword":""}>{tf.text}</span>;
+		}
+		return	<p key={i} className="hitrow">
+					{hit.fragments.map(renderTextFragments)}
+				</p>;
+	},
+
+	renderRowsAsKwic: function(hit,i) {
+		var sleft={textAlign:"left", verticalAlign:"middle", width:"50%"};
+		var scenter={textAlign:"center", verticalAlign:"middle", maxWidth:"50%"};
+		var sright={textAlign:"right", verticalAlign:"middle", maxWidth:"50%"};
+		return	<tr key={i} className="hitrow">
+					<td style={sright}>{hit.left}</td>
+					<td style={scenter} className="keyword">{hit.keyword}</td>
+					<td style={sleft}>{hit.right}</td>
+				</tr>;
+	},
+
+	renderPanelBody: function(corpusHit) {
+		var fulllength = {width:"100%"};		
+		if (this.state.displayKwic) {
+			return 	<table className="table table-condensed table-hover" style={fulllength}>
+						<tbody>{corpusHit.kwics.map(this.renderRowsAsKwic)}</tbody>
+					</table>;
+		} else {
+			return	<div>{corpusHit.kwics.map(this.renderRowsAsHits)}</div>;
+		}
+	},
+
 	renderResultPanels: function(corpusHit) {
-		function renderRowsAsHits(hit,i) {
-			function renderTextFragments(tf, idx) {
-				return <span key={idx} className={tf.hit?"keyword label label-primary":""}>{tf.text}</span>;
-			}
-			return	<p key={i}>
-						{hit.fragments.map(renderTextFragments)}
-					</p>;
-		}
-
-		function renderRowsAsKwic(hit,i) {
-			var sleft={textAlign:"left", verticalAlign:"middle", width:"50%"};
-			var scenter={textAlign:"center", verticalAlign:"middle", maxWidth:"50%"};
-			var sright={textAlign:"right", verticalAlign:"middle", maxWidth:"50%"};
-			return	<tr key={i}>
-						<td style={sright}>{hit.left}</td>
-						<td style={scenter} className="keyword">{hit.keyword}</td>
-						<td style={sleft}>{hit.right}</td>
-					</tr>;
-		}
-
 		if (corpusHit.kwics.length === 0) {
 			return false;
 		}
-		var fulllength = {width:"100%"};		
-		var body = this.state.displayKwic ? 
-			<table className="table table-condensed table-hover" style={fulllength}>
-				<tbody>{corpusHit.kwics.map(renderRowsAsKwic)}</tbody>
-			</table> :
-			<div>{corpusHit.kwics.map(renderRowsAsHits)}</div>;
 		return 	<Panel corpus={corpusHit.corpus} key={corpusHit.corpus.displayName}>
-					{body}
+					{this.renderPanelBody(corpusHit)}
 				</Panel>;
 	},
 
@@ -215,9 +160,18 @@ var Results = React.createClass({
 			<span />;
 	},
 
-	renderMessage: function() {
-		var noHits = this.props.results.filter(function(corpusHit) { return corpusHit.kwics.length === 0; });
-		return noHits.length > 0 ? (noHits.length + " other collections did not return any results") : "";
+	renderPreMessage: function() {
+		if (this.props.requests.length === 0)
+			return false;
+		return "Searching in " + this.props.requests.length + " collections...";
+	},
+
+	renderPostMessage: function() {
+		if (this.props.results.length === 0)
+			return false;
+		var hits = this.props.results.filter(function(corpusHit) { return corpusHit.kwics.length > 0; }).length;
+		var total = this.props.results.length;
+		return hits + " collections with results found out of " + total + " searched collections";
 	},
 
 	renderKwicCheckbox: function() {
@@ -247,17 +201,18 @@ var Results = React.createClass({
 					{this.props.results.length > 0 ? this.renderKwicCheckbox() : false}
 					<ReactCSSTransitionGroup transitionName="fade">
 						{this.props.results.map(this.renderResultPanels)}
-						<div key="-message-" style={margintop}>{this.renderMessage()} </div>
+						<div key="-premessage-" style={margintop}>{this.renderPreMessage()} </div>
 						<div key="-progress-" style={margintop}>{this.renderProgressBar()}</div>
+						<div key="-postmessage-" style={margintop}>{this.renderPostMessage()} </div>
 					</ReactCSSTransitionGroup>
 				</div>;
 	}
 });
 
-window.MyAggregator = {
-	CorpusView: CorpusView,
-	LanguageSelection: LanguageSelection,
-	HitNumber: HitNumber,
-	SearchBox: SearchBox,
-	Results: Results,
-};
+if (!window.MyAggregator) {
+	window.MyAggregator = {};
+}
+window.MyAggregator.LanguageSelection = LanguageSelection;
+window.MyAggregator.HitNumber = HitNumber;
+window.MyAggregator.SearchBox = SearchBox;
+window.MyAggregator.Results = Results;

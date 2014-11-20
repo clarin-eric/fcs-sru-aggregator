@@ -4,6 +4,47 @@ var PT = React.PropTypes;
 var ReactCSSTransitionGroup = React.addons.ReactCSSTransitionGroup;
 var ReactTransitionGroup = React.addons.TransitionGroup;
 
+window.MyReact = {};
+
+window.MyReact.Modal = React.createClass({
+	propTypes: {
+		title: PT.string.isRequired,
+	},
+	componentDidMount: function() {
+		$(this.getDOMNode()).modal({background: true, keyboard: true, show: false});
+	},
+	componentWillUnmount: function() {
+		$(this.getDOMNode()).off('hidden');
+	},
+	handleClick: function(e) {
+		e.stopPropagation();
+	},
+	render: function() {
+		return (
+			<div onClick={this.handleClick} className="modal fade" role="dialog" aria-hidden="true">
+				<div className="modal-dialog">
+					<div className="modal-content">
+						<div className="modal-header">
+							<button type="button" className="close" data-dismiss="modal">
+								<span aria-hidden="true">&times;</span>
+								<span className="sr-only">Close</span>
+							</button>
+							<h2 className="modal-title">{this.props.title}</h2>
+						</div>
+						<div className="modal-body">
+							{this.props.children}
+						</div>
+						<div className="modal-footer">
+							<button type="button" className="btn btn-default" data-dismiss="modal">Close</button>
+						</div>
+					</div>
+				</div>
+			</div>
+		);
+	}
+});
+
+
 var PopoverMixin = {
 	getDefaultProps: function(){
 		return {hasPopover: true};
@@ -43,7 +84,7 @@ var InfoPopover = React.createClass({
 	}
 });
 
-window.MyReact = {};
+
 window.MyReact.Panel = React.createClass({
 	propTypes: {
 		corpus:PT.object.isRequired,
