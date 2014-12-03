@@ -6,6 +6,67 @@ var ReactTransitionGroup = React.addons.TransitionGroup;
 
 window.MyReact = {};
 
+var JQuerySlide = React.createClass({
+	componentWillEnter: function(callback){
+		var el = jQuery(this.getDOMNode());
+		el.css("display", "none");
+		el.slideDown(500, callback);
+		$el.slideDown(function(){
+			callback();
+		});
+	},
+	componentWillLeave: function(callback){
+		var $el = jQuery(this.getDOMNode());
+		$el.slideUp(function(){
+			callback();
+		});
+	},
+	render: function(){
+		return this.transferPropsTo(this.props.component({style: {display: 'none'}}));
+	}
+});
+window.MyReact.JQuerySlide = JQuerySlide;
+ 
+var JQueryFade = React.createClass({
+	componentWillEnter: function(callback){
+		var el = jQuery(this.getDOMNode());
+		el.css("display", "none");
+		el.fadeIn(500, callback);
+	},
+	componentWillLeave: function(callback){
+		jQuery(this.getDOMNode()).fadeOut(500, callback);
+	},
+	render: function() {
+		return this.props.children;
+	}
+});
+window.MyReact.JQueryFade = JQueryFade;
+
+window.MyReact.ErrorPane = React.createClass({
+	propTypes: {
+		errorMessages: PT.array.isRequired,
+	},
+
+	renderErrorMessage: function(errorMessage, index) {
+		return errorMessage ? 
+			<JQueryFade key={index}>
+				<div key={index} className="errorMessage">{errorMessage}</div>
+			</JQueryFade> :
+			false;
+	},
+
+	render: function() {
+		return	<div className="container errorDiv">
+					<div className="row errorRow">
+						<ReactTransitionGroup>
+							{this.props.errorMessages.map(this.renderErrorMessage)}
+						</ReactTransitionGroup>
+					</div>
+				</div>;
+	}
+});
+
+
 window.MyReact.Modal = React.createClass({
 	propTypes: {
 		title: PT.string.isRequired,
@@ -78,7 +139,8 @@ var InfoPopover = React.createClass({
 	},
 
 	render: function() {
-		return	<button className="btn btn-default btn-xs" onClick={this.handleClick}>
+		var inline = {display:"inline-block"};
+		return	<button style={inline} className="btn btn-default btn-xs" onClick={this.handleClick}>
 					<span className="glyphicon glyphicon-info-sign"/>
 				</button>;
 	}
@@ -87,7 +149,8 @@ var InfoPopover = React.createClass({
 
 window.MyReact.Panel = React.createClass({
 	propTypes: {
-		corpus:PT.object.isRequired,
+		title:PT.object.isRequired,
+		info:PT.object.isRequired,
 	},
 
 	getInitialState: function() {
@@ -100,48 +163,24 @@ window.MyReact.Panel = React.createClass({
 		this.setState({open: !this.state.open});
 	},
 
-	renderBody: function() {
-		return this.state.open ? 
-					<div className="panel-body">{this.props.children}</div> : 
-					false;
-	},
-
-	renderInfo: function() {
-		return	<dl className="dl-horizontal">
-					<dt>Institution</dt>
-					<dd>{this.props.corpus.institution.name}</dd>
-
-					{this.props.corpus.description ? <dt>Description</dt>:false}
-					{this.props.corpus.description ? <dd>{this.props.corpus.description}</dd>: false}
-
-					{this.props.corpus.landingPage ? <dt>Landing Page</dt> : false }
-					{this.props.corpus.landingPage ? 
-						<dd><a href={this.props.corpus.landingPage}>{this.props.corpus.landingPage}</a></dd>:
-						false}
-
-					<dt>Languages</dt>
-					<dd>{this.props.corpus.languages.join(", ")}</dd>
-				</dl>;
-	},
-
 	render: function() {
 		var chevron = "glyphicon glyphicon-chevron-" + (this.state.open ? "down":"right");
-		var chevronStyle={fontSize:12};
-		var right={float:"right"};
+		var chevronStyle = {fontSize:12};
+		var right = {float:"right"};
 		return 	<div className="bs-callout bs-callout-info"> 
 					<div className="panel">
 						<div className="panel-heading unselectable row" onClick={this.toggleState}>
 							<div className="panel-title unselectable col-sm-11">
 								<span className={chevron} style={chevronStyle} />&nbsp;
-								{this.props.corpus.displayName}
+								{this.props.title}
 							</div>
 							<div style={right}>
-								<InfoPopover placement="left" title={this.props.corpus.displayName}>
-									{this.renderInfo()}
-								</InfoPopover>
+								{this.props.info}
 							</div>
 						</div>
-						{this.renderBody()}
+						{ this.state.open ? 
+							<div className="panel-body">{this.props.children}</div> : 
+							false}
 					</div>
 				</div>;
 	}

@@ -77,24 +77,36 @@ import org.slf4j.LoggerFactory;
  *
  * TODO: new UI element to specify layer we search in
  *
+ * TODO: use corpus/language selection for search
+ *
+ * TODO: disable popups easily
+ *
+ * TODO: support new spec-compatible centres, see Oliver's mail ...............
+ * TODO: scan ratelimiter (MPI complained about us hitting corpus1.mpi.nl) ....
+ * TODO: populate statistics page with scan & search results ..................
+ *
  * TODO: zoom into the results from a corpus, allow functionality only for the
  * view
  *
- * TODO: use corpus/language selection for search
+ * TODO: search for next set of results
  *
- * TODO: scan rate limiter (MPI complained about us hitting corpus1.mpi.nl)
+ * TODO: Clear results (also before new search)
+ *
+ * TODO: Use weblicht with results
+ *
+ * TODO: Export to personal workspace as csv, excel, tcf, plain text
+ *
+ * TODO: Download to personal workspace as csv, excel, tcf, plain text
+ *
+ * TODO: implement
  *
  * TODO: use SRUClient's extraResponseData POJOs
  *
  * TODO: websockets, selfhosting
  *
- * TODO: add statistics menu option w/ page
- *
  * TODO: atomic replace of cached corpora (file)
  *
  * TODO: show multiple hits on the same result in multiple rows, linked visually
- *
- * TODO: test json deserialization
  *
  */
 public class Aggregator implements ServletContextListener {
@@ -108,6 +120,7 @@ public class Aggregator implements ServletContextListener {
 
 	public static int ENDPOINTS_SEARCH_TIMEOUT_MS = 10 * 1000;
 	public static int ENDPOINTS_SCAN_TIMEOUT_MS = 60 * 1000;
+	public static int SCAN_TASK_INITIAL_DELAY = 0;
 	public static int EXECUTOR_SHUTDOWN_TIMEOUT_MS = (60 + 10) * 1000;
 	private final EndpointUrlFilter filter = new EndpointUrlFilter();
 
@@ -165,7 +178,8 @@ public class Aggregator implements ServletContextListener {
 
 			ScanCrawlTask task = new ScanCrawlTask(sruScanClient, params.centerRegistryUrl,
 					params.cacheMaxDepth, filter, scanCacheAtom, corporaCacheFile);
-			scheduler.scheduleAtFixedRate(task, 0, params.cacheUpdateInterval, params.cacheUpdateIntervalUnit);
+			scheduler.scheduleAtFixedRate(task, SCAN_TASK_INITIAL_DELAY,
+					params.cacheUpdateInterval, params.cacheUpdateIntervalUnit);
 
 			log.info("Aggregator initialization finished.");
 		} catch (Exception ex) {
@@ -249,9 +263,10 @@ public class Aggregator implements ServletContextListener {
 
 		log.warn(" *** Development Environment detected, using custom settings *** ");
 
+		SCAN_TASK_INITIAL_DELAY = 100; //(HOURS) // large delay, use cache
 		ENDPOINTS_SEARCH_TIMEOUT_MS = 5 * 1000;
 		ENDPOINTS_SCAN_TIMEOUT_MS = 15 * 1000;
-		EXECUTOR_SHUTDOWN_TIMEOUT_MS = 1000;
+		EXECUTOR_SHUTDOWN_TIMEOUT_MS = 100;
 
 //		filter.allow("lindat");
 //		filter.deny("leipzig");

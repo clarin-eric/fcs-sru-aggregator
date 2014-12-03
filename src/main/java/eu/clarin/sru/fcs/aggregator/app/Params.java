@@ -13,9 +13,9 @@ public class Params {
 
 	private static final org.slf4j.Logger log = LoggerFactory.getLogger(Params.class);
 
-	public final String centerRegistryUrl;
-	public final TimeUnit cacheUpdateIntervalUnit;
-	public final int cacheUpdateInterval;
+	public String centerRegistryUrl;
+	public TimeUnit cacheUpdateIntervalUnit;
+	public int cacheUpdateInterval;
 	public int cacheMaxDepth;
 	public String aggregatorFilePath;
 

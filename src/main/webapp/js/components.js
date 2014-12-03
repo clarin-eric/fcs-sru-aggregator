@@ -6,6 +6,67 @@ var ReactTransitionGroup = React.addons.TransitionGroup;
 
 window.MyReact = {};
 
+var JQuerySlide = React.createClass({displayName: 'JQuerySlide',
+	componentWillEnter: function(callback){
+		var el = jQuery(this.getDOMNode());
+		el.css("display", "none");
+		el.slideDown(500, callback);
+		$el.slideDown(function(){
+			callback();
+		});
+	},
+	componentWillLeave: function(callback){
+		var $el = jQuery(this.getDOMNode());
+		$el.slideUp(function(){
+			callback();
+		});
+	},
+	render: function(){
+		return this.transferPropsTo(this.props.component({style: {display: 'none'}}));
+	}
+});
+window.MyReact.JQuerySlide = JQuerySlide;
+ 
+var JQueryFade = React.createClass({displayName: 'JQueryFade',
+	componentWillEnter: function(callback){
+		var el = jQuery(this.getDOMNode());
+		el.css("display", "none");
+		el.fadeIn(500, callback);
+	},
+	componentWillLeave: function(callback){
+		jQuery(this.getDOMNode()).fadeOut(500, callback);
+	},
+	render: function() {
+		return this.props.children;
+	}
+});
+window.MyReact.JQueryFade = JQueryFade;
+
+window.MyReact.ErrorPane = React.createClass({displayName: 'ErrorPane',
+	propTypes: {
+		errorMessages: PT.array.isRequired,
+	},
+
+	renderErrorMessage: function(errorMessage, index) {
+		return errorMessage ? 
+			React.createElement(JQueryFade, {key: index}, 
+				React.createElement("div", {key: index, className: "errorMessage"}, errorMessage)
+			) :
+			false;
+	},
+
+	render: function() {
+		return	React.createElement("div", {className: "container errorDiv"}, 
+					React.createElement("div", {className: "row errorRow"}, 
+						React.createElement(ReactTransitionGroup, null, 
+							this.props.errorMessages.map(this.renderErrorMessage)
+						)
+					)
+				);
+	}
+});
+
+
 window.MyReact.Modal = React.createClass({displayName: 'Modal',
 	propTypes: {
 		title: PT.string.isRequired,
@@ -78,7 +139,8 @@ var InfoPopover = React.createClass({displayName: 'InfoPopover',
 	},
 
 	render: function() {
-		return	React.createElement("button", {className: "btn btn-default btn-xs", onClick: this.handleClick}, 
+		var inline = {display:"inline-block"};
+		return	React.createElement("button", {style: inline, className: "btn btn-default btn-xs", onClick: this.handleClick}, 
 					React.createElement("span", {className: "glyphicon glyphicon-info-sign"})
 				);
 	}
@@ -87,7 +149,8 @@ var InfoPopover = React.createClass({displayName: 'InfoPopover',
 
 window.MyReact.Panel = React.createClass({displayName: 'Panel',
 	propTypes: {
-		corpus:PT.object.isRequired,
+		title:PT.object.isRequired,
+		info:PT.object.isRequired,
 	},
 
 	getInitialState: function() {
@@ -100,48 +163,24 @@ window.MyReact.Panel = React.createClass({displayName: 'Panel',
 		this.setState({open: !this.state.open});
 	},
 
-	renderBody: function() {
-		return this.state.open ? 
-					React.createElement("div", {className: "panel-body"}, this.props.children) : 
-					false;
-	},
-
-	renderInfo: function() {
-		return	React.createElement("dl", {className: "dl-horizontal"}, 
-					React.createElement("dt", null, "Institution"), 
-					React.createElement("dd", null, this.props.corpus.institution.name), 
-
-					this.props.corpus.description ? React.createElement("dt", null, "Description"):false, 
-					this.props.corpus.description ? React.createElement("dd", null, this.props.corpus.description): false, 
-
-					this.props.corpus.landingPage ? React.createElement("dt", null, "Landing Page") : false, 
-					this.props.corpus.landingPage ? 
-						React.createElement("dd", null, React.createElement("a", {href: this.props.corpus.landingPage}, this.props.corpus.landingPage)):
-						false, 
-
-					React.createElement("dt", null, "Languages"), 
-					React.createElement("dd", null, this.props.corpus.languages.join(", "))
-				);
-	},
-
 	render: function() {
 		var chevron = "glyphicon glyphicon-chevron-" + (this.state.open ? "down":"right");
-		var chevronStyle={fontSize:12};
-		var right={float:"right"};
+		var chevronStyle = {fontSize:12};
+		var right = {float:"right"};
 		return 	React.createElement("div", {className: "bs-callout bs-callout-info"}, 
 					React.createElement("div", {className: "panel"}, 
 						React.createElement("div", {className: "panel-heading unselectable row", onClick: this.toggleState}, 
 							React.createElement("div", {className: "panel-title unselectable col-sm-11"}, 
 								React.createElement("span", {className: chevron, style: chevronStyle}), " ", 
-								this.props.corpus.displayName
+								this.props.title
 							), 
 							React.createElement("div", {style: right}, 
-								React.createElement(InfoPopover, {placement: "left", title: this.props.corpus.displayName}, 
-									this.renderInfo()
-								)
+								this.props.info
 							)
 						), 
-						this.renderBody()
+						 this.state.open ? 
+							React.createElement("div", {className: "panel-body"}, this.props.children) : 
+							false
 					)
 				);
 	}

@@ -10,11 +10,11 @@ var Panel = window.MyReact.Panel;
 
 var LanguageSelection = React.createClass({
 	propTypes: {
-		languages: PT.array.isRequired,
+		corpora: PT.object.isRequired,
 	},
 
 	render: function() {
-		var options = this.props.languages.map(function(lang) {
+		var options = this.props.corpora.getLanguages().map(function(lang) {
 			var desc = lang.name + " [" + lang.code + "]";
 			return <option value={lang.code} key={lang.code}>{desc}</option>;
 		});
@@ -128,6 +128,43 @@ var Results = React.createClass({
 				</tr>;
 	},
 
+	renderPanelTitle: function(corpus) {
+		var inline = {display:"inline-block"};
+		return	<div style={inline}>
+					<span className="corpusName"> {corpus.displayName}</span>
+					<span className="institutionName"> — {corpus.institution.name}</span>
+				</div>;
+	},
+
+	renderPanelInfo: function(corpus) {
+		var inline = {display:"inline-block"};
+		return	<div>
+					<InfoPopover placement="left" title={corpus.displayName}>
+						<dl className="dl-horizontal">
+							<dt>Institution</dt>
+							<dd>{corpus.institution.name}</dd>
+
+							{corpus.description ? <dt>Description</dt>:false}
+							{corpus.description ? <dd>{corpus.description}</dd>: false}
+
+							{corpus.landingPage ? <dt>Landing Page</dt> : false }
+							{corpus.landingPage ? 
+								<dd><a href={corpus.landingPage}>{corpus.landingPage}</a></dd>:
+								false}
+
+							<dt>Languages</dt>
+							<dd>{corpus.languages.join(", ")}</dd>
+						</dl>
+					</InfoPopover>
+					{" "}
+					<div style={inline}>
+						<button className="btn btn-default btn-xs" onClick={this.zoom}>
+							<span className="glyphicon glyphicon-fullscreen"/>
+						</button>
+					</div>
+				</div>;
+	},
+
 	renderPanelBody: function(corpusHit) {
 		var fulllength = {width:"100%"};		
 		if (this.state.displayKwic) {
@@ -143,7 +180,9 @@ var Results = React.createClass({
 		if (corpusHit.kwics.length === 0) {
 			return false;
 		}
-		return 	<Panel corpus={corpusHit.corpus} key={corpusHit.corpus.displayName}>
+		return 	<Panel key={corpusHit.corpus.displayName} 
+						title={this.renderPanelTitle(corpusHit.corpus)} 
+						info={this.renderPanelInfo(corpusHit.corpus)}>
 					{this.renderPanelBody(corpusHit)}
 				</Panel>;
 	},
@@ -176,8 +215,9 @@ var Results = React.createClass({
 
 	renderKwicCheckbox: function() {
 		var inline = {display:"inline-block"};
+		var marginright = {marginRight:17};
 		return	<div className="row">
-					<div className="col-sm-3 col-sm-offset-9">
+					<div className="float-right" style={marginright}>
 						<div className="btn-group" style={inline}>
 							<label forHtml="inputKwic" className="btn-default">
 								{ this.state.displayKwic ? 

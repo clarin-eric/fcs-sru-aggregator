@@ -1,10 +1,6 @@
 /* clarin blue: rgb(0,64,111) #00406F; */
 /* clarin gold: rgb(128,107,82) #806A52; */
 
-button.search {
-	 width: 64px;
-}
-
 .aligncenter {
 	text-align: center;
 }
@@ -37,6 +33,10 @@ label {
 	display:inline-block;
 }
 
+.link {
+	cursor: pointer;
+}
+
 .vcenter {
     display: inline-block;
     vertical-align: middle;
@@ -47,7 +47,36 @@ label {
     float: right;
 }
 
+/*** error ***/
+
+.errorDiv {
+	position: relative;
+	height: 10px;
+}
+
+.errorRow { 
+	position: absolute;
+	width: 100%;
+	border-radius: 4px;
+	text-align: center;
+	font-weight: bold;
+}
+
+.errorRow * {
+	/*width: 100%;*/
+	color: #fff;	
+	background-color: #a20;	
+}
+
+.errorRow .errorMessage {
+	margin: 2px 0;
+}
+
 /*** SEARCH ***/
+
+button.search {
+	 width: 64px;
+}
 
 .search::-webkit-input-placeholder { /* WebKit browsers */
     color:    #aaa;
@@ -196,6 +225,12 @@ div.panel-title {
 	font-size:16px;
 }
 
+div.panel-title .institutionName{
+	font-size: 12px;
+	font-weight:300;
+	color: #888;
+}
+
 .panel-body span {
 	color: #222;
 }
@@ -227,8 +262,9 @@ div.panel-title {
 	padding: 0 20px;
 	margin: 0 0 20px 0;
 	border: 1px solid #ddd;
-	/*border-left: 5px solid #806a52;*/ /*brown*/
-	border-left: 5px solid rgb(191, 133, 64); /*other gold*/
+	border-left: 5px solid #806a52; /*brown*/
+	/*border-left: 5px solid rgb(191, 133, 64); /*other gold*/
+	/*border-left: 5px solid #888; /*neutral*/
 	border-radius: 4px;
 }
 .bs-callout .panel-heading {
@@ -280,34 +316,45 @@ div.popover {
   opacity: 0.01;
   transition: all .2s ease-in;
 }
-
 .fade-enter.fade-enter-active {
   opacity: 1;
 }
-
 .fade-leave {
   opacity: 1;
   transition: all .2s ease-in;
 }
-
 .fade-leave.fade-leave-active {
   opacity: 0.01;
 }
+
+
+.error-enter {
+  opacity: 0.01;
+  transition: all .2s ease-in;
+}
+.error-enter.error-enter-active {
+  opacity: 1;
+}
+.error-leave {
+  opacity: 1;
+  transition: all .2s ease-in;
+}
+.error-leave.error-leave-active {
+  opacity: 0.01;
+}
+
 
 .display-enter {
   opacity: 0.01;
   transition: all 2s ease-in;
 }
-
 .display-enter.display-enter-active {
   opacity: 1;
 }
-
 .display-leave {
   opacity: 1;
   transition: all 2s ease-in;
 }
-
 .display-leave.display-leave-active {
   opacity: 0.01;
 }

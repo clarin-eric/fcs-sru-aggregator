@@ -21,10 +21,8 @@ var SearchCorpusBox = React.createClass({
 
 	handleChange: function(event) {
 		this.setState({query: event.target.value});
-		console.log("value", event.target.value, "query", this.state.query);
 		this.props.search(event.target.value);
-		// event.preventDefault();
-		// event.stopPropagation();
+		event.stopPropagation();
 	},
 
 	handleKey: function(event) {
@@ -43,79 +41,42 @@ var SearchCorpusBox = React.createClass({
 });
 
 var CorpusView = React.createClass({
-	getInitialState: function () {
-		return {
-			corpora:[],
-		};
+	propTypes: {
+		corpora: PT.object.isRequired,
 	},
 
-	recurseCorpus: function(corpus, fn) {
-		fn(corpus);
-		if (corpus.subCorpora)
-			this.recurseCorpora(corpus.subCorpora, fn);
-	},
-
-	recurseCorpora: function(corpora, fn) {
-		var recfn = function(corpus){
-			fn(corpus);
-			corpus.subCorpora.forEach(recfn);
-		};
-		corpora.forEach(recfn);
-	},
-
-	refreshCorpora: function() {
-		var that = this;
-		jQuery.ajax({
-			url: 'rest/corpora',
-			success: function(json, textStatus, jqXHR) {
-				that.recurseCorpora(json, function(corpus){
-					corpus.selected = true; // selected in the corpus view
-					corpus.expanded = false; // expanded in the corpus view
-					corpus.priority = 1; // priority in corpus view
-				});
-				that.setState({corpora:json});
-				console.log("corpora", json);
-			},
-			error: function(jqXHR, textStatus, error) {
-				console.log("corpora err", jqXHR, textStatus, error);
-			},
-		});
-	},
-	
 	toggleSelection: function (corpus) {
 		var s = !corpus.selected;
-		this.recurseCorpus(corpus, function(c) { c.selected = s; });
-		this.setState({corpora : this.state.corpora});
+		this.props.corpora.recurseCorpus(corpus, function(c) { c.selected = s; });
+		this.props.corpora.update();
 	},
 
 	toggleExpansion: function (corpus) {
 		corpus.expanded = !corpus.expanded;
-		this.setState({corpora : this.state.corpora});
+		this.props.corpora.update();
 	},
 
 	selectAll: function(value) {
-		this.recurseCorpora(this.state.corpora, function(c) { c.selected = value; });
-		this.setState({corpora : this.state.corpora});
+		this.props.corpora.recurse(function(c) { c.selected = value; });
+		this.props.corpora.update();
 	},
 
 	searchCorpus: function(query) {
 		query = query.toLowerCase();
-		console.log("corpus search", query);
 		var querytokens = query.split(" ");
-		var corpora = this.state.corpora;
 		if (!query) {
-			this.recurseCorpora(corpora, function(corpus) {corpus.priority = 1; });
-			this.setState({corpora : corpora});
+			this.props.corpora.recurse(function(corpus) {corpus.priority = 1; });
+			this.props.corpora.update();
 			return;
 		}
 
 		// clean up all priorities
-		this.recurseCorpora(corpora, function(corpus) {
+		this.props.corpora.recurse(function(corpus) {
 			corpus.priority = 0;
 		});
 
 		// find priority for each corpus
-		this.recurseCorpora(corpora, function(corpus){
+		this.props.corpora.recurse(function(corpus){
 			querytokens.forEach(function(qtoken){
 				if (corpus.displayName && corpus.displayName.toLowerCase().indexOf(qtoken) >= 0) {
 					corpus.priority ++;
@@ -142,7 +103,7 @@ var CorpusView = React.createClass({
 		});
 
 		// ensure root corpora have nonnull priority
-		this.recurseCorpora(corpora, function(corpus){
+		this.props.corpora.recurse(function(corpus){
 			if (corpus.subCorpora) {
 				corpus.subCorpora.forEach(function(subcorpus){
 					if (subcorpus.priority > 0 && corpus.priority === 0)
@@ -151,19 +112,22 @@ var CorpusView = React.createClass({
 			}
 		});
 
-		// order (larger first)
+		// order (descending priority)
 		var sortFn = function(a, b){
+			if (b.priority === a.priority) {
+				return b.index - a.index; // make it a stable sort
+			}
 			return b.priority - a.priority;
 		};
 
-		this.recurseCorpora(corpora, function(corpus){
+		this.props.corpora.recurse(function(corpus){
 			if (corpus.subCorpora)
 				corpus.subCorpora.sort(sortFn);
 		});
-		corpora.sort(sortFn);
+		this.props.corpora.corpora.sort(sortFn);
 
 		// display
-		this.setState({corpora : corpora});
+		this.props.corpora.update();
 		// console.log("corpus search done", query);
 	},
 
@@ -231,7 +195,7 @@ var CorpusView = React.createClass({
 								{" Deselect all"}</button>
 						</div>
 					</div>
-					{this.state.corpora.map(this.renderCorpus.bind(this,0))}
+					{this.props.corpora.corpora.map(this.renderCorpus.bind(this,0))}
 				</div>;
 	}
 });

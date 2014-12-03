@@ -10,11 +10,11 @@ var Panel = window.MyReact.Panel;
 
 var LanguageSelection = React.createClass({displayName: 'LanguageSelection',
 	propTypes: {
-		languages: PT.array.isRequired,
+		corpora: PT.object.isRequired,
 	},
 
 	render: function() {
-		var options = this.props.languages.map(function(lang) {
+		var options = this.props.corpora.getLanguages().map(function(lang) {
 			var desc = lang.name + " [" + lang.code + "]";
 			return React.createElement("option", {value: lang.code, key: lang.code}, desc);
 		});
@@ -128,6 +128,43 @@ var Results = React.createClass({displayName: 'Results',
 				);
 	},
 
+	renderPanelTitle: function(corpus) {
+		var inline = {display:"inline-block"};
+		return	React.createElement("div", {style: inline}, 
+					React.createElement("span", {className: "corpusName"}, " ", corpus.displayName), 
+					React.createElement("span", {className: "institutionName"}, " — ", corpus.institution.name)
+				);
+	},
+
+	renderPanelInfo: function(corpus) {
+		var inline = {display:"inline-block"};
+		return	React.createElement("div", null, 
+					React.createElement(InfoPopover, {placement: "left", title: corpus.displayName}, 
+						React.createElement("dl", {className: "dl-horizontal"}, 
+							React.createElement("dt", null, "Institution"), 
+							React.createElement("dd", null, corpus.institution.name), 
+
+							corpus.description ? React.createElement("dt", null, "Description"):false, 
+							corpus.description ? React.createElement("dd", null, corpus.description): false, 
+
+							corpus.landingPage ? React.createElement("dt", null, "Landing Page") : false, 
+							corpus.landingPage ? 
+								React.createElement("dd", null, React.createElement("a", {href: corpus.landingPage}, corpus.landingPage)):
+								false, 
+
+							React.createElement("dt", null, "Languages"), 
+							React.createElement("dd", null, corpus.languages.join(", "))
+						)
+					), 
+					" ", 
+					React.createElement("div", {style: inline}, 
+						React.createElement("button", {className: "btn btn-default btn-xs", onClick: this.zoom}, 
+							React.createElement("span", {className: "glyphicon glyphicon-fullscreen"})
+						)
+					)
+				);
+	},
+
 	renderPanelBody: function(corpusHit) {
 		var fulllength = {width:"100%"};		
 		if (this.state.displayKwic) {
@@ -143,7 +180,9 @@ var Results = React.createClass({displayName: 'Results',
 		if (corpusHit.kwics.length === 0) {
 			return false;
 		}
-		return 	React.createElement(Panel, {corpus: corpusHit.corpus, key: corpusHit.corpus.displayName}, 
+		return 	React.createElement(Panel, {key: corpusHit.corpus.displayName, 
+						title: this.renderPanelTitle(corpusHit.corpus), 
+						info: this.renderPanelInfo(corpusHit.corpus)}, 
 					this.renderPanelBody(corpusHit)
 				);
 	},
@@ -176,8 +215,9 @@ var Results = React.createClass({displayName: 'Results',
 
 	renderKwicCheckbox: function() {
 		var inline = {display:"inline-block"};
+		var marginright = {marginRight:17};
 		return	React.createElement("div", {className: "row"}, 
-					React.createElement("div", {className: "col-sm-3 col-sm-offset-9"}, 
+					React.createElement("div", {className: "float-right", style: marginright}, 
 						React.createElement("div", {className: "btn-group", style: inline}, 
 							React.createElement("label", {forHtml: "inputKwic", className: "btn-default"}, 
 								 this.state.displayKwic ? 
