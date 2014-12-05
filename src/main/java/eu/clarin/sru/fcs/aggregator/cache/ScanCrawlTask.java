@@ -1,12 +1,12 @@
 package eu.clarin.sru.fcs.aggregator.cache;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.clarin.sru.client.SRUThreadedClient;
 import eu.clarin.sru.fcs.aggregator.registry.CenterRegistry;
 import eu.clarin.sru.fcs.aggregator.registry.CenterRegistryLive;
 import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicReference;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.slf4j.LoggerFactory;
 
 /**

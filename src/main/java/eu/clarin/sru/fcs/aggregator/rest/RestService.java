@@ -1,8 +1,8 @@
 package eu.clarin.sru.fcs.aggregator.rest;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonParser;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
 import eu.clarin.sru.client.SRUVersion;
 import eu.clarin.sru.fcs.aggregator.app.Aggregator;
 import eu.clarin.sru.fcs.aggregator.registry.Corpus;
@@ -38,16 +38,15 @@ import javax.ws.rs.core.Response;
 @Produces(MediaType.APPLICATION_JSON)
 @Path("/")
 public class RestService {
+	ObjectWriter ow = new ObjectMapper().writerWithDefaultPrettyPrinter();
 
 	@Context
 	HttpServletRequest request;
 	@Context
 	ServletContext servletContext;
 
-	private String toJson(Object o) {
-		JsonParser parser = new JsonParser();
-		Gson gson = new GsonBuilder().setPrettyPrinting().create();
-		return gson.toJson(o);
+	private String toJson(Object o) throws JsonProcessingException {
+		return ow.writeValueAsString(o);
 	}
 
 	@GET

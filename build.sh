@@ -1,7 +1,7 @@
 #!/bin/bash
 
-WEBDIR=src/main/webapp
-LIBDIR=$WEBDIR/lib
+ASSETDIR=src/main/resources/assets
+LIBDIR=$ASSETDIR/lib
 
 if [ ! -e bower_components ]
 then
@@ -17,14 +17,20 @@ then
 	cp bower_components/font-awesome/css/font-awesome.min.css $LIBDIR
 
 	mkdir -p src/main/webapp/fonts
-	cp bower_components/bootstrap/fonts/*  $WEBDIR/fonts/
-	cp bower_components/font-awesome/fonts/* $WEBDIR/fonts/
+	cp bower_components/bootstrap/fonts/*  $ASSETDIR/fonts/
+	cp bower_components/font-awesome/fonts/* $ASSETDIR/fonts/
 fi
 
-JSDIR=src/main/webapp/js
+JSDIR=$ASSETDIR/js
 for f in $JSDIR/*.jsx; do 
 	cp -v $f $JSDIR/`basename $f .jsx`.js; 
 done
 node_modules/react-tools/bin/jsx --no-cache-dir $JSDIR $JSDIR
 
-#mvn clean package
+#mvn -q clean package
+
+# Run in production:
+#java -jar target/Aggregator2-2.0.0-alpha-6.jar server aggregator.yml
+
+# Run for development:
+#java -DEnvironment=Development -cp src/main/resources:target/Aggregator2-2.0.0-alpha-6.jar eu.clarin.sru.fcs.aggregator.app.Aggregator server aggregator.yml

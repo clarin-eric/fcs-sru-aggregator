@@ -1,5 +1,6 @@
 package eu.clarin.sru.fcs.aggregator.app;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.clarin.sru.fcs.aggregator.search.Search;
 import eu.clarin.sru.fcs.aggregator.cache.ScanCrawlTask;
 import eu.clarin.sru.fcs.aggregator.cache.Corpora;
@@ -8,6 +9,11 @@ import eu.clarin.sru.client.SRUVersion;
 import eu.clarin.sru.client.fcs.ClarinFCSClientBuilder;
 import eu.clarin.sru.fcs.aggregator.cache.EndpointUrlFilter;
 import eu.clarin.sru.fcs.aggregator.registry.Corpus;
+import eu.clarin.sru.fcs.aggregator.rest.RestService;
+import io.dropwizard.Application;
+import io.dropwizard.assets.AssetsBundle;
+import io.dropwizard.setup.Bootstrap;
+import io.dropwizard.setup.Environment;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -19,10 +25,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
-import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletContextListener;
 import opennlp.tools.tokenize.TokenizerModel;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.slf4j.LoggerFactory;
 
 /**
@@ -86,9 +89,7 @@ import org.slf4j.LoggerFactory;
  * TODO: populate statistics page with scan & search results ..................
  *
  * TODO: zoom into the results from a corpus, allow functionality only for the
- * view
- *
- * TODO: search for next set of results
+ * view (search for next set of results)
  *
  * TODO: Clear results (also before new search)
  *
@@ -98,22 +99,20 @@ import org.slf4j.LoggerFactory;
  *
  * TODO: Download to personal workspace as csv, excel, tcf, plain text
  *
- * TODO: implement
- *
  * TODO: use SRUClient's extraResponseData POJOs
  *
- * TODO: websockets, selfhosting
+ * TODO: websockets
  *
  * TODO: atomic replace of cached corpora (file)
  *
  * TODO: show multiple hits on the same result in multiple rows, linked visually
  *
  */
-public class Aggregator implements ServletContextListener {
+public class Aggregator extends Application<AggregatorConfiguration> {
 
 	private static final org.slf4j.Logger log = LoggerFactory.getLogger(Aggregator.class);
 
-	public static final String DE_TOK_MODEL = "/tokenizer/de-tuebadz-8.0-token.bin";
+	public static final String DE_TOK_MODEL = "tokenizer/de-tuebadz-8.0-token.bin";
 
 	private static final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 	private static Aggregator instance;
@@ -129,7 +128,29 @@ public class Aggregator implements ServletContextListener {
 	private SRUThreadedClient sruSearchClient = null;
 	private SRUThreadedClient sruScanClient = null;
 	private Map<Long, Search> activeSearches = Collections.synchronizedMap(new HashMap<Long, Search>());
-	private Params params;
+
+	public static void main(String[] args) throws Exception {
+		new Aggregator().run(args);
+	}
+
+	@Override
+	public String getName() {
+		return "Federated Content Search Aggregator";
+	}
+
+	@Override
+	public void initialize(Bootstrap<AggregatorConfiguration> bootstrap) {
+		bootstrap.addBundle(new AssetsBundle("/assets", "/", "index.html"));
+	}
+
+	@Override
+	public void run(AggregatorConfiguration config, Environment environment) {
+		environment.jersey().setUrlPattern("/rest/*");
+		environment.jersey().register(new RestService());
+
+		init(config);
+	}
+
 
 	public static Aggregator getInstance() {
 		return instance;
@@ -139,17 +160,11 @@ public class Aggregator implements ServletContextListener {
 		return scanCacheAtom.get();
 	}
 
-	public Params getParams() {
-		return params;
-	}
-
-	@Override
-	public void contextInitialized(ServletContextEvent servletContextEvent) {
+	public void init(AggregatorConfiguration config) {
 		log.info("Aggregator initialization started.");
 		instance = this;
 		try {
-			params = new Params();
-			detectAndConfigureEnvironment();
+			detectAndConfigureEnvironment(config);
 
 			sruScanClient = new ClarinFCSClientBuilder()
 					.setConnectTimeout(ENDPOINTS_SCAN_TIMEOUT_MS)
@@ -165,7 +180,7 @@ public class Aggregator implements ServletContextListener {
 					.enableLegacySupport()
 					.buildThreadedClient();
 
-			File corporaCacheFile = new File(params.aggregatorFilePath);
+			File corporaCacheFile = new File(config.getAggregatorFilePath());
 			try {
 				Corpora corpora = new ObjectMapper().readValue(corporaCacheFile, Corpora.class);
 				scanCacheAtom.set(corpora);
@@ -176,10 +191,10 @@ public class Aggregator implements ServletContextListener {
 
 			model = setUpTokenizers();
 
-			ScanCrawlTask task = new ScanCrawlTask(sruScanClient, params.centerRegistryUrl,
-					params.cacheMaxDepth, filter, scanCacheAtom, corporaCacheFile);
+			ScanCrawlTask task = new ScanCrawlTask(sruScanClient, config.getCenterRegistryUrl(),
+					config.getScanMaxDepth(), filter, scanCacheAtom, corporaCacheFile);
 			scheduler.scheduleAtFixedRate(task, SCAN_TASK_INITIAL_DELAY,
-					params.cacheUpdateInterval, params.cacheUpdateIntervalUnit);
+					config.getUpdateInterval(), config.getUpdateIntervalTimeUnit());
 
 			log.info("Aggregator initialization finished.");
 		} catch (Exception ex) {
@@ -188,8 +203,7 @@ public class Aggregator implements ServletContextListener {
 		}
 	}
 
-	@Override
-	public void contextDestroyed(ServletContextEvent sce) {
+	public void shutdown() {
 		log.info("Aggregator is shutting down.");
 		for (Search search : activeSearches.values()) {
 			search.shutdown();
@@ -254,10 +268,10 @@ public class Aggregator implements ServletContextListener {
 		return model;
 	}
 
-	private void detectAndConfigureEnvironment() {
+	private void detectAndConfigureEnvironment(AggregatorConfiguration config) {
 		if (!"Development".equals(System.getProperty("Environment"))) {
 			log.info(" *** Production Environment detected, using default settings *** ");
-			params.cacheMaxDepth = 1;
+			config.setScanMaxDepth(1);
 			return;
 		}
 
@@ -272,7 +286,8 @@ public class Aggregator implements ServletContextListener {
 //		filter.deny("leipzig");
 //		filter.allow("leipzig", "mpi.nl");
 //		filter.allow("lindat");
-		params.aggregatorFilePath = System.getProperty("user.home") + File.separator + "fcsAggregatorCorpora.json";
-		params.cacheMaxDepth = 1;
+		config.setAggregatorFilePath(System.getProperty("user.home")
+				+ File.separator + "fcsAggregatorCorpora.json");
+		config.setScanMaxDepth(1);
 	}
 }
