@@ -19,6 +19,7 @@ class ScanOperation implements Operation<SRUScanRequest, SRUScanResponse>, SRUCa
 	public ScanOperation(SRUScanRequest request, ThrottledClient.ScanCallback callback) {
 		this.request = request;
 		this.callback = callback;
+		this.stats = new OpStats();
 	}
 
 	@Override

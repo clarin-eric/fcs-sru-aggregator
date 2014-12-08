@@ -63,7 +63,7 @@ public class CenterRegistryLive implements CenterRegistry {
 						for (StringBinding sb : sbs) {
 							if ("CQL".equals(sb.getValue())) {
 								String endpoint = webRef.getWebsite();
-								if (filter != null && filter.filter(endpoint)) {
+								if (filter == null || filter.filter(endpoint)) {
 									institution.addEndpoint(endpoint);
 								}
 								break;

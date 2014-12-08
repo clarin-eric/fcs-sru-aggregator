@@ -1,10 +1,13 @@
 package eu.clarin.sru.fcs.aggregator.rest;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import eu.clarin.sru.client.SRUVersion;
 import eu.clarin.sru.fcs.aggregator.app.Aggregator;
+import eu.clarin.sru.fcs.aggregator.app.AggregatorConfiguration;
+import eu.clarin.sru.fcs.aggregator.client.ThrottledClient;
 import eu.clarin.sru.fcs.aggregator.scan.Corpus;
 import eu.clarin.sru.fcs.aggregator.scan.Diagnostic;
 import eu.clarin.sru.fcs.aggregator.scan.Statistics;
@@ -17,6 +20,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -60,8 +64,29 @@ public class RestService {
 	@GET
 	@Path("statistics")
 	public Response getStatistics() throws IOException {
-		Statistics stats = Aggregator.getInstance().getStatistics();
-		return Response.ok(toJson(stats)).build();
+		final Statistics scan = Aggregator.getInstance().getScanStatistics();
+		final Statistics search = Aggregator.getInstance().getSearchStatistics();
+		final AggregatorConfiguration.Params params = Aggregator.getInstance().getParams();
+
+		Object j = new HashMap<String, Object>() {
+			{
+				put("lastScanStats", new HashMap<String, Object>() {
+					{
+						put("maxConcurrentRequestsPerEndpoint", ThrottledClient.MAX_CONCURRENT_REQUESTS);
+						put("timeout", params.getENDPOINTS_SCAN_TIMEOUT_MS() / 1000.);
+						put("institutions", scan.getInstitutions());
+					}
+				});
+				put("searchStats", new HashMap<String, Object>() {
+					{
+						put("maxConcurrentRequestsPerEndpoint", ThrottledClient.MAX_CONCURRENT_REQUESTS);
+						put("timeout", params.getENDPOINTS_SEARCH_TIMEOUT_MS() / 1000.);
+						put("institutions", search.getInstitutions());
+					}
+				});
+			}
+		};
+		return Response.ok(toJson(j)).build();
 	}
 
 	public static class JsonLang {

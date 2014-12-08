@@ -16,7 +16,7 @@ var layers = [
 		name: "Phonetics Resources",
 		searchPlaceholder: "stA:z",
 		searchLabel: "SAMPA query",
-		searchLabelBkColor: "#dde",
+		searchLabelBkColor: "#eef",
 		allCollections: "All collections",
 	},
 	{
@@ -24,7 +24,7 @@ var layers = [
 		name: "Text Resources",
 		searchPlaceholder: "Elephant",
 		searchLabel: "Search text",
-		searchLabelBkColor: "#edc",
+		searchLabelBkColor: "#fed",
 		allCollections: "All collections",
 	},
 ];
@@ -430,11 +430,92 @@ var StatisticsPage = React.createClass({
 		ajax: PT.func.isRequired,
 	},
 
+	getInitialState: function () {
+		return {
+			searchStats: {}, 
+			lastScanStats: {}, 
+		};
+	},
+
+	componentDidMount: function() {
+		this.refreshStats();
+	},
+
+	refreshStats: function() {
+		this.props.ajax({
+			url: 'rest/statistics',
+			success: function(json, textStatus, jqXHR) {
+				this.setState({
+					searchStats: json.searchStats, 
+					lastScanStats: json.lastScanStats, 
+				});
+				console.log("stats:", json);
+			}.bind(this),
+		});
+	},
+
+	map: function(o, fn){
+		var ret = [];
+		for (var x in o) {
+			if (o.hasOwnProperty(x)) {
+				ret.push(fn(x, o[x]));
+			}
+		}
+		return ret;
+	},
+
+	listItem: function(name, object) {
+		return <li>	{name}:
+					{ typeof(object) === "object" ? 
+						<ul>{this.map(object, this.listItem)}</ul> : 
+						object
+					}
+				</li>;
+	},
+
+	// renderEndpoint: function(endpname, endpstats) {
+	// 	return <li>
+	// 				<ul>
+	// 					<li>endpoint: {endpname}</li>
+	//           			<li>numberOfRequests: {endpstats.numberOfRequests}</li>
+	// 			        <li>avgQueueTime: {endpstats.avgQueueTime}</li>
+	// 			        <li>maxQueueTime: {endpstats.maxQueueTime}</li>
+	// 			        <li>avgExecutionTime: {endpstats.avgExecutionTime}</li>
+	// 			        <li>maxExecutionTime: {endpstats.maxExecutionTime}</li>
+	// 					<li>errors 
+	// 						<ul>
+	// 							{ this.map(endpstats.errors, function(err, count) { return <li>{err}:{count}</li>; }) }
+	// 						</ul>
+	// 					</li>
+	// 				</ul>
+	// 			</li>;
+	// },
+	// renderInstitution: function(instname, instendps) {
+	// 	return 	<li>
+	// 				<ul>
+	// 					<li>{instname}</li>
+	// 					<li>
+	// 						<ul>{this.map(instendps, this.renderEndpoint)}</ul>
+	// 					</li>
+ // 					</ul>
+ // 				</li>;
+	// },
+
+	renderStatistics: function(stats) {
+		return 	<ul>
+					{this.map(stats, this.listItem)}
+				</ul>;
+	},
+
 	render: function() {
 		return	(
 			<div>
 				<div className="top-gap">
 					<h1>Statistics</h1>
+					<h2>Last Scan</h2>
+					{this.renderStatistics(this.state.lastScanStats)}
+					<h2>Search</h2>
+					{this.renderStatistics(this.state.searchStats)}
 				</div>
 			</div>
 			);

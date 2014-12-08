@@ -16,7 +16,7 @@ var layers = [
 		name: "Phonetics Resources",
 		searchPlaceholder: "stA:z",
 		searchLabel: "SAMPA query",
-		searchLabelBkColor: "#dde",
+		searchLabelBkColor: "#eef",
 		allCollections: "All collections",
 	},
 	{
@@ -24,7 +24,7 @@ var layers = [
 		name: "Text Resources",
 		searchPlaceholder: "Elephant",
 		searchLabel: "Search text",
-		searchLabelBkColor: "#edc",
+		searchLabelBkColor: "#fed",
 		allCollections: "All collections",
 	},
 ];
@@ -430,11 +430,92 @@ var StatisticsPage = React.createClass({displayName: 'StatisticsPage',
 		ajax: PT.func.isRequired,
 	},
 
+	getInitialState: function () {
+		return {
+			searchStats: {}, 
+			lastScanStats: {}, 
+		};
+	},
+
+	componentDidMount: function() {
+		this.refreshStats();
+	},
+
+	refreshStats: function() {
+		this.props.ajax({
+			url: 'rest/statistics',
+			success: function(json, textStatus, jqXHR) {
+				this.setState({
+					searchStats: json.searchStats, 
+					lastScanStats: json.lastScanStats, 
+				});
+				console.log("stats:", json);
+			}.bind(this),
+		});
+	},
+
+	map: function(o, fn){
+		var ret = [];
+		for (var x in o) {
+			if (o.hasOwnProperty(x)) {
+				ret.push(fn(x, o[x]));
+			}
+		}
+		return ret;
+	},
+
+	listItem: function(name, object) {
+		return React.createElement("li", null, " ", name, ":", 
+					 typeof(object) === "object" ? 
+						React.createElement("ul", null, this.map(object, this.listItem)) : 
+						object
+					
+				);
+	},
+
+	// renderEndpoint: function(endpname, endpstats) {
+	// 	return <li>
+	// 				<ul>
+	// 					<li>endpoint: {endpname}</li>
+	//           			<li>numberOfRequests: {endpstats.numberOfRequests}</li>
+	// 			        <li>avgQueueTime: {endpstats.avgQueueTime}</li>
+	// 			        <li>maxQueueTime: {endpstats.maxQueueTime}</li>
+	// 			        <li>avgExecutionTime: {endpstats.avgExecutionTime}</li>
+	// 			        <li>maxExecutionTime: {endpstats.maxExecutionTime}</li>
+	// 					<li>errors 
+	// 						<ul>
+	// 							{ this.map(endpstats.errors, function(err, count) { return <li>{err}:{count}</li>; }) }
+	// 						</ul>
+	// 					</li>
+	// 				</ul>
+	// 			</li>;
+	// },
+	// renderInstitution: function(instname, instendps) {
+	// 	return 	<li>
+	// 				<ul>
+	// 					<li>{instname}</li>
+	// 					<li>
+	// 						<ul>{this.map(instendps, this.renderEndpoint)}</ul>
+	// 					</li>
+ // 					</ul>
+ // 				</li>;
+	// },
+
+	renderStatistics: function(stats) {
+		return 	React.createElement("ul", null, 
+					this.map(stats, this.listItem)
+				);
+	},
+
 	render: function() {
 		return	(
 			React.createElement("div", null, 
 				React.createElement("div", {className: "top-gap"}, 
-					React.createElement("h1", null, "Statistics")
+					React.createElement("h1", null, "Statistics"), 
+					React.createElement("h2", null, "Last Scan"), 
+					this.renderStatistics(this.state.lastScanStats), 
+					React.createElement("h2", null, "Search"), 
+					this.renderStatistics(this.state.searchStats)
 				)
 			)
 			);

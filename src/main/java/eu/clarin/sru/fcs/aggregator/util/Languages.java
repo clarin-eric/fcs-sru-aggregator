@@ -71,10 +71,7 @@ public class Languages {
 	}
 
 	/**
-	 * Gets language name by the ISO 639 language code.
-	 *
-	 * @param code ISO 639/1, 639/2T or 639/2B language code
-	 * @return language name in English
+	 * Gets language code by its english name
 	 */
 	public String codeForName(String name) {
 		if (this.name2Lang.containsKey(name)) {

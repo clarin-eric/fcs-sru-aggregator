@@ -7,8 +7,10 @@ import eu.clarin.sru.client.SRUScanRequest;
 import eu.clarin.sru.client.SRUScanResponse;
 import eu.clarin.sru.client.SRUTerm;
 import eu.clarin.sru.client.SRUVersion;
+import eu.clarin.sru.fcs.aggregator.app.Aggregator;
 import eu.clarin.sru.fcs.aggregator.client.ThrottledClient;
 import eu.clarin.sru.fcs.aggregator.util.SRUCQL;
+import eu.clarin.sru.fcs.aggregator.util.Throw;
 import java.net.SocketTimeoutException;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.DocumentFragment;
@@ -151,19 +153,13 @@ public class ScanCrawler {
 		}
 
 		@Override
-
 		public void onError(SRUScanRequest request, SRUClientException error, ThrottledClient.Stats stats) {
 			latch.decrement();
-			log.error("{} Error while scanning {}: {} : {}", latch.get(), endpointUrl, error, error.getCause());
+			log.error("{} Error while scanning {}: {}", latch.get(), endpointUrl, error.getMessage());
 			statistics.addEndpointDatapoint(institution, endpointUrl, stats.getQueueTime(), stats.getExecutionTime());
 			statistics.addErrorDatapoint(institution, endpointUrl, error);
-			Throwable xc = error;
-			while (xc != null) {
-				if (xc instanceof SocketTimeoutException) {
-					return;
-				} else {
-					xc = xc.getCause();
-				}
+			if (Throw.isCausedBy(error, SocketTimeoutException.class)) {
+				return;
 			}
 			try {
 				log.error("--> " + request.makeURI(SRUVersion.VERSION_1_2) + " --> ", error);

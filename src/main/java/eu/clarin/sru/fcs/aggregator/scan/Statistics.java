@@ -13,12 +13,13 @@ import java.util.Map;
  * @author edima
  */
 public class Statistics {
-
 	public static class EndpointStats {
 
 		List<Long> queueTimes = Collections.synchronizedList(new ArrayList<Long>());
 		List<Long> executionTimes = Collections.synchronizedList(new ArrayList<Long>());
-		List<Throwable> throwables = Collections.synchronizedList(new ArrayList<Throwable>());
+
+		@JsonProperty
+		Map<String, Integer> errors = Collections.synchronizedMap(new HashMap<String, Integer>());
 
 		double avg(List<Long> q) {
 			double sum = 0;
@@ -36,27 +37,39 @@ public class Statistics {
 			return max;
 		}
 
+		@JsonProperty
 		public double getAvgQueueTime() {
-			return avg(queueTimes);
+			return avg(queueTimes) / 1000.0;
 		}
 
+		@JsonProperty
 		public double getMaxQueueTime() {
-			return max(queueTimes);
+			return max(queueTimes) / 1000.0;
 		}
 
+		@JsonProperty
 		public double getAvgExecutionTime() {
-			return avg(executionTimes);
+			return avg(executionTimes) / 1000.0;
 		}
 
+		@JsonProperty
 		public double getMaxExecutionTime() {
-			return max(executionTimes);
+			return max(executionTimes) / 1000.0;
+		}
+
+		@JsonProperty
+		public int getNumberOfRequests() {
+			return executionTimes.size();
 		}
 	};
 
 	// institution to endpoint to statistics_per_endpoint map
-	@JsonProperty
 	Map<String, Map<String, EndpointStats>> institutions
 			= Collections.synchronizedMap(new HashMap<String, Map<String, EndpointStats>>());
+
+	public Map<String, Map<String, EndpointStats>> getInstitutions() {
+		return institutions;
+	}
 
 	public void addEndpointDatapoint(Institution institution, String endpoint, long enqueuedTime, long executionTime) {
 		EndpointStats stats = getEndpointStats(institution, endpoint);
@@ -66,7 +79,11 @@ public class Statistics {
 
 	public void addErrorDatapoint(Institution institution, String endpoint, SRUClientException error) {
 		EndpointStats stats = getEndpointStats(institution, endpoint);
-		stats.throwables.add(error);
+		int number = 0;
+		if (stats.errors.containsKey(error.getMessage())) {
+			number = stats.errors.get(error.getMessage());
+		}
+		stats.errors.put(error.getMessage(), number + 1);
 	}
 
 	private EndpointStats getEndpointStats(Institution institution, String endpoint) {

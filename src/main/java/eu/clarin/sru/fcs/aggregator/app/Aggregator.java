@@ -6,7 +6,6 @@ import eu.clarin.sru.fcs.aggregator.scan.ScanCrawlTask;
 import eu.clarin.sru.fcs.aggregator.scan.Corpora;
 import eu.clarin.sru.client.SRUVersion;
 import eu.clarin.sru.client.fcs.ClarinFCSClientBuilder;
-import eu.clarin.sru.fcs.aggregator.scan.EndpointFilter;
 import eu.clarin.sru.fcs.aggregator.client.ThrottledClient;
 import eu.clarin.sru.fcs.aggregator.scan.Corpus;
 import eu.clarin.sru.fcs.aggregator.rest.RestService;
@@ -79,11 +78,13 @@ import org.slf4j.LoggerFactory;
  * @author Yana Panchenko
  * @author edima
  *
- * TODO: scan ratelimiter (MPI complained about us hitting corpus1.mpi.nl) ....
- * TODO: populate statistics page with scan & search results ..................
- * TODO: support new spec-compatible centres, see Oliver's mail ...............
+ * TODO: use selected visible corpus for search
  *
- * TODO: use corpus/language selection for search
+ * TODO: use language selection to hide corpora
+ *
+ * TODO: use number of hits input
+ *
+ * TODO: support new spec-compatible centres, see Oliver's mail ...............
  *
  * TODO: disable popups easily
  *
@@ -115,17 +116,16 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 
 	private static final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 	private static Aggregator instance;
-
-	private EndpointFilter filter = null;
+	private AggregatorConfiguration.Params params;
 
 	private AtomicReference<Corpora> scanCacheAtom = new AtomicReference<Corpora>(new Corpora());
 	private AtomicReference<Statistics> scanStatsAtom = new AtomicReference<Statistics>(new Statistics());
+	private AtomicReference<Statistics> searchStatsAtom = new AtomicReference<Statistics>(new Statistics());
 
 	private TokenizerModel model;
 	private ThrottledClient sruScanClient = null;
 	private ThrottledClient sruSearchClient = null;
 	private Map<Long, Search> activeSearches = Collections.synchronizedMap(new HashMap<Long, Search>());
-	private Statistics statistics = new Statistics();
 
 	public static void main(String[] args) throws Exception {
 		new Aggregator().run(args);
@@ -143,6 +143,7 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 
 	@Override
 	public void run(AggregatorConfiguration config, Environment environment) {
+		params = config.aggregatorParams;
 		System.out.println("Using parameters: ");
 		try {
 			System.out.println(new ObjectMapper().writerWithDefaultPrettyPrinter().
@@ -151,25 +152,33 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 		}
 		environment.jersey().setUrlPattern("/rest/*");
 		environment.jersey().register(new RestService());
-		init(config);
+
+		init();
 	}
 
 	public static Aggregator getInstance() {
 		return instance;
 	}
 
+	public AggregatorConfiguration.Params getParams() {
+		return params;
+	}
+
 	public Corpora getCorpora() {
 		return scanCacheAtom.get();
 	}
 
-	public Statistics getStatistics() {
+	public Statistics getScanStatistics() {
 		return scanStatsAtom.get();
 	}
 
-	public void init(AggregatorConfiguration config) {
+	public Statistics getSearchStatistics() {
+		return searchStatsAtom.get();
+	}
+
+	public void init() {
 		log.info("Aggregator initialization started.");
 		instance = this;
-		AggregatorConfiguration.Params params = config.aggregatorParams;
 		try {
 			sruScanClient = new ThrottledClient(
 					new ClarinFCSClientBuilder()
@@ -199,7 +208,7 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 
 			ScanCrawlTask task = new ScanCrawlTask(sruScanClient,
 					params.CENTER_REGISTRY_URL, params.SCAN_MAX_DEPTH,
-					filter, scanCacheAtom, corporaCacheFile, scanStatsAtom);
+					null, scanCacheAtom, corporaCacheFile, scanStatsAtom);
 			scheduler.scheduleAtFixedRate(task, params.SCAN_TASK_INITIAL_DELAY,
 					params.SCAN_TASK_INTERVAL, params.getScanTaskTimeUnit());
 
@@ -229,7 +238,7 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 			// No query
 			return null;
 		} else {
-			Search sr = new Search(sruSearchClient, version, statistics,
+			Search sr = new Search(sruSearchClient, version, searchStatsAtom.get(),
 					corpora, searchString, searchLang, 1, maxRecords);
 			activeSearches.put(sr.getId(), sr);
 			return sr;

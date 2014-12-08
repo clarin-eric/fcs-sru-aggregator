@@ -103,7 +103,12 @@ public class Corpus {
 		if (Languages.getInstance().getCodes().contains(language)) {
 			this.languages.add(language);
 		} else {
-			this.languages.add(Languages.getInstance().codeForName(language));
+			String code = Languages.getInstance().codeForName(language);
+			if (code != null) {
+				this.languages.add(code);
+			} else {
+				this.languages.add(language);
+			}
 		}
 	}
 

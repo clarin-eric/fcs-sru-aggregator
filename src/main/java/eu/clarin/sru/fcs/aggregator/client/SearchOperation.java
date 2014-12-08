@@ -19,6 +19,7 @@ class SearchOperation implements Operation<SRUSearchRetrieveRequest, SRUSearchRe
 	public SearchOperation(SRUSearchRetrieveRequest request, ThrottledClient.SearchCallback callback) {
 		this.request = request;
 		this.callback = callback;
+		this.stats = new OpStats();
 	}
 
 	@Override

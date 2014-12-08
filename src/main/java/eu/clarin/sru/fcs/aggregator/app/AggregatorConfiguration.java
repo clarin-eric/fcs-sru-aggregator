@@ -53,6 +53,14 @@ public class AggregatorConfiguration extends Configuration {
 		public TimeUnit getScanTaskTimeUnit() {
 			return TimeUnit.valueOf(SCAN_TASK_TIME_UNIT);
 		}
+
+		public int getENDPOINTS_SCAN_TIMEOUT_MS() {
+			return ENDPOINTS_SCAN_TIMEOUT_MS;
+		}
+
+		public int getENDPOINTS_SEARCH_TIMEOUT_MS() {
+			return ENDPOINTS_SEARCH_TIMEOUT_MS;
+		}
 	}
 
 	public Params aggregatorParams = new Params();
