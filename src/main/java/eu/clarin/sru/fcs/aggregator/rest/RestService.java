@@ -5,9 +5,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import eu.clarin.sru.client.SRUVersion;
 import eu.clarin.sru.fcs.aggregator.app.Aggregator;
-import eu.clarin.sru.fcs.aggregator.registry.Corpus;
-import eu.clarin.sru.fcs.aggregator.registry.Diagnostic;
-import eu.clarin.sru.fcs.aggregator.registry.Languages;
+import eu.clarin.sru.fcs.aggregator.scan.Corpus;
+import eu.clarin.sru.fcs.aggregator.scan.Diagnostic;
+import eu.clarin.sru.fcs.aggregator.scan.Statistics;
+import eu.clarin.sru.fcs.aggregator.util.Languages;
 import eu.clarin.sru.fcs.aggregator.search.Request;
 import eu.clarin.sru.fcs.aggregator.search.Result;
 import eu.clarin.sru.fcs.aggregator.search.Search;
@@ -54,6 +55,13 @@ public class RestService {
 	public Response getCorpora() throws IOException {
 		List<Corpus> corpora = Aggregator.getInstance().getCorpora().getCorpora();
 		return Response.ok(toJson(corpora)).build();
+	}
+
+	@GET
+	@Path("statistics")
+	public Response getStatistics() throws IOException {
+		Statistics stats = Aggregator.getInstance().getStatistics();
+		return Response.ok(toJson(stats)).build();
 	}
 
 	public static class JsonLang {

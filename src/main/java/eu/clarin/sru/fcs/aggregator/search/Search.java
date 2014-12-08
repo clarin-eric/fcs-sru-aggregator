@@ -1,14 +1,14 @@
 package eu.clarin.sru.fcs.aggregator.search;
 
-import eu.clarin.sru.client.SRUCallback;
 import eu.clarin.sru.client.SRUVersion;
 import java.util.List;
 import eu.clarin.sru.client.SRUClientException;
 import eu.clarin.sru.client.SRUSearchRetrieveRequest;
 import eu.clarin.sru.client.SRUSearchRetrieveResponse;
-import eu.clarin.sru.client.SRUThreadedClient;
 import eu.clarin.sru.client.fcs.ClarinFCSRecordData;
-import eu.clarin.sru.fcs.aggregator.registry.Corpus;
+import eu.clarin.sru.fcs.aggregator.client.ThrottledClient;
+import eu.clarin.sru.fcs.aggregator.scan.Corpus;
+import eu.clarin.sru.fcs.aggregator.scan.Statistics;
 import eu.clarin.sru.fcs.aggregator.util.SRUCQL;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -37,18 +37,21 @@ public class Search {
 	private final String searchLanguage;
 	private final List<Request> requests = Collections.synchronizedList(new ArrayList<Request>());
 	private final List<Result> results = Collections.synchronizedList(new ArrayList<Result>());
+	private final Statistics statistics;
 
-	public Search(SRUThreadedClient searchClient, SRUVersion version, List<Corpus> corpora,
+	public Search(ThrottledClient searchClient, SRUVersion version,
+			Statistics statistics, List<Corpus> corpora,
 			String searchString, String searchLanguage, int startRecord, int maxRecords
 	) {
 		this.id = counter.getAndIncrement();
 		this.searchLanguage = searchLanguage;
+		this.statistics = statistics;
 		for (Corpus corpus : corpora) {
 			executeSearch(searchClient, version, corpus, searchString, startRecord, maxRecords);
 		}
 	}
 
-	private Request executeSearch(SRUThreadedClient searchClient, SRUVersion version, Corpus corpus, String searchString, int startRecord, int maxRecords) {
+	private Request executeSearch(ThrottledClient searchClient, SRUVersion version, final Corpus corpus, String searchString, int startRecord, int maxRecords) {
 		final Request request = new Request(corpus, searchString, startRecord, startRecord + maxRecords - 1);
 		log.info("Executing search in '{}' query='{}' maxRecords='{}'", corpus, searchString, maxRecords);
 
@@ -59,26 +62,27 @@ public class Search {
 		searchRequest.setQuery("\"" + searchString + "\"");
 		searchRequest.setStartRecord(startRecord);
 		if (request.hasCorpusHandler()) {
-			searchRequest.setExtraRequestData(SRUCQL.SEARCH_CORPUS_HANDLE_PARAMETER, request.getCorpus().getHandle());
+			searchRequest.setExtraRequestData(SRUCQL.SEARCH_CORPUS_HANDLE_PARAMETER, corpus.getHandle());
 		}
 		requests.add(request);
 
 		try {
-			searchClient.searchRetrieve(searchRequest, new SRUCallback<SRUSearchRetrieveRequest, SRUSearchRetrieveResponse>() {
+			searchClient.searchRetrieve(searchRequest, new ThrottledClient.SearchCallback() {
 				@Override
-				public void onSuccess(SRUSearchRetrieveResponse response) {
+				public void onSuccess(SRUSearchRetrieveResponse response, ThrottledClient.Stats stats) {
+					statistics.addEndpointDatapoint(corpus.getInstitution(), corpus.getEndpointUrl(), stats.getQueueTime(), stats.getExecutionTime());
 					results.add(new Result(request, response, null));
 					requests.remove(request);
 				}
 
 				@Override
-				public void onError(SRUSearchRetrieveRequest srureq, SRUClientException xc) {
+				public void onError(SRUSearchRetrieveRequest srureq, SRUClientException xc, ThrottledClient.Stats stats) {
+					statistics.addEndpointDatapoint(corpus.getInstitution(), corpus.getEndpointUrl(), stats.getQueueTime(), stats.getExecutionTime());
+					statistics.addErrorDatapoint(corpus.getInstitution(), corpus.getEndpointUrl(), xc);
 					results.add(new Result(request, null, xc));
 					requests.remove(request);
 				}
 			});
-		} catch (SRUClientException ex) {
-			log.error("SearchRetrieve exception for " + corpus.getEndpointUrl(), ex);
 		} catch (Throwable xc) {
 			log.error("SearchRetrieve error for " + corpus.getEndpointUrl(), xc);
 		}
@@ -103,6 +107,10 @@ public class Search {
 			copy.addAll(results);
 		}
 		return copy;
+	}
+
+	public Statistics getStatistics() {
+		return statistics;
 	}
 
 	public void exportTCF(TokenizerModel tokenizerModel) throws ExportException {

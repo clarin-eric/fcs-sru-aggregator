@@ -1,18 +1,13 @@
-package eu.clarin.sru.fcs.aggregator.cache;
+package eu.clarin.sru.fcs.aggregator.scan;
 
 import eu.clarin.sru.fcs.aggregator.util.CounterLatch;
-import eu.clarin.sru.client.SRUCallback;
 import eu.clarin.sru.client.SRUClientException;
 import eu.clarin.sru.client.SRUDiagnostic;
 import eu.clarin.sru.client.SRUScanRequest;
 import eu.clarin.sru.client.SRUScanResponse;
 import eu.clarin.sru.client.SRUTerm;
-import eu.clarin.sru.client.SRUThreadedClient;
 import eu.clarin.sru.client.SRUVersion;
-import eu.clarin.sru.fcs.aggregator.registry.CenterRegistry;
-import eu.clarin.sru.fcs.aggregator.registry.Corpus;
-import eu.clarin.sru.fcs.aggregator.registry.Diagnostic;
-import eu.clarin.sru.fcs.aggregator.registry.Institution;
+import eu.clarin.sru.fcs.aggregator.client.ThrottledClient;
 import eu.clarin.sru.fcs.aggregator.util.SRUCQL;
 import java.net.SocketTimeoutException;
 import org.slf4j.LoggerFactory;
@@ -33,16 +28,15 @@ public class ScanCrawler {
 	private static final org.slf4j.Logger log = LoggerFactory.getLogger(ScanCrawler.class);
 
 	private final CenterRegistry centerRegistry;
-	private final SRUThreadedClient sruScanClient;
 	private final int maxDepth;
-	private final EndpointFilter filter;
 	private final CounterLatch latch;
+	private final ThrottledClient sruClient;
+	private final Statistics statistics = new Statistics();
 
-	public ScanCrawler(CenterRegistry centerRegistry, SRUThreadedClient sruScanClient, EndpointFilter filter, int maxDepth) {
+	public ScanCrawler(CenterRegistry centerRegistry, ThrottledClient sruClient, int maxDepth) {
 		this.centerRegistry = centerRegistry;
-		this.sruScanClient = sruScanClient;
+		this.sruClient = sruClient;
 		this.maxDepth = maxDepth;
-		this.filter = filter;
 		this.latch = new CounterLatch();
 	}
 
@@ -51,9 +45,6 @@ public class ScanCrawler {
 		for (Institution institution : centerRegistry.getCQLInstitutions()) {
 			cache.addInstitution(institution);
 			Iterable<String> endpoints = institution.getEndpoints();
-			if (filter != null) {
-				endpoints = filter.filter(endpoints);
-			}
 			for (String endp : endpoints) {
 				ScanTask st = new ScanTask(institution, endp, null, cache, 0);
 				scanForCorpora(st);
@@ -69,6 +60,10 @@ public class ScanCrawler {
 
 		log.info("done crawling");
 		return cache;
+	}
+
+	public Statistics getStatistics() {
+		return statistics;
 	}
 
 	private void scanForCorpora(ScanTask st) {
@@ -93,16 +88,10 @@ public class ScanCrawler {
 
 		log.info("{} Start scan: {}", latch.get(), st.endpointUrl);
 		latch.increment();
-		try {
-			sruScanClient.scan(scanRequest, st);
-		} catch (SRUClientException ex) {
-			latch.decrement();
-			log.error("{} Exception in scan request for {}: {}", latch.get(), st.endpointUrl, ex.getMessage());
-			log.error("--> ", ex);
-		}
+		sruClient.scan(scanRequest, st);
 	}
 
-	class ScanTask implements SRUCallback<SRUScanRequest, SRUScanResponse> {
+	class ScanTask implements ThrottledClient.ScanCallback {
 
 		final Institution institution;
 		final String endpointUrl;
@@ -120,8 +109,9 @@ public class ScanCrawler {
 		}
 
 		@Override
-		public void onSuccess(SRUScanResponse response) {
+		public void onSuccess(SRUScanResponse response, ThrottledClient.Stats stats) {
 			try {
+				statistics.addEndpointDatapoint(institution, endpointUrl, stats.getQueueTime(), stats.getExecutionTime());
 				if (response != null && response.hasTerms()) {
 					for (SRUTerm term : response.getTerms()) {
 						if (term == null) {
@@ -142,7 +132,7 @@ public class ScanCrawler {
 					}
 				}
 
-				if (response.hasDiagnostics()) {
+				if (response != null && response.hasDiagnostics()) {
 					for (SRUDiagnostic d : response.getDiagnostics()) {
 						String context = SRUCQL.SCAN_RESOURCE_PARAMETER + "=" + normalizeHandle(parentCorpus);
 						Diagnostic diag = new Diagnostic(d.getURI(), context, d.getMessage(), d.getDetails());
@@ -162,9 +152,11 @@ public class ScanCrawler {
 
 		@Override
 
-		public void onError(SRUScanRequest request, SRUClientException error) {
+		public void onError(SRUScanRequest request, SRUClientException error, ThrottledClient.Stats stats) {
 			latch.decrement();
 			log.error("{} Error while scanning {}: {} : {}", latch.get(), endpointUrl, error, error.getCause());
+			statistics.addEndpointDatapoint(institution, endpointUrl, stats.getQueueTime(), stats.getExecutionTime());
+			statistics.addErrorDatapoint(institution, endpointUrl, error);
 			Throwable xc = error;
 			while (xc != null) {
 				if (xc instanceof SocketTimeoutException) {

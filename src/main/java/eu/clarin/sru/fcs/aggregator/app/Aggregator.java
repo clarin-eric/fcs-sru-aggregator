@@ -2,14 +2,15 @@ package eu.clarin.sru.fcs.aggregator.app;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.clarin.sru.fcs.aggregator.search.Search;
-import eu.clarin.sru.fcs.aggregator.cache.ScanCrawlTask;
-import eu.clarin.sru.fcs.aggregator.cache.Corpora;
-import eu.clarin.sru.client.SRUThreadedClient;
+import eu.clarin.sru.fcs.aggregator.scan.ScanCrawlTask;
+import eu.clarin.sru.fcs.aggregator.scan.Corpora;
 import eu.clarin.sru.client.SRUVersion;
 import eu.clarin.sru.client.fcs.ClarinFCSClientBuilder;
-import eu.clarin.sru.fcs.aggregator.cache.EndpointUrlFilter;
-import eu.clarin.sru.fcs.aggregator.registry.Corpus;
+import eu.clarin.sru.fcs.aggregator.scan.EndpointFilter;
+import eu.clarin.sru.fcs.aggregator.client.ThrottledClient;
+import eu.clarin.sru.fcs.aggregator.scan.Corpus;
 import eu.clarin.sru.fcs.aggregator.rest.RestService;
+import eu.clarin.sru.fcs.aggregator.scan.Statistics;
 import io.dropwizard.Application;
 import io.dropwizard.assets.AssetsBundle;
 import io.dropwizard.setup.Bootstrap;
@@ -78,20 +79,18 @@ import org.slf4j.LoggerFactory;
  * @author Yana Panchenko
  * @author edima
  *
- * TODO: new UI element to specify layer we search in
+ * TODO: scan ratelimiter (MPI complained about us hitting corpus1.mpi.nl) ....
+ * TODO: populate statistics page with scan & search results ..................
+ * TODO: support new spec-compatible centres, see Oliver's mail ...............
  *
  * TODO: use corpus/language selection for search
  *
  * TODO: disable popups easily
  *
- * TODO: support new spec-compatible centres, see Oliver's mail ...............
- * TODO: scan ratelimiter (MPI complained about us hitting corpus1.mpi.nl) ....
- * TODO: populate statistics page with scan & search results ..................
- *
  * TODO: zoom into the results from a corpus, allow functionality only for the
  * view (search for next set of results)
  *
- * TODO: Clear results (also before new search)
+ * TODO: Fix activeSearch memory leak (gc searches older than...)
  *
  * TODO: Use weblicht with results
  *
@@ -117,17 +116,16 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 	private static final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 	private static Aggregator instance;
 
-	public static int ENDPOINTS_SEARCH_TIMEOUT_MS = 10 * 1000;
-	public static int ENDPOINTS_SCAN_TIMEOUT_MS = 60 * 1000;
-	public static int SCAN_TASK_INITIAL_DELAY = 0;
-	public static int EXECUTOR_SHUTDOWN_TIMEOUT_MS = (60 + 10) * 1000;
-	private final EndpointUrlFilter filter = new EndpointUrlFilter();
+	private EndpointFilter filter = null;
 
 	private AtomicReference<Corpora> scanCacheAtom = new AtomicReference<Corpora>(new Corpora());
+	private AtomicReference<Statistics> scanStatsAtom = new AtomicReference<Statistics>(new Statistics());
+
 	private TokenizerModel model;
-	private SRUThreadedClient sruSearchClient = null;
-	private SRUThreadedClient sruScanClient = null;
+	private ThrottledClient sruScanClient = null;
+	private ThrottledClient sruSearchClient = null;
 	private Map<Long, Search> activeSearches = Collections.synchronizedMap(new HashMap<Long, Search>());
+	private Statistics statistics = new Statistics();
 
 	public static void main(String[] args) throws Exception {
 		new Aggregator().run(args);
@@ -135,7 +133,7 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 
 	@Override
 	public String getName() {
-		return "Federated Content Search Aggregator";
+		return "FCS Aggregator";
 	}
 
 	@Override
@@ -145,12 +143,16 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 
 	@Override
 	public void run(AggregatorConfiguration config, Environment environment) {
+		System.out.println("Using parameters: ");
+		try {
+			System.out.println(new ObjectMapper().writerWithDefaultPrettyPrinter().
+					writeValueAsString(config.aggregatorParams));
+		} catch (IOException xc) {
+		}
 		environment.jersey().setUrlPattern("/rest/*");
 		environment.jersey().register(new RestService());
-
 		init(config);
 	}
-
 
 	public static Aggregator getInstance() {
 		return instance;
@@ -160,27 +162,31 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 		return scanCacheAtom.get();
 	}
 
+	public Statistics getStatistics() {
+		return scanStatsAtom.get();
+	}
+
 	public void init(AggregatorConfiguration config) {
 		log.info("Aggregator initialization started.");
 		instance = this;
+		AggregatorConfiguration.Params params = config.aggregatorParams;
 		try {
-			detectAndConfigureEnvironment(config);
-
-			sruScanClient = new ClarinFCSClientBuilder()
-					.setConnectTimeout(ENDPOINTS_SCAN_TIMEOUT_MS)
-					.setSocketTimeout(ENDPOINTS_SCAN_TIMEOUT_MS)
+			sruScanClient = new ThrottledClient(
+					new ClarinFCSClientBuilder()
+					.setConnectTimeout(params.ENDPOINTS_SCAN_TIMEOUT_MS)
+					.setSocketTimeout(params.ENDPOINTS_SCAN_TIMEOUT_MS)
 					.addDefaultDataViewParsers()
 					.enableLegacySupport()
-					.setThreadCount(8)
-					.buildThreadedClient();
-			sruSearchClient = new ClarinFCSClientBuilder()
-					.setConnectTimeout(ENDPOINTS_SEARCH_TIMEOUT_MS)
-					.setSocketTimeout(ENDPOINTS_SEARCH_TIMEOUT_MS)
+					.buildThreadedClient());
+			sruSearchClient = new ThrottledClient(
+					new ClarinFCSClientBuilder()
+					.setConnectTimeout(params.ENDPOINTS_SEARCH_TIMEOUT_MS)
+					.setSocketTimeout(params.ENDPOINTS_SEARCH_TIMEOUT_MS)
 					.addDefaultDataViewParsers()
 					.enableLegacySupport()
-					.buildThreadedClient();
+					.buildThreadedClient());
 
-			File corporaCacheFile = new File(config.getAggregatorFilePath());
+			File corporaCacheFile = new File(params.AGGREGATOR_FILE_PATH);
 			try {
 				Corpora corpora = new ObjectMapper().readValue(corporaCacheFile, Corpora.class);
 				scanCacheAtom.set(corpora);
@@ -191,10 +197,11 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 
 			model = setUpTokenizers();
 
-			ScanCrawlTask task = new ScanCrawlTask(sruScanClient, config.getCenterRegistryUrl(),
-					config.getScanMaxDepth(), filter, scanCacheAtom, corporaCacheFile);
-			scheduler.scheduleAtFixedRate(task, SCAN_TASK_INITIAL_DELAY,
-					config.getUpdateInterval(), config.getUpdateIntervalTimeUnit());
+			ScanCrawlTask task = new ScanCrawlTask(sruScanClient,
+					params.CENTER_REGISTRY_URL, params.SCAN_MAX_DEPTH,
+					filter, scanCacheAtom, corporaCacheFile, scanStatsAtom);
+			scheduler.scheduleAtFixedRate(task, params.SCAN_TASK_INITIAL_DELAY,
+					params.SCAN_TASK_INTERVAL, params.getScanTaskTimeUnit());
 
 			log.info("Aggregator initialization finished.");
 		} catch (Exception ex) {
@@ -203,23 +210,14 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 		}
 	}
 
-	public void shutdown() {
+	public void shutdown(AggregatorConfiguration config) {
 		log.info("Aggregator is shutting down.");
 		for (Search search : activeSearches.values()) {
 			search.shutdown();
 		}
-		shutdownAndAwaitTermination(sruScanClient, scheduler);
-		shutdownAndAwaitTermination(sruSearchClient, scheduler);
+		shutdownAndAwaitTermination(config.aggregatorParams, sruScanClient, scheduler);
+		shutdownAndAwaitTermination(config.aggregatorParams, sruSearchClient, scheduler);
 		log.info("Aggregator shutdown complete.");
-	}
-
-	public static SRUVersion getSRUVersion(String sruversion) {
-		if (sruversion.equals("1.2")) {
-			return SRUVersion.VERSION_1_2;
-		} else if (sruversion.equals("1.1")) {
-			return SRUVersion.VERSION_1_1;
-		}
-		return null;
 	}
 
 	// this function should be thread-safe
@@ -231,7 +229,8 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 			// No query
 			return null;
 		} else {
-			Search sr = new Search(sruSearchClient, version, corpora, searchString, searchLang, 1, maxRecords);
+			Search sr = new Search(sruSearchClient, version, statistics,
+					corpora, searchString, searchLang, 1, maxRecords);
 			activeSearches.put(sr.getId(), sr);
 			return sr;
 		}
@@ -241,14 +240,15 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 		return activeSearches.get(id);
 	}
 
-	private static void shutdownAndAwaitTermination(SRUThreadedClient sruClient, ExecutorService scheduler) {
+	private static void shutdownAndAwaitTermination(AggregatorConfiguration.Params params,
+			ThrottledClient sruClient, ExecutorService scheduler) {
 		try {
 			sruClient.shutdown();
 			scheduler.shutdown();
-			Thread.sleep(EXECUTOR_SHUTDOWN_TIMEOUT_MS);
+			Thread.sleep(params.EXECUTOR_SHUTDOWN_TIMEOUT_MS);
 			sruClient.shutdownNow();
 			scheduler.shutdownNow();
-			Thread.sleep(EXECUTOR_SHUTDOWN_TIMEOUT_MS);
+			Thread.sleep(params.EXECUTOR_SHUTDOWN_TIMEOUT_MS);
 		} catch (InterruptedException ie) {
 			sruClient.shutdownNow();
 			scheduler.shutdownNow();
@@ -268,26 +268,8 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 		return model;
 	}
 
-	private void detectAndConfigureEnvironment(AggregatorConfiguration config) {
-		if (!"Development".equals(System.getProperty("Environment"))) {
-			log.info(" *** Production Environment detected, using default settings *** ");
-			config.setScanMaxDepth(1);
-			return;
-		}
-
-		log.warn(" *** Development Environment detected, using custom settings *** ");
-
-		SCAN_TASK_INITIAL_DELAY = 100; //(HOURS) // large delay, use cache
-		ENDPOINTS_SEARCH_TIMEOUT_MS = 5 * 1000;
-		ENDPOINTS_SCAN_TIMEOUT_MS = 15 * 1000;
-		EXECUTOR_SHUTDOWN_TIMEOUT_MS = 100;
-
-//		filter.allow("lindat");
-//		filter.deny("leipzig");
-//		filter.allow("leipzig", "mpi.nl");
-//		filter.allow("lindat");
-		config.setAggregatorFilePath(System.getProperty("user.home")
-				+ File.separator + "fcsAggregatorCorpora.json");
-		config.setScanMaxDepth(1);
-	}
+//		filter = new EndpointUrlFilterAllow("lindat");
+//		filter = new EndpointUrlFilterDeny("leipzig");
+//		filter = new EndpointUrlFilterAllow("leipzig", "mpi.nl");
+//		filter = new EndpointUrlFilterAllow("lindat");
 }

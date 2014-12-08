@@ -1,5 +1,6 @@
-package eu.clarin.sru.fcs.aggregator.registry;
+package eu.clarin.sru.fcs.aggregator.scan;
 
+import eu.clarin.sru.fcs.aggregator.scan.EndpointFilter;
 import eu.clarin.weblicht.bindings.cmd.StringBinding;
 import eu.clarin.weblicht.bindings.cmd.cp.CenterExtendedInformation;
 import eu.clarin.weblicht.bindings.cmd.cp.CenterProfile;
@@ -25,10 +26,12 @@ public class CenterRegistryLive implements CenterRegistry {
 	private String centerRegistryUrl;
 	private boolean hasInstitutionsLoaded = false;
 	private List<Institution> centers = new ArrayList<Institution>();
+	private final EndpointFilter filter;
 
-	public CenterRegistryLive(String centerRegistryUrl) {
+	public CenterRegistryLive(String centerRegistryUrl, EndpointFilter filter) {
 		super();
 		this.centerRegistryUrl = centerRegistryUrl;
+		this.filter = filter;
 	}
 
 	@Override
@@ -59,7 +62,10 @@ public class CenterRegistryLive implements CenterRegistry {
 						List<StringBinding> sbs = webRef.getDescription();
 						for (StringBinding sb : sbs) {
 							if ("CQL".equals(sb.getValue())) {
-								institution.add(webRef.getWebsite());
+								String endpoint = webRef.getWebsite();
+								if (filter != null && filter.filter(endpoint)) {
+									institution.addEndpoint(endpoint);
+								}
 								break;
 							}
 						}

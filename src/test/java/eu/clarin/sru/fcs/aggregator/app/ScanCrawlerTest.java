@@ -1,13 +1,13 @@
 package eu.clarin.sru.fcs.aggregator.app;
 
-import eu.clarin.sru.client.SRUThreadedClient;
 import eu.clarin.sru.client.fcs.ClarinFCSClientBuilder;
-import eu.clarin.sru.fcs.aggregator.cache.Corpora;
-import eu.clarin.sru.fcs.aggregator.cache.EndpointUrlFilter;
-import eu.clarin.sru.fcs.aggregator.cache.ScanCrawler;
-import eu.clarin.sru.fcs.aggregator.registry.CenterRegistry;
-import eu.clarin.sru.fcs.aggregator.registry.CenterRegistryLive;
-import eu.clarin.sru.fcs.aggregator.registry.Corpus;
+import eu.clarin.sru.fcs.aggregator.scan.Corpora;
+import eu.clarin.sru.fcs.aggregator.scan.EndpointUrlFilterAllow;
+import eu.clarin.sru.fcs.aggregator.scan.ScanCrawler;
+import eu.clarin.sru.fcs.aggregator.client.ThrottledClient;
+import eu.clarin.sru.fcs.aggregator.scan.CenterRegistry;
+import eu.clarin.sru.fcs.aggregator.scan.CenterRegistryLive;
+import eu.clarin.sru.fcs.aggregator.scan.Corpus;
 import java.util.HashSet;
 import java.util.Set;
 import javax.naming.InitialContext;
@@ -26,18 +26,18 @@ public class ScanCrawlerTest {
 	@Test
 	public void testCrawlForMpiAndTue() throws NamingException {
 
-		SRUThreadedClient sruClient = new ClarinFCSClientBuilder()
+		ThrottledClient sruClient = new ThrottledClient(
+				new ClarinFCSClientBuilder()
 				.addDefaultDataViewParsers()
-				.buildThreadedClient();
+				.buildThreadedClient());
 
 		try {
-			EndpointUrlFilter filter = new EndpointUrlFilter()
-					.allow("uni-tuebingen.de"); //, "leipzig", ".mpi.nl", "dspin.dwds.de", "lindat."
+			EndpointUrlFilterAllow filter = new EndpointUrlFilterAllow("uni-tuebingen.de"); //, "leipzig", ".mpi.nl", "dspin.dwds.de", "lindat."
 
 			InitialContext context = new InitialContext();
 			String centerRegistryUrl = (String) context.lookup("java:comp/env/center-registry-url");
-			CenterRegistry centerRegistry = new CenterRegistryLive(centerRegistryUrl);
-			ScanCrawler crawler = new ScanCrawler(centerRegistry, sruClient, filter, 2);
+			CenterRegistry centerRegistry = new CenterRegistryLive(centerRegistryUrl, filter);
+			ScanCrawler crawler = new ScanCrawler(centerRegistry, sruClient, 2);
 			Corpora cache = crawler.crawl();
 			Corpus tueRootCorpus = cache.findByEndpoint("http://weblicht.sfs.uni-tuebingen.de/rws/sru/").get(0);
 			Corpus mpiRootCorpus = cache.findByEndpoint("http://cqlservlet.mpi.nl/").get(0);

@@ -33,4 +33,4 @@ node_modules/react-tools/bin/jsx --no-cache-dir $JSDIR $JSDIR
 #java -jar target/Aggregator2-2.0.0-alpha-6.jar server aggregator.yml
 
 # Run for development:
-#java -DEnvironment=Development -cp src/main/resources:target/Aggregator2-2.0.0-alpha-6.jar eu.clarin.sru.fcs.aggregator.app.Aggregator server aggregator.yml
+#java -cp src/main/resources:target/Aggregator2-2.0.0-alpha-6.jar eu.clarin.sru.fcs.aggregator.app.Aggregator server aggregator_development.yml

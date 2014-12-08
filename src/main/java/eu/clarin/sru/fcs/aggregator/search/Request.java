@@ -1,6 +1,6 @@
 package eu.clarin.sru.fcs.aggregator.search;
 
-import eu.clarin.sru.fcs.aggregator.registry.Corpus;
+import eu.clarin.sru.fcs.aggregator.scan.Corpus;
 import java.util.logging.Logger;
 
 /**

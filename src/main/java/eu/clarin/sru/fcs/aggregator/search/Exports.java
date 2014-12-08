@@ -1,6 +1,6 @@
 package eu.clarin.sru.fcs.aggregator.search;
 
-import eu.clarin.sru.fcs.aggregator.registry.Languages;
+import eu.clarin.sru.fcs.aggregator.util.Languages;
 import eu.clarin.weblicht.wlfxb.io.WLDObjector;
 import eu.clarin.weblicht.wlfxb.io.WLFormatException;
 import eu.clarin.weblicht.wlfxb.md.xb.MetaData;

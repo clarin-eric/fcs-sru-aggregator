@@ -6,11 +6,6 @@
 }
 
 
-label {
-	color: #222;
-}
-
-
 .muted {
 	font-weight:300;
 	color: #888;
@@ -74,8 +69,17 @@ label {
 
 /*** SEARCH ***/
 
+.biglabel {
+	font-size: 16px;
+}
+
 button.search {
-	 width: 64px;
+	 /*width: 64px;*/
+	 /*min-width:64px;*/
+}
+
+input[type="text"].search {
+	 /*width: 64px;*/
 }
 
 .search::-webkit-input-placeholder { /* WebKit browsers */
@@ -96,6 +100,11 @@ button.search {
 
 /*** input ***/
 
+.nobkg {
+	background-color: transparent;
+	border: none;
+}
+
 input, select, textarea {
   -webkit-transition: all 0.30s ease-in-out;
   -moz-transition: all 0.30s ease-in-out;
@@ -104,9 +113,12 @@ input, select, textarea {
   outline: none;
   border: 1px solid #ccc;
 }
-input:focus, select:focus, textarea:focus {
-  box-shadow: 0 0 5px #806a52 !important;
-  border: 1px solid #806a52 !important;
+input:focus, select:focus, textarea:focus, button:focus, a:focus {
+  /*box-shadow: 0 0 5px #00406F !important;*/
+  /*border: 1px solid #00406F !important;*/
+  box-shadow: 0 0 10px rgb(179,216,253) !important;
+  /*border: 1px solid rgb(179,216,253) !important;*/
+  outline: none !important;
 }
 
 input.input {
@@ -238,15 +250,16 @@ div.panel-title .institutionName{
 .panel-body span.keyword {
 	font-weight: bold;
 	font-size: 12px;
-	/*color: #fff;*/
+	color: #000;
 	/*background-color: #00406F;*/ /*blue*/
-	background-color: rgb(223, 184, 155); /*gold*/
+	/*background-color: rgb(223, 184, 155); /*gold*/
+	background-color: rgb(230, 242, 254); /*sky blue*/
 	/*color: #00406F;*/
 	/*color: rgb(215, 180, 105);*/
 	font-weight: bold;
 	padding: .15em .5em .25em;
 	white-space: nowrap;
-	border-radius: .25em;
+	border-radius: .2em;
 	/*display: inline;*/
 }
  
@@ -262,9 +275,9 @@ div.panel-title .institutionName{
 	padding: 0 20px;
 	margin: 0 0 20px 0;
 	border: 1px solid #ddd;
-	border-left: 5px solid #806a52; /*brown*/
+	/*border-left: 5px solid #806a52; /*brown*/
 	/*border-left: 5px solid rgb(191, 133, 64); /*other gold*/
-	/*border-left: 5px solid #888; /*neutral*/
+	border-left: 5px solid #00406F; /*blue*/
 	border-radius: 4px;
 }
 .bs-callout .panel-heading {

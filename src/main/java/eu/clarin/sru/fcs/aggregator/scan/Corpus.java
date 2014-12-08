@@ -1,5 +1,6 @@
-package eu.clarin.sru.fcs.aggregator.registry;
+package eu.clarin.sru.fcs.aggregator.scan;
 
+import eu.clarin.sru.fcs.aggregator.util.Languages;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -99,7 +100,11 @@ public class Corpus {
 	}
 
 	public void addLanguage(String language) {
-		this.languages.add(language);
+		if (Languages.getInstance().getCodes().contains(language)) {
+			this.languages.add(language);
+		} else {
+			this.languages.add(Languages.getInstance().codeForName(language));
+		}
 	}
 
 	public String getLandingPage() {

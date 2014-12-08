@@ -1,4 +1,4 @@
-package eu.clarin.sru.fcs.aggregator.registry;
+package eu.clarin.sru.fcs.aggregator.scan;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -68,7 +68,7 @@ public class CenterRegistryForTesting implements CenterRegistry {
         for (int i = 0; i < INSTITUTION_ENDPOINTS.length; i++) {
             Institution institution = new Institution(INSTITUTION_NAMES[i], INSTITUTION_URLS[i]);
             for (int j = 0; j < INSTITUTION_ENDPOINTS.length; j++) {
-				institution.add(INSTITUTION_ENDPOINTS[i][j]);
+				institution.addEndpoint(INSTITUTION_ENDPOINTS[i][j]);
             } 
 			if (!institution.getEndpoints().isEmpty()) {
 				centers.add(institution);

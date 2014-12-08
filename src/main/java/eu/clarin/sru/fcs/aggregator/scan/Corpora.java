@@ -1,8 +1,5 @@
-package eu.clarin.sru.fcs.aggregator.cache;
+package eu.clarin.sru.fcs.aggregator.scan;
 
-import eu.clarin.sru.fcs.aggregator.registry.Corpus;
-import eu.clarin.sru.fcs.aggregator.registry.Diagnostic;
-import eu.clarin.sru.fcs.aggregator.registry.Institution;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;

@@ -8,58 +8,15 @@ var Panel = window.MyReact.Panel;
 
 /////////////////////////////////
 
-var LanguageSelection = React.createClass({displayName: 'LanguageSelection',
-	propTypes: {
-		corpora: PT.object.isRequired,
-	},
-
-	render: function() {
-		var options = this.props.corpora.getLanguages().map(function(lang) {
-			var desc = lang.name + " [" + lang.code + "]";
-			return React.createElement("option", {value: lang.code, key: lang.code}, desc);
-		});
-		var style={width:"240px"};
-		return	React.createElement("div", {className: "form-group"}, 
-					React.createElement("select", {className: "form-control", type: "select", style: style}, 
-						React.createElement("option", {value: "ALL", key: "ALL"}, "All languages"), 
-						options
-					)
-				);
-	}
-});
-
-/////////////////////////////////
-
-var HitNumber = React.createClass({displayName: 'HitNumber',
-	propTypes: {
-		onChange: PT.func.isRequired,
-		numberOfResults: PT.number.isRequired,
-	},
-
-	handleChange: function(event) {
-		this.props.onChange(event.target.value);
-	},
-
-	render: function() {
-		var fifty = {width:"50px"};
-		return (
-			React.createElement("div", {className: "input-group", style: fifty}, 
-				React.createElement("input", {id: "hits", type: "number", className: "input", name: "maxResults", min: "10", max: "50", 
-					value: this.props.numberOfResults, onChange: this.handleChange})
-			) );
-	}
-});
-
-/////////////////////////////////
-
 var SearchBox = React.createClass({displayName: 'SearchBox',
 	propTypes: {
 		search: PT.func.isRequired,
+		placeholder: PT.string.isRequired,
 	},
 
 	getInitialState: function () {
 		return {
-			query: ""
+			query: "",
 		};
 	},
 
@@ -78,17 +35,14 @@ var SearchBox = React.createClass({displayName: 'SearchBox',
 	},
 
 	render: function() {
-		return 	React.createElement("div", {className: "input-group"}, 
-					React.createElement("input", {name: "query", type: "text", className: "form-control input-lg search", 
-						value: this.state.query, placeholder: "Search", tabIndex: "1", 
-						onChange: this.handleChange, 
-						onKeyDown: this.handleKey}), 
-					React.createElement("div", {className: "input-group-btn"}, 
-						React.createElement("button", {className: "btn btn-default input-lg search", type: "submit", tabIndex: "2", onClick: this.search}, 
-							React.createElement("i", {className: "glyphicon glyphicon-search"})
-						)
-					)
-				);
+		return 	React.createElement("input", {className: "form-control input-lg search", 
+					name: "query", 
+					type: "text", 
+					value: this.state.query, 
+					placeholder: this.props.placeholder, 
+					tabIndex: "1", 
+					onChange: this.handleChange, 
+					onKeyDown: this.handleKey})  ;
 	}
 });
 
@@ -199,13 +153,14 @@ var Results = React.createClass({displayName: 'Results',
 			React.createElement("span", null);
 	},
 
-	renderPreMessage: function() {
-		if (this.props.requests.length === 0)
-			return false;
-		return "Searching in " + this.props.requests.length + " collections...";
+	renderSearchingMessage: function() {
+		return false;
+		// if (this.props.requests.length === 0)
+		// 	return false;
+		// return "Searching in " + this.props.requests.length + " collections...";
 	},
 
-	renderPostMessage: function() {
+	renderFoundMessage: function() {
 		if (this.props.results.length === 0)
 			return false;
 		var hits = this.props.results.filter(function(corpusHit) { return corpusHit.kwics.length > 0; }).length;
@@ -216,7 +171,7 @@ var Results = React.createClass({displayName: 'Results',
 	renderKwicCheckbox: function() {
 		var inline = {display:"inline-block"};
 		var marginright = {marginRight:17};
-		return	React.createElement("div", {className: "row"}, 
+		return	React.createElement("div", {key: "-option-KWIC-", className: "row"}, 
 					React.createElement("div", {className: "float-right", style: marginright}, 
 						React.createElement("div", {className: "btn-group", style: inline}, 
 							React.createElement("label", {forHtml: "inputKwic", className: "btn-default"}, 
@@ -238,12 +193,12 @@ var Results = React.createClass({displayName: 'Results',
 		var inlinew = {display:"inline-block", margin:"0 5px 0 0", width:"240px;"};
 		var right= {float:"right"};
 		return 	React.createElement("div", null, 
-					this.props.results.length > 0 ? this.renderKwicCheckbox() : false, 
 					React.createElement(ReactCSSTransitionGroup, {transitionName: "fade"}, 
-						this.props.results.map(this.renderResultPanels), 
-						React.createElement("div", {key: "-premessage-", style: margintop}, this.renderPreMessage(), " "), 
+						React.createElement("div", {key: "-searching-message-", style: margintop}, this.renderSearchingMessage(), " "), 
+						React.createElement("div", {key: "-found-message-", style: margintop}, this.renderFoundMessage(), " "), 
 						React.createElement("div", {key: "-progress-", style: margintop}, this.renderProgressBar()), 
-						React.createElement("div", {key: "-postmessage-", style: margintop}, this.renderPostMessage(), " ")
+						this.props.results.length > 0 ? this.renderKwicCheckbox() : false, 
+						this.props.results.map(this.renderResultPanels)
 					)
 				);
 	}
@@ -252,7 +207,5 @@ var Results = React.createClass({displayName: 'Results',
 if (!window.MyAggregator) {
 	window.MyAggregator = {};
 }
-window.MyAggregator.LanguageSelection = LanguageSelection;
-window.MyAggregator.HitNumber = HitNumber;
 window.MyAggregator.SearchBox = SearchBox;
 window.MyAggregator.Results = Results;

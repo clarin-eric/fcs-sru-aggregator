@@ -1,4 +1,4 @@
-package eu.clarin.sru.fcs.aggregator.registry;
+package eu.clarin.sru.fcs.aggregator.scan;
 
 /*
  * @author edima

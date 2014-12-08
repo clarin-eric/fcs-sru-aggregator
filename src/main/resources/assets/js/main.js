@@ -4,12 +4,34 @@ var PT = React.PropTypes;
 
 var SearchBox = window.MyAggregator.SearchBox;
 var CorpusSelection = window.MyAggregator.CorpusSelection;
-var LanguageSelection = window.MyAggregator.LanguageSelection;
 var HitNumber = window.MyAggregator.HitNumber;
 var Results = window.MyAggregator.Results;
 var CorpusView = window.MyAggregator.CorpusView;
 var Modal = window.MyReact.Modal;
 var ErrorPane = window.MyReact.ErrorPane;
+
+var layers = [
+	{
+		id: "sampa",
+		name: "Phonetics Resources",
+		searchPlaceholder: "stA:z",
+		searchLabel: "SAMPA query",
+		searchLabelBkColor: "#dde",
+		allCollections: "All collections",
+	},
+	{
+		id: "text",
+		name: "Text Resources",
+		searchPlaceholder: "Elephant",
+		searchLabel: "Search text",
+		searchLabelBkColor: "#edc",
+		allCollections: "All collections",
+	},
+];
+var layerMap = {
+	sampa: layers[0], 
+	text: layers[1],
+};
 
 function Corpora(corpora, updateFn) {
 	var that = this;
@@ -220,27 +242,40 @@ var AggregatorPage = React.createClass({displayName: 'AggregatorPage',
 		corpora: PT.object.isRequired,
 	},
 
+	mixins: [React.addons.LinkedStateMixin],
+	timeout: 0,
+	nohits: { 
+		requests: [],
+		results: [],
+	},
+	anyLanguage: {
+		code: "ANY", 
+		name: "Any Language",
+	},
+
 	getInitialState: function () {
 		return {
-			searchLayer: "text",
+			searchLayerId: "text",
+			language: this.anyLanguage,
 			numberOfResults: 10,
 
 			searchId: null,
-			hits: { 
-				requests: [],
-				results: [],
-			},
+			hits: this.nohits,
 		};
 	},
 
-	timeout: 0,
-
 	search: function(query) {
+		console.log(query);
+		if (!query) {
+			this.setState({ hits: this.nohits, searchId: null });
+			return;			
+		}
 		this.props.ajax({
 			url: 'rest/search',
 			type: "POST",
 			data: {
-				query: query
+				layer: this.state.searchLayerId,
+				query: query,
 			},
 			success: function(searchId, textStatus, jqXHR) {
 				console.log("search ["+query+"] ok: ", searchId, jqXHR);
@@ -251,11 +286,10 @@ var AggregatorPage = React.createClass({displayName: 'AggregatorPage',
 		});
 	},
 
-	setNumberOfResults: function(x) {
-		this.setState({numberOfResults:x});
-	},
-
 	refreshSearchResults: function() {
+		if (!this.state.searchId) {
+			return;
+		}
 		this.props.ajax({
 			url: 'rest/search/'+this.state.searchId,
 			success: function(json, textStatus, jqXHR) {
@@ -274,44 +308,104 @@ var AggregatorPage = React.createClass({displayName: 'AggregatorPage',
 		});
 	},
 
+	setAState: function(id, value) {
+		var v = {};
+		v[id] = value;
+		this.setState(v);
+	},
+
+	openLayerDropdown:  function(e) {
+		// $(this.refs.layerDropdownMenu.getDOMNode()).dropdown();
+		e.preventDefault();
+		e.stopPropagation();
+	},
+
 	toggleCorpusSelection: function(e) {
 		$(this.refs.corporaModal.getDOMNode()).modal();
 		e.preventDefault();
 		e.stopPropagation();
 	},
 
-	renderCorpusSelection: function() {
-		var style={width:"240px"};
-		return	React.createElement("button", {type: "button", className: "btn btn-default", style: style, onClick: this.toggleCorpusSelection}, 
-					"All available corpora", React.createElement("span", {className: "caret"})
-				);
-	},
-
 	renderAggregator: function() {
-		var margin = {marginTop:"0", padding:"20px"};
-		var inline = {display:"inline-block", margin:"0 5px 0 0"};
-		var inlinew = {display:"inline-block", margin:"0 5px 0 0", width:"240px;"};
+		var layer = layerMap[this.state.searchLayerId];
 		return	(
-			React.createElement("div", null, 
-				React.createElement("div", {className: "top-gap"}, 
-					React.createElement(SearchBox, {search: this.search})
+			React.createElement("div", {className: "top-gap"}, 
+				React.createElement("div", {className: "row"}, 
+					React.createElement("div", {className: "aligncenter", style: {marginLeft:16, marginRight:16}}, 
+						React.createElement("div", {className: "input-group"}, 
+							React.createElement("span", {className: "input-group-addon", style: {backgroundColor:layer.searchLabelBkColor}}, 
+								layer.searchLabel
+							), 
+
+							React.createElement(SearchBox, {search: this.search, placeholder: layer.searchPlaceholder}), 
+							React.createElement("div", {className: "input-group-btn"}, 
+								React.createElement("button", {className: "btn btn-default input-lg", type: "button", onClick: this.search}, 
+									React.createElement("i", {className: "glyphicon glyphicon-search"})
+								)
+							)
+						)
+					)
 				), 
-				React.createElement("div", {className: "aligncenter"}, 
-					React.createElement("div", {style: margin}, 
+
+				React.createElement("div", {className: "wel", style: {marginTop:20}}, 
+					React.createElement("div", {className: "aligncenter"}, 
 						React.createElement("form", {className: "form-inline", role: "form"}, 
-							React.createElement("label", {className: "muted"}, "search in "), 
-							React.createElement("div", {id: "corpusSelection", style: inlinew}, 
-								this.renderCorpusSelection()
+
+							React.createElement("div", {className: "input-group", style: {marginRight:10}}, 
+								React.createElement("span", {className: "input-group-addon nobkg"}, "Search in"), 
+									React.createElement("button", {type: "button", className: "btn btn-default", onClick: this.toggleCorpusSelection}, 
+										layer.allCollections, " ", React.createElement("span", {className: "caret"})
+									)
 							), 
-							React.createElement("label", {className: "muted"}, " for results in "), 
-							React.createElement("div", {id: "languageSelection", style: inlinew}, 
-								React.createElement(LanguageSelection, {corpora: this.props.corpora})
+
+							React.createElement("div", {className: "input-group", style: {marginRight:10}}, 
+								
+								React.createElement("span", {className: "input-group-addon nobkg"}, "of"), 
+								
+								React.createElement("div", {className: "input-group-btn"}, 
+									React.createElement("button", {className: "form-control btn btn-default", 
+											'aria-expanded': "false", 
+											'data-toggle': "dropdown"}, 
+										this.state.language.name, " ", React.createElement("span", {className: "caret"})
+									), 
+									React.createElement("ul", {ref: "languageDropdownMenu", className: "dropdown-menu"}, 
+										React.createElement("li", {key: this.anyLanguage.code}, " ", React.createElement("a", {tabIndex: "-1", href: "#", 
+											onClick: this.setAState.bind(this, "language", this.anyLanguage)}, this.anyLanguage.name)), 
+											this.props.corpora.getLanguages().map(function(l) {
+												var desc = l.name + " [" + l.code + "]";
+												return React.createElement("li", {key: l.code}, " ", React.createElement("a", {tabIndex: "-1", href: "#", 
+													onClick: this.setAState.bind(this, "language", l)}, desc));
+											}.bind(this))
+										
+									)
+								), 
+
+								React.createElement("div", {className: "input-group-btn"}, 
+									React.createElement("ul", {ref: "layerDropdownMenu", className: "dropdown-menu"}, 
+										 	layers.map(function(l) { 
+												return React.createElement("li", {key: l.id}, " ", React.createElement("a", {tabIndex: "-1", href: "#", 
+													onClick: this.setAState.bind(this, "searchLayerId", l.id)}, " ", l.name, " "));
+											}.bind(this))
+										
+									), 								
+									React.createElement("button", {className: "form-control btn btn-default", 
+											'aria-expanded': "false", 
+											'data-toggle': "dropdown", 
+											onClick: this.openLayerDropdown}, 
+										layer.name, " ", React.createElement("span", {className: "caret"})
+									)
+								)
+
 							), 
-							React.createElement("label", {className: "muted"}, " and show maximum "), 
-							React.createElement("div", {style: inline}, 
-								React.createElement(HitNumber, {onChange: this.setNumberOfResults, numberOfResults: this.state.numberOfResults})
-							), 
-							React.createElement("label", {className: "muted"}, " hits")
+
+							React.createElement("div", {className: "input-group"}, 
+								React.createElement("span", {className: "input-group-addon nobkg"}, "and show up to"), 
+								React.createElement("div", {className: "input-group-btn"}, 
+									React.createElement("input", {type: "number", className: "form-control input", name: "maxResults", min: "10", max: "50", 
+										valueLink: this.linkState('numberOfResults')})
+								), 
+								React.createElement("span", {className: "input-group-addon nobkg"}, "hits")
+							)
 						)
 					)
 				), 
@@ -331,7 +425,7 @@ var AggregatorPage = React.createClass({displayName: 'AggregatorPage',
 	}
 });
 
-var StatsPage = React.createClass({displayName: 'StatsPage',
+var StatisticsPage = React.createClass({displayName: 'StatisticsPage',
 	propTypes: {
 		ajax: PT.func.isRequired,
 	},

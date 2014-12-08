@@ -4,12 +4,34 @@ var PT = React.PropTypes;
 
 var SearchBox = window.MyAggregator.SearchBox;
 var CorpusSelection = window.MyAggregator.CorpusSelection;
-var LanguageSelection = window.MyAggregator.LanguageSelection;
 var HitNumber = window.MyAggregator.HitNumber;
 var Results = window.MyAggregator.Results;
 var CorpusView = window.MyAggregator.CorpusView;
 var Modal = window.MyReact.Modal;
 var ErrorPane = window.MyReact.ErrorPane;
+
+var layers = [
+	{
+		id: "sampa",
+		name: "Phonetics Resources",
+		searchPlaceholder: "stA:z",
+		searchLabel: "SAMPA query",
+		searchLabelBkColor: "#dde",
+		allCollections: "All collections",
+	},
+	{
+		id: "text",
+		name: "Text Resources",
+		searchPlaceholder: "Elephant",
+		searchLabel: "Search text",
+		searchLabelBkColor: "#edc",
+		allCollections: "All collections",
+	},
+];
+var layerMap = {
+	sampa: layers[0], 
+	text: layers[1],
+};
 
 function Corpora(corpora, updateFn) {
 	var that = this;
@@ -220,27 +242,40 @@ var AggregatorPage = React.createClass({
 		corpora: PT.object.isRequired,
 	},
 
+	mixins: [React.addons.LinkedStateMixin],
+	timeout: 0,
+	nohits: { 
+		requests: [],
+		results: [],
+	},
+	anyLanguage: {
+		code: "ANY", 
+		name: "Any Language",
+	},
+
 	getInitialState: function () {
 		return {
-			searchLayer: "text",
+			searchLayerId: "text",
+			language: this.anyLanguage,
 			numberOfResults: 10,
 
 			searchId: null,
-			hits: { 
-				requests: [],
-				results: [],
-			},
+			hits: this.nohits,
 		};
 	},
 
-	timeout: 0,
-
 	search: function(query) {
+		console.log(query);
+		if (!query) {
+			this.setState({ hits: this.nohits, searchId: null });
+			return;			
+		}
 		this.props.ajax({
 			url: 'rest/search',
 			type: "POST",
 			data: {
-				query: query
+				layer: this.state.searchLayerId,
+				query: query,
 			},
 			success: function(searchId, textStatus, jqXHR) {
 				console.log("search ["+query+"] ok: ", searchId, jqXHR);
@@ -251,11 +286,10 @@ var AggregatorPage = React.createClass({
 		});
 	},
 
-	setNumberOfResults: function(x) {
-		this.setState({numberOfResults:x});
-	},
-
 	refreshSearchResults: function() {
+		if (!this.state.searchId) {
+			return;
+		}
 		this.props.ajax({
 			url: 'rest/search/'+this.state.searchId,
 			success: function(json, textStatus, jqXHR) {
@@ -274,44 +308,104 @@ var AggregatorPage = React.createClass({
 		});
 	},
 
+	setAState: function(id, value) {
+		var v = {};
+		v[id] = value;
+		this.setState(v);
+	},
+
+	openLayerDropdown:  function(e) {
+		// $(this.refs.layerDropdownMenu.getDOMNode()).dropdown();
+		e.preventDefault();
+		e.stopPropagation();
+	},
+
 	toggleCorpusSelection: function(e) {
 		$(this.refs.corporaModal.getDOMNode()).modal();
 		e.preventDefault();
 		e.stopPropagation();
 	},
 
-	renderCorpusSelection: function() {
-		var style={width:"240px"};
-		return	<button type="button" className="btn btn-default" style={style} onClick={this.toggleCorpusSelection}>
-					All available corpora<span className="caret"></span>
-				</button>;
-	},
-
 	renderAggregator: function() {
-		var margin = {marginTop:"0", padding:"20px"};
-		var inline = {display:"inline-block", margin:"0 5px 0 0"};
-		var inlinew = {display:"inline-block", margin:"0 5px 0 0", width:"240px;"};
+		var layer = layerMap[this.state.searchLayerId];
 		return	(
-			<div>
-				<div className="top-gap">
-					<SearchBox search={this.search} />
+			<div className="top-gap">
+				<div className="row">
+					<div className="aligncenter" style={{marginLeft:16, marginRight:16}}> 
+						<div className="input-group">
+							<span className="input-group-addon" style={{backgroundColor:layer.searchLabelBkColor}}>
+								{layer.searchLabel}
+							</span>
+
+							<SearchBox search={this.search} placeholder={layer.searchPlaceholder} />
+							<div className="input-group-btn">
+								<button className="btn btn-default input-lg" type="button" onClick={this.search}>
+									<i className="glyphicon glyphicon-search"></i>
+								</button>
+							</div>
+						</div>
+					</div>
 				</div>
-				<div className="aligncenter">
-					<div style={margin}>
+
+				<div className="wel" style={{marginTop:20}}>
+					<div className="aligncenter" >
 						<form className="form-inline" role="form">
-							<label className="muted">search in&nbsp;</label>
-							<div id="corpusSelection" style={inlinew}>
-								{this.renderCorpusSelection()}
+
+							<div className="input-group" style={{marginRight:10}}>
+								<span className="input-group-addon nobkg">Search in</span>
+									<button type="button" className="btn btn-default" onClick={this.toggleCorpusSelection}>
+										{layer.allCollections} <span className="caret"/>
+									</button>
 							</div>
-							<label className="muted">&nbsp;for results in&nbsp;</label>
-							<div id="languageSelection" style={inlinew}>
-								<LanguageSelection corpora={this.props.corpora} />
+
+							<div className="input-group" style={{marginRight:10}}>
+								
+								<span className="input-group-addon nobkg" >of</span>
+								
+								<div className="input-group-btn">
+									<button className="form-control btn btn-default" 
+											aria-expanded="false"
+											data-toggle="dropdown">
+										{this.state.language.name} <span className="caret"/>
+									</button>
+									<ul ref="languageDropdownMenu" className="dropdown-menu">
+										<li key={this.anyLanguage.code}> <a tabIndex="-1" href="#" 
+											onClick={this.setAState.bind(this, "language", this.anyLanguage)}>{this.anyLanguage.name}</a></li>
+										{	this.props.corpora.getLanguages().map(function(l) {
+												var desc = l.name + " [" + l.code + "]";
+												return <li key={l.code}> <a tabIndex="-1" href="#" 
+													onClick={this.setAState.bind(this, "language", l)}>{desc}</a></li>;
+											}.bind(this))
+										}
+									</ul>
+								</div>
+
+								<div className="input-group-btn">
+									<ul ref="layerDropdownMenu" className="dropdown-menu">
+										{ 	layers.map(function(l) { 
+												return <li key={l.id}> <a tabIndex="-1" href="#" 
+													onClick={this.setAState.bind(this, "searchLayerId", l.id)}> {l.name} </a></li>;
+											}.bind(this))
+										}
+									</ul>								
+									<button className="form-control btn btn-default" 
+											aria-expanded="false"
+											data-toggle="dropdown"
+											onClick={this.openLayerDropdown} >
+										{layer.name} <span className="caret"/>
+									</button>
+								</div>
+
 							</div>
-							<label className="muted">&nbsp;and show maximum&nbsp;</label>
-							<div style={inline}>
-								<HitNumber onChange={this.setNumberOfResults} numberOfResults={this.state.numberOfResults} />
+
+							<div className="input-group">
+								<span className="input-group-addon nobkg">and show up to</span>
+								<div className="input-group-btn">
+									<input type="number" className="form-control input" name="maxResults" min="10" max="50" 
+										valueLink={this.linkState('numberOfResults')} />
+								</div>
+								<span className="input-group-addon nobkg">hits</span>
 							</div>
-							<label className="muted"> hits</label>
 						</form>
 					</div>
 				</div>
@@ -331,7 +425,7 @@ var AggregatorPage = React.createClass({
 	}
 });
 
-var StatsPage = React.createClass({
+var StatisticsPage = React.createClass({
 	propTypes: {
 		ajax: PT.func.isRequired,
 	},

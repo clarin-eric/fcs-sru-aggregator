@@ -2,7 +2,7 @@ package eu.clarin.sru.fcs.aggregator.search;
 
 import eu.clarin.sru.client.SRUClientException;
 import eu.clarin.sru.client.SRURecord;
-import eu.clarin.sru.fcs.aggregator.registry.Corpus;
+import eu.clarin.sru.fcs.aggregator.scan.Corpus;
 import eu.clarin.sru.client.SRUSearchRetrieveResponse;
 import eu.clarin.sru.client.SRUSurrogateRecordData;
 import eu.clarin.sru.client.fcs.ClarinFCSRecordData;

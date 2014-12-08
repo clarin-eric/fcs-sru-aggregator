@@ -4,86 +4,56 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.dropwizard.Configuration;
 import java.util.concurrent.TimeUnit;
 import org.hibernate.validator.constraints.NotEmpty;
+import org.hibernate.validator.constraints.Range;
 
 public class AggregatorConfiguration extends Configuration {
 
-	@NotEmpty
-	private String centerRegistryUrl;
+	public static class Params {
 
-	@NotEmpty
-	private String weblichtUrl;
+		@NotEmpty
+		@JsonProperty
+		String CENTER_REGISTRY_URL;
 
-	@NotEmpty
-	private String updateIntervalUnit;
+		@NotEmpty
+		@JsonProperty
+		String WEBLICHT_URL;
 
-	private int updateInterval;
+		@NotEmpty
+		@JsonProperty
+		String AGGREGATOR_FILE_PATH;
 
-	private int scanMaxDepth;
+		@JsonProperty
+		@Range
+		int SCAN_MAX_DEPTH;
 
-	@NotEmpty
-	private String aggregatorFilePath;
+		@JsonProperty
+		@Range
+		long SCAN_TASK_INITIAL_DELAY;
 
-	@JsonProperty
-	public String getAggregatorFilePath() {
-		return aggregatorFilePath;
+		@Range
+		@JsonProperty
+		int SCAN_TASK_INTERVAL;
+
+		@NotEmpty
+		@JsonProperty
+		String SCAN_TASK_TIME_UNIT;
+
+		@JsonProperty
+		@Range
+		int ENDPOINTS_SCAN_TIMEOUT_MS;
+
+		@JsonProperty
+		@Range
+		int ENDPOINTS_SEARCH_TIMEOUT_MS;
+
+		@JsonProperty
+		@Range
+		long EXECUTOR_SHUTDOWN_TIMEOUT_MS;
+
+		public TimeUnit getScanTaskTimeUnit() {
+			return TimeUnit.valueOf(SCAN_TASK_TIME_UNIT);
+		}
 	}
 
-	@JsonProperty
-	public String getCenterRegistryUrl() {
-		return centerRegistryUrl;
-	}
-
-	@JsonProperty
-	public int getScanMaxDepth() {
-		return scanMaxDepth;
-	}
-
-	@JsonProperty
-	public int getUpdateInterval() {
-		return updateInterval;
-	}
-
-	@JsonProperty
-	public String getUpdateIntervalUnit() {
-		return updateIntervalUnit;
-	}
-
-	public TimeUnit getUpdateIntervalTimeUnit() {
-		return TimeUnit.valueOf(updateIntervalUnit);
-	}
-
-	@JsonProperty
-	public String getWeblichtUrl() {
-		return weblichtUrl;
-	}
-
-	@JsonProperty
-	public void setAggregatorFilePath(String aggregatorFilePath) {
-		this.aggregatorFilePath = aggregatorFilePath;
-	}
-
-	@JsonProperty
-	public void setCenterRegistryUrl(String centerRegistryUrl) {
-		this.centerRegistryUrl = centerRegistryUrl;
-	}
-
-	@JsonProperty
-	public void setScanMaxDepth(int scanMaxDepth) {
-		this.scanMaxDepth = scanMaxDepth;
-	}
-
-	@JsonProperty
-	public void setUpdateInterval(int updateInterval) {
-		this.updateInterval = updateInterval;
-	}
-
-	@JsonProperty
-	public void setUpdateIntervalUnit(String updateIntervalUnit) {
-		this.updateIntervalUnit = updateIntervalUnit;
-	}
-
-	@JsonProperty
-	public void setWeblichtUrl(String weblichtUrl) {
-		this.weblichtUrl = weblichtUrl;
-	}
+	public Params aggregatorParams = new Params();
 }

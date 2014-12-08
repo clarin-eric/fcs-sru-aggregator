@@ -1,4 +1,4 @@
-package eu.clarin.sru.fcs.aggregator.registry;
+package eu.clarin.sru.fcs.aggregator.scan;
 
 import java.util.*;
 
@@ -24,7 +24,7 @@ public class Institution {
 		this.endpoints = new LinkedHashSet<String>();
 	}
 
-	public String add(String endpointUrl) {
+	public String addEndpoint(String endpointUrl) {
 		endpoints.add(endpointUrl);
 		return endpointUrl;
 	}
