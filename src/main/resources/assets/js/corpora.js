@@ -1,4 +1,6 @@
 /** @jsx React.DOM */
+(function() {
+"use strict";
 
 var PT = React.PropTypes;
 var ReactCSSTransitionGroup = window.React.addons.CSSTransitionGroup;
@@ -179,19 +181,15 @@ var CorpusView = React.createClass({displayName: 'CorpusView',
 	},
 
 	render: function() {
-		var rightspace = { marginRight: 20 };
-		var lateralspace = { margin: "0 30px" };
-		return	React.createElement("div", {style: lateralspace}, 
+		return	React.createElement("div", {style: {margin: "0 30px"}}, 
 					React.createElement("div", {className: "row"}, 
 						React.createElement("div", {className: "float-right"}, 
-							React.createElement("div", {className: "inline", style: rightspace}, 
+							React.createElement("div", {className: "inline", style: { marginRight: 20}}, 
 								React.createElement(SearchCorpusBox, {search: this.searchCorpus})
 							), 
-							React.createElement("button", {className: "btn btn-default", style: rightspace, onClick: this.selectAll.bind(this,true)}, 
-								React.createElement("span", {className: "glyphicon glyphicon-check", 'aria-hidden': "true"}), 
+							React.createElement("button", {className: "btn btn-default", style: { marginRight: 10}, onClick: this.selectAll.bind(this,true)}, 
 								" Select all"), 
-							React.createElement("button", {className: "btn btn-default", style: rightspace, onClick: this.selectAll.bind(this,false)}, 
-								React.createElement("span", {className: "glyphicon glyphicon-unchecked", 'aria-hidden': "true"}), 
+							React.createElement("button", {className: "btn btn-default", style: { marginRight: 20}, onClick: this.selectAll.bind(this,false)}, 
 								" Deselect all")
 						)
 					), 
@@ -206,3 +204,4 @@ if (!window.MyAggregator) {
 	window.MyAggregator = {};
 }
 window.MyAggregator.CorpusView = CorpusView;
+})();

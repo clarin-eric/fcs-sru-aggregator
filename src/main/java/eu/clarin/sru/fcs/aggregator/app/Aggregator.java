@@ -10,6 +10,7 @@ import eu.clarin.sru.fcs.aggregator.client.ThrottledClient;
 import eu.clarin.sru.fcs.aggregator.scan.Corpus;
 import eu.clarin.sru.fcs.aggregator.rest.RestService;
 import eu.clarin.sru.fcs.aggregator.scan.Statistics;
+import eu.clarin.sru.fcs.aggregator.lang.LanguagesISO693_3;
 import io.dropwizard.Application;
 import io.dropwizard.assets.AssetsBundle;
 import io.dropwizard.setup.Bootstrap;
@@ -78,11 +79,11 @@ import org.slf4j.LoggerFactory;
  * @author Yana Panchenko
  * @author edima
  *
+ * TODO: make language show nicely in the UI
+ *
  * TODO: use selected visible corpus for search
  *
  * TODO: use language selection to hide corpora
- *
- * TODO: use number of hits input
  *
  * TODO: support new spec-compatible centres, see Oliver's mail ...............
  *
@@ -144,16 +145,24 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 	@Override
 	public void run(AggregatorConfiguration config, Environment environment) {
 		params = config.aggregatorParams;
+		instance = this;
+
 		System.out.println("Using parameters: ");
 		try {
 			System.out.println(new ObjectMapper().writerWithDefaultPrettyPrinter().
 					writeValueAsString(config.aggregatorParams));
 		} catch (IOException xc) {
 		}
+
 		environment.jersey().setUrlPattern("/rest/*");
 		environment.jersey().register(new RestService());
 
-		init();
+		try {
+			init();
+		} catch (Exception ex) {
+			log.error("INIT EXCEPTION", ex);
+			throw ex; // force exit
+		}
 	}
 
 	public static Aggregator getInstance() {
@@ -178,45 +187,40 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 
 	public void init() {
 		log.info("Aggregator initialization started.");
-		instance = this;
+		sruScanClient = new ThrottledClient(
+				new ClarinFCSClientBuilder()
+				.setConnectTimeout(params.ENDPOINTS_SCAN_TIMEOUT_MS)
+				.setSocketTimeout(params.ENDPOINTS_SCAN_TIMEOUT_MS)
+				.addDefaultDataViewParsers()
+				.enableLegacySupport()
+				.buildThreadedClient());
+		sruSearchClient = new ThrottledClient(
+				new ClarinFCSClientBuilder()
+				.setConnectTimeout(params.ENDPOINTS_SEARCH_TIMEOUT_MS)
+				.setSocketTimeout(params.ENDPOINTS_SEARCH_TIMEOUT_MS)
+				.addDefaultDataViewParsers()
+				.enableLegacySupport()
+				.buildThreadedClient());
+
+		File corporaCacheFile = new File(params.AGGREGATOR_FILE_PATH);
 		try {
-			sruScanClient = new ThrottledClient(
-					new ClarinFCSClientBuilder()
-					.setConnectTimeout(params.ENDPOINTS_SCAN_TIMEOUT_MS)
-					.setSocketTimeout(params.ENDPOINTS_SCAN_TIMEOUT_MS)
-					.addDefaultDataViewParsers()
-					.enableLegacySupport()
-					.buildThreadedClient());
-			sruSearchClient = new ThrottledClient(
-					new ClarinFCSClientBuilder()
-					.setConnectTimeout(params.ENDPOINTS_SEARCH_TIMEOUT_MS)
-					.setSocketTimeout(params.ENDPOINTS_SEARCH_TIMEOUT_MS)
-					.addDefaultDataViewParsers()
-					.enableLegacySupport()
-					.buildThreadedClient());
-
-			File corporaCacheFile = new File(params.AGGREGATOR_FILE_PATH);
-			try {
-				Corpora corpora = new ObjectMapper().readValue(corporaCacheFile, Corpora.class);
-				scanCacheAtom.set(corpora);
-				log.info("corpus list read from file; number of root corpora: " + scanCacheAtom.get().getCorpora().size());
-			} catch (Exception e) {
-				log.error("Error while reading cached corpora:", e);
-			}
-
-			model = setUpTokenizers();
-
-			ScanCrawlTask task = new ScanCrawlTask(sruScanClient,
-					params.CENTER_REGISTRY_URL, params.SCAN_MAX_DEPTH,
-					null, scanCacheAtom, corporaCacheFile, scanStatsAtom);
-			scheduler.scheduleAtFixedRate(task, params.SCAN_TASK_INITIAL_DELAY,
-					params.SCAN_TASK_INTERVAL, params.getScanTaskTimeUnit());
-
-			log.info("Aggregator initialization finished.");
-		} catch (Exception ex) {
-			log.error("INIT EXCEPTION", ex);
-			instance = null; // force crash
+			Corpora corpora = new ObjectMapper().readValue(corporaCacheFile, Corpora.class);
+			scanCacheAtom.set(corpora);
+			log.info("corpus list read from file; number of root corpora: " + scanCacheAtom.get().getCorpora().size());
+		} catch (Exception e) {
+			log.error("Error while reading cached corpora:", e);
 		}
+
+		LanguagesISO693_3.getInstance(); // force init
+		model = setUpTokenizers();
+
+		ScanCrawlTask task = new ScanCrawlTask(sruScanClient,
+				params.CENTER_REGISTRY_URL, params.SCAN_MAX_DEPTH,
+				null, scanCacheAtom, corporaCacheFile, scanStatsAtom);
+		scheduler.scheduleAtFixedRate(task, params.SCAN_TASK_INITIAL_DELAY,
+				params.SCAN_TASK_INTERVAL, params.getScanTaskTimeUnit());
+
+		log.info("Aggregator initialization finished.");
 	}
 
 	public void shutdown(AggregatorConfiguration config) {

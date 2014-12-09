@@ -1,6 +1,5 @@
 package eu.clarin.sru.fcs.aggregator.rest;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
@@ -11,15 +10,12 @@ import eu.clarin.sru.fcs.aggregator.client.ThrottledClient;
 import eu.clarin.sru.fcs.aggregator.scan.Corpus;
 import eu.clarin.sru.fcs.aggregator.scan.Diagnostic;
 import eu.clarin.sru.fcs.aggregator.scan.Statistics;
-import eu.clarin.sru.fcs.aggregator.util.Languages;
 import eu.clarin.sru.fcs.aggregator.search.Request;
 import eu.clarin.sru.fcs.aggregator.search.Result;
 import eu.clarin.sru.fcs.aggregator.search.Search;
+import eu.clarin.sru.fcs.aggregator.lang.LanguagesISO693_3;
 import java.io.IOException;
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,6 +39,7 @@ import javax.ws.rs.core.Response;
 @Produces(MediaType.APPLICATION_JSON)
 @Path("/")
 public class RestService {
+
 	ObjectWriter ow = new ObjectMapper().writerWithDefaultPrettyPrinter();
 
 	@Context
@@ -89,38 +86,15 @@ public class RestService {
 		return Response.ok(toJson(j)).build();
 	}
 
-	public static class JsonLang {
-
-		String name, code;
-
-		public JsonLang(String name, String code) {
-			this.name = name;
-			this.code = code;
-		}
-
-		public String getName() {
-			return name;
-		}
-
-		public String getCode() {
-			return code;
-		}
-	}
-
 	@GET
 	@Path("languages")
 	public Response getLanguages() throws IOException {
+		Map<String, String> languages = new HashMap<String, String>();
 		Set<String> codes = Aggregator.getInstance().getCorpora().getLanguages();
-		List<JsonLang> languages = new ArrayList<JsonLang>();
 		for (String code : codes) {
-			languages.add(new JsonLang(Languages.getInstance().nameForCode(code), code));
+			String name = LanguagesISO693_3.getInstance().nameForCode(code);
+			languages.put(code, name != null ? name : code);
 		}
-		Collections.sort(languages, new Comparator<JsonLang>() {
-			@Override
-			public int compare(JsonLang l1, JsonLang l2) {
-				return l1.name.compareToIgnoreCase(l2.name);
-			}
-		});
 		return Response.ok(toJson(languages)).build();
 	}
 
@@ -135,19 +109,29 @@ public class RestService {
 	@Path("search")
 	public Response postSearch(
 			@FormParam("query") String query,
-			@FormParam("language") String language,
-			@FormParam("numHits") Integer numHits) throws Exception {
+			@FormParam("corporaIds") Set<String> corporaIds,
+			@FormParam("numberOfResults") Integer numberOfResults,
+			@FormParam("language") String language) throws Exception {
 		if (query == null || query.isEmpty()) {
 			return Response.status(400).entity("'query' parameter expected").build();
 		}
-		List<Corpus> corpora = Aggregator.getInstance().getCorpora().getCorpora();
+		if (corporaIds == null || corporaIds.isEmpty()) {
+			return Response.status(400).entity("'corporaIds' parameter expected").build();
+		}
+		List<Corpus> corpora = Aggregator.getInstance().getCorpora().getCorporaByIds(corporaIds);
 		if (corpora == null || corpora.isEmpty()) {
 			return Response.status(503).entity("No corpora, please wait for the server to finish scanning").build();
 		}
-		if (numHits == null || numHits < 10) {
-			numHits = 10;
+		if (numberOfResults == null || numberOfResults < 10) {
+			numberOfResults = 10;
 		}
-		Search search = Aggregator.getInstance().startSearch(SRUVersion.VERSION_1_2, corpora, query, language, numHits);
+		if (numberOfResults > 250) {
+			numberOfResults = 250;
+		}
+		for (String c : corporaIds) {
+
+		}
+		Search search = Aggregator.getInstance().startSearch(SRUVersion.VERSION_1_2, corpora, query, language, numberOfResults);
 		if (search == null) {
 			return Response.status(500).entity("Initiating search failed").build();
 		}

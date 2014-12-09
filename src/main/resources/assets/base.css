@@ -47,20 +47,23 @@
 .errorDiv {
 	position: relative;
 	height: 10px;
+	text-align: center;
 }
 
 .errorRow { 
 	position: absolute;
 	width: 100%;
-	border-radius: 4px;
 	text-align: center;
 	font-weight: bold;
+	text-align: center;
 }
 
-.errorRow * {
-	/*width: 100%;*/
-	color: #fff;	
+.errorRow div * {
+	color: #fff;
+	border-radius: 4px;
 	background-color: #a20;	
+	text-align: center;
+	margin: 0 auto;
 }
 
 .errorRow .errorMessage {

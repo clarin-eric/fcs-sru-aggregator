@@ -1,6 +1,6 @@
 package eu.clarin.sru.fcs.aggregator.search;
 
-import eu.clarin.sru.fcs.aggregator.util.Languages;
+import eu.clarin.sru.fcs.aggregator.lang.LanguagesISO693_2;
 import eu.clarin.weblicht.wlfxb.io.WLDObjector;
 import eu.clarin.weblicht.wlfxb.io.WLFormatException;
 import eu.clarin.weblicht.wlfxb.md.xb.MetaData;
@@ -195,12 +195,12 @@ public class Exports {
             String resultsLang = "unknown";
             if (resultsLangs.size() == 1) {
                 resultsLang = resultsLangs.iterator().next();
-				String code2 = Languages.getInstance().langForCode(resultsLang).getCode_639_1();
+				String code2 = LanguagesISO693_2.getInstance().langForCode(resultsLang).getCode_639_1();
                 if (code2 != null) {
                     resultsLang = code2;
                 }
             } else if (!searchLanguage.equals("anylang")) {
-				String code2 = Languages.getInstance().langForCode(resultsLang).getCode_639_1();
+				String code2 = LanguagesISO693_2.getInstance().langForCode(resultsLang).getCode_639_1();
                 if (code2 == null) {
                     resultsLang = searchLanguage;
                 } else {
@@ -247,12 +247,12 @@ public class Exports {
             String resultsLang = "unknown";
             if (resultsLangs.size() == 1) {
                 resultsLang = resultsLangs.iterator().next();
-				String code2 = Languages.getInstance().langForCode(resultsLang).getCode_639_1();
+				String code2 = LanguagesISO693_2.getInstance().langForCode(resultsLang).getCode_639_1();
                 if (code2 != null) {
                     resultsLang = code2;
                 }
             } else if (!searchLanguage.equals("anylang")) {
-				String code2 = Languages.getInstance().langForCode(resultsLang).getCode_639_1();
+				String code2 = LanguagesISO693_2.getInstance().langForCode(resultsLang).getCode_639_1();
                 if (code2 == null) {
                     resultsLang = searchLanguage;
                 } else {

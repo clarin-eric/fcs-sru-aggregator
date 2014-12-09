@@ -1,8 +1,12 @@
 /** @jsx React.DOM */
+(function() {
+"use strict";
 
+var React = window.React;
 var PT = React.PropTypes;
 var ReactCSSTransitionGroup = window.React.addons.CSSTransitionGroup;
 // own components
+var InfoPopover = window.MyReact.InfoPopover;
 var Panel = window.MyReact.Panel;
 
 
@@ -146,7 +150,7 @@ var Results = React.createClass({
 		var sperc = Math.round(percents);
 		var styleperc = {width: sperc+"%"};
 		return this.props.requests.length > 0 ? 
-			<div className="progress">
+			<div className="progress" style={{marginBottom:10}}>
   				<div className="progress-bar progress-bar-striped active" role="progressbar" 
   					aria-valuenow={sperc} aria-valuemin="0" aria-valuemax="100" style={styleperc} />
 			</div> : 
@@ -165,15 +169,13 @@ var Results = React.createClass({
 			return false;
 		var hits = this.props.results.filter(function(corpusHit) { return corpusHit.kwics.length > 0; }).length;
 		var total = this.props.results.length;
-		return hits + " collections with results found out of " + total + " searched collections";
+		return hits + " collections with results found in " + total + " searched collections";
 	},
 
 	renderKwicCheckbox: function() {
-		var inline = {display:"inline-block"};
-		var marginright = {marginRight:17};
 		return	<div key="-option-KWIC-" className="row">
-					<div className="float-right" style={marginright}>
-						<div className="btn-group" style={inline}>
+					<div className="float-right" style={{marginRight:17}}>
+						<div className="btn-group" style={{display:"inline-block"}}>
 							<label forHtml="inputKwic" className="btn-default">
 								{ this.state.displayKwic ? 
 									<input id="inputKwic" type="checkbox" value="kwic" checked onChange={this.toggleKwic} /> :
@@ -209,3 +211,4 @@ if (!window.MyAggregator) {
 }
 window.MyAggregator.SearchBox = SearchBox;
 window.MyAggregator.Results = Results;
+})();

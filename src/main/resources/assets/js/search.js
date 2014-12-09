@@ -1,8 +1,12 @@
 /** @jsx React.DOM */
+(function() {
+"use strict";
 
+var React = window.React;
 var PT = React.PropTypes;
 var ReactCSSTransitionGroup = window.React.addons.CSSTransitionGroup;
 // own components
+var InfoPopover = window.MyReact.InfoPopover;
 var Panel = window.MyReact.Panel;
 
 
@@ -146,7 +150,7 @@ var Results = React.createClass({displayName: 'Results',
 		var sperc = Math.round(percents);
 		var styleperc = {width: sperc+"%"};
 		return this.props.requests.length > 0 ? 
-			React.createElement("div", {className: "progress"}, 
+			React.createElement("div", {className: "progress", style: {marginBottom:10}}, 
   				React.createElement("div", {className: "progress-bar progress-bar-striped active", role: "progressbar", 
   					'aria-valuenow': sperc, 'aria-valuemin': "0", 'aria-valuemax': "100", style: styleperc})
 			) : 
@@ -165,15 +169,13 @@ var Results = React.createClass({displayName: 'Results',
 			return false;
 		var hits = this.props.results.filter(function(corpusHit) { return corpusHit.kwics.length > 0; }).length;
 		var total = this.props.results.length;
-		return hits + " collections with results found out of " + total + " searched collections";
+		return hits + " collections with results found in " + total + " searched collections";
 	},
 
 	renderKwicCheckbox: function() {
-		var inline = {display:"inline-block"};
-		var marginright = {marginRight:17};
 		return	React.createElement("div", {key: "-option-KWIC-", className: "row"}, 
-					React.createElement("div", {className: "float-right", style: marginright}, 
-						React.createElement("div", {className: "btn-group", style: inline}, 
+					React.createElement("div", {className: "float-right", style: {marginRight:17}}, 
+						React.createElement("div", {className: "btn-group", style: {display:"inline-block"}}, 
 							React.createElement("label", {forHtml: "inputKwic", className: "btn-default"}, 
 								 this.state.displayKwic ? 
 									React.createElement("input", {id: "inputKwic", type: "checkbox", value: "kwic", checked: true, onChange: this.toggleKwic}) :
@@ -209,3 +211,4 @@ if (!window.MyAggregator) {
 }
 window.MyAggregator.SearchBox = SearchBox;
 window.MyAggregator.Results = Results;
+})();

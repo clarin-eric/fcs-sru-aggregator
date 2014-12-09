@@ -1,4 +1,4 @@
-package eu.clarin.sru.fcs.aggregator.scan;
+package eu.clarin.sru.fcs.aggregator.lang;
 
 /**
  * Represents language and contains information about language name and 
@@ -6,7 +6,7 @@ package eu.clarin.sru.fcs.aggregator.scan;
  * 
  * @author Yana Panchenko
  */
-public class Language implements Comparable {
+public class LanguageISO693_2 implements Comparable {
     
     //2-letter code
     private String code_639_1;
@@ -17,7 +17,7 @@ public class Language implements Comparable {
     //english name
     private String nameEn;
     
-    public Language(String code_639_1, String code_639_2T, String code_639_2B, String nameEn) {
+    public LanguageISO693_2(String code_639_1, String code_639_2T, String code_639_2B, String nameEn) {
         this.code_639_1 = code_639_1;
         this.code_639_2T = code_639_2T;
         this.code_639_2B = code_639_2B;
@@ -74,7 +74,7 @@ public class Language implements Comparable {
         if (getClass() != obj.getClass()) {
             return false;
         }
-        final Language other = (Language) obj;
+        final LanguageISO693_2 other = (LanguageISO693_2) obj;
         if ((this.code_639_1 == null) ? (other.code_639_1 != null) : !this.code_639_1.equals(other.code_639_1)) {
             return false;
         }
@@ -92,15 +92,15 @@ public class Language implements Comparable {
 
     @Override
     public int compareTo(Object o) {
-        int result = this.nameEn.compareTo(((Language) o).nameEn);
+        int result = this.nameEn.compareTo(((LanguageISO693_2) o).nameEn);
         if (result == 0) {
-            result = this.code_639_2T.compareTo(((Language) o).code_639_2T);
+            result = this.code_639_2T.compareTo(((LanguageISO693_2) o).code_639_2T);
         }
         if (result == 0) {
-            result = this.code_639_2B.compareTo(((Language) o).code_639_2B);
+            result = this.code_639_2B.compareTo(((LanguageISO693_2) o).code_639_2B);
         }
         if (result == 0) {
-            result = this.code_639_1.compareTo(((Language) o).code_639_1);
+            result = this.code_639_1.compareTo(((LanguageISO693_2) o).code_639_1);
         }
         return result;
     }

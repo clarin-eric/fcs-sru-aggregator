@@ -1,4 +1,6 @@
 /** @jsx React.DOM */
+(function() {
+"use strict";
 
 var PT = React.PropTypes;
 var ReactCSSTransitionGroup = window.React.addons.CSSTransitionGroup;
@@ -179,19 +181,15 @@ var CorpusView = React.createClass({
 	},
 
 	render: function() {
-		var rightspace = { marginRight: 20 };
-		var lateralspace = { margin: "0 30px" };
-		return	<div style={lateralspace}>
+		return	<div style={{margin: "0 30px"}}>
 					<div className="row">
 						<div className="float-right">
-							<div className="inline" style={rightspace} >
+							<div className="inline" style={{ marginRight: 20 }} >
 								<SearchCorpusBox search={this.searchCorpus}/>
 							</div>
-							<button className="btn btn-default" style={rightspace} onClick={this.selectAll.bind(this,true)}>
-								<span className="glyphicon glyphicon-check" aria-hidden="true"/>
+							<button className="btn btn-default" style={{ marginRight: 10 }} onClick={this.selectAll.bind(this,true)}>
 								{" Select all"}</button>
-							<button className="btn btn-default" style={rightspace} onClick={this.selectAll.bind(this,false)}>
-								<span className="glyphicon glyphicon-unchecked" aria-hidden="true"/>
+							<button className="btn btn-default" style={{ marginRight: 20 }} onClick={this.selectAll.bind(this,false)}>
 								{" Deselect all"}</button>
 						</div>
 					</div>
@@ -206,3 +204,4 @@ if (!window.MyAggregator) {
 	window.MyAggregator = {};
 }
 window.MyAggregator.CorpusView = CorpusView;
+})();

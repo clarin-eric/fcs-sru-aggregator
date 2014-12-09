@@ -1,6 +1,7 @@
 package eu.clarin.sru.fcs.aggregator.scan;
 
-import eu.clarin.sru.fcs.aggregator.util.Languages;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import eu.clarin.sru.fcs.aggregator.lang.LanguagesISO693_3;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -19,6 +20,7 @@ public class Corpus {
 
 	public static final String ROOT_HANDLE = "root";
 	public static final Pattern HANDLE_WITH_SPECIAL_CHARS = Pattern.compile(".*[<>=/()\\s].*");
+
 	private Institution institution;
 	private String endpointUrl;
 	private String handle;
@@ -36,6 +38,11 @@ public class Corpus {
 	public Corpus(Institution institution, String endpointUrl) {
 		this.institution = institution;
 		this.endpointUrl = endpointUrl;
+	}
+
+	@JsonIgnore
+	public String getId() {
+		return endpointUrl + "#" + handle;
 	}
 
 	public void addCorpus(Corpus c) {
@@ -100,10 +107,10 @@ public class Corpus {
 	}
 
 	public void addLanguage(String language) {
-		if (Languages.getInstance().getCodes().contains(language)) {
+		if (LanguagesISO693_3.getInstance().getCodes().contains(language)) {
 			this.languages.add(language);
 		} else {
-			String code = Languages.getInstance().codeForName(language);
+			String code = LanguagesISO693_3.getInstance().codeForName(language);
 			if (code != null) {
 				this.languages.add(code);
 			} else {
@@ -118,14 +125,6 @@ public class Corpus {
 
 	public void setLandingPage(String landingPage) {
 		this.landingPage = landingPage;
-	}
-
-	public String getTitle() {
-		return title;
-	}
-
-	public void setTitle(String title) {
-		this.title = title;
 	}
 
 	public String getDescription() {

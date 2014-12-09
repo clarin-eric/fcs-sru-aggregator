@@ -1,4 +1,6 @@
 /** @jsx React.DOM */
+(function() {
+"use strict";
 
 var PT = React.PropTypes;
 var ReactCSSTransitionGroup = React.addons.ReactCSSTransitionGroup;
@@ -58,7 +60,7 @@ window.MyReact.ErrorPane = React.createClass({displayName: 'ErrorPane',
 	render: function() {
 		return	React.createElement("div", {className: "container errorDiv"}, 
 					React.createElement("div", {className: "row errorRow"}, 
-						React.createElement(ReactTransitionGroup, null, 
+						React.createElement(ReactTransitionGroup, {component: "div"}, 
 							this.props.errorMessages.map(this.renderErrorMessage)
 						)
 					)
@@ -128,7 +130,7 @@ var PopoverMixin = {
 	}
 };
 
-var InfoPopover = React.createClass({displayName: 'InfoPopover',
+window.MyReact.InfoPopover = React.createClass({displayName: 'InfoPopover',
 	propTypes: {
 		title: PT.string.isRequired,
 	},
@@ -191,3 +193,5 @@ window.MyReact.PanelGroup = React.createClass({displayName: 'PanelGroup',
 		return	React.createElement("div", {className: "panel-group"}, " ", this.props.children, " ");
 	},
 });
+
+})();

@@ -1,4 +1,6 @@
 /** @jsx React.DOM */
+(function() {
+"use strict";
 
 var PT = React.PropTypes;
 
@@ -66,23 +68,14 @@ Corpora.prototype.recurse = function(fn) {
 	this.recurseCorpora(this.corpora, fn);
 };
 
-Corpora.prototype.getLanguages = function() {
+Corpora.prototype.getLanguageCodes = function() {
 	var languages = {};
 	this.recurse(function(corpus) {
 		corpus.languages.forEach(function(lang) {
 			languages[lang] = true;
 		});
 	});
-	var ret = [];
-	for (var l in languages) {
-		if (languages.hasOwnProperty(l)) {
-			ret.push({
-				name:l,
-				code:l,
-			});
-		}
-	}
-	return ret;
+	return languages;
 };
 
 
@@ -94,11 +87,13 @@ var Main = React.createClass({
 			errorMessages: [],
 
 			corpora: new Corpora([], this.updateCorpora),
+			languageMap: {},
 		};
 	},
 
 	componentDidMount: function() {
 		this.refreshCorpora();
+		this.refreshLanguages();
 	},
 
 	error: function(errObj) {
@@ -121,7 +116,7 @@ var Main = React.createClass({
 			var errs = that.state.errorMessages.slice();
 			errs.shift();
 			that.setState({errorMessages: errs});
-		}, 2000);
+		}, 10000);
 	},
 	
 	ajax: function(ajaxObject) {
@@ -130,7 +125,9 @@ var Main = React.createClass({
 			ajaxObject.error = function(jqXHR, textStatus, error) {
 				if (jqXHR.readyState === 0) {
 					that.error("Network error, please check your internet connection");
-				} else {
+				} else if (jqXHR.responseText) {
+					that.error(jqXHR.responseText + " ("+error+")");
+				} else  {
 					that.error(error + " ("+textStatus+")");
 				}
 				console.log("ajax error, jqXHR: ", jqXHR);
@@ -148,12 +145,21 @@ var Main = React.createClass({
 		});
 	},
 
+	refreshLanguages: function() {
+		this.ajax({
+			url: 'rest/languages',
+			success: function(json, textStatus, jqXHR) {
+				this.setState({languageMap : json});
+			}.bind(this),
+		});
+	},
+
 	updateCorpora: function(corpora) {
 		this.setState({corpora:corpora});
 	},
 
 	renderAggregator: function() {
-		return <AggregatorPage ajax={this.ajax} corpora={this.state.corpora} />;
+		return <AggregatorPage ajax={this.ajax} corpora={this.state.corpora} languageMap={this.state.languageMap} />;
 	},
 
 	renderStatistics: function() {
@@ -240,6 +246,7 @@ var AggregatorPage = React.createClass({
 	propTypes: {
 		ajax: PT.func.isRequired,
 		corpora: PT.object.isRequired,
+		languageMap: PT.object.isRequired,
 	},
 
 	mixins: [React.addons.LinkedStateMixin],
@@ -248,10 +255,7 @@ var AggregatorPage = React.createClass({
 		requests: [],
 		results: [],
 	},
-	anyLanguage: {
-		code: "ANY", 
-		name: "Any Language",
-	},
+	anyLanguage: ["ANY", "Any Language"],
 
 	getInitialState: function () {
 		return {
@@ -276,6 +280,7 @@ var AggregatorPage = React.createClass({
 			data: {
 				layer: this.state.searchLayerId,
 				query: query,
+				numberOfResults: this.state.numberOfResults,
 			},
 			success: function(searchId, textStatus, jqXHR) {
 				console.log("search ["+query+"] ok: ", searchId, jqXHR);
@@ -314,8 +319,16 @@ var AggregatorPage = React.createClass({
 		this.setState(v);
 	},
 
-	openLayerDropdown:  function(e) {
-		// $(this.refs.layerDropdownMenu.getDOMNode()).dropdown();
+	setNumberOfResults: function(e) {
+		var n = e.target.value;
+		if (n < 10) n = 10;
+		if (n > 250) n = 250;
+		this.setState({numberOfResults: n});
+		e.preventDefault();
+		e.stopPropagation();
+	},
+
+	stop: function(e) {
 		e.preventDefault();
 		e.stopPropagation();
 	},
@@ -364,16 +377,17 @@ var AggregatorPage = React.createClass({
 								
 								<div className="input-group-btn">
 									<button className="form-control btn btn-default" 
-											aria-expanded="false"
-											data-toggle="dropdown">
-										{this.state.language.name} <span className="caret"/>
+											aria-expanded="false" data-toggle="dropdown">
+										{this.state.language[1]} <span className="caret"/>
 									</button>
 									<ul ref="languageDropdownMenu" className="dropdown-menu">
-										<li key={this.anyLanguage.code}> <a tabIndex="-1" href="#" 
-											onClick={this.setAState.bind(this, "language", this.anyLanguage)}>{this.anyLanguage.name}</a></li>
-										{	this.props.corpora.getLanguages().map(function(l) {
-												var desc = l.name + " [" + l.code + "]";
-												return <li key={l.code}> <a tabIndex="-1" href="#" 
+										<li key={this.anyLanguage[0]}> <a tabIndex="-1" href="#" 
+												onClick={this.setAState.bind(this, "language", this.anyLanguage)}>
+											{this.anyLanguage[1]}</a>
+										</li>
+										{	_.pairs(this.props.languageMap).map(function(l) {
+												var desc = l[1] + " [" + l[0] + "]";
+												return <li key={l[0]}> <a tabIndex="-1" href="#" 
 													onClick={this.setAState.bind(this, "language", l)}>{desc}</a></li>;
 											}.bind(this))
 										}
@@ -389,9 +403,7 @@ var AggregatorPage = React.createClass({
 										}
 									</ul>								
 									<button className="form-control btn btn-default" 
-											aria-expanded="false"
-											data-toggle="dropdown"
-											onClick={this.openLayerDropdown} >
+											aria-expanded="false" data-toggle="dropdown" >
 										{layer.name} <span className="caret"/>
 									</button>
 								</div>
@@ -401,8 +413,9 @@ var AggregatorPage = React.createClass({
 							<div className="input-group">
 								<span className="input-group-addon nobkg">and show up to</span>
 								<div className="input-group-btn">
-									<input type="number" className="form-control input" name="maxResults" min="10" max="50" 
-										valueLink={this.linkState('numberOfResults')} />
+									<input type="number" className="form-control input" min="10" max="250" step="5"
+										onChange={this.setNumberOfResults} value={this.state.numberOfResults} 
+										onKeyPress={this.stop}/>
 								</div>
 								<span className="input-group-addon nobkg">hits</span>
 							</div>
@@ -454,37 +467,27 @@ var StatisticsPage = React.createClass({
 		});
 	},
 
-	map: function(o, fn){
-		var ret = [];
-		for (var x in o) {
-			if (o.hasOwnProperty(x)) {
-				ret.push(fn(x, o[x]));
-			}
-		}
-		return ret;
-	},
-
-	listItem: function(name, object) {
-		return <li>	{name}:
-					{ typeof(object) === "object" ? 
-						<ul>{this.map(object, this.listItem)}</ul> : 
-						object
+	listItem: function(it) {
+		return <li>	{it[0]}:
+					{ typeof(it[1]) === "object" ? 
+						<ul>{_.pairs(it[1]).map(this.listItem)}</ul> : 
+						it[1]
 					}
 				</li>;
 	},
 
-	// renderEndpoint: function(endpname, endpstats) {
+	// renderEndpoint: function(endp) {
 	// 	return <li>
 	// 				<ul>
-	// 					<li>endpoint: {endpname}</li>
-	//           			<li>numberOfRequests: {endpstats.numberOfRequests}</li>
-	// 			        <li>avgQueueTime: {endpstats.avgQueueTime}</li>
-	// 			        <li>maxQueueTime: {endpstats.maxQueueTime}</li>
-	// 			        <li>avgExecutionTime: {endpstats.avgExecutionTime}</li>
-	// 			        <li>maxExecutionTime: {endpstats.maxExecutionTime}</li>
+	// 					<li>endpoint: {endp[0]}</li>
+	//           			<li>numberOfRequests: {endp[1].numberOfRequests}</li>
+	// 			        <li>avgQueueTime: {endp[1].avgQueueTime}</li>
+	// 			        <li>maxQueueTime: {endp[1].maxQueueTime}</li>
+	// 			        <li>avgExecutionTime: {endp[1].avgExecutionTime}</li>
+	// 			        <li>maxExecutionTime: {endp[1].maxExecutionTime}</li>
 	// 					<li>errors 
 	// 						<ul>
-	// 							{ this.map(endpstats.errors, function(err, count) { return <li>{err}:{count}</li>; }) }
+	// 							{ _.pairs(object).map(endp[1].errors, function(e) { return <li>{e[0]}:{e[1]}</li>; }) }
 	// 						</ul>
 	// 					</li>
 	// 				</ul>
@@ -495,16 +498,14 @@ var StatisticsPage = React.createClass({
 	// 				<ul>
 	// 					<li>{instname}</li>
 	// 					<li>
-	// 						<ul>{this.map(instendps, this.renderEndpoint)}</ul>
+	// 						<ul>{_.pairs(object).map(instendps, this.renderEndpoint)}</ul>
 	// 					</li>
  // 					</ul>
  // 				</li>;
 	// },
 
 	renderStatistics: function(stats) {
-		return 	<ul>
-					{this.map(stats, this.listItem)}
-				</ul>;
+		return <ul>{_.pairs(stats).map(this.listItem)}</ul>;
 	},
 
 	render: function() {
@@ -567,5 +568,28 @@ var HelpPage = React.createClass({
 	}
 });
 
+var _ = _ || {
+	keys: function() {
+		var ret = [];
+		for (var x in o) {
+			if (o.hasOwnProperty(x)) {
+				ret.push(x);
+			}
+		}
+		return ret;
+	},
+
+	pairs: function(o){
+		var ret = [];
+		for (var x in o) {
+			if (o.hasOwnProperty(x)) {
+				ret.push([x, o[x]]);
+			}
+		}
+		return ret;
+	},
+};
+
 
 React.render(<Main />, document.getElementById('reactMain') );
+})();

@@ -129,6 +129,19 @@ public class Corpora {
 		return found.isEmpty() ? null : found.get(0);
 	}
 
+	public List<Corpus> getCorporaByIds(final Set<String> corporaIds) {
+		final List<Corpus> found = new ArrayList<Corpus>();
+		visit(corpora, new CallCorpus() {
+			@Override
+			public void call(Corpus c) {
+				if (corporaIds.contains(c.getId())) {
+					found.add(c);
+				}
+			}
+		});
+		return found;
+	}
+
 	public static interface CallCorpus {
 		void call(Corpus c);
 	}

@@ -1,4 +1,6 @@
 /** @jsx React.DOM */
+(function() {
+"use strict";
 
 var PT = React.PropTypes;
 
@@ -66,27 +68,18 @@ Corpora.prototype.recurse = function(fn) {
 	this.recurseCorpora(this.corpora, fn);
 };
 
-Corpora.prototype.getLanguages = function() {
+Corpora.prototype.getLanguageCodes = function() {
 	var languages = {};
 	this.recurse(function(corpus) {
 		corpus.languages.forEach(function(lang) {
 			languages[lang] = true;
 		});
 	});
-	var ret = [];
-	for (var l in languages) {
-		if (languages.hasOwnProperty(l)) {
-			ret.push({
-				name:l,
-				code:l,
-			});
-		}
-	}
-	return ret;
+	return languages;
 };
 
 
-var Main = React.createClass({displayName: 'Main',
+var Main = React.createClass({
 	getInitialState: function () {
 		return {
 			navbarCollapse: false,
@@ -94,11 +87,13 @@ var Main = React.createClass({displayName: 'Main',
 			errorMessages: [],
 
 			corpora: new Corpora([], this.updateCorpora),
+			languageMap: {},
 		};
 	},
 
 	componentDidMount: function() {
 		this.refreshCorpora();
+		this.refreshLanguages();
 	},
 
 	error: function(errObj) {
@@ -121,7 +116,7 @@ var Main = React.createClass({displayName: 'Main',
 			var errs = that.state.errorMessages.slice();
 			errs.shift();
 			that.setState({errorMessages: errs});
-		}, 2000);
+		}, 10000);
 	},
 	
 	ajax: function(ajaxObject) {
@@ -130,7 +125,9 @@ var Main = React.createClass({displayName: 'Main',
 			ajaxObject.error = function(jqXHR, textStatus, error) {
 				if (jqXHR.readyState === 0) {
 					that.error("Network error, please check your internet connection");
-				} else {
+				} else if (jqXHR.responseText) {
+					that.error(jqXHR.responseText + " ("+error+")");
+				} else  {
 					that.error(error + " ("+textStatus+")");
 				}
 				console.log("ajax error, jqXHR: ", jqXHR);
@@ -148,20 +145,29 @@ var Main = React.createClass({displayName: 'Main',
 		});
 	},
 
+	refreshLanguages: function() {
+		this.ajax({
+			url: 'rest/languages',
+			success: function(json, textStatus, jqXHR) {
+				this.setState({languageMap : json});
+			}.bind(this),
+		});
+	},
+
 	updateCorpora: function(corpora) {
 		this.setState({corpora:corpora});
 	},
 
 	renderAggregator: function() {
-		return React.createElement(AggregatorPage, {ajax: this.ajax, corpora: this.state.corpora});
+		return <AggregatorPage ajax={this.ajax} corpora={this.state.corpora} languageMap={this.state.languageMap} />;
 	},
 
 	renderStatistics: function() {
-		return React.createElement(StatisticsPage, {ajax: this.ajax});
+		return <StatisticsPage ajax={this.ajax} />;
 	},
 
 	renderHelp: function() {
-		return React.createElement(HelpPage, null);
+		return <HelpPage />;
 	},
 
 	toggleCollapse: function() {
@@ -175,71 +181,72 @@ var Main = React.createClass({displayName: 'Main',
 	renderCollapsible: function() {
 		var classname = "navbar-collapse collapse " + (this.state.navbarCollapse?"in":"");
 		return (
-			React.createElement("div", {className: classname}, 
-				React.createElement("ul", {className: "nav navbar-nav"}, 
-					React.createElement("li", {className: this.state.navbarPageFn === this.renderAggregator ? "active":""}, 
-						React.createElement("a", {className: "link", tabIndex: "-1", 
-							onClick: this.setNavbarPageFn.bind(this, this.renderAggregator)}, "Aggregator")
-					), 
-					React.createElement("li", {className: this.state.navbarPageFn === this.renderStatistics ? "active":""}, 
-						React.createElement("a", {className: "link", tabIndex: "-1", 
-							onClick: this.setNavbarPageFn.bind(this, this.renderStatistics)}, "Statistics")
-					), 
-					React.createElement("li", {className: this.state.navbarPageFn === this.renderHelp ? "active":""}, 
-						React.createElement("a", {className: "link", tabIndex: "-1", 
-							onClick: this.setNavbarPageFn.bind(this, this.renderHelp)}, "Help")
-					)
-				), 
-				React.createElement("ul", {id: "CLARIN_header_right", className: "nav navbar-nav navbar-right"}, 
-					React.createElement("li", {className: "unauthenticated"}, 
-						React.createElement("a", {href: "login", tabIndex: "-1"}, React.createElement("span", {className: "glyphicon glyphicon-log-in"}), " LOGIN")
-					)
-				)
-			)
+			<div className={classname}>
+				<ul className="nav navbar-nav">
+					<li className={this.state.navbarPageFn === this.renderAggregator ? "active":""}>
+						<a className="link" tabIndex="-1" 
+							onClick={this.setNavbarPageFn.bind(this, this.renderAggregator)}>Aggregator</a>
+					</li>
+					<li className={this.state.navbarPageFn === this.renderStatistics ? "active":""}>
+						<a className="link" tabIndex="-1" 
+							onClick={this.setNavbarPageFn.bind(this, this.renderStatistics)}>Statistics</a>
+					</li>
+					<li className={this.state.navbarPageFn === this.renderHelp ? "active":""}>
+						<a className="link" tabIndex="-1" 
+							onClick={this.setNavbarPageFn.bind(this, this.renderHelp)}>Help</a>
+					</li>
+				</ul>
+				<ul id="CLARIN_header_right" className="nav navbar-nav navbar-right">
+					<li className="unauthenticated">
+						<a href="login" tabIndex="-1"><span className="glyphicon glyphicon-log-in"></span> LOGIN</a>
+					</li>
+				</ul>
+			</div>
 		);
 	},
 
 	render: function() {
 		return	(
-			React.createElement("div", null, 
-				React.createElement("div", {className: "container"}, 
-					React.createElement("div", {className: "beta-tag"}, 
-						React.createElement("span", null, "BETA")
-					)
-				), 
+			<div>
+				<div className="container">
+					<div className="beta-tag">
+						<span>BETA</span>
+					</div>
+				</div>
 			
-				React.createElement("div", {className: "navbar navbar-default navbar-static-top", role: "navigation"}, 
-					React.createElement("div", {className: "container"}, 
-						React.createElement("div", {className: "navbar-header"}, 
-							React.createElement("button", {type: "button", className: "navbar-toggle", onClick: this.toggleCollapse}, 
-								React.createElement("span", {className: "sr-only"}, "Toggle navigation"), 
-								React.createElement("span", {className: "icon-bar"}), 
-								React.createElement("span", {className: "icon-bar"}), 
-								React.createElement("span", {className: "icon-bar"})
-							), 
-							React.createElement("a", {className: "navbar-brand", href: "#", tabIndex: "-1"}, React.createElement("header", null, "Federated Content Search"))
-						), 
-						this.renderCollapsible()
-					)
-				), 
+				<div className="navbar navbar-default navbar-static-top" role="navigation">
+					<div className="container">
+						<div className="navbar-header">
+							<button type="button" className="navbar-toggle" onClick={this.toggleCollapse}>
+								<span className="sr-only">Toggle navigation</span>
+								<span className="icon-bar"></span>
+								<span className="icon-bar"></span>
+								<span className="icon-bar"></span>
+							</button>
+							<a className="navbar-brand" href="#" tabIndex="-1"><header>Federated Content Search</header></a>
+						</div>
+						{this.renderCollapsible()}
+					</div>
+				</div>
 
-				React.createElement(ErrorPane, {errorMessages: this.state.errorMessages}), 
+				<ErrorPane errorMessages={this.state.errorMessages} />
 
-				React.createElement("div", {id: "push"}, 
-					React.createElement("div", {className: "container"}, 
-						this.state.navbarPageFn()
-		 			), 
-		 			React.createElement("div", {className: "top-gap"})
-				)
-			)
+				<div id="push">
+					<div className="container">
+						{this.state.navbarPageFn()}
+		 			</div>
+		 			<div className="top-gap" />
+				</div>
+			</div>
 		);
 	}
 });
 
-var AggregatorPage = React.createClass({displayName: 'AggregatorPage',
+var AggregatorPage = React.createClass({
 	propTypes: {
 		ajax: PT.func.isRequired,
 		corpora: PT.object.isRequired,
+		languageMap: PT.object.isRequired,
 	},
 
 	mixins: [React.addons.LinkedStateMixin],
@@ -248,10 +255,7 @@ var AggregatorPage = React.createClass({displayName: 'AggregatorPage',
 		requests: [],
 		results: [],
 	},
-	anyLanguage: {
-		code: "ANY", 
-		name: "Any Language",
-	},
+	anyLanguage: ["ANY", "Any Language"],
 
 	getInitialState: function () {
 		return {
@@ -276,6 +280,7 @@ var AggregatorPage = React.createClass({displayName: 'AggregatorPage',
 			data: {
 				layer: this.state.searchLayerId,
 				query: query,
+				numberOfResults: this.state.numberOfResults,
 			},
 			success: function(searchId, textStatus, jqXHR) {
 				console.log("search ["+query+"] ok: ", searchId, jqXHR);
@@ -314,8 +319,16 @@ var AggregatorPage = React.createClass({displayName: 'AggregatorPage',
 		this.setState(v);
 	},
 
-	openLayerDropdown:  function(e) {
-		// $(this.refs.layerDropdownMenu.getDOMNode()).dropdown();
+	setNumberOfResults: function(e) {
+		var n = e.target.value;
+		if (n < 10) n = 10;
+		if (n > 250) n = 250;
+		this.setState({numberOfResults: n});
+		e.preventDefault();
+		e.stopPropagation();
+	},
+
+	stop: function(e) {
 		e.preventDefault();
 		e.stopPropagation();
 	},
@@ -329,95 +342,95 @@ var AggregatorPage = React.createClass({displayName: 'AggregatorPage',
 	renderAggregator: function() {
 		var layer = layerMap[this.state.searchLayerId];
 		return	(
-			React.createElement("div", {className: "top-gap"}, 
-				React.createElement("div", {className: "row"}, 
-					React.createElement("div", {className: "aligncenter", style: {marginLeft:16, marginRight:16}}, 
-						React.createElement("div", {className: "input-group"}, 
-							React.createElement("span", {className: "input-group-addon", style: {backgroundColor:layer.searchLabelBkColor}}, 
-								layer.searchLabel
-							), 
+			<div className="top-gap">
+				<div className="row">
+					<div className="aligncenter" style={{marginLeft:16, marginRight:16}}> 
+						<div className="input-group">
+							<span className="input-group-addon" style={{backgroundColor:layer.searchLabelBkColor}}>
+								{layer.searchLabel}
+							</span>
 
-							React.createElement(SearchBox, {search: this.search, placeholder: layer.searchPlaceholder}), 
-							React.createElement("div", {className: "input-group-btn"}, 
-								React.createElement("button", {className: "btn btn-default input-lg", type: "button", onClick: this.search}, 
-									React.createElement("i", {className: "glyphicon glyphicon-search"})
-								)
-							)
-						)
-					)
-				), 
+							<SearchBox search={this.search} placeholder={layer.searchPlaceholder} />
+							<div className="input-group-btn">
+								<button className="btn btn-default input-lg" type="button" onClick={this.search}>
+									<i className="glyphicon glyphicon-search"></i>
+								</button>
+							</div>
+						</div>
+					</div>
+				</div>
 
-				React.createElement("div", {className: "wel", style: {marginTop:20}}, 
-					React.createElement("div", {className: "aligncenter"}, 
-						React.createElement("form", {className: "form-inline", role: "form"}, 
+				<div className="wel" style={{marginTop:20}}>
+					<div className="aligncenter" >
+						<form className="form-inline" role="form">
 
-							React.createElement("div", {className: "input-group", style: {marginRight:10}}, 
-								React.createElement("span", {className: "input-group-addon nobkg"}, "Search in"), 
-									React.createElement("button", {type: "button", className: "btn btn-default", onClick: this.toggleCorpusSelection}, 
-										layer.allCollections, " ", React.createElement("span", {className: "caret"})
-									)
-							), 
+							<div className="input-group" style={{marginRight:10}}>
+								<span className="input-group-addon nobkg">Search in</span>
+									<button type="button" className="btn btn-default" onClick={this.toggleCorpusSelection}>
+										{layer.allCollections} <span className="caret"/>
+									</button>
+							</div>
 
-							React.createElement("div", {className: "input-group", style: {marginRight:10}}, 
+							<div className="input-group" style={{marginRight:10}}>
 								
-								React.createElement("span", {className: "input-group-addon nobkg"}, "of"), 
+								<span className="input-group-addon nobkg" >of</span>
 								
-								React.createElement("div", {className: "input-group-btn"}, 
-									React.createElement("button", {className: "form-control btn btn-default", 
-											'aria-expanded': "false", 
-											'data-toggle': "dropdown"}, 
-										this.state.language.name, " ", React.createElement("span", {className: "caret"})
-									), 
-									React.createElement("ul", {ref: "languageDropdownMenu", className: "dropdown-menu"}, 
-										React.createElement("li", {key: this.anyLanguage.code}, " ", React.createElement("a", {tabIndex: "-1", href: "#", 
-											onClick: this.setAState.bind(this, "language", this.anyLanguage)}, this.anyLanguage.name)), 
-											this.props.corpora.getLanguages().map(function(l) {
-												var desc = l.name + " [" + l.code + "]";
-												return React.createElement("li", {key: l.code}, " ", React.createElement("a", {tabIndex: "-1", href: "#", 
-													onClick: this.setAState.bind(this, "language", l)}, desc));
+								<div className="input-group-btn">
+									<button className="form-control btn btn-default" 
+											aria-expanded="false" data-toggle="dropdown">
+										{this.state.language[1]} <span className="caret"/>
+									</button>
+									<ul ref="languageDropdownMenu" className="dropdown-menu">
+										<li key={this.anyLanguage[0]}> <a tabIndex="-1" href="#" 
+												onClick={this.setAState.bind(this, "language", this.anyLanguage)}>
+											{this.anyLanguage[1]}</a>
+										</li>
+										{	_.pairs(this.props.languageMap).map(function(l) {
+												var desc = l[1] + " [" + l[0] + "]";
+												return <li key={l[0]}> <a tabIndex="-1" href="#" 
+													onClick={this.setAState.bind(this, "language", l)}>{desc}</a></li>;
 											}.bind(this))
-										
-									)
-								), 
+										}
+									</ul>
+								</div>
 
-								React.createElement("div", {className: "input-group-btn"}, 
-									React.createElement("ul", {ref: "layerDropdownMenu", className: "dropdown-menu"}, 
-										 	layers.map(function(l) { 
-												return React.createElement("li", {key: l.id}, " ", React.createElement("a", {tabIndex: "-1", href: "#", 
-													onClick: this.setAState.bind(this, "searchLayerId", l.id)}, " ", l.name, " "));
+								<div className="input-group-btn">
+									<ul ref="layerDropdownMenu" className="dropdown-menu">
+										{ 	layers.map(function(l) { 
+												return <li key={l.id}> <a tabIndex="-1" href="#" 
+													onClick={this.setAState.bind(this, "searchLayerId", l.id)}> {l.name} </a></li>;
 											}.bind(this))
-										
-									), 								
-									React.createElement("button", {className: "form-control btn btn-default", 
-											'aria-expanded': "false", 
-											'data-toggle': "dropdown", 
-											onClick: this.openLayerDropdown}, 
-										layer.name, " ", React.createElement("span", {className: "caret"})
-									)
-								)
+										}
+									</ul>								
+									<button className="form-control btn btn-default" 
+											aria-expanded="false" data-toggle="dropdown" >
+										{layer.name} <span className="caret"/>
+									</button>
+								</div>
 
-							), 
+							</div>
 
-							React.createElement("div", {className: "input-group"}, 
-								React.createElement("span", {className: "input-group-addon nobkg"}, "and show up to"), 
-								React.createElement("div", {className: "input-group-btn"}, 
-									React.createElement("input", {type: "number", className: "form-control input", name: "maxResults", min: "10", max: "50", 
-										valueLink: this.linkState('numberOfResults')})
-								), 
-								React.createElement("span", {className: "input-group-addon nobkg"}, "hits")
-							)
-						)
-					)
-				), 
+							<div className="input-group">
+								<span className="input-group-addon nobkg">and show up to</span>
+								<div className="input-group-btn">
+									<input type="number" className="form-control input" min="10" max="250" step="5"
+										onChange={this.setNumberOfResults} value={this.state.numberOfResults} 
+										onKeyPress={this.stop}/>
+								</div>
+								<span className="input-group-addon nobkg">hits</span>
+							</div>
+						</form>
+					</div>
+				</div>
 
-	            React.createElement(Modal, {ref: "corporaModal", title: "Collections"}, 
-					React.createElement(CorpusView, {ref: "corpusView", corpora: this.props.corpora})
-	            ), 
+	            <Modal ref="corporaModal" title="Collections">
+					<CorpusView ref="corpusView" corpora={this.props.corpora} />
+	            </Modal>
 
-				React.createElement("div", {className: "top-gap"}, 
-					React.createElement(Results, {requests: this.state.hits.requests, results: this.state.hits.results})
-				)
-			)
+				<div className="top-gap">
+					<Results requests={this.state.hits.requests} results={this.state.hits.results} />
+				</div>
+			</div>
 			);
 	},
 	render: function() {
@@ -425,7 +438,7 @@ var AggregatorPage = React.createClass({displayName: 'AggregatorPage',
 	}
 });
 
-var StatisticsPage = React.createClass({displayName: 'StatisticsPage',
+var StatisticsPage = React.createClass({
 	propTypes: {
 		ajax: PT.func.isRequired,
 	},
@@ -454,37 +467,27 @@ var StatisticsPage = React.createClass({displayName: 'StatisticsPage',
 		});
 	},
 
-	map: function(o, fn){
-		var ret = [];
-		for (var x in o) {
-			if (o.hasOwnProperty(x)) {
-				ret.push(fn(x, o[x]));
-			}
-		}
-		return ret;
+	listItem: function(it) {
+		return <li>	{it[0]}:
+					{ typeof(it[1]) === "object" ? 
+						<ul>{_.pairs(it[1]).map(this.listItem)}</ul> : 
+						it[1]
+					}
+				</li>;
 	},
 
-	listItem: function(name, object) {
-		return React.createElement("li", null, " ", name, ":", 
-					 typeof(object) === "object" ? 
-						React.createElement("ul", null, this.map(object, this.listItem)) : 
-						object
-					
-				);
-	},
-
-	// renderEndpoint: function(endpname, endpstats) {
+	// renderEndpoint: function(endp) {
 	// 	return <li>
 	// 				<ul>
-	// 					<li>endpoint: {endpname}</li>
-	//           			<li>numberOfRequests: {endpstats.numberOfRequests}</li>
-	// 			        <li>avgQueueTime: {endpstats.avgQueueTime}</li>
-	// 			        <li>maxQueueTime: {endpstats.maxQueueTime}</li>
-	// 			        <li>avgExecutionTime: {endpstats.avgExecutionTime}</li>
-	// 			        <li>maxExecutionTime: {endpstats.maxExecutionTime}</li>
+	// 					<li>endpoint: {endp[0]}</li>
+	//           			<li>numberOfRequests: {endp[1].numberOfRequests}</li>
+	// 			        <li>avgQueueTime: {endp[1].avgQueueTime}</li>
+	// 			        <li>maxQueueTime: {endp[1].maxQueueTime}</li>
+	// 			        <li>avgExecutionTime: {endp[1].avgExecutionTime}</li>
+	// 			        <li>maxExecutionTime: {endp[1].maxExecutionTime}</li>
 	// 					<li>errors 
 	// 						<ul>
-	// 							{ this.map(endpstats.errors, function(err, count) { return <li>{err}:{count}</li>; }) }
+	// 							{ _.pairs(object).map(endp[1].errors, function(e) { return <li>{e[0]}:{e[1]}</li>; }) }
 	// 						</ul>
 	// 					</li>
 	// 				</ul>
@@ -495,34 +498,32 @@ var StatisticsPage = React.createClass({displayName: 'StatisticsPage',
 	// 				<ul>
 	// 					<li>{instname}</li>
 	// 					<li>
-	// 						<ul>{this.map(instendps, this.renderEndpoint)}</ul>
+	// 						<ul>{_.pairs(object).map(instendps, this.renderEndpoint)}</ul>
 	// 					</li>
  // 					</ul>
  // 				</li>;
 	// },
 
 	renderStatistics: function(stats) {
-		return 	React.createElement("ul", null, 
-					this.map(stats, this.listItem)
-				);
+		return <ul>{_.pairs(stats).map(this.listItem)}</ul>;
 	},
 
 	render: function() {
 		return	(
-			React.createElement("div", null, 
-				React.createElement("div", {className: "top-gap"}, 
-					React.createElement("h1", null, "Statistics"), 
-					React.createElement("h2", null, "Last Scan"), 
-					this.renderStatistics(this.state.lastScanStats), 
-					React.createElement("h2", null, "Search"), 
-					this.renderStatistics(this.state.searchStats)
-				)
-			)
+			<div>
+				<div className="top-gap">
+					<h1>Statistics</h1>
+					<h2>Last Scan</h2>
+					{this.renderStatistics(this.state.lastScanStats)}
+					<h2>Search</h2>
+					{this.renderStatistics(this.state.searchStats)}
+				</div>
+			</div>
 			);
 	},
 });
 
-var HelpPage = React.createClass({displayName: 'HelpPage',
+var HelpPage = React.createClass({
 	openHelpDesk: function() {
 		window.open('http://support.clarin-d.de/mail/form.php?queue=Aggregator', 
 			'_blank', 'height=560,width=370');
@@ -530,42 +531,65 @@ var HelpPage = React.createClass({displayName: 'HelpPage',
 
 	render: function() {
 		return	(
-			React.createElement("div", null, 
-				React.createElement("div", {className: "top-gap"}, 
-					React.createElement("h3", null, "Performing search in FCS corpora"), 
-					React.createElement("p", null, "To perform simple keyword search in all CLARIN-D Federated Content Search centers" + ' ' + 
-					"and their corpora, go to the search field at the top of the page," + ' ' + 
-					"enter your query, and click 'search' button or press the 'Enter' key."), 
+			<div>
+				<div className="top-gap">
+					<h3>Performing search in FCS corpora</h3>
+					<p>To perform simple keyword search in all CLARIN-D Federated Content Search centers 
+					and their corpora, go to the search field at the top of the page, 
+					enter your query, and click 'search' button or press the 'Enter' key.</p>
 					
-					React.createElement("h3", null, "Search Options - adjusting search criteria"), 
-					React.createElement("p", null, "To select specific corpora based on their name or language and to specify" + ' ' + 
-					"number of search results (hits) per corpus per page, click on the 'Search options'" + ' ' +
-					"link. Here, you can filter resources based on the language, select specific resources," + ' ' + 
-					"set the maximum number of hits."), 
+					<h3>Search Options - adjusting search criteria</h3>
+					<p>To select specific corpora based on their name or language and to specify 
+					number of search results (hits) per corpus per page, click on the 'Search options'
+					link. Here, you can filter resources based on the language, select specific resources, 
+					set the maximum number of hits.</p>
 
-					React.createElement("h3", null, "Search Results - inspecting search results"), 
-					React.createElement("p", null, "When the search starts, the 'Search results' page is displayed" + ' ' + 
-					"and its content starts to get filled with the corpora responses." + ' ' + 
-					"To save or process the displayed search result, in the 'Search results' page," + ' ' + 
-					"go to the menu and select either 'Export to Personal Workspace'," + ' ' + 
-					"'Download' or 'Use WebLicht' menu item. This menu appears only after" + ' ' + 
-					"all the results on the page have been loaded. To get the next hits from each corpus," + ' ' + 
-					"click the 'next' arrow at the bottom of 'Search results' page."), 
+					<h3>Search Results - inspecting search results</h3>
+					<p>When the search starts, the 'Search results' page is displayed 
+					and its content starts to get filled with the corpora responses. 
+					To save or process the displayed search result, in the 'Search results' page, 
+					go to the menu and select either 'Export to Personal Workspace', 
+					'Download' or 'Use WebLicht' menu item. This menu appears only after 
+					all the results on the page have been loaded. To get the next hits from each corpus, 
+					click the 'next' arrow at the bottom of 'Search results' page.</p>
 
 
-					React.createElement("h3", null, "More help"), 
-					React.createElement("p", null, "More detailed information on using FCS Aggregator is available" + ' ' + 
-					"at the Aggegator wiki page. If you still cannot find an answer to your question," + ' ' + 
-					"or if want to send a feedback, you can write to Clarin-D helpdesk: "), 
-					React.createElement("button", {type: "button", className: "btn btn-default btn-lg", onClick: this.openHelpDesk}, 
-						React.createElement("span", {className: "glyphicon glyphicon-question-sign", 'aria-hidden': "true"}), 
-						" HelpDesk"
-					)					
-				)
-			)
+					<h3>More help</h3>
+					<p>More detailed information on using FCS Aggregator is available 
+					at the Aggegator wiki page. If you still cannot find an answer to your question, 
+					or if want to send a feedback, you can write to Clarin-D helpdesk: </p>
+					<button type="button" className="btn btn-default btn-lg" onClick={this.openHelpDesk} >
+						<span className="glyphicon glyphicon-question-sign" aria-hidden="true"></span>
+						&nbsp;HelpDesk
+					</button>					
+				</div>
+			</div>
 		);
 	}
 });
 
+var _ = _ || {
+	keys: function() {
+		var ret = [];
+		for (var x in o) {
+			if (o.hasOwnProperty(x)) {
+				ret.push(x);
+			}
+		}
+		return ret;
+	},
 
-React.render(React.createElement(Main, null), document.getElementById('reactMain') );
+	pairs: function(o){
+		var ret = [];
+		for (var x in o) {
+			if (o.hasOwnProperty(x)) {
+				ret.push([x, o[x]]);
+			}
+		}
+		return ret;
+	},
+};
+
+
+React.render(<Main />, document.getElementById('reactMain') );
+})();
