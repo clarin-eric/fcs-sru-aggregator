@@ -175,11 +175,11 @@ div.corpus-container {
 	margin: 10px 0;
 }
 div.corpus-container:hover {
-	background-color: #F5F5F5;
+	box-shadow: 0 0 10px rgb(179,216,253) !important;
 }
 div.corpus-container.dimmed {
-	font-weight: 300;
-	opacity: 0.4;
+	/*font-weight: 300;*/
+	/*opacity: 0.8;*/
 }
 
 div.modal-dialog input {

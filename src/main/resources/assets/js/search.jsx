@@ -89,7 +89,7 @@ var Results = React.createClass({
 	renderPanelTitle: function(corpus) {
 		var inline = {display:"inline-block"};
 		return	<div style={inline}>
-					<span className="corpusName"> {corpus.displayName}</span>
+					<span className="corpusName"> {corpus.title ? corpus.title : corpus.displayName}</span>
 					<span className="institutionName"> — {corpus.institution.name}</span>
 				</div>;
 	},
@@ -97,7 +97,8 @@ var Results = React.createClass({
 	renderPanelInfo: function(corpus) {
 		var inline = {display:"inline-block"};
 		return	<div>
-					<InfoPopover placement="left" title={corpus.displayName}>
+					<InfoPopover placement="left" 
+							title={corpus.title ? corpus.title : corpus.displayName}>
 						<dl className="dl-horizontal">
 							<dt>Institution</dt>
 							<dd>{corpus.institution.name}</dd>
@@ -164,10 +165,9 @@ var Results = React.createClass({
 		// return "Searching in " + this.props.requests.length + " collections...";
 	},
 
-	renderFoundMessage: function() {
+	renderFoundMessage: function(hits) {
 		if (this.props.results.length === 0)
 			return false;
-		var hits = this.props.results.filter(function(corpusHit) { return corpusHit.kwics.length > 0; }).length;
 		var total = this.props.results.length;
 		return hits + " collections with results found in " + total + " searched collections";
 	},
@@ -190,6 +190,7 @@ var Results = React.createClass({
 	},
 
 	render: function() {
+		var hits = this.props.results.filter(function(corpusHit) { return corpusHit.kwics.length > 0; }).length;
 		var margintop = {marginTop:"10px"};
 		var margin = {marginTop:"0", padding:"20px"};
 		var inlinew = {display:"inline-block", margin:"0 5px 0 0", width:"240px;"};
@@ -197,9 +198,9 @@ var Results = React.createClass({
 		return 	<div> 
 					<ReactCSSTransitionGroup transitionName="fade">
 						<div key="-searching-message-" style={margintop}>{this.renderSearchingMessage()} </div>
-						<div key="-found-message-" style={margintop}>{this.renderFoundMessage()} </div>
+						<div key="-found-message-" style={margintop}>{this.renderFoundMessage(hits)} </div>
 						<div key="-progress-" style={margintop}>{this.renderProgressBar()}</div>
-						{this.props.results.length > 0 ? this.renderKwicCheckbox() : false}
+						{hits > 0 ? this.renderKwicCheckbox() : false}
 						{this.props.results.map(this.renderResultPanels)}
 					</ReactCSSTransitionGroup>
 				</div>;

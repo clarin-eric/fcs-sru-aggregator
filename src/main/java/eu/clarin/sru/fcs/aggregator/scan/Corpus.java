@@ -1,6 +1,5 @@
 package eu.clarin.sru.fcs.aggregator.scan;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import eu.clarin.sru.fcs.aggregator.lang.LanguagesISO693_3;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -8,6 +7,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
+import org.slf4j.LoggerFactory;
 
 /**
  * Represents information about corpus resource, such as corpus handle (id),
@@ -17,6 +17,7 @@ import java.util.regex.Pattern;
  * @author Yana Panchenko
  */
 public class Corpus {
+	private static final org.slf4j.Logger log = LoggerFactory.getLogger(Corpus.class);
 
 	public static final String ROOT_HANDLE = "root";
 	public static final Pattern HANDLE_WITH_SPECIAL_CHARS = Pattern.compile(".*[<>=/()\\s].*");
@@ -40,9 +41,11 @@ public class Corpus {
 		this.endpointUrl = endpointUrl;
 	}
 
-	@JsonIgnore
 	public String getId() {
 		return endpointUrl + "#" + handle;
+	}
+
+	public void setId(String id) { // dumb setter for JsonDeserialization
 	}
 
 	public void addCorpus(Corpus c) {
@@ -111,11 +114,7 @@ public class Corpus {
 			this.languages.add(language);
 		} else {
 			String code = LanguagesISO693_3.getInstance().codeForName(language);
-			if (code != null) {
-				this.languages.add(code);
-			} else {
-				this.languages.add(language);
-			}
+			this.languages.add(code == null ? language : code);
 		}
 	}
 
@@ -125,6 +124,14 @@ public class Corpus {
 
 	public void setLandingPage(String landingPage) {
 		this.landingPage = landingPage;
+	}
+
+	public String getTitle() {
+		return title;
+	}
+
+	void setTitle(String title) {
+		this.title = title;
 	}
 
 	public String getDescription() {

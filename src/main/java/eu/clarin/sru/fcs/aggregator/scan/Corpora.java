@@ -1,10 +1,10 @@
 package eu.clarin.sru.fcs.aggregator.scan;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -21,10 +21,11 @@ public class Corpora {
 
 	private static final org.slf4j.Logger log = LoggerFactory.getLogger(Corpora.class);
 
-	private Map<String, Set<Corpus>> langToRootCorpora = new HashMap<String, Set<Corpus>>();
-	private Map<String, Set<Corpus>> langToTopUniqueCorpora = new HashMap<String, Set<Corpus>>();
+	@JsonProperty
 	private Map<String, Diagnostic> endpointDiagnostics = Collections.synchronizedMap(new HashMap<String, Diagnostic>());
+	@JsonProperty
 	private List<Institution> institutions = Collections.synchronizedList(new ArrayList<Institution>());
+	@JsonProperty
 	private List<Corpus> corpora = new ArrayList<Corpus>();
 
 	public List<Institution> getInstitutions() {
@@ -49,24 +50,8 @@ public class Corpora {
 		}
 		if (parentCorpus == null) { //i.e it's a root corpus
 			corpora.add(c);
-			for (String lang : c.getLanguages()) {
-				if (!langToRootCorpora.containsKey(lang)) {
-					langToRootCorpora.put(lang, new HashSet<Corpus>());
-				}
-				langToRootCorpora.get(lang).add(c);
-			}
 		} else {
 			parentCorpus.addCorpus(c);
-		}
-
-		// index top corpora with unique language as for their languages
-		if (c.getLanguages().size() == 1
-				&& (parentCorpus == null || parentCorpus.getLanguages().size() > 0)) {
-			String lang = c.getLanguages().iterator().next();
-			if (!langToTopUniqueCorpora.containsKey(lang)) {
-				langToTopUniqueCorpora.put(lang, new LinkedHashSet<Corpus>());
-			}
-			langToTopUniqueCorpora.get(lang).add(c);
 		}
 		return true;
 	}
@@ -76,31 +61,27 @@ public class Corpora {
 	}
 
 	public Set<String> getLanguages() {
-		Set<String> languages = new HashSet<String>(this.langToRootCorpora.size());
-		languages.addAll(this.langToRootCorpora.keySet());
+		final Set<String> languages = new HashSet<String>();
+		visit(corpora, new CallCorpus() {
+			@Override
+			public void call(Corpus c) {
+				languages.addAll(c.getLanguages());
+			}
+		});
 		return languages;
 	}
 
-	public List<Corpus> getRootCorporaForLang(String lang) {
-		List<Corpus> ret = new ArrayList<Corpus>();
-		for (Corpus c : corpora) {
-			if (c.getLanguages().contains(lang)) {
-				ret.add(c);
+	public List<Corpus> getCorporaByIds(final Set<String> corporaIds) {
+		final List<Corpus> found = new ArrayList<Corpus>();
+		visit(corpora, new CallCorpus() {
+			@Override
+			public void call(Corpus c) {
+				if (corporaIds.contains(c.getId())) {
+					found.add(c);
+				}
 			}
-		}
-		return ret;
-	}
-
-	public List<Corpus> getTopUniqueLanguageCorpora(String lang) {
-		ArrayList<Corpus> corpora = new ArrayList<Corpus>();
-		corpora.addAll(langToTopUniqueCorpora.get(lang));
-		return corpora;
-	}
-
-	@Override
-	public String toString() {
-		return "corpora{\n" + "institutions=" + institutions + "\n"
-				+ "\n corpora=" + corpora + "\n}";
+		});
+		return found;
 	}
 
 	public List<Corpus> findByEndpoint(final String endpointUrl) {
@@ -129,20 +110,8 @@ public class Corpora {
 		return found.isEmpty() ? null : found.get(0);
 	}
 
-	public List<Corpus> getCorporaByIds(final Set<String> corporaIds) {
-		final List<Corpus> found = new ArrayList<Corpus>();
-		visit(corpora, new CallCorpus() {
-			@Override
-			public void call(Corpus c) {
-				if (corporaIds.contains(c.getId())) {
-					found.add(c);
-				}
-			}
-		});
-		return found;
-	}
-
 	public static interface CallCorpus {
+
 		void call(Corpus c);
 	}
 
@@ -152,4 +121,11 @@ public class Corpora {
 			visit(c.getSubCorpora(), clb);
 		}
 	}
+
+	@Override
+	public String toString() {
+		return "corpora{\n" + "institutions=" + institutions + "\n"
+				+ "\n corpora=" + corpora + "\n}";
+	}
+
 }

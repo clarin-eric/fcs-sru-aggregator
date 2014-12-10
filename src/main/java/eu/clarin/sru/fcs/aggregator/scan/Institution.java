@@ -50,4 +50,18 @@ public class Institution {
 		}
 	}
 
+	@Override
+	public int hashCode() {
+		https://primes.utm.edu/lists/small/1000.txt
+		return name.hashCode() * 2953;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (!(obj instanceof Institution)) {
+			return false;
+		}
+		Institution i = (Institution) obj;
+		return i.name.equals(name);
+	}
 }

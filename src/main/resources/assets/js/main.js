@@ -12,6 +12,8 @@ var CorpusView = window.MyAggregator.CorpusView;
 var Modal = window.MyReact.Modal;
 var ErrorPane = window.MyReact.ErrorPane;
 
+var multipleLanguageCode = "mul"; // see ISO-693-3
+
 var layers = [
 	{
 		id: "sampa",
@@ -19,7 +21,6 @@ var layers = [
 		searchPlaceholder: "stA:z",
 		searchLabel: "SAMPA query",
 		searchLabelBkColor: "#eef",
-		allCollections: "All collections",
 	},
 	{
 		id: "text",
@@ -27,7 +28,6 @@ var layers = [
 		searchPlaceholder: "Elephant",
 		searchLabel: "Search text",
 		searchLabelBkColor: "#fed",
-		allCollections: "All collections",
 	},
 ];
 var layerMap = {
@@ -38,28 +38,47 @@ var layerMap = {
 function Corpora(corpora, updateFn) {
 	var that = this;
 	this.corpora = corpora;
-	this.recurse(function(corpus, index){
-		corpus.visible = true; // selected in the corpus view
-		corpus.selected = true; // selected in the corpus view
-		corpus.expanded = false; // expanded in the corpus view
-		corpus.priority = 1; // priority in corpus view
-		corpus.index = index;
-	});
 	this.update = function() { 
 		updateFn(that); 
 	};
+	
+	var sortFn = function(x, y) {
+		var r = x.institution.name.localeCompare(y.institution.name);
+		if (r !== 0) {
+			return r;
+		}
+		var t1 = x.title ? x.title : x.displayName;
+		var t2 = y.title ? y.title : y.displayName;
+		return t1.toLowerCase().localeCompare(t2.toLowerCase()); 
+	};
+
+	this.recurse(function(corpus) { corpus.subCorpora.sort(sortFn); });
+	this.corpora.sort(sortFn);
+
+	this.recurse(function(corpus, index) {
+		corpus.visible = true; // visible in the corpus view
+		corpus.selected = true; // selected in the corpus view
+		corpus.expanded = false; // not expanded in the corpus view
+		corpus.priority = 1; // priority in corpus view
+		corpus.index = index;
+	});
 }
 
 Corpora.prototype.recurseCorpus = function(corpus, fn) {
-	fn(corpus);
-	if (corpus.subCorpora)
+	if (false === fn(corpus)) {		
+		// no recursion
+	} else {
 		this.recurseCorpora(corpus.subCorpora, fn);
+	}
 };
 
 Corpora.prototype.recurseCorpora = function(corpora, fn) {
 	var recfn = function(corpus, index){
-		fn(corpus, index);
-		corpus.subCorpora.forEach(recfn);
+		if (false === fn(corpus)) {
+			// no recursion
+		} else {
+			corpus.subCorpora.forEach(recfn);
+		}
 	};
 	corpora.forEach(recfn);
 };
@@ -74,12 +93,70 @@ Corpora.prototype.getLanguageCodes = function() {
 		corpus.languages.forEach(function(lang) {
 			languages[lang] = true;
 		});
+		return true;
 	});
 	return languages;
 };
 
+Corpora.prototype.isCorpusVisible = function(corpus, layerId, languageCode) {
+	if (layerId !== "text") {
+		return false;
+	}
+	// yes for any language
+	if (languageCode === multipleLanguageCode) {
+		return true;
+	}
+	// yes if the corpus is in only that language
+	if (corpus.languages && corpus.languages.length === 1 && corpus.languages[0] === languageCode) {
+		return true;
+	}	
 
-var Main = React.createClass({
+	// ? yes if the corpus also contains that language
+	if (corpus.languages && corpus.languages.indexOf(languageCode) >=0) {
+		return true;
+	}
+
+	// ? yes if the corpus has no language
+	// if (!corpus.languages || corpus.languages.length === 0) {
+	// 	return true;
+	// }
+	return false;
+};
+
+Corpora.prototype.setVisibility = function(layerId, languageCode) {
+	// top level
+	this.corpora.forEach(function(corpus) {
+		corpus.visible = this.isCorpusVisible(corpus, layerId, languageCode);
+		this.recurseCorpora(corpus.subCorpora, function(c) { c.visible = corpus.visible; });
+	}.bind(this));
+};
+
+Corpora.prototype.getSelectedIds = function() {
+	var ids = [];
+	this.recurse(function(corpus) {
+		if (corpus.visible && corpus.selected) {
+			ids.push(corpus.id);
+			return false; // top-most collection in tree, don't delve deeper
+		}
+		return true;
+	});
+
+	// console.log("ids: ", ids.length, {ids:ids});
+	return ids;
+};
+
+Corpora.prototype.getSelectedMessage = function() {
+	var selected = this.getSelectedIds().length;
+	if (this.corpora.length === selected) {
+		return "All available collections";
+	} else if (selected === 1) {
+		return "1 selected collection";
+	}
+	return selected+" selected collections";
+};
+
+
+var Main = React.createClass({displayName: 'Main',
 	getInitialState: function () {
 		return {
 			navbarCollapse: false,
@@ -159,15 +236,15 @@ var Main = React.createClass({
 	},
 
 	renderAggregator: function() {
-		return <AggregatorPage ajax={this.ajax} corpora={this.state.corpora} languageMap={this.state.languageMap} />;
+		return React.createElement(AggregatorPage, {ajax: this.ajax, corpora: this.state.corpora, languageMap: this.state.languageMap});
 	},
 
 	renderStatistics: function() {
-		return <StatisticsPage ajax={this.ajax} />;
+		return React.createElement(StatisticsPage, {ajax: this.ajax});
 	},
 
 	renderHelp: function() {
-		return <HelpPage />;
+		return React.createElement(HelpPage, null);
 	},
 
 	toggleCollapse: function() {
@@ -181,68 +258,68 @@ var Main = React.createClass({
 	renderCollapsible: function() {
 		var classname = "navbar-collapse collapse " + (this.state.navbarCollapse?"in":"");
 		return (
-			<div className={classname}>
-				<ul className="nav navbar-nav">
-					<li className={this.state.navbarPageFn === this.renderAggregator ? "active":""}>
-						<a className="link" tabIndex="-1" 
-							onClick={this.setNavbarPageFn.bind(this, this.renderAggregator)}>Aggregator</a>
-					</li>
-					<li className={this.state.navbarPageFn === this.renderStatistics ? "active":""}>
-						<a className="link" tabIndex="-1" 
-							onClick={this.setNavbarPageFn.bind(this, this.renderStatistics)}>Statistics</a>
-					</li>
-					<li className={this.state.navbarPageFn === this.renderHelp ? "active":""}>
-						<a className="link" tabIndex="-1" 
-							onClick={this.setNavbarPageFn.bind(this, this.renderHelp)}>Help</a>
-					</li>
-				</ul>
-				<ul id="CLARIN_header_right" className="nav navbar-nav navbar-right">
-					<li className="unauthenticated">
-						<a href="login" tabIndex="-1"><span className="glyphicon glyphicon-log-in"></span> LOGIN</a>
-					</li>
-				</ul>
-			</div>
+			React.createElement("div", {className: classname}, 
+				React.createElement("ul", {className: "nav navbar-nav"}, 
+					React.createElement("li", {className: this.state.navbarPageFn === this.renderAggregator ? "active":""}, 
+						React.createElement("a", {className: "link", tabIndex: "-1", 
+							onClick: this.setNavbarPageFn.bind(this, this.renderAggregator)}, "Aggregator")
+					), 
+					React.createElement("li", {className: this.state.navbarPageFn === this.renderStatistics ? "active":""}, 
+						React.createElement("a", {className: "link", tabIndex: "-1", 
+							onClick: this.setNavbarPageFn.bind(this, this.renderStatistics)}, "Statistics")
+					), 
+					React.createElement("li", {className: this.state.navbarPageFn === this.renderHelp ? "active":""}, 
+						React.createElement("a", {className: "link", tabIndex: "-1", 
+							onClick: this.setNavbarPageFn.bind(this, this.renderHelp)}, "Help")
+					)
+				), 
+				React.createElement("ul", {id: "CLARIN_header_right", className: "nav navbar-nav navbar-right"}, 
+					React.createElement("li", {className: "unauthenticated"}, 
+						React.createElement("a", {href: "login", tabIndex: "-1"}, React.createElement("span", {className: "glyphicon glyphicon-log-in"}), " LOGIN")
+					)
+				)
+			)
 		);
 	},
 
 	render: function() {
 		return	(
-			<div>
-				<div className="container">
-					<div className="beta-tag">
-						<span>BETA</span>
-					</div>
-				</div>
+			React.createElement("div", null, 
+				React.createElement("div", {className: "container"}, 
+					React.createElement("div", {className: "beta-tag"}, 
+						React.createElement("span", null, "BETA")
+					)
+				), 
 			
-				<div className="navbar navbar-default navbar-static-top" role="navigation">
-					<div className="container">
-						<div className="navbar-header">
-							<button type="button" className="navbar-toggle" onClick={this.toggleCollapse}>
-								<span className="sr-only">Toggle navigation</span>
-								<span className="icon-bar"></span>
-								<span className="icon-bar"></span>
-								<span className="icon-bar"></span>
-							</button>
-							<a className="navbar-brand" href="#" tabIndex="-1"><header>Federated Content Search</header></a>
-						</div>
-						{this.renderCollapsible()}
-					</div>
-				</div>
+				React.createElement("div", {className: "navbar navbar-default navbar-static-top", role: "navigation"}, 
+					React.createElement("div", {className: "container"}, 
+						React.createElement("div", {className: "navbar-header"}, 
+							React.createElement("button", {type: "button", className: "navbar-toggle", onClick: this.toggleCollapse}, 
+								React.createElement("span", {className: "sr-only"}, "Toggle navigation"), 
+								React.createElement("span", {className: "icon-bar"}), 
+								React.createElement("span", {className: "icon-bar"}), 
+								React.createElement("span", {className: "icon-bar"})
+							), 
+							React.createElement("a", {className: "navbar-brand", href: "#", tabIndex: "-1"}, React.createElement("header", null, "Federated Content Search"))
+						), 
+						this.renderCollapsible()
+					)
+				), 
 
-				<ErrorPane errorMessages={this.state.errorMessages} />
+				React.createElement(ErrorPane, {errorMessages: this.state.errorMessages}), 
 
-				<div id="push">
-					<div className="container">
-						{this.state.navbarPageFn()}
-		 			</div>
-		 			<div className="top-gap" />
-				</div>
-			</div>
+				React.createElement("div", {id: "push"}, 
+					React.createElement("div", {className: "container"}, 
+						this.state.navbarPageFn()
+		 			), 
+		 			React.createElement("div", {className: "top-gap"})
+				)
+			)
 		);
 	}
 });
 
-var AggregatorPage = React.createClass({
+var AggregatorPage = React.createClass({displayName: 'AggregatorPage',
 	propTypes: {
 		ajax: PT.func.isRequired,
 		corpora: PT.object.isRequired,
@@ -255,7 +332,7 @@ var AggregatorPage = React.createClass({
 		requests: [],
 		results: [],
 	},
-	anyLanguage: ["ANY", "Any Language"],
+	anyLanguage: [multipleLanguageCode, "Any Language"],
 
 	getInitialState: function () {
 		return {
@@ -269,7 +346,7 @@ var AggregatorPage = React.createClass({
 	},
 
 	search: function(query) {
-		console.log(query);
+		// console.log(query);
 		if (!query) {
 			this.setState({ hits: this.nohits, searchId: null });
 			return;			
@@ -279,11 +356,13 @@ var AggregatorPage = React.createClass({
 			type: "POST",
 			data: {
 				layer: this.state.searchLayerId,
+				language: this.state.language[0],
 				query: query,
 				numberOfResults: this.state.numberOfResults,
+				corporaIds: this.props.corpora.getSelectedIds(),
 			},
 			success: function(searchId, textStatus, jqXHR) {
-				console.log("search ["+query+"] ok: ", searchId, jqXHR);
+				// console.log("search ["+query+"] ok: ", searchId, jqXHR);
 				this.setState({searchId : searchId});
 				this.timeout = 250;
 				setTimeout(this.refreshSearchResults, this.timeout);
@@ -308,15 +387,21 @@ var AggregatorPage = React.createClass({
 					// console.log("search ended");
 				}
 				this.setState({hits:json});
-				console.log("hits:", json);
+				// console.log("hits:", json);
 			}.bind(this),
 		});
 	},
 
-	setAState: function(id, value) {
-		var v = {};
-		v[id] = value;
-		this.setState(v);
+	setLanguage: function(languageObj) {
+		this.props.corpora.setVisibility(this.state.searchLayerId, languageObj[0]);
+		this.setState({language: languageObj});
+		this.props.corpora.update();
+	},
+
+	setLayer: function(layerId) {
+		this.props.corpora.setVisibility(layerId, this.state.language[0]);
+		this.props.corpora.update();
+		this.setState({searchLayerId: layerId});
 	},
 
 	setNumberOfResults: function(e) {
@@ -342,95 +427,97 @@ var AggregatorPage = React.createClass({
 	renderAggregator: function() {
 		var layer = layerMap[this.state.searchLayerId];
 		return	(
-			<div className="top-gap">
-				<div className="row">
-					<div className="aligncenter" style={{marginLeft:16, marginRight:16}}> 
-						<div className="input-group">
-							<span className="input-group-addon" style={{backgroundColor:layer.searchLabelBkColor}}>
-								{layer.searchLabel}
-							</span>
+			React.createElement("div", {className: "top-gap"}, 
+				React.createElement("div", {className: "row"}, 
+					React.createElement("div", {className: "aligncenter", style: {marginLeft:16, marginRight:16}}, 
+						React.createElement("div", {className: "input-group"}, 
+							React.createElement("span", {className: "input-group-addon", style: {backgroundColor:layer.searchLabelBkColor}}, 
+								layer.searchLabel
+							), 
 
-							<SearchBox search={this.search} placeholder={layer.searchPlaceholder} />
-							<div className="input-group-btn">
-								<button className="btn btn-default input-lg" type="button" onClick={this.search}>
-									<i className="glyphicon glyphicon-search"></i>
-								</button>
-							</div>
-						</div>
-					</div>
-				</div>
+							React.createElement(SearchBox, {search: this.search, placeholder: layer.searchPlaceholder}), 
+							React.createElement("div", {className: "input-group-btn"}, 
+								React.createElement("button", {className: "btn btn-default input-lg", type: "button", onClick: this.search}, 
+									React.createElement("i", {className: "glyphicon glyphicon-search"})
+								)
+							)
+						)
+					)
+				), 
 
-				<div className="wel" style={{marginTop:20}}>
-					<div className="aligncenter" >
-						<form className="form-inline" role="form">
+				React.createElement("div", {className: "wel", style: {marginTop:20}}, 
+					React.createElement("div", {className: "aligncenter"}, 
+						React.createElement("form", {className: "form-inline", role: "form"}, 
 
-							<div className="input-group" style={{marginRight:10}}>
-								<span className="input-group-addon nobkg">Search in</span>
-									<button type="button" className="btn btn-default" onClick={this.toggleCorpusSelection}>
-										{layer.allCollections} <span className="caret"/>
-									</button>
-							</div>
+							React.createElement("div", {className: "input-group", style: {marginRight:10}}, 
+								React.createElement("span", {className: "input-group-addon nobkg"}, "Search in"), 
+									React.createElement("button", {type: "button", className: "btn btn-default", onClick: this.toggleCorpusSelection}, 
+										this.props.corpora.getSelectedMessage(), " ", React.createElement("span", {className: "caret"})
+									)
+							), 
 
-							<div className="input-group" style={{marginRight:10}}>
+							React.createElement("div", {className: "input-group", style: {marginRight:10}}, 
 								
-								<span className="input-group-addon nobkg" >of</span>
+								React.createElement("span", {className: "input-group-addon nobkg"}, "of"), 
 								
-								<div className="input-group-btn">
-									<button className="form-control btn btn-default" 
-											aria-expanded="false" data-toggle="dropdown">
-										{this.state.language[1]} <span className="caret"/>
-									</button>
-									<ul ref="languageDropdownMenu" className="dropdown-menu">
-										<li key={this.anyLanguage[0]}> <a tabIndex="-1" href="#" 
-												onClick={this.setAState.bind(this, "language", this.anyLanguage)}>
-											{this.anyLanguage[1]}</a>
-										</li>
-										{	_.pairs(this.props.languageMap).map(function(l) {
+								React.createElement("div", {className: "input-group-btn"}, 
+									React.createElement("button", {className: "form-control btn btn-default", 
+											'aria-expanded': "false", 'data-toggle': "dropdown"}, 
+										this.state.language[1], " ", React.createElement("span", {className: "caret"})
+									), 
+									React.createElement("ul", {ref: "languageDropdownMenu", className: "dropdown-menu"}, 
+										React.createElement("li", {key: this.anyLanguage[0]}, " ", React.createElement("a", {tabIndex: "-1", href: "#", 
+												onClick: this.setLanguage.bind(this, this.anyLanguage)}, 
+											this.anyLanguage[1])
+										), 
+											_.pairs(this.props.languageMap).sort(function(l1, l2){
+												return l1[1].localeCompare(l2[1]);
+											}).map(function(l) {
 												var desc = l[1] + " [" + l[0] + "]";
-												return <li key={l[0]}> <a tabIndex="-1" href="#" 
-													onClick={this.setAState.bind(this, "language", l)}>{desc}</a></li>;
+												return React.createElement("li", {key: l[0]}, " ", React.createElement("a", {tabIndex: "-1", href: "#", 
+													onClick: this.setLanguage.bind(this, l)}, desc));
 											}.bind(this))
-										}
-									</ul>
-								</div>
+										
+									)
+								), 
 
-								<div className="input-group-btn">
-									<ul ref="layerDropdownMenu" className="dropdown-menu">
-										{ 	layers.map(function(l) { 
-												return <li key={l.id}> <a tabIndex="-1" href="#" 
-													onClick={this.setAState.bind(this, "searchLayerId", l.id)}> {l.name} </a></li>;
+								React.createElement("div", {className: "input-group-btn"}, 
+									React.createElement("ul", {ref: "layerDropdownMenu", className: "dropdown-menu"}, 
+										 	layers.map(function(l) { 
+												return React.createElement("li", {key: l.id}, " ", React.createElement("a", {tabIndex: "-1", href: "#", 
+													onClick: this.setLayer.bind(this, l.id)}, " ", l.name, " "));
 											}.bind(this))
-										}
-									</ul>								
-									<button className="form-control btn btn-default" 
-											aria-expanded="false" data-toggle="dropdown" >
-										{layer.name} <span className="caret"/>
-									</button>
-								</div>
+										
+									), 								
+									React.createElement("button", {className: "form-control btn btn-default", 
+											'aria-expanded': "false", 'data-toggle': "dropdown"}, 
+										layer.name, " ", React.createElement("span", {className: "caret"})
+									)
+								)
 
-							</div>
+							), 
 
-							<div className="input-group">
-								<span className="input-group-addon nobkg">and show up to</span>
-								<div className="input-group-btn">
-									<input type="number" className="form-control input" min="10" max="250" step="5"
-										onChange={this.setNumberOfResults} value={this.state.numberOfResults} 
-										onKeyPress={this.stop}/>
-								</div>
-								<span className="input-group-addon nobkg">hits</span>
-							</div>
-						</form>
-					</div>
-				</div>
+							React.createElement("div", {className: "input-group"}, 
+								React.createElement("span", {className: "input-group-addon nobkg"}, "and show up to"), 
+								React.createElement("div", {className: "input-group-btn"}, 
+									React.createElement("input", {type: "number", className: "form-control input", min: "10", max: "250", step: "5", 
+										onChange: this.setNumberOfResults, value: this.state.numberOfResults, 
+										onKeyPress: this.stop})
+								), 
+								React.createElement("span", {className: "input-group-addon nobkg"}, "hits")
+							)
+						)
+					)
+				), 
 
-	            <Modal ref="corporaModal" title="Collections">
-					<CorpusView ref="corpusView" corpora={this.props.corpora} />
-	            </Modal>
+	            React.createElement(Modal, {ref: "corporaModal", title: "Collections"}, 
+					React.createElement(CorpusView, {corpora: this.props.corpora, languageMap: this.props.languageMap})
+	            ), 
 
-				<div className="top-gap">
-					<Results requests={this.state.hits.requests} results={this.state.hits.results} />
-				</div>
-			</div>
+				React.createElement("div", {className: "top-gap"}, 
+					React.createElement(Results, {requests: this.state.hits.requests, results: this.state.hits.results})
+				)
+			)
 			);
 	},
 	render: function() {
@@ -438,7 +525,7 @@ var AggregatorPage = React.createClass({
 	}
 });
 
-var StatisticsPage = React.createClass({
+var StatisticsPage = React.createClass({displayName: 'StatisticsPage',
 	propTypes: {
 		ajax: PT.func.isRequired,
 	},
@@ -468,12 +555,12 @@ var StatisticsPage = React.createClass({
 	},
 
 	listItem: function(it) {
-		return <li>	{it[0]}:
-					{ typeof(it[1]) === "object" ? 
-						<ul>{_.pairs(it[1]).map(this.listItem)}</ul> : 
+		return React.createElement("li", null, " ", it[0], ":", 
+					 typeof(it[1]) === "object" ? 
+						React.createElement("ul", null, _.pairs(it[1]).map(this.listItem)) : 
 						it[1]
-					}
-				</li>;
+					
+				);
 	},
 
 	// renderEndpoint: function(endp) {
@@ -505,25 +592,25 @@ var StatisticsPage = React.createClass({
 	// },
 
 	renderStatistics: function(stats) {
-		return <ul>{_.pairs(stats).map(this.listItem)}</ul>;
+		return React.createElement("ul", null, _.pairs(stats).map(this.listItem));
 	},
 
 	render: function() {
 		return	(
-			<div>
-				<div className="top-gap">
-					<h1>Statistics</h1>
-					<h2>Last Scan</h2>
-					{this.renderStatistics(this.state.lastScanStats)}
-					<h2>Search</h2>
-					{this.renderStatistics(this.state.searchStats)}
-				</div>
-			</div>
+			React.createElement("div", null, 
+				React.createElement("div", {className: "top-gap"}, 
+					React.createElement("h1", null, "Statistics"), 
+					React.createElement("h2", null, "Last Scan"), 
+					this.renderStatistics(this.state.lastScanStats), 
+					React.createElement("h2", null, "Search"), 
+					this.renderStatistics(this.state.searchStats)
+				)
+			)
 			);
 	},
 });
 
-var HelpPage = React.createClass({
+var HelpPage = React.createClass({displayName: 'HelpPage',
 	openHelpDesk: function() {
 		window.open('http://support.clarin-d.de/mail/form.php?queue=Aggregator', 
 			'_blank', 'height=560,width=370');
@@ -531,39 +618,39 @@ var HelpPage = React.createClass({
 
 	render: function() {
 		return	(
-			<div>
-				<div className="top-gap">
-					<h3>Performing search in FCS corpora</h3>
-					<p>To perform simple keyword search in all CLARIN-D Federated Content Search centers 
-					and their corpora, go to the search field at the top of the page, 
-					enter your query, and click 'search' button or press the 'Enter' key.</p>
+			React.createElement("div", null, 
+				React.createElement("div", {className: "top-gap"}, 
+					React.createElement("h3", null, "Performing search in FCS corpora"), 
+					React.createElement("p", null, "To perform simple keyword search in all CLARIN-D Federated Content Search centers" + ' ' + 
+					"and their corpora, go to the search field at the top of the page," + ' ' + 
+					"enter your query, and click 'search' button or press the 'Enter' key."), 
 					
-					<h3>Search Options - adjusting search criteria</h3>
-					<p>To select specific corpora based on their name or language and to specify 
-					number of search results (hits) per corpus per page, click on the 'Search options'
-					link. Here, you can filter resources based on the language, select specific resources, 
-					set the maximum number of hits.</p>
+					React.createElement("h3", null, "Search Options - adjusting search criteria"), 
+					React.createElement("p", null, "To select specific corpora based on their name or language and to specify" + ' ' + 
+					"number of search results (hits) per corpus per page, click on the 'Search options'" + ' ' +
+					"link. Here, you can filter resources based on the language, select specific resources," + ' ' + 
+					"set the maximum number of hits."), 
 
-					<h3>Search Results - inspecting search results</h3>
-					<p>When the search starts, the 'Search results' page is displayed 
-					and its content starts to get filled with the corpora responses. 
-					To save or process the displayed search result, in the 'Search results' page, 
-					go to the menu and select either 'Export to Personal Workspace', 
-					'Download' or 'Use WebLicht' menu item. This menu appears only after 
-					all the results on the page have been loaded. To get the next hits from each corpus, 
-					click the 'next' arrow at the bottom of 'Search results' page.</p>
+					React.createElement("h3", null, "Search Results - inspecting search results"), 
+					React.createElement("p", null, "When the search starts, the 'Search results' page is displayed" + ' ' + 
+					"and its content starts to get filled with the corpora responses." + ' ' + 
+					"To save or process the displayed search result, in the 'Search results' page," + ' ' + 
+					"go to the menu and select either 'Export to Personal Workspace'," + ' ' + 
+					"'Download' or 'Use WebLicht' menu item. This menu appears only after" + ' ' + 
+					"all the results on the page have been loaded. To get the next hits from each corpus," + ' ' + 
+					"click the 'next' arrow at the bottom of 'Search results' page."), 
 
 
-					<h3>More help</h3>
-					<p>More detailed information on using FCS Aggregator is available 
-					at the Aggegator wiki page. If you still cannot find an answer to your question, 
-					or if want to send a feedback, you can write to Clarin-D helpdesk: </p>
-					<button type="button" className="btn btn-default btn-lg" onClick={this.openHelpDesk} >
-						<span className="glyphicon glyphicon-question-sign" aria-hidden="true"></span>
-						&nbsp;HelpDesk
-					</button>					
-				</div>
-			</div>
+					React.createElement("h3", null, "More help"), 
+					React.createElement("p", null, "More detailed information on using FCS Aggregator is available" + ' ' + 
+					"at the Aggegator wiki page. If you still cannot find an answer to your question," + ' ' + 
+					"or if want to send a feedback, you can write to Clarin-D helpdesk: "), 
+					React.createElement("button", {type: "button", className: "btn btn-default btn-lg", onClick: this.openHelpDesk}, 
+						React.createElement("span", {className: "glyphicon glyphicon-question-sign", 'aria-hidden': "true"}), 
+						" HelpDesk"
+					)					
+				)
+			)
 		);
 	}
 });
@@ -591,5 +678,5 @@ var _ = _ || {
 };
 
 
-React.render(<Main />, document.getElementById('reactMain') );
+React.render(React.createElement(Main, null), document.getElementById('reactMain') );
 })();

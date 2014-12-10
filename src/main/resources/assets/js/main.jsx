@@ -12,6 +12,8 @@ var CorpusView = window.MyAggregator.CorpusView;
 var Modal = window.MyReact.Modal;
 var ErrorPane = window.MyReact.ErrorPane;
 
+var multipleLanguageCode = "mul"; // see ISO-693-3
+
 var layers = [
 	{
 		id: "sampa",
@@ -19,7 +21,6 @@ var layers = [
 		searchPlaceholder: "stA:z",
 		searchLabel: "SAMPA query",
 		searchLabelBkColor: "#eef",
-		allCollections: "All collections",
 	},
 	{
 		id: "text",
@@ -27,7 +28,6 @@ var layers = [
 		searchPlaceholder: "Elephant",
 		searchLabel: "Search text",
 		searchLabelBkColor: "#fed",
-		allCollections: "All collections",
 	},
 ];
 var layerMap = {
@@ -38,28 +38,47 @@ var layerMap = {
 function Corpora(corpora, updateFn) {
 	var that = this;
 	this.corpora = corpora;
-	this.recurse(function(corpus, index){
-		corpus.visible = true; // selected in the corpus view
-		corpus.selected = true; // selected in the corpus view
-		corpus.expanded = false; // expanded in the corpus view
-		corpus.priority = 1; // priority in corpus view
-		corpus.index = index;
-	});
 	this.update = function() { 
 		updateFn(that); 
 	};
+	
+	var sortFn = function(x, y) {
+		var r = x.institution.name.localeCompare(y.institution.name);
+		if (r !== 0) {
+			return r;
+		}
+		var t1 = x.title ? x.title : x.displayName;
+		var t2 = y.title ? y.title : y.displayName;
+		return t1.toLowerCase().localeCompare(t2.toLowerCase()); 
+	};
+
+	this.recurse(function(corpus) { corpus.subCorpora.sort(sortFn); });
+	this.corpora.sort(sortFn);
+
+	this.recurse(function(corpus, index) {
+		corpus.visible = true; // visible in the corpus view
+		corpus.selected = true; // selected in the corpus view
+		corpus.expanded = false; // not expanded in the corpus view
+		corpus.priority = 1; // priority in corpus view
+		corpus.index = index;
+	});
 }
 
 Corpora.prototype.recurseCorpus = function(corpus, fn) {
-	fn(corpus);
-	if (corpus.subCorpora)
+	if (false === fn(corpus)) {		
+		// no recursion
+	} else {
 		this.recurseCorpora(corpus.subCorpora, fn);
+	}
 };
 
 Corpora.prototype.recurseCorpora = function(corpora, fn) {
 	var recfn = function(corpus, index){
-		fn(corpus, index);
-		corpus.subCorpora.forEach(recfn);
+		if (false === fn(corpus)) {
+			// no recursion
+		} else {
+			corpus.subCorpora.forEach(recfn);
+		}
 	};
 	corpora.forEach(recfn);
 };
@@ -74,8 +93,66 @@ Corpora.prototype.getLanguageCodes = function() {
 		corpus.languages.forEach(function(lang) {
 			languages[lang] = true;
 		});
+		return true;
 	});
 	return languages;
+};
+
+Corpora.prototype.isCorpusVisible = function(corpus, layerId, languageCode) {
+	if (layerId !== "text") {
+		return false;
+	}
+	// yes for any language
+	if (languageCode === multipleLanguageCode) {
+		return true;
+	}
+	// yes if the corpus is in only that language
+	if (corpus.languages && corpus.languages.length === 1 && corpus.languages[0] === languageCode) {
+		return true;
+	}	
+
+	// ? yes if the corpus also contains that language
+	if (corpus.languages && corpus.languages.indexOf(languageCode) >=0) {
+		return true;
+	}
+
+	// ? yes if the corpus has no language
+	// if (!corpus.languages || corpus.languages.length === 0) {
+	// 	return true;
+	// }
+	return false;
+};
+
+Corpora.prototype.setVisibility = function(layerId, languageCode) {
+	// top level
+	this.corpora.forEach(function(corpus) {
+		corpus.visible = this.isCorpusVisible(corpus, layerId, languageCode);
+		this.recurseCorpora(corpus.subCorpora, function(c) { c.visible = corpus.visible; });
+	}.bind(this));
+};
+
+Corpora.prototype.getSelectedIds = function() {
+	var ids = [];
+	this.recurse(function(corpus) {
+		if (corpus.visible && corpus.selected) {
+			ids.push(corpus.id);
+			return false; // top-most collection in tree, don't delve deeper
+		}
+		return true;
+	});
+
+	// console.log("ids: ", ids.length, {ids:ids});
+	return ids;
+};
+
+Corpora.prototype.getSelectedMessage = function() {
+	var selected = this.getSelectedIds().length;
+	if (this.corpora.length === selected) {
+		return "All available collections";
+	} else if (selected === 1) {
+		return "1 selected collection";
+	}
+	return selected+" selected collections";
 };
 
 
@@ -255,7 +332,7 @@ var AggregatorPage = React.createClass({
 		requests: [],
 		results: [],
 	},
-	anyLanguage: ["ANY", "Any Language"],
+	anyLanguage: [multipleLanguageCode, "Any Language"],
 
 	getInitialState: function () {
 		return {
@@ -269,7 +346,7 @@ var AggregatorPage = React.createClass({
 	},
 
 	search: function(query) {
-		console.log(query);
+		// console.log(query);
 		if (!query) {
 			this.setState({ hits: this.nohits, searchId: null });
 			return;			
@@ -279,11 +356,13 @@ var AggregatorPage = React.createClass({
 			type: "POST",
 			data: {
 				layer: this.state.searchLayerId,
+				language: this.state.language[0],
 				query: query,
 				numberOfResults: this.state.numberOfResults,
+				corporaIds: this.props.corpora.getSelectedIds(),
 			},
 			success: function(searchId, textStatus, jqXHR) {
-				console.log("search ["+query+"] ok: ", searchId, jqXHR);
+				// console.log("search ["+query+"] ok: ", searchId, jqXHR);
 				this.setState({searchId : searchId});
 				this.timeout = 250;
 				setTimeout(this.refreshSearchResults, this.timeout);
@@ -308,15 +387,21 @@ var AggregatorPage = React.createClass({
 					// console.log("search ended");
 				}
 				this.setState({hits:json});
-				console.log("hits:", json);
+				// console.log("hits:", json);
 			}.bind(this),
 		});
 	},
 
-	setAState: function(id, value) {
-		var v = {};
-		v[id] = value;
-		this.setState(v);
+	setLanguage: function(languageObj) {
+		this.props.corpora.setVisibility(this.state.searchLayerId, languageObj[0]);
+		this.setState({language: languageObj});
+		this.props.corpora.update();
+	},
+
+	setLayer: function(layerId) {
+		this.props.corpora.setVisibility(layerId, this.state.language[0]);
+		this.props.corpora.update();
+		this.setState({searchLayerId: layerId});
 	},
 
 	setNumberOfResults: function(e) {
@@ -367,7 +452,7 @@ var AggregatorPage = React.createClass({
 							<div className="input-group" style={{marginRight:10}}>
 								<span className="input-group-addon nobkg">Search in</span>
 									<button type="button" className="btn btn-default" onClick={this.toggleCorpusSelection}>
-										{layer.allCollections} <span className="caret"/>
+										{this.props.corpora.getSelectedMessage()} <span className="caret"/>
 									</button>
 							</div>
 
@@ -382,13 +467,15 @@ var AggregatorPage = React.createClass({
 									</button>
 									<ul ref="languageDropdownMenu" className="dropdown-menu">
 										<li key={this.anyLanguage[0]}> <a tabIndex="-1" href="#" 
-												onClick={this.setAState.bind(this, "language", this.anyLanguage)}>
+												onClick={this.setLanguage.bind(this, this.anyLanguage)}>
 											{this.anyLanguage[1]}</a>
 										</li>
-										{	_.pairs(this.props.languageMap).map(function(l) {
+										{	_.pairs(this.props.languageMap).sort(function(l1, l2){
+												return l1[1].localeCompare(l2[1]);
+											}).map(function(l) {
 												var desc = l[1] + " [" + l[0] + "]";
 												return <li key={l[0]}> <a tabIndex="-1" href="#" 
-													onClick={this.setAState.bind(this, "language", l)}>{desc}</a></li>;
+													onClick={this.setLanguage.bind(this, l)}>{desc}</a></li>;
 											}.bind(this))
 										}
 									</ul>
@@ -398,7 +485,7 @@ var AggregatorPage = React.createClass({
 									<ul ref="layerDropdownMenu" className="dropdown-menu">
 										{ 	layers.map(function(l) { 
 												return <li key={l.id}> <a tabIndex="-1" href="#" 
-													onClick={this.setAState.bind(this, "searchLayerId", l.id)}> {l.name} </a></li>;
+													onClick={this.setLayer.bind(this, l.id)}> {l.name} </a></li>;
 											}.bind(this))
 										}
 									</ul>								
@@ -424,7 +511,7 @@ var AggregatorPage = React.createClass({
 				</div>
 
 	            <Modal ref="corporaModal" title="Collections">
-					<CorpusView ref="corpusView" corpora={this.props.corpora} />
+					<CorpusView corpora={this.props.corpora} languageMap={this.props.languageMap} />
 	            </Modal>
 
 				<div className="top-gap">

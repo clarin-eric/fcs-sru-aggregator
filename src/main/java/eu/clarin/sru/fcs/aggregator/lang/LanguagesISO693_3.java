@@ -8,7 +8,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import org.slf4j.LoggerFactory;
@@ -21,7 +20,7 @@ import org.slf4j.LoggerFactory;
 public class LanguagesISO693_3 {
 
 	private static final org.slf4j.Logger log = LoggerFactory.getLogger(LanguagesISO693_3.class);
-	public static final String LANGUAGES_FILE_PATH = "/lang/ISO-639-3_20140320.tab";
+	public static final String LANGUAGES_FILE_PATH = "/lang/iso-639-3_20140320.tab";
 	public static final String LANGUAGES_FILE_ENCODING = "UTF-8";
 
 	private static LanguagesISO693_3 instance = null;

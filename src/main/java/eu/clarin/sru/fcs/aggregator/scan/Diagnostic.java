@@ -27,6 +27,7 @@ public class Diagnostic {
 	public String getContext() {
 		return context;
 	}
+
 	public String getMessage() {
 		return message;
 	}
@@ -49,5 +50,22 @@ public class Diagnostic {
 
 	public void setDiagnostic(String diagnostic) {
 		this.diagnostic = diagnostic;
+	}
+
+	@Override
+	public int hashCode() {
+		https://primes.utm.edu/lists/small/1000.txt
+		return uri.hashCode() * 967 + context.hashCode() * 797
+				+ message.hashCode() * 1669 + diagnostic.hashCode();
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (!(obj instanceof Diagnostic)) {
+			return false;
+		}
+		Diagnostic d = (Diagnostic) obj;
+		return uri.equals(d.uri) && message.equals(d.message)
+				&& context.equals(d.context) && diagnostic.equals(d.diagnostic);
 	}
 }

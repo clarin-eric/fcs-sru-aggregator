@@ -8,43 +8,17 @@ aggregatorParams:
   SCAN_TASK_INTERVAL: 6
   SCAN_TASK_TIME_UNIT: HOURS
 
-  ENDPOINTS_SCAN_TIMEOUT_MS: 15000
+  ENDPOINTS_SCAN_TIMEOUT_MS: 60000
   ENDPOINTS_SEARCH_TIMEOUT_MS: 5000
   EXECUTOR_SHUTDOWN_TIMEOUT_MS: 100
 
 # use the simple server factory, run on a single port
 server:
-  applicationContextPath: /
+  applicationContextPath: /Aggregator-testing
   type: simple
   connector:
     type: http
-    port: 8080
-
-#server:
-#  softNofileLimit: 1000
-#  hardNofileLimit: 1000
-#  applicationConnectors:
-#    - type: http
-#      port: 8080
-#    - type: https
-#      port: 8443
-#      keyStorePath: example.keystore
-#      keyStorePassword: example
-#      validateCerts: false
-# this requires the npn-boot library on the JVM's boot classpath
-#    - type: spdy3
-#      port: 8445
-#      keyStorePath: example.keystore
-#      keyStorePassword: example
-#      validateCerts: false
-#  adminConnectors:
-#    - type: http
-#      port: 8081
-#    - type: https
-#      port: 8444
-#      keyStorePath: example.keystore
-#      keyStorePassword: example
-#      validateCerts: false
+    port: 4019
 
 # Logging settings.
 logging:

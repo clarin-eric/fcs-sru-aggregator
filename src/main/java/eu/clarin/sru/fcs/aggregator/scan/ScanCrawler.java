@@ -161,11 +161,7 @@ public class ScanCrawler {
 			if (Throw.isCausedBy(error, SocketTimeoutException.class)) {
 				return;
 			}
-			try {
-				log.error("--> " + request.makeURI(SRUVersion.VERSION_1_2) + " --> ", error);
-			} catch (SRUClientException nestedxc) {
-				log.error(" xc on xc ", nestedxc);
-			}
+			log.error("--> " + request.getBaseURI() + "?" + request.getScanClause() + " --> ", error);
 		}
 	}
 
@@ -196,12 +192,9 @@ public class ScanCrawler {
 		return c;
 	}
 
-	// TODO: ask Oliver to add API support for the extra info in the
-	// SRU client/server libraries, so that it's not necessary to work
-	// with DocumentFragment
 	private static void addExtraInfo(Corpus c, SRUTerm term) {
 		DocumentFragment extraInfo = term.getExtraTermData();
-		String enDescription = null;
+		String enDescription = null, enTitle = null;
 		if (extraInfo != null) {
 			NodeList infoNodes = extraInfo.getChildNodes().item(0).getChildNodes();
 			for (int i = 0; i < infoNodes.getLength(); i++) {
@@ -214,11 +207,22 @@ public class ScanCrawler {
 						if (languageNodes.item(j).getNodeType() == Node.ELEMENT_NODE
 								&& languageNodes.item(j).getLocalName().equals("Language")) {
 							Element languageNode = (Element) languageNodes.item(j);
-							String languageText = languageNode.getTextContent().trim();
-							if (!languageText.isEmpty()) {
+							String languageText = languageNode.getTextContent();
+							if (languageText != null && !languageText.trim().isEmpty()) {
 								c.addLanguage(languageText.trim());
 							}
 						}
+					}
+				} else if (infoNode.getNodeType() == Node.ELEMENT_NODE && infoNode.getLocalName().equals("Title")) {
+					Element element = (Element) infoNode;
+					String descr = infoNode.getTextContent().replaceAll("&lt;br/&gt;", " ");
+					descr = descr.replaceAll("<br/>", " ");
+					descr = descr.replaceAll("[\t\n\r ]+", " ");
+					c.setTitle(descr.trim());
+					//String lang = element.getAttributeNS("http://clarin.eu/fcs/1.0/resource-info", "lang");
+					//System.out.println("ATTRIBUTE LANG: " + lang);
+					if ("en".equals(element.getAttribute("xml:lang"))) {
+						enTitle = c.getDescription();
 					}
 				} else if (infoNode.getNodeType() == Node.ELEMENT_NODE && infoNode.getLocalName().equals("Description")) {
 					Element element = (Element) infoNode;
@@ -232,6 +236,10 @@ public class ScanCrawler {
 						enDescription = c.getDescription();
 					}
 				}
+			}
+			// title in Engish has priority
+			if (enTitle != null && !enTitle.isEmpty()) {
+				c.setTitle(enTitle);
 			}
 			// description in Engish has priority
 			if (enDescription != null && !enDescription.isEmpty()) {

@@ -17,11 +17,13 @@ import eu.clarin.sru.fcs.aggregator.lang.LanguagesISO693_3;
 import java.io.IOException;
 import java.net.URI;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -31,6 +33,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -39,6 +42,8 @@ import javax.ws.rs.core.Response;
 @Produces(MediaType.APPLICATION_JSON)
 @Path("/")
 public class RestService {
+
+	private static final org.slf4j.Logger log = LoggerFactory.getLogger(RestService.class);
 
 	ObjectWriter ow = new ObjectMapper().writerWithDefaultPrettyPrinter();
 
@@ -91,6 +96,7 @@ public class RestService {
 	public Response getLanguages() throws IOException {
 		Map<String, String> languages = new HashMap<String, String>();
 		Set<String> codes = Aggregator.getInstance().getCorpora().getLanguages();
+		log.info("get language codes", codes);
 		for (String code : codes) {
 			String name = LanguagesISO693_3.getInstance().nameForCode(code);
 			languages.put(code, name != null ? name : code);
@@ -109,16 +115,17 @@ public class RestService {
 	@Path("search")
 	public Response postSearch(
 			@FormParam("query") String query,
-			@FormParam("corporaIds") Set<String> corporaIds,
 			@FormParam("numberOfResults") Integer numberOfResults,
-			@FormParam("language") String language) throws Exception {
+			@FormParam("language") String language,
+			@FormParam("corporaIds[]") List<String> corporaIds) throws Exception {
 		if (query == null || query.isEmpty()) {
 			return Response.status(400).entity("'query' parameter expected").build();
 		}
+//		log.info("POST /search corporaIds: " + corporaIds);
 		if (corporaIds == null || corporaIds.isEmpty()) {
 			return Response.status(400).entity("'corporaIds' parameter expected").build();
 		}
-		List<Corpus> corpora = Aggregator.getInstance().getCorpora().getCorporaByIds(corporaIds);
+		List<Corpus> corpora = Aggregator.getInstance().getCorpora().getCorporaByIds(new HashSet<String>(corporaIds));
 		if (corpora == null || corpora.isEmpty()) {
 			return Response.status(503).entity("No corpora, please wait for the server to finish scanning").build();
 		}

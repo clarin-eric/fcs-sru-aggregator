@@ -61,7 +61,7 @@ public class Search {
 		searchRequest.setRecordSchema(ClarinFCSRecordData.RECORD_SCHEMA);
 		searchRequest.setQuery("\"" + searchString + "\"");
 		searchRequest.setStartRecord(startRecord);
-		if (request.hasCorpusHandler()) {
+		if (request.hasCorpusHandle()) {
 			searchRequest.setExtraRequestData(SRUCQL.SEARCH_CORPUS_HANDLE_PARAMETER, corpus.getHandle());
 		}
 		requests.add(request);

@@ -1,5 +1,6 @@
 package eu.clarin.sru.fcs.aggregator.app;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.dropwizard.Configuration;
 import java.util.concurrent.TimeUnit;
@@ -50,14 +51,17 @@ public class AggregatorConfiguration extends Configuration {
 		@Range
 		long EXECUTOR_SHUTDOWN_TIMEOUT_MS;
 
+		@JsonIgnore
 		public TimeUnit getScanTaskTimeUnit() {
 			return TimeUnit.valueOf(SCAN_TASK_TIME_UNIT);
 		}
 
+		@JsonIgnore
 		public int getENDPOINTS_SCAN_TIMEOUT_MS() {
 			return ENDPOINTS_SCAN_TIMEOUT_MS;
 		}
 
+		@JsonIgnore
 		public int getENDPOINTS_SEARCH_TIMEOUT_MS() {
 			return ENDPOINTS_SEARCH_TIMEOUT_MS;
 		}

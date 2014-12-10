@@ -79,34 +79,35 @@ import org.slf4j.LoggerFactory;
  * @author Yana Panchenko
  * @author edima
  *
- * TODO: make language show nicely in the UI
+ * TODO: push footer down
  *
- * TODO: use selected visible corpus for search
+ * TODO: 1. support new spec-compatible centres, see Oliver's mail
+ * (use SRUClient's extraResponseData POJOs)
  *
- * TODO: use language selection to hide corpora
- *
- * TODO: support new spec-compatible centres, see Oliver's mail ...............
+ * TODO: tri-state for parent collections; search + message implications
  *
  * TODO: disable popups easily
  *
- * TODO: zoom into the results from a corpus, allow functionality only for the
- * view (search for next set of results)
+ * TODO: 2. zoom into the results from a corpus, allow functionality only for
+ * the view (search for next set of results)
  *
  * TODO: Fix activeSearch memory leak (gc searches older than...)
  *
- * TODO: Use weblicht with results
+ * TODO: 3. Use weblicht with results
  *
  * TODO: Export to personal workspace as csv, excel, tcf, plain text
  *
  * TODO: Download to personal workspace as csv, excel, tcf, plain text
  *
- * TODO: use SRUClient's extraResponseData POJOs
+ * TODO: 4. use a language guesser ?
  *
  * TODO: websockets
  *
  * TODO: atomic replace of cached corpora (file)
  *
  * TODO: show multiple hits on the same result in multiple rows, linked visually
+ *
+ * TODO: improve help page text
  *
  */
 public class Aggregator extends Application<AggregatorConfiguration> {
@@ -280,9 +281,4 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 		}
 		return model;
 	}
-
-//		filter = new EndpointUrlFilterAllow("lindat");
-//		filter = new EndpointUrlFilterDeny("leipzig");
-//		filter = new EndpointUrlFilterAllow("leipzig", "mpi.nl");
-//		filter = new EndpointUrlFilterAllow("lindat");
 }

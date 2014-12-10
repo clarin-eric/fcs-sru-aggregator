@@ -45,6 +45,7 @@ var SearchCorpusBox = React.createClass({displayName: 'SearchCorpusBox',
 var CorpusView = React.createClass({displayName: 'CorpusView',
 	propTypes: {
 		corpora: PT.object.isRequired,
+		languageMap: PT.object.isRequired,
 	},
 
 	toggleSelection: function (corpus) {
@@ -64,6 +65,17 @@ var CorpusView = React.createClass({displayName: 'CorpusView',
 	},
 
 	searchCorpus: function(query) {
+		// sort fn: descending priority, stable sort
+		var sortFn = function(a, b){
+			if (b.priority === a.priority) {
+				return b.index - a.index; // stable sort
+			}
+			return b.priority - a.priority;
+		};
+
+		this.props.corpora.recurse(function(corpus) { corpus.subCorpora.sort(sortFn); });
+		this.props.corpora.corpora.sort(sortFn);
+
 		query = query.toLowerCase();
 		var querytokens = query.split(" ");
 		if (!query) {
@@ -79,30 +91,32 @@ var CorpusView = React.createClass({displayName: 'CorpusView',
 
 		// find priority for each corpus
 		this.props.corpora.recurse(function(corpus){
+			var title = corpus.title ? corpus.title : corpus.displayName;
 			querytokens.forEach(function(qtoken){
-				if (corpus.displayName && corpus.displayName.toLowerCase().indexOf(qtoken) >= 0) {
+				if (title && title.toLowerCase().indexOf(qtoken) >= 0) {
 					corpus.priority ++;
-					// console.log(corpus.displayName, "name ++");
 				}
 				if (corpus.description && corpus.description.toLowerCase().indexOf(qtoken) >= 0) {
 					corpus.priority ++;
-					// console.log(corpus.displayName, "desc ++");
 				}
 				if (corpus.institution && corpus.institution.name && 
 						corpus.institution.name.toLowerCase().indexOf(qtoken) >= 0) {
 					corpus.priority ++;
-					// console.log(corpus.displayName, "inst ++");
 				}
 				if (corpus.languages){
 					corpus.languages.forEach(function(lang){
 						if (lang.toLowerCase().indexOf(qtoken) >= 0){
 							corpus.priority ++;
-							// console.log(corpus.displayName, "lang ++");
 						}
 					});
+					corpus.languages.forEach(function(lang){
+						if (this.props.languageMap[lang].toLowerCase().indexOf(qtoken) >= 0){
+							corpus.priority ++;
+						}
+					}.bind(this));
 				}
-			});
-		});
+			}.bind(this));
+		}.bind(this));
 
 		// ensure root corpora have nonnull priority
 		this.props.corpora.recurse(function(corpus){
@@ -114,23 +128,21 @@ var CorpusView = React.createClass({displayName: 'CorpusView',
 			}
 		});
 
-		// order (descending priority)
-		var sortFn = function(a, b){
-			if (b.priority === a.priority) {
-				return b.index - a.index; // make it a stable sort
-			}
-			return b.priority - a.priority;
-		};
-
-		this.props.corpora.recurse(function(corpus){
-			if (corpus.subCorpora)
-				corpus.subCorpora.sort(sortFn);
-		});
+		this.props.corpora.recurse(function(corpus) { corpus.subCorpora.sort(sortFn); });
 		this.props.corpora.corpora.sort(sortFn);
 
 		// display
 		this.props.corpora.update();
 		// console.log("corpus search done", query);
+	},
+
+	getMinMaxPriority: function() {
+		var min = 1, max = 0;
+		this.props.corpora.recurse(function(c) { 
+			if (c.priority < min) min = c.priority;
+			if (max < c.priority) max = c.priority;
+		});
+		return [min, max];
 	},
 
 	renderCheckbox: function(corpus) {
@@ -156,34 +168,61 @@ var CorpusView = React.createClass({displayName: 'CorpusView',
 				);
 	},
 
-	renderCorpus: function(level, corpus) {
+	renderLanguages: function(languages) {
+		return languages
+				.map(function(l) { return this.props.languageMap[l]; }.bind(this))
+				.sort()
+				.join(" ");
+	},
+
+	renderCorpus: function(level, minmaxp, corpus) {
+		if (!corpus.visible) {
+			return false;
+		}
+
 		var indent = {marginLeft:level*50};
 		var corpusContainerClass = "corpus-container "+(corpus.priority>0?"":"dimmed");
+
+		var hue = 80 * corpus.priority / minmaxp[1];
+		if (corpus.priority > 0) { hue += 40; }
+		var color = minmaxp[0] === minmaxp[1] ? 'transparent' : 'hsl('+hue+', 50%, 50%)';
+		var priorityStyle = {paddingBottom: 4, paddingLeft: 2, borderBottom: '2px solid '+color };
 		return	React.createElement("div", {className: corpusContainerClass, key: corpus.displayName}, 
 					React.createElement("div", {className: "row corpus"}, 
 						React.createElement("div", {className: "col-sm-1 vcenter", onClick: this.toggleSelection.bind(this,corpus)}, 
-							this.renderCheckbox(corpus)
+							React.createElement("div", {style: priorityStyle}, 
+								this.renderCheckbox(corpus)
+							)
 						), 
 						React.createElement("div", {className: "col-sm-8 vcenter"}, 
 							React.createElement("div", {style: indent}, 
-								React.createElement("h3", null, corpus.displayName, " :", corpus.priority), 
+								React.createElement("h3", null, corpus.title ? corpus.title : corpus.displayName, " "), 
 								React.createElement("p", null, corpus.description), 
 								this.renderExpansion(corpus)
 							)
 						), 
 						React.createElement("div", {className: "col-sm-3 vcenter"}, 
 							React.createElement("p", null, React.createElement("i", {className: "fa fa-institution"}), " ", corpus.institution.name), 
-							React.createElement("p", null, React.createElement("i", {className: "fa fa-language"}), " ", corpus.languages.join(" "))
+							React.createElement("p", null, React.createElement("i", {className: "fa fa-language"}), " ", this.renderLanguages(corpus.languages)), 
+							 corpus.landingPage ? 
+								React.createElement("p", null, React.createElement("i", {className: "fa fa-home"}), " ", React.createElement("a", {href: corpus.landingPage}, corpus.landingPage)) : 
+								false
 						)
 					), 
-					corpus.expanded ? corpus.subCorpora.map(this.renderCorpus.bind(this,level+1)) : false
+					corpus.expanded ? corpus.subCorpora.map(this.renderCorpus.bind(this, level+1, minmaxp)) : false
 				);
 	},
 
 	render: function() {
+		var minmaxp = this.getMinMaxPriority();
 		return	React.createElement("div", {style: {margin: "0 30px"}}, 
 					React.createElement("div", {className: "row"}, 
-						React.createElement("div", {className: "float-right"}, 
+						React.createElement("div", {className: "float-left inline"}, 
+							React.createElement("h3", {style: {marginTop:10}}, 
+								this.props.corpora.getSelectedMessage()
+							)
+						), 
+						React.createElement("div", {className: "float-right inline"}, 
 							React.createElement("div", {className: "inline", style: { marginRight: 20}}, 
 								React.createElement(SearchCorpusBox, {search: this.searchCorpus})
 							), 
@@ -193,7 +232,7 @@ var CorpusView = React.createClass({displayName: 'CorpusView',
 								" Deselect all")
 						)
 					), 
-					this.props.corpora.corpora.map(this.renderCorpus.bind(this,0))
+					this.props.corpora.corpora.map(this.renderCorpus.bind(this, 0, minmaxp))
 				);
 	}
 });

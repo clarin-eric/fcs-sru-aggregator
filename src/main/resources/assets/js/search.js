@@ -89,7 +89,7 @@ var Results = React.createClass({displayName: 'Results',
 	renderPanelTitle: function(corpus) {
 		var inline = {display:"inline-block"};
 		return	React.createElement("div", {style: inline}, 
-					React.createElement("span", {className: "corpusName"}, " ", corpus.displayName), 
+					React.createElement("span", {className: "corpusName"}, " ", corpus.title ? corpus.title : corpus.displayName), 
 					React.createElement("span", {className: "institutionName"}, " — ", corpus.institution.name)
 				);
 	},
@@ -97,7 +97,8 @@ var Results = React.createClass({displayName: 'Results',
 	renderPanelInfo: function(corpus) {
 		var inline = {display:"inline-block"};
 		return	React.createElement("div", null, 
-					React.createElement(InfoPopover, {placement: "left", title: corpus.displayName}, 
+					React.createElement(InfoPopover, {placement: "left", 
+							title: corpus.title ? corpus.title : corpus.displayName}, 
 						React.createElement("dl", {className: "dl-horizontal"}, 
 							React.createElement("dt", null, "Institution"), 
 							React.createElement("dd", null, corpus.institution.name), 
@@ -164,10 +165,9 @@ var Results = React.createClass({displayName: 'Results',
 		// return "Searching in " + this.props.requests.length + " collections...";
 	},
 
-	renderFoundMessage: function() {
+	renderFoundMessage: function(hits) {
 		if (this.props.results.length === 0)
 			return false;
-		var hits = this.props.results.filter(function(corpusHit) { return corpusHit.kwics.length > 0; }).length;
 		var total = this.props.results.length;
 		return hits + " collections with results found in " + total + " searched collections";
 	},
@@ -190,6 +190,7 @@ var Results = React.createClass({displayName: 'Results',
 	},
 
 	render: function() {
+		var hits = this.props.results.filter(function(corpusHit) { return corpusHit.kwics.length > 0; }).length;
 		var margintop = {marginTop:"10px"};
 		var margin = {marginTop:"0", padding:"20px"};
 		var inlinew = {display:"inline-block", margin:"0 5px 0 0", width:"240px;"};
@@ -197,9 +198,9 @@ var Results = React.createClass({displayName: 'Results',
 		return 	React.createElement("div", null, 
 					React.createElement(ReactCSSTransitionGroup, {transitionName: "fade"}, 
 						React.createElement("div", {key: "-searching-message-", style: margintop}, this.renderSearchingMessage(), " "), 
-						React.createElement("div", {key: "-found-message-", style: margintop}, this.renderFoundMessage(), " "), 
+						React.createElement("div", {key: "-found-message-", style: margintop}, this.renderFoundMessage(hits), " "), 
 						React.createElement("div", {key: "-progress-", style: margintop}, this.renderProgressBar()), 
-						this.props.results.length > 0 ? this.renderKwicCheckbox() : false, 
+						hits > 0 ? this.renderKwicCheckbox() : false, 
 						this.props.results.map(this.renderResultPanels)
 					)
 				);
