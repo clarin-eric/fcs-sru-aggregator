@@ -74,14 +74,16 @@ public class RestService {
 			{
 				put("lastScanStats", new HashMap<String, Object>() {
 					{
-						put("maxConcurrentRequestsPerEndpoint", ThrottledClient.MAX_CONCURRENT_REQUESTS);
+						put("maxConcurrentScanRequestsPerEndpoint",
+								Aggregator.getInstance().getParams().getSCAN_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT());
 						put("timeout", params.getENDPOINTS_SCAN_TIMEOUT_MS() / 1000.);
 						put("institutions", scan.getInstitutions());
 					}
 				});
 				put("searchStats", new HashMap<String, Object>() {
 					{
-						put("maxConcurrentRequestsPerEndpoint", ThrottledClient.MAX_CONCURRENT_REQUESTS);
+						put("maxConcurrentSearchRequestsPerEndpoint",
+								Aggregator.getInstance().getParams().getSEARCH_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT());
 						put("timeout", params.getENDPOINTS_SEARCH_TIMEOUT_MS() / 1000.);
 						put("institutions", search.getInstitutions());
 					}

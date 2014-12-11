@@ -41,6 +41,14 @@ public class AggregatorConfiguration extends Configuration {
 
 		@JsonProperty
 		@Range
+		int SCAN_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT;
+
+		@JsonProperty
+		@Range
+		int SEARCH_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT;
+
+		@JsonProperty
+		@Range
 		int ENDPOINTS_SCAN_TIMEOUT_MS;
 
 		@JsonProperty
@@ -65,7 +73,16 @@ public class AggregatorConfiguration extends Configuration {
 		public int getENDPOINTS_SEARCH_TIMEOUT_MS() {
 			return ENDPOINTS_SEARCH_TIMEOUT_MS;
 		}
-	}
 
+		@JsonIgnore
+		public int getSCAN_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT() {
+			return SCAN_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT;
+		}
+
+		@JsonIgnore
+		public int getSEARCH_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT() {
+			return SEARCH_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT;
+		}
+	}
 	public Params aggregatorParams = new Params();
 }

@@ -29,7 +29,7 @@ public class ScanCrawlerTest {
 		ThrottledClient sruClient = new ThrottledClient(
 				new ClarinFCSClientBuilder()
 				.addDefaultDataViewParsers()
-				.buildThreadedClient());
+				.buildThreadedClient(), 2, 2);
 
 		try {
 			EndpointUrlFilterAllow filter = new EndpointUrlFilterAllow("uni-tuebingen.de"); //, "leipzig", ".mpi.nl", "dspin.dwds.de", "lindat."

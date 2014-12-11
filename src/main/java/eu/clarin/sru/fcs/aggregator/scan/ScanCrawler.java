@@ -88,7 +88,7 @@ public class ScanCrawler {
 			return;
 		}
 
-		log.info("{} Start scan: {}", latch.get(), st.endpointUrl);
+		log.info("{} Start scan: {}#{}", latch.get(), st.endpointUrl, normalizeHandle(st.parentCorpus));
 		latch.increment();
 		sruClient.scan(scanRequest, st);
 	}
@@ -143,9 +143,9 @@ public class ScanCrawler {
 					}
 				}
 
-				log.info("{} Finished scan: {}", latch.get(), endpointUrl);
+				log.info("{} Finished scan: {}#{}", latch.get(), endpointUrl, normalizeHandle(parentCorpus));
 			} catch (Exception xc) {
-				log.error("{} Exception in callback {}", latch.get(), endpointUrl);
+				log.error("{} Exception in callback {}#{}", latch.get(), endpointUrl, normalizeHandle(parentCorpus));
 				log.error("--> ", xc);
 			} finally {
 				latch.decrement();
@@ -154,14 +154,17 @@ public class ScanCrawler {
 
 		@Override
 		public void onError(SRUScanRequest request, SRUClientException error, ThrottledClient.Stats stats) {
-			latch.decrement();
-			log.error("{} Error while scanning {}: {}", latch.get(), endpointUrl, error.getMessage());
-			statistics.addEndpointDatapoint(institution, endpointUrl, stats.getQueueTime(), stats.getExecutionTime());
-			statistics.addErrorDatapoint(institution, endpointUrl, error);
-			if (Throw.isCausedBy(error, SocketTimeoutException.class)) {
-				return;
+			try {
+				log.error("{} Error while scanning {}#{}: {}", latch.get(), endpointUrl, normalizeHandle(parentCorpus), error.getMessage());
+				statistics.addEndpointDatapoint(institution, endpointUrl, stats.getQueueTime(), stats.getExecutionTime());
+				statistics.addErrorDatapoint(institution, endpointUrl, error);
+				if (Throw.isCausedBy(error, SocketTimeoutException.class)) {
+					return;
+				}
+				log.error("--> " + request.getBaseURI() + "?" + request.getScanClause() + " --> ", error);
+			} finally {
+				latch.decrement();
 			}
-			log.error("--> " + request.getBaseURI() + "?" + request.getScanClause() + " --> ", error);
 		}
 	}
 

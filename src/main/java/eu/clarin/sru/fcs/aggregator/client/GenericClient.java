@@ -13,37 +13,49 @@ import java.util.Queue;
  */
 class GenericClient {
 	private final SRUThreadedClient sruClient;
+	public final int maxConcurrentRequests;
 	// queue of operations waiting for execution
-	private final Map<URI, Queue<Operation>> endpoint2exec = new HashMap<URI, Queue<Operation>>();
-	private final int nowExecuting = 0;
+
+	static class ExecQueue {
+
+		int nowExecuting = 0;
+		Queue<Operation> queue = new ArrayDeque<>();
+	}
+	private final Map<URI, ExecQueue> endpointMap = new HashMap<URI, ExecQueue>();
 	private final Object lock = new Object();
 
-	GenericClient(SRUThreadedClient sruClient) {
+	GenericClient(SRUThreadedClient sruClient, int maxConcurrentRequests) {
 		this.sruClient = sruClient;
+		this.maxConcurrentRequests = maxConcurrentRequests;
 	}
 
 	void execute(URI endpoint, Operation op) {
 		op.setClient(this);
 		synchronized (lock) {
-			if (!endpoint2exec.containsKey(endpoint)) {
-				endpoint2exec.put(endpoint, new ArrayDeque<Operation>());
+			ExecQueue eq = endpointMap.get(endpoint);
+			if (eq == null) {
+				eq = new ExecQueue();
+				endpointMap.put(endpoint, eq);
 			}
 			op.stats().enqueuedTime = System.currentTimeMillis();
-			endpoint2exec.get(endpoint).add(op);
+			eq.queue.add(op);
+			eq.nowExecuting++; // counter the following decrement in executeNext
 			executeNextOperationOfEndpoint(endpoint);
 		}
 	}
 
 	void executeNextOperationOfEndpoint(URI endpoint) {
 		synchronized (lock) {
-			Queue<Operation> queue = endpoint2exec.get(endpoint);
-			if (queue == null || queue.isEmpty()) {
+			ExecQueue eq = endpointMap.get(endpoint);
+			eq.nowExecuting--; // assume an operation just finished
+			if (eq.queue.isEmpty()) {
 				return;
 			}
-			if (nowExecuting >= ThrottledClient.MAX_CONCURRENT_REQUESTS) {
+			if (eq.nowExecuting >= maxConcurrentRequests) {
 				return;
 			}
-			Operation op = queue.poll();
+			eq.nowExecuting++;
+			Operation op = eq.queue.poll();
 			op.stats().startedTime = System.currentTimeMillis();
 			op.execute(sruClient);
 		}

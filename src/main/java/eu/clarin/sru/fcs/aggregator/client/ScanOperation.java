@@ -32,8 +32,7 @@ class ScanOperation implements Operation<SRUScanRequest, SRUScanResponse>, SRUCa
 		try {
 			sruClient.scan(request, this);
 		} catch (SRUClientException xc) {
-			stats.finishedTime = System.currentTimeMillis();
-			callback.onError(request, xc, stats);
+			onError(request, xc);
 		}
 	}
 

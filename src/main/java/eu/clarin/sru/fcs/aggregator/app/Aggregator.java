@@ -79,6 +79,29 @@ import org.slf4j.LoggerFactory;
  * @author Yana Panchenko
  * @author edima
  *
+ * TODO: version page: credits, open source, see vcr/version page
+ *
+ * TODO: change the order in the GUI: selected collections after the
+ * language/layer
+ *
+ * TODO: condensed list of corpora
+ *
+ * TODO: group the list of corpora by institution?
+ *
+ * TODO: fix ordering of corpora in corpora view
+ *
+ * TODO: corpora search should not indicate the ones that don't match
+ *
+ * TODO: try to refine by language using a language library, with UI element
+ *
+ * TODO: helpdesk: switch to english (parameter of the form)
+ *
+ * TODO: label: "phonetic transcriptions" (ask the BAS guys)
+ *
+ * TODO: number of results control: make the buttons larger
+ *
+ * TODO: Collections view: home link (make a single consistent text for it)
+ *
  * TODO: push footer down
  *
  * TODO: 1. support new spec-compatible centres, see Oliver's mail
@@ -106,6 +129,8 @@ import org.slf4j.LoggerFactory;
  * TODO: atomic replace of cached corpora (file)
  *
  * TODO: show multiple hits on the same result in multiple rows, linked visually
+ *
+ * TODO: optimise page load
  *
  * TODO: improve help page text
  *
@@ -189,19 +214,25 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 	public void init() {
 		log.info("Aggregator initialization started.");
 		sruScanClient = new ThrottledClient(
-				new ClarinFCSClientBuilder()
+			new ClarinFCSClientBuilder()
 				.setConnectTimeout(params.ENDPOINTS_SCAN_TIMEOUT_MS)
 				.setSocketTimeout(params.ENDPOINTS_SCAN_TIMEOUT_MS)
 				.addDefaultDataViewParsers()
 				.enableLegacySupport()
-				.buildThreadedClient());
+				.buildThreadedClient(),
+				params.SCAN_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT,
+				params.SEARCH_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT
+		);
 		sruSearchClient = new ThrottledClient(
 				new ClarinFCSClientBuilder()
 				.setConnectTimeout(params.ENDPOINTS_SEARCH_TIMEOUT_MS)
 				.setSocketTimeout(params.ENDPOINTS_SEARCH_TIMEOUT_MS)
 				.addDefaultDataViewParsers()
 				.enableLegacySupport()
-				.buildThreadedClient());
+				.buildThreadedClient(),
+				params.SCAN_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT,
+				params.SEARCH_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT
+		);
 
 		File corporaCacheFile = new File(params.AGGREGATOR_FILE_PATH);
 		try {

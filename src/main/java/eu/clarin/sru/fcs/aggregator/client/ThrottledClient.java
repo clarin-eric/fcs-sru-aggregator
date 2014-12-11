@@ -12,8 +12,6 @@ import eu.clarin.sru.client.SRUThreadedClient;
  */
 public class ThrottledClient {
 
-	public final static int MAX_CONCURRENT_REQUESTS = 8;
-
 	public interface Stats {
 
 		long getQueueTime();
@@ -39,10 +37,10 @@ public class ThrottledClient {
 	GenericClient scanClient;
 	GenericClient searchClient;
 
-	public ThrottledClient(SRUThreadedClient sruClient) {
+	public ThrottledClient(SRUThreadedClient sruClient, int maxConcurrentScanRequests, int maxConcurrentSearchRequests) {
 		this.sruClient = sruClient;
-		this.scanClient = new GenericClient(sruClient);
-		this.searchClient = new GenericClient(sruClient);
+		this.scanClient = new GenericClient(sruClient, maxConcurrentScanRequests);
+		this.searchClient = new GenericClient(sruClient, maxConcurrentSearchRequests);
 	}
 
 	public void scan(SRUScanRequest request, ScanCallback callback) {
