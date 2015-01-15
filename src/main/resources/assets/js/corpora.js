@@ -2,6 +2,8 @@
 (function() {
 "use strict";
 
+window.MyAggregator = window.MyAggregator || {};
+
 var PT = React.PropTypes;
 var ReactCSSTransitionGroup = window.React.addons.CSSTransitionGroup;
 // own components
@@ -42,7 +44,7 @@ var SearchCorpusBox = React.createClass({displayName: 'SearchCorpusBox',
 	}
 });
 
-var CorpusView = React.createClass({displayName: 'CorpusView',
+var CorpusView = window.MyAggregator.CorpusView = React.createClass({displayName: 'CorpusView',
 	propTypes: {
 		corpora: PT.object.isRequired,
 		languageMap: PT.object.isRequired,
@@ -237,10 +239,4 @@ var CorpusView = React.createClass({displayName: 'CorpusView',
 	}
 });
 
-/////////////////////////////////
-
-if (!window.MyAggregator) {
-	window.MyAggregator = {};
-}
-window.MyAggregator.CorpusView = CorpusView;
 })();

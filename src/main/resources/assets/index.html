@@ -14,42 +14,65 @@
 		<div>Federated Content Search Aggregator requires JavaScript to be enabled!</div>
 	</noscript>
 
-	<div id="body">
-		<div id="reactMain">
-	</div>
+	<style>
+		html,
+		body {
+			margin:0;
+			padding:0;
+			height:100%;
+		}
+		#container {
+			min-height:100%;
+			position:relative;
+		}
+		#body {
+			padding-bottom:100px;   /* Height of the footer */
+		}
+		#footer {
+			position:absolute;
+			bottom:0;
+			width:100%;
+			height:100px;   /* Height of the footer */
+		}
+	</style>
 
-	<div id="footer">
-		<div class="container">
-			<div id="CLARIN_footer_left">
-				<a title="about" id="aboutlink">
-					<span class="glyphicon glyphicon-info-sign"></span>
-					<span>VERSION 2.0.0.α10</span>
-				</a>
-			</div>
-			<div id="CLARIN_footer_middle">
-				<a title="CLARIN ERIC" href="https://www.clarin.eu/">
-				<img src="img/clarindLogo.png" alt="CLARIN ERIC logo" style="height:80px"/>
-				</a>
-			</div>
-			<div id="CLARIN_footer_right">
-				<a title="contact" href="mailto:fcs@clarin.eu">
-					<span class="glyphicon glyphicon-envelope"></span>
-					<span> CONTACT</span>
-				</a>
+	<div id="container">
+		<div id="body">
+			<div id="reactMain">
+		</div>
+		<div id="footer">
+			<div class="container">
+				<div id="CLARIN_footer_left">
+						<a title="about" id="aboutlink" href="about"> 
+						<span class="glyphicon glyphicon-info-sign"></span>
+						<span>VERSION 2.0.0.α11</span>
+					</a>
+				</div>
+				<div id="CLARIN_footer_middle">
+					<a title="CLARIN ERIC" href="https://www.clarin.eu/">
+					<img src="img/clarindLogo.png" alt="CLARIN ERIC logo" style="height:80px"/>
+					</a>
+				</div>
+				<div id="CLARIN_footer_right">
+					<a title="contact" href="mailto:fcs@clarin.eu">
+						<span class="glyphicon glyphicon-envelope"></span>
+						<span> CONTACT</span>
+					</a>
+				</div>
 			</div>
 		</div>
 	</div>
 
-	<script src="lib/jquery.min.js"></script>
 	<!--[if lt IE 9]>
 		<script src="http://cdnjs.cloudflare.com/ajax/libs/es5-shim/3.4.0/es5-shim.js"></script>
 		<script src="http://cdnjs.cloudflare.com/ajax/libs/es5-shim/3.4.0/es5-sham.js"></script>
 	<![endif]-->   
+	<script src="lib/jquery.min.js"></script>
 	<script src="lib/react-with-addons.js"></script>
 	<script src="lib/bootstrap.min.js"></script>
 	<script src="js/components.js"></script>
-	<script src="js/search.js"></script>
 	<script src="js/corpora.js"></script>
+	<script src="js/search.js"></script>
 	<script src="js/main.js"></script>
 </body>
 </html>

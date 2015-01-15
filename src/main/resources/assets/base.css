@@ -108,13 +108,21 @@ input[type="text"].search {
 	border: none;
 }
 
+/* large spinner */
+input[type=number]::-webkit-inner-spin-button, 
+input[type=number]::-webkit-outer-spin-button { 
+	margin-left: 2px; 
+	font-size:24px;
+}
+
+
 input, select, textarea {
-  -webkit-transition: all 0.30s ease-in-out;
-  -moz-transition: all 0.30s ease-in-out;
-  -ms-transition: all 0.30s ease-in-out;
-  -o-transition: all 0.30s ease-in-out;
-  outline: none;
-  border: 1px solid #ccc;
+	-webkit-transition: all 0.30s ease-in-out;
+	-moz-transition: all 0.30s ease-in-out;
+	-ms-transition: all 0.30s ease-in-out;
+	-o-transition: all 0.30s ease-in-out;
+	outline: none;
+	border: 1px solid #ccc;
 }
 input:focus, select:focus, textarea:focus, button:focus, a:focus {
   /*box-shadow: 0 0 5px #00406F !important;*/

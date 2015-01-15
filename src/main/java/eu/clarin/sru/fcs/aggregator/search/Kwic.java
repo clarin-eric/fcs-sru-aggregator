@@ -1,6 +1,7 @@
 package eu.clarin.sru.fcs.aggregator.search;
 
 import eu.clarin.sru.client.fcs.DataViewHits;
+import eu.clarin.sru.fcs.aggregator.app.Aggregator;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -38,6 +39,7 @@ public class Kwic {
 
 	private String pid;
 	private String reference;
+	private String language;
 	private List<TextFragment> fragments = new ArrayList<TextFragment>();
 
 	public Kwic(DataViewHits hits, String pid, String reference) {
@@ -59,6 +61,8 @@ public class Kwic {
 		if (lastOffset < text.length()) {
 			fragments.add(new TextFragment(text.substring(lastOffset, text.length()), false));
 		}
+
+		language = Aggregator.getInstance().detectLanguage(hits.getText());
 	}
 
 	public List<TextFragment> getFragments() {
@@ -71,6 +75,10 @@ public class Kwic {
 
 	public String getReference() {
 		return reference;
+	}
+
+	public String getLanguage() {
+		return language;
 	}
 
 	@Deprecated

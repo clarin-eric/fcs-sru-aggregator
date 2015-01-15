@@ -1,6 +1,12 @@
 package eu.clarin.sru.fcs.aggregator.app;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.optimaize.langdetect.LanguageDetector;
+import com.optimaize.langdetect.LanguageDetectorBuilder;
+import com.optimaize.langdetect.ngram.NgramExtractors;
+import com.optimaize.langdetect.profiles.LanguageProfile;
+import com.optimaize.langdetect.profiles.LanguageProfileReader;
+import com.optimaize.langdetect.text.*;
 import eu.clarin.sru.fcs.aggregator.search.Search;
 import eu.clarin.sru.fcs.aggregator.scan.ScanCrawlTask;
 import eu.clarin.sru.fcs.aggregator.scan.Corpora;
@@ -79,10 +85,8 @@ import org.slf4j.LoggerFactory;
  * @author Yana Panchenko
  * @author edima
  *
- * TODO: version page: credits, open source, see vcr/version page
- *
- * TODO: change the order in the GUI: selected collections after the
- * language/layer
+ * TODO: try to refine results by language using a language library, with UI
+ * element
  *
  * TODO: condensed list of corpora
  *
@@ -92,37 +96,29 @@ import org.slf4j.LoggerFactory;
  *
  * TODO: corpora search should not indicate the ones that don't match
  *
- * TODO: try to refine by language using a language library, with UI element
- *
- * TODO: helpdesk: switch to english (parameter of the form)
- *
- * TODO: label: "phonetic transcriptions" (ask the BAS guys)
- *
- * TODO: number of results control: make the buttons larger
- *
  * TODO: Collections view: home link (make a single consistent text for it)
  *
- * TODO: push footer down
+ * TODO: tri-state for parent collections; search + message implications
+ *
+ * TODO: version page: credits, open source, see vcr/version page
+ *
+ * TODO: statistics page liked from version page
  *
  * TODO: 1. support new spec-compatible centres, see Oliver's mail
  * (use SRUClient's extraResponseData POJOs)
  *
- * TODO: tri-state for parent collections; search + message implications
- *
- * TODO: disable popups easily
- *
  * TODO: 2. zoom into the results from a corpus, allow functionality only for
  * the view (search for next set of results)
  *
+ * TODO: disable popups easily
+ *
  * TODO: Fix activeSearch memory leak (gc searches older than...)
  *
- * TODO: 3. Use weblicht with results
+ * TODO: Use weblicht with results
  *
  * TODO: Export to personal workspace as csv, excel, tcf, plain text
  *
  * TODO: Download to personal workspace as csv, excel, tcf, plain text
- *
- * TODO: 4. use a language guesser ?
  *
  * TODO: websockets
  *
@@ -149,7 +145,10 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 	private AtomicReference<Statistics> scanStatsAtom = new AtomicReference<Statistics>(new Statistics());
 	private AtomicReference<Statistics> searchStatsAtom = new AtomicReference<Statistics>(new Statistics());
 
-	private TokenizerModel model;
+	private TokenizerModel tokenizerModel;
+	private LanguageDetector languageDetector;
+	private TextObjectFactory textObjectFactory;
+
 	private ThrottledClient sruScanClient = null;
 	private ThrottledClient sruSearchClient = null;
 	private Map<Long, Search> activeSearches = Collections.synchronizedMap(new HashMap<Long, Search>());
@@ -169,7 +168,7 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 	}
 
 	@Override
-	public void run(AggregatorConfiguration config, Environment environment) {
+	public void run(AggregatorConfiguration config, Environment environment) throws Exception {
 		params = config.aggregatorParams;
 		instance = this;
 
@@ -211,10 +210,10 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 		return searchStatsAtom.get();
 	}
 
-	public void init() {
+	public void init() throws IOException {
 		log.info("Aggregator initialization started.");
 		sruScanClient = new ThrottledClient(
-			new ClarinFCSClientBuilder()
+				new ClarinFCSClientBuilder()
 				.setConnectTimeout(params.ENDPOINTS_SCAN_TIMEOUT_MS)
 				.setSocketTimeout(params.ENDPOINTS_SCAN_TIMEOUT_MS)
 				.addDefaultDataViewParsers()
@@ -244,7 +243,8 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 		}
 
 		LanguagesISO693_3.getInstance(); // force init
-		model = setUpTokenizers();
+		initTokenizer();
+		initLanguageDetector();
 
 		ScanCrawlTask task = new ScanCrawlTask(sruScanClient,
 				params.CENTER_REGISTRY_URL, params.SCAN_MAX_DEPTH,
@@ -301,7 +301,7 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 		}
 	}
 
-	private static TokenizerModel setUpTokenizers() {
+	private void initTokenizer() {
 		TokenizerModel model = null;
 		try {
 			try (InputStream tokenizerModelDeAsIS = Thread.currentThread().getContextClassLoader().getResourceAsStream(DE_TOK_MODEL)) {
@@ -310,6 +310,20 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 		} catch (IOException ex) {
 			log.error("Failed to load tokenizer model", ex);
 		}
-		return model;
+		tokenizerModel = model;
+	}
+
+	public void initLanguageDetector() throws IOException {
+		List<LanguageProfile> languageProfiles = new LanguageProfileReader().readAll();
+		languageDetector = LanguageDetectorBuilder
+				.create(NgramExtractors.standard())
+				.withProfiles(languageProfiles)
+				.build();
+
+		textObjectFactory = CommonTextObjectFactories.forDetectingOnLargeText();
+	}
+
+	public String detectLanguage(String text) {
+		return languageDetector.detect(textObjectFactory.forText(text)).orNull();
 	}
 }
