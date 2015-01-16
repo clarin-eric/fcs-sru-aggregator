@@ -119,6 +119,7 @@ public class RestService {
 			@FormParam("query") String query,
 			@FormParam("numberOfResults") Integer numberOfResults,
 			@FormParam("language") String language,
+			@FormParam("useLanguageGuesser") boolean useLanguageGuesser,
 			@FormParam("corporaIds[]") List<String> corporaIds) throws Exception {
 		if (query == null || query.isEmpty()) {
 			return Response.status(400).entity("'query' parameter expected").build();
@@ -136,9 +137,6 @@ public class RestService {
 		}
 		if (numberOfResults > 250) {
 			numberOfResults = 250;
-		}
-		for (String c : corporaIds) {
-
 		}
 		Search search = Aggregator.getInstance().startSearch(SRUVersion.VERSION_1_2, corpora, query, language, numberOfResults);
 		if (search == null) {

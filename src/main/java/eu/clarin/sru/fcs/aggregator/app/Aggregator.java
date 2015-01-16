@@ -85,18 +85,9 @@ import org.slf4j.LoggerFactory;
  * @author Yana Panchenko
  * @author edima
  *
- * TODO: try to refine results by language using a language library, with UI
- * element
- *
- * TODO: condensed list of corpora
- *
- * TODO: group the list of corpora by institution?
- *
  * TODO: fix ordering of corpora in corpora view
  *
  * TODO: corpora search should not indicate the ones that don't match
- *
- * TODO: Collections view: home link (make a single consistent text for it)
  *
  * TODO: tri-state for parent collections; search + message implications
  *
@@ -266,7 +257,8 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 	}
 
 	// this function should be thread-safe
-	public Search startSearch(SRUVersion version, List<Corpus> corpora, String searchString, String searchLang, int maxRecords) throws Exception {
+	public Search startSearch(SRUVersion version, List<Corpus> corpora,
+			String searchString, String searchLang, int maxRecords) throws Exception {
 		if (corpora.isEmpty()) {
 			// No corpora
 			return null;

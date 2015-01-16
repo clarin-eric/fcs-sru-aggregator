@@ -12,12 +12,15 @@
 }
 
 .unselectable {
-	-webkit-touch-callout: none;
+	-ms-touch-action: manipulation;
+	touch-action: manipulation;
+	cursor: pointer;
 	-webkit-user-select: none;
-	-khtml-user-select: none;
 	-moz-user-select: none;
 	-ms-user-select: none;
 	user-select: none;
+	-webkit-touch-callout: none;
+	-khtml-user-select: none;
 }
 
 .top-gap {
@@ -180,7 +183,8 @@ p.input {
 /*** corpus selection panel ***/
 
 div.corpus-container {
-	margin: 10px 0;
+	margin: 5px 0;
+	border-bottom: 1px solid #eee;
 }
 div.corpus-container:hover {
 	box-shadow: 0 0 10px rgb(179,216,253) !important;
@@ -195,12 +199,29 @@ div.modal-dialog input {
 }
 
 div.corpus h3 {
-	margin-top: 10px;
+	margin: 0px 0 5px 0;
 	font-size: 18px;
+}
+
+div.corpus p {
+	margin: 0;
 }
 
 div.corpus button {
 	/*border: none;*/
+}
+
+div.corpus .glyphicon {
+	font-size: 12px;
+	color: rgb(128,107,82); /*gold*/
+
+	-ms-touch-action: manipulation;
+	touch-action: manipulation;
+	cursor: pointer;
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
 }
 
 div.corpus button .glyphicon.glyphicon-check {
@@ -221,7 +242,7 @@ div.corpus p {
 }
 
 div.corpus div.expansion-handle {
-	margin: 5px 0;
+	margin: 0 0 5px 0;
 	cursor: pointer;
 }
 
@@ -277,7 +298,6 @@ div.panel-title .institutionName{
 .panel-body td.keyword {
 	color: #00406F;
 	font-weight: bold;
-	font-size: 12px;
 	font-weight: bold;
 	white-space: nowrap;
 }

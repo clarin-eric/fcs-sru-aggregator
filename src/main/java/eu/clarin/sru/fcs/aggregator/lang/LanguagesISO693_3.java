@@ -27,21 +27,24 @@ public class LanguagesISO693_3 {
 
 	public static class Language {
 
-		String code, name;
+		// code is ISO-639-3 (3 letters) while code_2 is ISO-639-2 (2 letters)
+		String code, code_2, name;
 
-		public Language(String code, String name) {
+		public Language(String code, String code_2, String name) {
 			this.code = code;
+			this.code_2 = code_2;
 			this.name = name;
 		}
 	}
 
-	private Map<String, Language> code2Lang = new HashMap<String, Language>();
-	private Map<String, Language> name2Lang = new HashMap<String, Language>();
+	private Map<String, Language> codeToLang = new HashMap<String, Language>();
+	private Map<String, Language> nameToLang = new HashMap<String, Language>();
+	private Map<String, Language> code_2ToLang = new HashMap<String, Language>();
 
 	private LanguagesISO693_3() {
 		InputStream is = LanguagesISO693_3.class.getResourceAsStream(LANGUAGES_FILE_PATH);
 		try (BufferedReader br = new BufferedReader(new InputStreamReader(is, LANGUAGES_FILE_ENCODING))) {
-			String line;
+			String line = br.readLine(); // ignore first line
 			while ((line = br.readLine()) != null) {
 				if (line.length() > 0) {
 					String[] toks = line.split("\\t");
@@ -49,11 +52,18 @@ public class LanguagesISO693_3 {
 						log.error("Line error in language codes file: ", line);
 						continue;
 					}
-					String code = toks[0];
-					String name = toks[6];
-					Language l = new Language(code, name);
-					code2Lang.put(code, l);
-					name2Lang.put(name, l);
+					String code = toks[0].trim();
+					String code_2 = toks[3].trim().isEmpty() ? null : toks[3].trim();
+					if (code_2 != null && code_2.length() != 2) {
+						throw new RuntimeException("bad code_2 code: " + code_2);
+					}
+					String name = toks[6].trim();
+					Language l = new Language(code, code_2, name);
+					codeToLang.put(code, l);
+					if (code_2 != null) {
+						code_2ToLang.put(code_2, l);
+					}
+					nameToLang.put(name, l);
 				}
 			}
 		} catch (IOException ex) {
@@ -62,7 +72,7 @@ public class LanguagesISO693_3 {
 
 		ObjectWriter ow = new ObjectMapper().writerWithDefaultPrettyPrinter();
 		try {
-			System.out.println(ow.writeValueAsString(code2Lang));
+			System.out.println(ow.writeValueAsString(codeToLang));
 		} catch (JsonProcessingException ex) {
 		}
 	}
@@ -75,11 +85,23 @@ public class LanguagesISO693_3 {
 	}
 
 	public Set<String> getCodes() {
-		return code2Lang.keySet();
+		return codeToLang.keySet();
+	}
+
+	public String codeForCode639_2(String code639_2) {
+		if (code639_2 == null) {
+			return null;
+		}
+		Language l = code_2ToLang.get(code639_2);
+		if (l == null) {
+			log.error("Unknown 639-2 code: " + code639_2);
+			return null;
+		}
+		return l.code;
 	}
 
 	public String codeForName(String name) {
-		Language l = name2Lang.get(name);
+		Language l = nameToLang.get(name);
 		if (l == null) {
 			log.error("Unknown language name: " + name);
 			return null;
@@ -88,7 +110,7 @@ public class LanguagesISO693_3 {
 	}
 
 	public String nameForCode(String code) {
-		Language l = code2Lang.get(code);
+		Language l = codeToLang.get(code);
 		if (l == null) {
 			log.error("Unknown language code: " + code);
 			return null;

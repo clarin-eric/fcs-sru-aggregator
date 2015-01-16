@@ -11,6 +11,7 @@ var ReactCSSTransitionGroup = React.addons.CSSTransitionGroup;
 var CorpusSelection = window.MyAggregator.CorpusSelection;
 var HitNumber = window.MyAggregator.HitNumber;
 var CorpusView = window.MyAggregator.CorpusView;
+var Popover = window.MyReact.Popover;
 var InfoPopover = window.MyReact.InfoPopover;
 var Panel = window.MyReact.Panel;
 var Modal = window.MyReact.Modal;
@@ -164,7 +165,6 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({dis
 		ajax: PT.func.isRequired
 	},
 
-	mixins: [React.addons.LinkedStateMixin],
 	timeout: 0,
 	nohits: { 
 		requests: [],
@@ -177,6 +177,7 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({dis
 			corpora: new Corpora([], this.updateCorpora),
 			languageMap: {},
 			language: this.anyLanguage,
+			languageFilter: 'byMeta',
 			searchLayerId: "text",
 			numberOfResults: 10,
 
@@ -259,9 +260,10 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({dis
 		});
 	},
 
-	setLanguage: function(languageObj) {
-		this.state.corpora.setVisibility(this.state.searchLayerId, languageObj[0]);
-		this.setState({language: languageObj});
+	setLanguageAndFilter: function(languageObj, languageFilter) {
+		this.state.corpora.setVisibility(this.state.searchLayerId, 
+			languageFilter === 'byGuess' ? multipleLanguageCode : languageObj[0]);
+		this.setState({language: languageObj, languageFilter: languageFilter});
 		this.state.corpora.update();
 	},
 
@@ -281,6 +283,28 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({dis
 	},
 
 	stop: function(e) {
+		e.preventDefault();
+		e.stopPropagation();
+	},
+
+	filterResults: function() {
+		var langCode = this.state.language[0];
+		return this.state.hits.results.map(function(corpusHit) { 
+			return {
+				corpus: corpusHit.corpus,
+				startRecord: corpusHit.startRecord,
+				endRecord: corpusHit.endRecord,
+				exception: corpusHit.exception,
+				searchString: corpusHit.searchString,
+				kwics: corpusHit.kwics.filter(function(kwic){
+					return kwic.language === langCode || langCode === multipleLanguageCode || langCode === null; 
+				}),
+			};
+		});
+	},
+
+	toggleLanguageSelection: function(e) {
+		$(this.refs.languageModal.getDOMNode()).modal();
 		e.preventDefault();
 		e.stopPropagation();
 	},
@@ -322,23 +346,10 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({dis
 								
 								React.createElement("div", {className: "input-group-btn"}, 
 									React.createElement("button", {className: "form-control btn btn-default", 
-											'aria-expanded': "false", 'data-toggle': "dropdown"}, 
+											onClick: this.toggleLanguageSelection}, 
 										this.state.language[1], " ", React.createElement("span", {className: "caret"})
 									), 
-									React.createElement("ul", {ref: "languageDropdownMenu", className: "dropdown-menu"}, 
-										React.createElement("li", {key: this.anyLanguage[0]}, " ", React.createElement("a", {tabIndex: "-1", href: "#", 
-												onClick: this.setLanguage.bind(this, this.anyLanguage)}, 
-											this.anyLanguage[1])
-										), 
-											_.pairs(this.state.languageMap).sort(function(l1, l2){
-												return l1[1].localeCompare(l2[1]);
-											}).map(function(l) {
-												var desc = l[1] + " [" + l[0] + "]";
-												return React.createElement("li", {key: l[0]}, " ", React.createElement("a", {tabIndex: "-1", href: "#", 
-													onClick: this.setLanguage.bind(this, l)}, desc));
-											}.bind(this))
-										
-									)
+									React.createElement("span", null)
 								), 
 
 								React.createElement("div", {className: "input-group-btn"}, 
@@ -359,9 +370,9 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({dis
 
 							React.createElement("div", {className: "input-group"}, 
 								React.createElement("span", {className: "input-group-addon nobkg"}, "in"), 
-									React.createElement("button", {type: "button", className: "btn btn-default", onClick: this.toggleCorpusSelection}, 
-										this.state.corpora.getSelectedMessage(), " ", React.createElement("span", {className: "caret"})
-									)
+								React.createElement("button", {type: "button", className: "btn btn-default", onClick: this.toggleCorpusSelection}, 
+									this.state.corpora.getSelectedMessage(), " ", React.createElement("span", {className: "caret"})
+								)
 							), 							
 
 							React.createElement("div", {className: "input-group"}, 
@@ -382,8 +393,18 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({dis
 					React.createElement(CorpusView, {corpora: this.state.corpora, languageMap: this.state.languageMap})
 	            ), 
 
+	            React.createElement(Modal, {ref: "languageModal", title: "Select Language"}, 
+					React.createElement(LanguageSelector, {anyLanguage: this.anyLanguage, 
+									  languageMap: this.state.languageMap, 
+									  selectedLanguage: this.state.language, 
+									  languageFilter: this.state.languageFilter, 
+									  languageChangeHandler: this.setLanguageAndFilter})
+	            ), 
+
 				React.createElement("div", {className: "top-gap"}, 
-					React.createElement(Results, {requests: this.state.hits.requests, results: this.state.hits.results})
+					React.createElement(Results, {requests: this.state.hits.requests, 
+					         results: this.filterResults(), 
+					         searchedLanguage: this.state.language})
 				)
 			)
 			);
@@ -395,6 +416,85 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({dis
 
 
 
+/////////////////////////////////
+
+var LanguageSelector = React.createClass({displayName: 'LanguageSelector',
+	propTypes: {
+		anyLanguage: PT.array.isRequired,
+		languageMap: PT.object.isRequired,
+		selectedLanguage: PT.array.isRequired,
+		languageFilter: PT.string.isRequired,
+		languageChangeHandler: PT.func.isRequired,
+	},
+	mixins: [React.addons.LinkedStateMixin],
+
+	selectLang: function(language) {
+		this.props.languageChangeHandler(language, this.props.languageFilter);
+	},
+
+	setFilter: function(filter) {
+		this.props.languageChangeHandler(this.props.selectedLanguage, filter);
+	},
+
+	renderLanguageObject: function(lang) {
+		var desc = lang[1] + " [" + lang[0] + "]";
+		var style = {
+			whiteSpace: "nowrap",
+			fontWeight: lang[0] === this.props.selectedLanguage[0] ? "bold":"normal",
+		};
+		return	React.createElement("div", {key: lang[0]}, 
+					React.createElement("a", {tabIndex: "-1", href: "#", style: style, onClick: this.selectLang.bind(this, lang)}, desc)
+				);
+	},
+
+	renderRadio: function(option) {
+		return	this.props.languageFilter === option ? 
+				React.createElement("input", {type: "radio", name: "filterOpts", value: option, checked: true, onChange: this.setFilter.bind(this, option)})
+				: React.createElement("input", {type: "radio", name: "filterOpts", value: option, onChange: this.setFilter.bind(this, option)});
+	},
+
+	render: function() {
+		var languages = _.pairs(this.props.languageMap)
+		                 .sort(function(l1, l2){return l1[1].localeCompare(l2[1]); });
+		languages.unshift(this.props.anyLanguage);
+		languages = languages.map(this.renderLanguageObject);
+		var third = Math.round(languages.length/3);
+		var l1 = languages.slice(0, third);
+		var l2 = languages.slice(third, 2*third);
+		var l3 = languages.slice(2*third, languages.length);
+
+		return	React.createElement("div", null, 
+					React.createElement("div", {className: "row"}, 
+						React.createElement("div", {className: "col-sm-4"}, l1), 
+						React.createElement("div", {className: "col-sm-4"}, l2), 
+						React.createElement("div", {className: "col-sm-4"}, l3), 
+						React.createElement("div", {className: "col-sm-12", style: {marginTop:10, marginBottom:10, borderBottom:"1px solid #eee"}})
+					), 
+					React.createElement("form", {className: "form", role: "form"}, 
+						React.createElement("div", {className: "input-group"}, 
+							React.createElement("div", null, 
+							React.createElement("label", {style: {color:'black'}}, 
+								 this.renderRadio('byMeta'), " ", 
+		  						"Use the collections", "'", " specified language to filter results" 
+							)
+							), 
+							React.createElement("div", null, 
+							React.createElement("label", {style: {color:'black'}}, 
+								 this.renderRadio('byGuess'), " ", 
+		  						"Filter results by using a language detector" 
+							)
+							), 
+							React.createElement("div", null, 
+							React.createElement("label", {style: {color:'black'}}, 
+								 this.renderRadio('byMetaAndGuess'), " ", 
+		  						"First use the collections", "'", " specified language then also use a language detector"
+							)
+							)
+						)
+					)
+				);
+	}
+});
 /////////////////////////////////
 
 var SearchBox = React.createClass({displayName: 'SearchBox',
@@ -441,10 +541,13 @@ var Results = React.createClass({displayName: 'Results',
 	propTypes: {
 		requests: PT.array.isRequired,
 		results: PT.array.isRequired,
+		searchedLanguage: PT.array.isRequired,
 	},
 
 	getInitialState: function () {
-		return { displayKwic: false };
+		return { 
+			displayKwic: false,
+		};
 	},
 
 	toggleKwic: function() {
@@ -452,7 +555,7 @@ var Results = React.createClass({displayName: 'Results',
 	},
 
 	renderRowLanguage: function(hit) {
-		return React.createElement("span", {style: {fontFace:"Courier",color:"black"}}, hit.language);
+		return React.createElement("span", {style: {fontFace:"Courier",color:"black"}}, hit.language, " ") ;
 	},
 
 	renderRowsAsHits: function(hit,i) {
@@ -466,9 +569,9 @@ var Results = React.createClass({displayName: 'Results',
 	},
 
 	renderRowsAsKwic: function(hit,i) {
-		var sleft={textAlign:"left", verticalAlign:"middle", width:"50%"};
-		var scenter={textAlign:"center", verticalAlign:"middle", maxWidth:"50%"};
-		var sright={textAlign:"right", verticalAlign:"middle", maxWidth:"50%"};
+		var sleft={textAlign:"left", verticalAlign:"top", width:"50%"};
+		var scenter={textAlign:"center", verticalAlign:"top", maxWidth:"50%"};
+		var sright={textAlign:"right", verticalAlign:"top", maxWidth:"50%"};
 		return	React.createElement("tr", {key: i, className: "hitrow"}, 
 					React.createElement("td", null, this.renderRowLanguage(hit)), 
 					React.createElement("td", {style: sright}, hit.left), 
@@ -564,17 +667,15 @@ var Results = React.createClass({displayName: 'Results',
 	},
 
 	renderKwicCheckbox: function() {
-		return	React.createElement("div", {key: "-option-KWIC-", className: "row"}, 
-					React.createElement("div", {className: "float-right", style: {marginRight:17}}, 
-						React.createElement("div", {className: "btn-group", style: {display:"inline-block"}}, 
-							React.createElement("label", {forHtml: "inputKwic", className: "btn-default"}, 
-								 this.state.displayKwic ? 
-									React.createElement("input", {id: "inputKwic", type: "checkbox", value: "kwic", checked: true, onChange: this.toggleKwic}) :
-									React.createElement("input", {id: "inputKwic", type: "checkbox", value: "kwic", onChange: this.toggleKwic}), 
-								
-								" " + ' ' +
-								"Display as Key Word In Context"
-							)
+		return	React.createElement("div", {className: "float-right", style: {marginRight:17}}, 
+					React.createElement("div", {className: "btn-group", style: {display:"inline-block"}}, 
+						React.createElement("label", {forHtml: "inputKwic", className: "btn-default"}, 
+							 this.state.displayKwic ? 
+								React.createElement("input", {id: "inputKwic", type: "checkbox", value: "kwic", checked: true, onChange: this.toggleKwic}) :
+								React.createElement("input", {id: "inputKwic", type: "checkbox", value: "kwic", onChange: this.toggleKwic}), 
+							
+							" " + ' ' +
+							"Display as Key Word In Context"
 						)
 					)
 				);
@@ -591,7 +692,11 @@ var Results = React.createClass({displayName: 'Results',
 						React.createElement("div", {key: "-searching-message-", style: margintop}, this.renderSearchingMessage(), " "), 
 						React.createElement("div", {key: "-found-message-", style: margintop}, this.renderFoundMessage(hits), " "), 
 						React.createElement("div", {key: "-progress-", style: margintop}, this.renderProgressBar()), 
-						hits > 0 ? this.renderKwicCheckbox() : false, 
+						hits > 0 ? 
+							React.createElement("div", {key: "-option-KWIC-", className: "row"}, 
+								this.renderKwicCheckbox()
+							)
+						 	: false, 
 						this.props.results.map(this.renderResultPanels)
 					)
 				);

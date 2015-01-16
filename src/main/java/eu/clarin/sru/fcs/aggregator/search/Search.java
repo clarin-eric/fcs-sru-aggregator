@@ -40,8 +40,8 @@ public class Search {
 	private final Statistics statistics;
 
 	public Search(ThrottledClient searchClient, SRUVersion version,
-			Statistics statistics, List<Corpus> corpora,
-			String searchString, String searchLanguage, int startRecord, int maxRecords
+			Statistics statistics, List<Corpus> corpora, String searchString,
+			String searchLanguage, int startRecord, int maxRecords
 	) {
 		this.id = counter.getAndIncrement();
 		this.searchLanguage = searchLanguage;

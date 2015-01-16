@@ -36,7 +36,8 @@ public final class Result {
 		return kwics;
 	}
 
-	public Result(Request request, SRUSearchRetrieveResponse response, SRUClientException xc) {
+	public Result(Request request, SRUSearchRetrieveResponse response,
+			SRUClientException xc) {
 		this.request = request;
 		this.exception = xc;
 		if (response != null && response.hasRecords()) {

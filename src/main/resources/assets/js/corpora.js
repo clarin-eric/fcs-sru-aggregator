@@ -160,10 +160,11 @@ var CorpusView = window.MyAggregator.CorpusView = React.createClass({displayName
 		if (!corpus.subCorpora || corpus.subCorpora.length === 0) {
 			return false;
 		}
-		return 	React.createElement("div", {className: "expansion-handle", onClick: this.toggleExpansion.bind(this,corpus)}, 
-					React.createElement("a", null, " ", corpus.expanded ?
-							React.createElement("span", {className: "glyphicon glyphicon-collapse-down", 'aria-hidden': "true"}):
-							React.createElement("span", {className: "glyphicon glyphicon-expand", 'aria-hidden': "true"}), 
+		return 	React.createElement("div", {className: "expansion-handle", style: {}}, 
+					React.createElement("a", null, 
+						corpus.expanded ?
+							React.createElement("span", {className: "glyphicon glyphicon-minus", 'aria-hidden': "true"}):
+							React.createElement("span", {className: "glyphicon glyphicon-plus", 'aria-hidden': "true"}), 
 						
 						corpus.expanded ? " Collapse ":" Expand ", " ", corpus.subCorpora.length, " subcollections"
 					)
@@ -174,7 +175,7 @@ var CorpusView = window.MyAggregator.CorpusView = React.createClass({displayName
 		return languages
 				.map(function(l) { return this.props.languageMap[l]; }.bind(this))
 				.sort()
-				.join(" ");
+				.join(", ");
 	},
 
 	renderCorpus: function(level, minmaxp, corpus) {
@@ -189,26 +190,33 @@ var CorpusView = window.MyAggregator.CorpusView = React.createClass({displayName
 		if (corpus.priority > 0) { hue += 40; }
 		var color = minmaxp[0] === minmaxp[1] ? 'transparent' : 'hsl('+hue+', 50%, 50%)';
 		var priorityStyle = {paddingBottom: 4, paddingLeft: 2, borderBottom: '2px solid '+color };
+		var expansive = corpus.expanded ? {} 
+			: {whiteSpace:'nowrap', overflow:'hidden', textOverflow: 'ellipsis'};
+		var title = corpus.title || corpus.displayName;
 		return	React.createElement("div", {className: corpusContainerClass, key: corpus.displayName}, 
-					React.createElement("div", {className: "row corpus"}, 
-						React.createElement("div", {className: "col-sm-1 vcenter", onClick: this.toggleSelection.bind(this,corpus)}, 
-							React.createElement("div", {style: priorityStyle}, 
-								this.renderCheckbox(corpus)
-							)
+					React.createElement("div", {className: "row corpus", onClick: this.toggleExpansion.bind(this, corpus)}, 
+						React.createElement("div", {className: "col-sm-1 vcenter"}, 
+								React.createElement("div", {className: "inline", style: priorityStyle, onClick: this.toggleSelection.bind(this,corpus)}, 
+									this.renderCheckbox(corpus)
+								)
 						), 
 						React.createElement("div", {className: "col-sm-8 vcenter"}, 
 							React.createElement("div", {style: indent}, 
-								React.createElement("h3", null, corpus.title ? corpus.title : corpus.displayName, " "), 
-								React.createElement("p", null, corpus.description), 
-								this.renderExpansion(corpus)
-							)
+								React.createElement("h3", {style: expansive}, 
+									 corpus.landingPage ? React.createElement("a", {href: corpus.landingPage}, title): title
+								), 
+
+								React.createElement("p", {style: expansive}, corpus.description)
+							), 
+							this.renderExpansion(corpus)
 						), 
 						React.createElement("div", {className: "col-sm-3 vcenter"}, 
-							React.createElement("p", null, React.createElement("i", {className: "fa fa-institution"}), " ", corpus.institution.name), 
-							React.createElement("p", null, React.createElement("i", {className: "fa fa-language"}), " ", this.renderLanguages(corpus.languages)), 
-							 corpus.landingPage ? 
-								React.createElement("p", null, React.createElement("i", {className: "fa fa-home"}), " ", React.createElement("a", {href: corpus.landingPage}, corpus.landingPage)) : 
-								false
+							React.createElement("p", {style: expansive}, 
+								React.createElement("i", {className: "fa fa-institution"}), " ", corpus.institution.name
+							), 
+							React.createElement("p", {style: expansive}, 
+								React.createElement("i", {className: "fa fa-language"}), " ", this.renderLanguages(corpus.languages)
+							)
 						)
 					), 
 					corpus.expanded ? corpus.subCorpora.map(this.renderCorpus.bind(this, level+1, minmaxp)) : false

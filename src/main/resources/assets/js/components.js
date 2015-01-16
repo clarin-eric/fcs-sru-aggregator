@@ -108,17 +108,28 @@ window.MyReact.Modal = React.createClass({displayName: 'Modal',
 });
 
 
-var PopoverMixin = {
+var PopoverMixin = window.MyReact.PopoverMixin = {
 	getDefaultProps: function(){
 		return {hasPopover: true};
 	},
  
 	componentDidMount: function() {
+		this.refresh();
+	},
+	componentDidUpdate: function() {
+		this.refresh();
+	},
+
+	refresh: function() {
+		$(this.getDOMNode()).popover('destroy');
+
 		var content;
 		if (Array.isArray(this.props.children))
 			content = this.props.children.map(React.renderToString).join(" ");
 		else 
 			content = React.renderToString(this.props.children);
+		// console.log("children: ", this.props.children);
+		// console.log("content: ", content);
 		$(this.getDOMNode()).popover({
 			content: content,
 			animation: this.props.animation,
@@ -127,8 +138,32 @@ var PopoverMixin = {
 			trigger: 'click',
 			html: true,
 		});
-	}
+	},
+
+	componentWillUnmount: function() {
+		$(this.getDOMNode()).popover('destroy');
+	},	
 };
+
+window.MyReact.Popover = React.createClass({displayName: 'Popover',
+	propTypes: {
+		placement: PT.string,
+		title: PT.string,
+		triggerButtonClass: PT.string,
+		triggerButtonContent: PT.element.isRequired
+	},
+	mixins: [PopoverMixin],
+
+	handleClick: function(e) {
+		e.stopPropagation();
+	},
+
+	render: function() {
+		return	React.createElement("button", {className: this.props.triggerButtonClass, onClick: this.handleClick}, 
+					this.props.triggerButtonContent
+				);
+	}
+});
 
 window.MyReact.InfoPopover = React.createClass({displayName: 'InfoPopover',
 	propTypes: {

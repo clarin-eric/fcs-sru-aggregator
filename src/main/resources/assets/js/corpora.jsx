@@ -160,10 +160,11 @@ var CorpusView = window.MyAggregator.CorpusView = React.createClass({
 		if (!corpus.subCorpora || corpus.subCorpora.length === 0) {
 			return false;
 		}
-		return 	<div className="expansion-handle" onClick={this.toggleExpansion.bind(this,corpus)}>
-					<a> {corpus.expanded ?
-							<span className="glyphicon glyphicon-collapse-down" aria-hidden="true"/>:
-							<span className="glyphicon glyphicon-expand" aria-hidden="true"/>
+		return 	<div className="expansion-handle" style={{}}>
+					<a>
+						{corpus.expanded ?
+							<span className="glyphicon glyphicon-minus" aria-hidden="true"/>:
+							<span className="glyphicon glyphicon-plus" aria-hidden="true"/>
 						} 
 						{corpus.expanded ? " Collapse ":" Expand "} {corpus.subCorpora.length} subcollections
 					</a>
@@ -174,7 +175,7 @@ var CorpusView = window.MyAggregator.CorpusView = React.createClass({
 		return languages
 				.map(function(l) { return this.props.languageMap[l]; }.bind(this))
 				.sort()
-				.join(" ");
+				.join(", ");
 	},
 
 	renderCorpus: function(level, minmaxp, corpus) {
@@ -189,26 +190,33 @@ var CorpusView = window.MyAggregator.CorpusView = React.createClass({
 		if (corpus.priority > 0) { hue += 40; }
 		var color = minmaxp[0] === minmaxp[1] ? 'transparent' : 'hsl('+hue+', 50%, 50%)';
 		var priorityStyle = {paddingBottom: 4, paddingLeft: 2, borderBottom: '2px solid '+color };
+		var expansive = corpus.expanded ? {} 
+			: {whiteSpace:'nowrap', overflow:'hidden', textOverflow: 'ellipsis'};
+		var title = corpus.title || corpus.displayName;
 		return	<div className={corpusContainerClass} key={corpus.displayName}>
-					<div className="row corpus">
-						<div className="col-sm-1 vcenter" onClick={this.toggleSelection.bind(this,corpus)}>
-							<div style={priorityStyle}>
-								{this.renderCheckbox(corpus)}
-							</div>
+					<div className="row corpus" onClick={this.toggleExpansion.bind(this, corpus)}>
+						<div className="col-sm-1 vcenter">
+								<div className="inline" style={priorityStyle} onClick={this.toggleSelection.bind(this,corpus)}>
+									{this.renderCheckbox(corpus)}
+								</div>
 						</div>
 						<div className="col-sm-8 vcenter">
 							<div style={indent}>
-								<h3>{corpus.title ? corpus.title : corpus.displayName} </h3>
-								<p>{corpus.description}</p>
-								{this.renderExpansion(corpus)}
+								<h3 style={expansive}>
+									{ corpus.landingPage ? <a href={corpus.landingPage}>{title}</a>: title }
+								</h3>
+
+								<p style={expansive}>{corpus.description}</p>
 							</div>
+							{this.renderExpansion(corpus)}
 						</div>
 						<div className="col-sm-3 vcenter">
-							<p><i className="fa fa-institution"/> {corpus.institution.name}</p>
-							<p><i className="fa fa-language"/> {this.renderLanguages(corpus.languages)}</p>
-							{ corpus.landingPage ? 
-								<p><i className="fa fa-home"/> <a href={corpus.landingPage}>{corpus.landingPage}</a></p> : 
-								false }
+							<p style={expansive}>
+								<i className="fa fa-institution"/> {corpus.institution.name}
+							</p>
+							<p style={expansive}>
+								<i className="fa fa-language"/> {this.renderLanguages(corpus.languages)}
+							</p>
 						</div>
 					</div>
 					{corpus.expanded ? corpus.subCorpora.map(this.renderCorpus.bind(this, level+1, minmaxp)) : false}

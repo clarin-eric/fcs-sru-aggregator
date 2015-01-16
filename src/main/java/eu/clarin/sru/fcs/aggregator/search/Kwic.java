@@ -2,6 +2,7 @@ package eu.clarin.sru.fcs.aggregator.search;
 
 import eu.clarin.sru.client.fcs.DataViewHits;
 import eu.clarin.sru.fcs.aggregator.app.Aggregator;
+import eu.clarin.sru.fcs.aggregator.lang.LanguagesISO693_3;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -62,7 +63,9 @@ public class Kwic {
 			fragments.add(new TextFragment(text.substring(lastOffset, text.length()), false));
 		}
 
-		language = Aggregator.getInstance().detectLanguage(hits.getText());
+		String code_iso639_2 = Aggregator.getInstance().detectLanguage(hits.getText());
+		language = code_iso639_2 == null ? null
+				: LanguagesISO693_3.getInstance().codeForCode639_2(code_iso639_2);
 	}
 
 	public List<TextFragment> getFragments() {

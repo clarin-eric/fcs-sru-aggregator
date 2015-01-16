@@ -11,6 +11,7 @@ var ReactCSSTransitionGroup = React.addons.CSSTransitionGroup;
 var CorpusSelection = window.MyAggregator.CorpusSelection;
 var HitNumber = window.MyAggregator.HitNumber;
 var CorpusView = window.MyAggregator.CorpusView;
+var Popover = window.MyReact.Popover;
 var InfoPopover = window.MyReact.InfoPopover;
 var Panel = window.MyReact.Panel;
 var Modal = window.MyReact.Modal;
@@ -164,7 +165,6 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({
 		ajax: PT.func.isRequired
 	},
 
-	mixins: [React.addons.LinkedStateMixin],
 	timeout: 0,
 	nohits: { 
 		requests: [],
@@ -177,6 +177,7 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({
 			corpora: new Corpora([], this.updateCorpora),
 			languageMap: {},
 			language: this.anyLanguage,
+			languageFilter: 'byMeta',
 			searchLayerId: "text",
 			numberOfResults: 10,
 
@@ -259,9 +260,10 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({
 		});
 	},
 
-	setLanguage: function(languageObj) {
-		this.state.corpora.setVisibility(this.state.searchLayerId, languageObj[0]);
-		this.setState({language: languageObj});
+	setLanguageAndFilter: function(languageObj, languageFilter) {
+		this.state.corpora.setVisibility(this.state.searchLayerId, 
+			languageFilter === 'byGuess' ? multipleLanguageCode : languageObj[0]);
+		this.setState({language: languageObj, languageFilter: languageFilter});
 		this.state.corpora.update();
 	},
 
@@ -281,6 +283,28 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({
 	},
 
 	stop: function(e) {
+		e.preventDefault();
+		e.stopPropagation();
+	},
+
+	filterResults: function() {
+		var langCode = this.state.language[0];
+		return this.state.hits.results.map(function(corpusHit) { 
+			return {
+				corpus: corpusHit.corpus,
+				startRecord: corpusHit.startRecord,
+				endRecord: corpusHit.endRecord,
+				exception: corpusHit.exception,
+				searchString: corpusHit.searchString,
+				kwics: corpusHit.kwics.filter(function(kwic){
+					return kwic.language === langCode || langCode === multipleLanguageCode || langCode === null; 
+				}),
+			};
+		});
+	},
+
+	toggleLanguageSelection: function(e) {
+		$(this.refs.languageModal.getDOMNode()).modal();
 		e.preventDefault();
 		e.stopPropagation();
 	},
@@ -322,23 +346,10 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({
 								
 								<div className="input-group-btn">
 									<button className="form-control btn btn-default" 
-											aria-expanded="false" data-toggle="dropdown">
+											onClick={this.toggleLanguageSelection}>
 										{this.state.language[1]} <span className="caret"/>
 									</button>
-									<ul ref="languageDropdownMenu" className="dropdown-menu">
-										<li key={this.anyLanguage[0]}> <a tabIndex="-1" href="#" 
-												onClick={this.setLanguage.bind(this, this.anyLanguage)}>
-											{this.anyLanguage[1]}</a>
-										</li>
-										{	_.pairs(this.state.languageMap).sort(function(l1, l2){
-												return l1[1].localeCompare(l2[1]);
-											}).map(function(l) {
-												var desc = l[1] + " [" + l[0] + "]";
-												return <li key={l[0]}> <a tabIndex="-1" href="#" 
-													onClick={this.setLanguage.bind(this, l)}>{desc}</a></li>;
-											}.bind(this))
-										}
-									</ul>
+									<span/>
 								</div>
 
 								<div className="input-group-btn">
@@ -359,9 +370,9 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({
 
 							<div className="input-group">
 								<span className="input-group-addon nobkg">in</span>
-									<button type="button" className="btn btn-default" onClick={this.toggleCorpusSelection}>
-										{this.state.corpora.getSelectedMessage()} <span className="caret"/>
-									</button>
+								<button type="button" className="btn btn-default" onClick={this.toggleCorpusSelection}>
+									{this.state.corpora.getSelectedMessage()} <span className="caret"/>
+								</button>
 							</div>							
 
 							<div className="input-group">
@@ -382,8 +393,18 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({
 					<CorpusView corpora={this.state.corpora} languageMap={this.state.languageMap} />
 	            </Modal>
 
+	            <Modal ref="languageModal" title="Select Language">
+					<LanguageSelector anyLanguage={this.anyLanguage}
+									  languageMap={this.state.languageMap}
+									  selectedLanguage={this.state.language}
+									  languageFilter={this.state.languageFilter}
+									  languageChangeHandler={this.setLanguageAndFilter} />
+	            </Modal>
+
 				<div className="top-gap">
-					<Results requests={this.state.hits.requests} results={this.state.hits.results} />
+					<Results requests={this.state.hits.requests} 
+					         results={this.filterResults()} 
+					         searchedLanguage={this.state.language}/>
 				</div>
 			</div>
 			);
@@ -395,6 +416,85 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({
 
 
 
+/////////////////////////////////
+
+var LanguageSelector = React.createClass({
+	propTypes: {
+		anyLanguage: PT.array.isRequired,
+		languageMap: PT.object.isRequired,
+		selectedLanguage: PT.array.isRequired,
+		languageFilter: PT.string.isRequired,
+		languageChangeHandler: PT.func.isRequired,
+	},
+	mixins: [React.addons.LinkedStateMixin],
+
+	selectLang: function(language) {
+		this.props.languageChangeHandler(language, this.props.languageFilter);
+	},
+
+	setFilter: function(filter) {
+		this.props.languageChangeHandler(this.props.selectedLanguage, filter);
+	},
+
+	renderLanguageObject: function(lang) {
+		var desc = lang[1] + " [" + lang[0] + "]";
+		var style = {
+			whiteSpace: "nowrap",
+			fontWeight: lang[0] === this.props.selectedLanguage[0] ? "bold":"normal",
+		};
+		return	<div key={lang[0]}>
+					<a tabIndex="-1" href="#" style={style} onClick={this.selectLang.bind(this, lang)}>{desc}</a>
+				</div>;
+	},
+
+	renderRadio: function(option) {
+		return	this.props.languageFilter === option ? 
+				<input type="radio" name="filterOpts" value={option} checked onChange={this.setFilter.bind(this, option)}/>
+				: <input type="radio" name="filterOpts" value={option} onChange={this.setFilter.bind(this, option)} />;
+	},
+
+	render: function() {
+		var languages = _.pairs(this.props.languageMap)
+		                 .sort(function(l1, l2){return l1[1].localeCompare(l2[1]); });
+		languages.unshift(this.props.anyLanguage);
+		languages = languages.map(this.renderLanguageObject);
+		var third = Math.round(languages.length/3);
+		var l1 = languages.slice(0, third);
+		var l2 = languages.slice(third, 2*third);
+		var l3 = languages.slice(2*third, languages.length);
+
+		return	<div>
+					<div className="row">
+						<div className="col-sm-4">{l1}</div>
+						<div className="col-sm-4">{l2}</div>
+						<div className="col-sm-4">{l3}</div>
+						<div className="col-sm-12" style={{marginTop:10, marginBottom:10, borderBottom:"1px solid #eee"}}/>
+					</div>
+					<form className="form" role="form">
+						<div className="input-group">
+							<div>
+							<label style={{color:'black'}}>
+								{ this.renderRadio('byMeta') }{" "}
+		  						Use the collections{"'"} specified language to filter results 
+							</label>
+							</div>
+							<div>
+							<label style={{color:'black'}}>
+								{ this.renderRadio('byGuess') }{" "}
+		  						Filter results by using a language detector 
+							</label>
+							</div>
+							<div>
+							<label style={{color:'black'}}>
+								{ this.renderRadio('byMetaAndGuess') }{" "}
+		  						First use the collections{"'"} specified language then also use a language detector
+							</label>
+							</div>
+						</div>
+					</form>
+				</div>;
+	}
+});
 /////////////////////////////////
 
 var SearchBox = React.createClass({
@@ -441,10 +541,13 @@ var Results = React.createClass({
 	propTypes: {
 		requests: PT.array.isRequired,
 		results: PT.array.isRequired,
+		searchedLanguage: PT.array.isRequired,
 	},
 
 	getInitialState: function () {
-		return { displayKwic: false };
+		return { 
+			displayKwic: false,
+		};
 	},
 
 	toggleKwic: function() {
@@ -452,7 +555,7 @@ var Results = React.createClass({
 	},
 
 	renderRowLanguage: function(hit) {
-		return <span style={{fontFace:"Courier",color:"black"}}>{hit.language}</span>;
+		return <span style={{fontFace:"Courier",color:"black"}}>{hit.language} </span> ;
 	},
 
 	renderRowsAsHits: function(hit,i) {
@@ -466,9 +569,9 @@ var Results = React.createClass({
 	},
 
 	renderRowsAsKwic: function(hit,i) {
-		var sleft={textAlign:"left", verticalAlign:"middle", width:"50%"};
-		var scenter={textAlign:"center", verticalAlign:"middle", maxWidth:"50%"};
-		var sright={textAlign:"right", verticalAlign:"middle", maxWidth:"50%"};
+		var sleft={textAlign:"left", verticalAlign:"top", width:"50%"};
+		var scenter={textAlign:"center", verticalAlign:"top", maxWidth:"50%"};
+		var sright={textAlign:"right", verticalAlign:"top", maxWidth:"50%"};
 		return	<tr key={i} className="hitrow">
 					<td>{this.renderRowLanguage(hit)}</td>
 					<td style={sright}>{hit.left}</td>
@@ -564,18 +667,16 @@ var Results = React.createClass({
 	},
 
 	renderKwicCheckbox: function() {
-		return	<div key="-option-KWIC-" className="row">
-					<div className="float-right" style={{marginRight:17}}>
-						<div className="btn-group" style={{display:"inline-block"}}>
-							<label forHtml="inputKwic" className="btn-default">
-								{ this.state.displayKwic ? 
-									<input id="inputKwic" type="checkbox" value="kwic" checked onChange={this.toggleKwic} /> :
-									<input id="inputKwic" type="checkbox" value="kwic" onChange={this.toggleKwic} />
-								}
-								&nbsp;
-								Display as Key Word In Context
-							</label>
-						</div>
+		return	<div className="float-right" style={{marginRight:17}}>
+					<div className="btn-group" style={{display:"inline-block"}}>
+						<label forHtml="inputKwic" className="btn-default">
+							{ this.state.displayKwic ? 
+								<input id="inputKwic" type="checkbox" value="kwic" checked onChange={this.toggleKwic} /> :
+								<input id="inputKwic" type="checkbox" value="kwic" onChange={this.toggleKwic} />
+							}
+							&nbsp;
+							Display as Key Word In Context
+						</label>
 					</div>
 				</div>;
 	},
@@ -591,7 +692,11 @@ var Results = React.createClass({
 						<div key="-searching-message-" style={margintop}>{this.renderSearchingMessage()} </div>
 						<div key="-found-message-" style={margintop}>{this.renderFoundMessage(hits)} </div>
 						<div key="-progress-" style={margintop}>{this.renderProgressBar()}</div>
-						{hits > 0 ? this.renderKwicCheckbox() : false}
+						{hits > 0 ? 
+							<div key="-option-KWIC-" className="row">
+								{this.renderKwicCheckbox()}
+							</div>
+						 	: false }
 						{this.props.results.map(this.renderResultPanels)}
 					</ReactCSSTransitionGroup>
 				</div>;
