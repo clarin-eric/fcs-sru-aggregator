@@ -19,6 +19,8 @@ public class Statistics {
 		List<Long> executionTimes = Collections.synchronizedList(new ArrayList<Long>());
 
 		@JsonProperty
+		List<Diagnostic> diagnostics = Collections.synchronizedList(new ArrayList<Diagnostic>());
+		@JsonProperty
 		Map<String, Integer> errors = Collections.synchronizedMap(new HashMap<String, Integer>());
 
 		double avg(List<Long> q) {
@@ -75,6 +77,11 @@ public class Statistics {
 		EndpointStats stats = getEndpointStats(institution, endpoint);
 		stats.queueTimes.add(enqueuedTime);
 		stats.executionTimes.add(executionTime);
+	}
+
+	public void addEndpointDiagnostic(Institution institution, String endpoint, Diagnostic diag) {
+		EndpointStats stats = getEndpointStats(institution, endpoint);
+		stats.diagnostics.add(diag);
 	}
 
 	public void addErrorDatapoint(Institution institution, String endpoint, SRUClientException error) {

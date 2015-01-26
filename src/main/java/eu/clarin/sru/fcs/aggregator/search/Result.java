@@ -1,7 +1,9 @@
 package eu.clarin.sru.fcs.aggregator.search;
 
 import eu.clarin.sru.client.SRUClientException;
+import eu.clarin.sru.client.SRUDiagnostic;
 import eu.clarin.sru.client.SRURecord;
+import eu.clarin.sru.client.SRUSearchRetrieveRequest;
 import eu.clarin.sru.fcs.aggregator.scan.Corpus;
 import eu.clarin.sru.client.SRUSearchRetrieveResponse;
 import eu.clarin.sru.client.SRUSurrogateRecordData;
@@ -11,7 +13,9 @@ import eu.clarin.sru.client.fcs.DataViewGenericDOM;
 import eu.clarin.sru.client.fcs.DataViewGenericString;
 import eu.clarin.sru.client.fcs.DataViewHits;
 import eu.clarin.sru.client.fcs.Resource;
+import eu.clarin.sru.fcs.aggregator.scan.Diagnostic;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import org.w3c.dom.Node;
 import org.slf4j.LoggerFactory;
@@ -31,6 +35,7 @@ public final class Result {
 	private Request request;
 	private List<Kwic> kwics = new ArrayList<Kwic>();
 	private SRUClientException exception;
+	private List<Diagnostic> diagnostics = new ArrayList<Diagnostic>();
 
 	public List<Kwic> getKwics() {
 		return kwics;
@@ -43,9 +48,12 @@ public final class Result {
 		if (response != null && response.hasRecords()) {
 			setResponse(response);
 		}
+		if (response != null && response.hasDiagnostics()) {
+			setDiagnostics(response);
+		}
 	}
 
-	public void setResponse(SRUSearchRetrieveResponse response) {
+	void setResponse(SRUSearchRetrieveResponse response) {
 		for (SRURecord record : response.getRecords()) {
 			if (record.isRecordSchema(ClarinFCSRecordData.RECORD_SCHEMA)) {
 				ClarinFCSRecordData rd = (ClarinFCSRecordData) record.getRecordData();
@@ -60,6 +68,15 @@ public final class Result {
 			} else {
 				log.info("Unsupported schema: {0}", record.getRecordSchema());
 			}
+		}
+	}
+
+	void setDiagnostics(SRUSearchRetrieveResponse response) {
+		for (SRUDiagnostic d : response.getDiagnostics()) {
+			SRUSearchRetrieveRequest srurequest = response.getRequest();
+			diagnostics.add(new Diagnostic(srurequest.getBaseURI().toString(),
+					srurequest.getQuery(),
+					d.getURI(), d.getMessage(), d.getDetails()));
 		}
 	}
 
@@ -110,6 +127,10 @@ public final class Result {
 		return exception;
 	}
 
+	public List<Diagnostic> getDiagnostics() {
+		return Collections.unmodifiableList(diagnostics);
+	}
+
 	public int getStartRecord() {
 		return request.getStartRecord();
 	}
@@ -125,5 +146,4 @@ public final class Result {
 	public String getSearchString() {
 		return request.getSearchString();
 	}
-
 }

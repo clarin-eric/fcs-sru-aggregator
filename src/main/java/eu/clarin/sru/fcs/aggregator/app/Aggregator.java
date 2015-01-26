@@ -85,21 +85,14 @@ import org.slf4j.LoggerFactory;
  * @author Yana Panchenko
  * @author edima
  *
- * TODO: fix ordering of corpora in corpora view
- *
- * TODO: corpora search should not indicate the ones that don't match
- *
- * TODO: tri-state for parent collections; search + message implications
+ * TODO: support new spec-compatible centres, see Oliver's mail
+ * (use SRUClient's extraResponseData POJOs)
  *
  * TODO: version page: credits, open source, see vcr/version page
  *
- * TODO: statistics page liked from version page
+ * TODO: statistics page linked from version page
  *
- * TODO: 1. support new spec-compatible centres, see Oliver's mail
- * (use SRUClient's extraResponseData POJOs)
- *
- * TODO: 2. zoom into the results from a corpus, allow functionality only for
- * the view (search for next set of results)
+ * TODO: add diagnostics messages to statistics page
  *
  * TODO: disable popups easily
  *
@@ -117,7 +110,14 @@ import org.slf4j.LoggerFactory;
  *
  * TODO: show multiple hits on the same result in multiple rows, linked visually
  *
+ * TODO: zoom into the results from a corpus, allow functionality only for
+ * the view (search for next set of results)
+ *
  * TODO: optimise page load
+ *
+ * TODO: test it in IE, other browsers
+ *
+ * TODO: tri-state for parent collections; search + message implications
  *
  * TODO: improve help page text
  *

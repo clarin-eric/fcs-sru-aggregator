@@ -104,7 +104,7 @@ var Main = React.createClass({displayName: 'Main',
 			React.createElement("div", null, 
 				React.createElement("div", {className: "container"}, 
 					React.createElement("div", {className: "beta-tag"}, 
-						React.createElement("span", null, "BETA")
+						React.createElement("span", null, "ALPHA")
 					)
 				), 
 			
@@ -269,4 +269,5 @@ var HelpPage = React.createClass({displayName: 'HelpPage',
 });
 
 React.render(React.createElement(Main, null), document.getElementById('reactMain') );
+
 })();

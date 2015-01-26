@@ -5,58 +5,66 @@ package eu.clarin.sru.fcs.aggregator.scan;
  */
 public class Diagnostic {
 
-	private String uri;
-	private String context;
-	private String message;
-	private String diagnostic;
+	private String reqEndpointUrl, reqContext;
+	private String dgnUri, dgnMessage, dgnDiagnostic;
 
-	public Diagnostic(String uri, String context, String message, String diagnostic) {
-		this.uri = uri;
-		this.context = context;
-		this.message = message;
-		this.diagnostic = diagnostic;
+	public Diagnostic(String reqEndpointUrl, String reqContext, String dgnUri, String dgnMessage, String dgnDiagnostic) {
+		this.reqEndpointUrl = reqEndpointUrl;
+		this.reqContext = reqContext;
+		this.dgnUri = dgnUri;
+		this.dgnMessage = dgnMessage;
+		this.dgnDiagnostic = dgnDiagnostic;
 	}
 
 	public Diagnostic() {
 	}
 
-	public String getUri() {
-		return uri;
+	public String getDgnDiagnostic() {
+		return dgnDiagnostic;
 	}
 
-	public String getContext() {
-		return context;
+	public String getDgnMessage() {
+		return dgnMessage;
 	}
 
-	public String getMessage() {
-		return message;
+	public String getDgnUri() {
+		return dgnUri;
 	}
 
-	public String getDiagnostic() {
-		return diagnostic;
+	public String getReqContext() {
+		return reqContext;
 	}
 
-	public void setUri(String uri) {
-		this.uri = uri;
+	public String getReqEndpointUrl() {
+		return reqEndpointUrl;
 	}
 
-	public void setMessage(String message) {
-		this.message = message;
+	public void setDgnDiagnostic(String dgnDiagnostic) {
+		this.dgnDiagnostic = dgnDiagnostic;
 	}
 
-	public void setContext(String context) {
-		this.context = context;
+	public void setDgnMessage(String dgnMessage) {
+		this.dgnMessage = dgnMessage;
 	}
 
-	public void setDiagnostic(String diagnostic) {
-		this.diagnostic = diagnostic;
+	public void setDgnUri(String dgnUri) {
+		this.dgnUri = dgnUri;
+	}
+
+	public void setReqContext(String reqContext) {
+		this.reqContext = reqContext;
+	}
+
+	public void setReqEndpointUrl(String reqEndpointUrl) {
+		this.reqEndpointUrl = reqEndpointUrl;
 	}
 
 	@Override
 	public int hashCode() {
 		https://primes.utm.edu/lists/small/1000.txt
-		return uri.hashCode() * 967 + context.hashCode() * 797
-				+ message.hashCode() * 1669 + diagnostic.hashCode();
+		return reqEndpointUrl.hashCode() * 967 + reqContext.hashCode() * 797
+				+ dgnUri.hashCode() * 1669 + dgnMessage.hashCode() * 31
+				+ dgnDiagnostic.hashCode();
 	}
 
 	@Override
@@ -65,7 +73,10 @@ public class Diagnostic {
 			return false;
 		}
 		Diagnostic d = (Diagnostic) obj;
-		return uri.equals(d.uri) && message.equals(d.message)
-				&& context.equals(d.context) && diagnostic.equals(d.diagnostic);
+		return reqEndpointUrl.equals(d.reqEndpointUrl)
+				&& reqContext.equals(d.reqContext)
+				&& dgnUri.equals(d.dgnUri)
+				&& dgnMessage.equals(d.dgnMessage)
+				&& dgnDiagnostic.equals(d.dgnDiagnostic);
 	}
 }

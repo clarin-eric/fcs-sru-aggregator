@@ -64,7 +64,7 @@ function Corpora(corpora, updateFn) {
 		corpus.selected = true; // selected in the corpus view
 		corpus.expanded = false; // not expanded in the corpus view
 		corpus.priority = 1; // priority in corpus view
-		corpus.index = index;
+		corpus.index = index; // original order, used for stable sort
 	});
 }
 
@@ -78,7 +78,7 @@ Corpora.prototype.recurseCorpus = function(corpus, fn) {
 
 Corpora.prototype.recurseCorpora = function(corpora, fn) {
 	var recfn = function(corpus, index){
-		if (false === fn(corpus)) {
+		if (false === fn(corpus, index)) {
 			// no recursion
 		} else {
 			corpus.subCorpora.forEach(recfn);
@@ -283,7 +283,6 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({dis
 	},
 
 	stop: function(e) {
-		e.preventDefault();
 		e.stopPropagation();
 	},
 
@@ -295,6 +294,7 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({dis
 				startRecord: corpusHit.startRecord,
 				endRecord: corpusHit.endRecord,
 				exception: corpusHit.exception,
+				diagnostics: corpusHit.diagnostics,
 				searchString: corpusHit.searchString,
 				kwics: corpusHit.kwics.filter(function(kwic){
 					return kwic.language === langCode || langCode === multipleLanguageCode || langCode === null; 
@@ -378,8 +378,8 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({dis
 							React.createElement("div", {className: "input-group"}, 
 								React.createElement("span", {className: "input-group-addon nobkg"}, "and show up to"), 
 								React.createElement("div", {className: "input-group-btn"}, 
-									React.createElement("input", {type: "number", className: "form-control input", min: "10", max: "250", step: "5", 
-										style: {width:54}, 
+									React.createElement("input", {type: "number", className: "form-control input", min: "10", max: "250", 
+										style: {width:60}, 
 										onChange: this.setNumberOfResults, value: this.state.numberOfResults, 
 										onKeyPress: this.stop})
 								), 
@@ -555,7 +555,7 @@ var Results = React.createClass({displayName: 'Results',
 	},
 
 	renderRowLanguage: function(hit) {
-		return React.createElement("span", {style: {fontFace:"Courier",color:"black"}}, hit.language, " ") ;
+		return false; //<span style={{fontFace:"Courier",color:"black"}}>{hit.language} </span> ;
 	},
 
 	renderRowsAsHits: function(hit,i) {
@@ -618,19 +618,38 @@ var Results = React.createClass({displayName: 'Results',
 				);
 	},
 
+	renderDiagnostics: function(corpusHit) {
+		if (!corpusHit.diagnostics || corpusHit.diagnostics.length === 0) {
+			return false;
+		}
+
+		return corpusHit.diagnostics.map(function(d) {
+			return 	React.createElement("div", {className: "alert alert-danger", role: "alert"}, 
+						d.dgnMessage, ": ", d.dgnDiagnostic
+					);
+		});
+	},
+
 	renderPanelBody: function(corpusHit) {
-		var fulllength = {width:"100%"};		
+		var fulllength = {width:"100%"};
 		if (this.state.displayKwic) {
-			return 	React.createElement("table", {className: "table table-condensed table-hover", style: fulllength}, 
-						React.createElement("tbody", null, corpusHit.kwics.map(this.renderRowsAsKwic))
+			return 	React.createElement("div", null, 
+						this.renderDiagnostics(corpusHit), 
+						React.createElement("table", {className: "table table-condensed table-hover", style: fulllength}, 
+							React.createElement("tbody", null, corpusHit.kwics.map(this.renderRowsAsKwic))
+						)
 					);
 		} else {
-			return	React.createElement("div", null, corpusHit.kwics.map(this.renderRowsAsHits));
+			return	React.createElement("div", null, 
+						this.renderDiagnostics(corpusHit), 
+						corpusHit.kwics.map(this.renderRowsAsHits)
+					);
 		}
 	},
 
 	renderResultPanels: function(corpusHit) {
-		if (corpusHit.kwics.length === 0) {
+		if (corpusHit.kwics.length === 0 &&
+			corpusHit.diagnostics.length === 0) {
 			return false;
 		}
 		return 	React.createElement(Panel, {key: corpusHit.corpus.displayName, 

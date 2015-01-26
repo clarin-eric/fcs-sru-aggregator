@@ -6,8 +6,6 @@ import eu.clarin.sru.client.SRUDiagnostic;
 import eu.clarin.sru.client.SRUScanRequest;
 import eu.clarin.sru.client.SRUScanResponse;
 import eu.clarin.sru.client.SRUTerm;
-import eu.clarin.sru.client.SRUVersion;
-import eu.clarin.sru.fcs.aggregator.app.Aggregator;
 import eu.clarin.sru.fcs.aggregator.client.ThrottledClient;
 import eu.clarin.sru.fcs.aggregator.util.SRUCQL;
 import eu.clarin.sru.fcs.aggregator.util.Throw;
@@ -136,10 +134,14 @@ public class ScanCrawler {
 
 				if (response != null && response.hasDiagnostics()) {
 					for (SRUDiagnostic d : response.getDiagnostics()) {
-						String context = SRUCQL.SCAN_RESOURCE_PARAMETER + "=" + normalizeHandle(parentCorpus);
-						Diagnostic diag = new Diagnostic(d.getURI(), context, d.getMessage(), d.getDetails());
-						corpora.addEndpointDiagnostic(endpointUrl, diag);
-						log.info("Diagnostic: {}: {}: {}", d.getURI(), context, d.getMessage(), d.getDetails());
+						SRUScanRequest request = response.getRequest();
+
+						String handle = SRUCQL.SCAN_RESOURCE_PARAMETER + "=" + normalizeHandle(parentCorpus);
+						Diagnostic diag = new Diagnostic(request.getBaseURI().toString(), handle,
+								d.getURI(), d.getMessage(), d.getDetails());
+						statistics.addEndpointDiagnostic(institution, endpointUrl, diag);
+						log.info("Diagnostic: {} {}: {} {} {}", diag.getReqEndpointUrl(), diag.getReqContext(),
+								diag.getDgnUri(), diag.getDgnMessage(), diag.getDgnDiagnostic());
 					}
 				}
 

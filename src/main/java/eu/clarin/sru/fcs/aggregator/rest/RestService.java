@@ -106,13 +106,6 @@ public class RestService {
 		return Response.ok(toJson(languages)).build();
 	}
 
-	@GET
-	@Path("diagnostics")
-	public Response getDiagnostics() throws IOException {
-		Map<String, Diagnostic> diagnostics = Aggregator.getInstance().getCorpora().getEndpointDiagnostics();
-		return Response.ok(toJson(diagnostics)).build();
-	}
-
 	@POST
 	@Path("search")
 	public Response postSearch(

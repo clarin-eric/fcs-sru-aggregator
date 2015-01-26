@@ -24,8 +24,12 @@ var SearchCorpusBox = React.createClass({
 	},
 
 	handleChange: function(event) {
-		this.setState({query: event.target.value});
-		this.props.search(event.target.value);
+		var query = event.target.value;
+		this.setState({query: query});
+
+		if (query.length === 0 || 2 <= query.length) {
+			this.props.search(query);
+		}
 		event.stopPropagation();
 	},
 
@@ -50,10 +54,11 @@ var CorpusView = window.MyAggregator.CorpusView = React.createClass({
 		languageMap: PT.object.isRequired,
 	},
 
-	toggleSelection: function (corpus) {
+	toggleSelection: function (corpus, e) {
 		var s = !corpus.selected;
 		this.props.corpora.recurseCorpus(corpus, function(c) { c.selected = s; });
 		this.props.corpora.update();
+		this.stop(e);
 	},
 
 	toggleExpansion: function (corpus) {
@@ -75,11 +80,7 @@ var CorpusView = window.MyAggregator.CorpusView = React.createClass({
 			return b.priority - a.priority;
 		};
 
-		this.props.corpora.recurse(function(corpus) { corpus.subCorpora.sort(sortFn); });
-		this.props.corpora.corpora.sort(sortFn);
-
 		query = query.toLowerCase();
-		var querytokens = query.split(" ");
 		if (!query) {
 			this.props.corpora.recurse(function(corpus) {corpus.priority = 1; });
 			this.props.corpora.update();
@@ -92,6 +93,7 @@ var CorpusView = window.MyAggregator.CorpusView = React.createClass({
 		});
 
 		// find priority for each corpus
+		var querytokens = query.split(" ").filter(function(x){ return x.length > 0; });
 		this.props.corpora.recurse(function(corpus){
 			var title = corpus.title ? corpus.title : corpus.displayName;
 			querytokens.forEach(function(qtoken){
@@ -120,22 +122,28 @@ var CorpusView = window.MyAggregator.CorpusView = React.createClass({
 			}.bind(this));
 		}.bind(this));
 
-		// ensure root corpora have nonnull priority
-		this.props.corpora.recurse(function(corpus){
-			if (corpus.subCorpora) {
-				corpus.subCorpora.forEach(function(subcorpus){
-					if (subcorpus.priority > 0 && corpus.priority === 0)
-						corpus.priority ++;
-				});
+		// ensure parents of visible corpora are also visible; maximum depth = 3
+		var isVisibleFn = function(corpus){ return corpus.priority > 0; };
+		var parentBooster = function(corpus){
+			if (corpus.priority <= 0 && corpus.subCorpora) {
+				if (corpus.subCorpora.some(isVisibleFn)) {
+					corpus.priority = 0.5;
+				}
 			}
-		});
+		};
+		for (var i = 3; i > 0; i --) {
+			this.props.corpora.recurse(parentBooster);
+		}
 
 		this.props.corpora.recurse(function(corpus) { corpus.subCorpora.sort(sortFn); });
 		this.props.corpora.corpora.sort(sortFn);
 
 		// display
 		this.props.corpora.update();
-		// console.log("corpus search done", query);
+	},
+
+	stop: function(e) {
+		e.stopPropagation();
 	},
 
 	getMinMaxPriority: function() {
@@ -166,7 +174,7 @@ var CorpusView = window.MyAggregator.CorpusView = React.createClass({
 							<span className="glyphicon glyphicon-minus" aria-hidden="true"/>:
 							<span className="glyphicon glyphicon-plus" aria-hidden="true"/>
 						} 
-						{corpus.expanded ? " Collapse ":" Expand "} {corpus.subCorpora.length} subcollections
+						{corpus.expanded ? " Collapse ":" Expand "} ({corpus.subCorpora.length} subcollections)
 					</a>
 				</div>;
 	},
@@ -178,19 +186,35 @@ var CorpusView = window.MyAggregator.CorpusView = React.createClass({
 				.join(", ");
 	},
 
+	renderFilteredMessage: function() {
+		var total = 0;
+		var visible = 0;
+		this.props.corpora.recurse(function(corpus){
+			if (corpus.visible) {
+				total ++;
+				if (corpus.priority > 0) {
+					visible++;
+				}
+			}
+		});
+		if (visible === total) {
+			return false;
+		}
+		return 	<div> Showing {visible} out of {total} (sub)collections. </div>;
+	},
+
 	renderCorpus: function(level, minmaxp, corpus) {
-		if (!corpus.visible) {
+		if (!corpus.visible || corpus.priority <= 0) {
 			return false;
 		}
 
 		var indent = {marginLeft:level*50};
 		var corpusContainerClass = "corpus-container "+(corpus.priority>0?"":"dimmed");
 
-		var hue = 80 * corpus.priority / minmaxp[1];
-		if (corpus.priority > 0) { hue += 40; }
+		var hue = 120 * corpus.priority / minmaxp[1];
 		var color = minmaxp[0] === minmaxp[1] ? 'transparent' : 'hsl('+hue+', 50%, 50%)';
-		var priorityStyle = {paddingBottom: 4, paddingLeft: 2, borderBottom: '2px solid '+color };
-		var expansive = corpus.expanded ? {} 
+		var priorityStyle = {paddingBottom: 4, paddingLeft: 2, borderBottom: '3px solid '+color };
+		var expansive = corpus.expanded ? {overflow:'hidden'} 
 			: {whiteSpace:'nowrap', overflow:'hidden', textOverflow: 'ellipsis'};
 		var title = corpus.title || corpus.displayName;
 		return	<div className={corpusContainerClass} key={corpus.displayName}>
@@ -202,13 +226,18 @@ var CorpusView = window.MyAggregator.CorpusView = React.createClass({
 						</div>
 						<div className="col-sm-8 vcenter">
 							<div style={indent}>
-								<h3 style={expansive}>
-									{ corpus.landingPage ? <a href={corpus.landingPage}>{title}</a>: title }
+								<h3 style={expansive}> 
+									{title}
+									{ corpus.landingPage ? 
+										<a href={corpus.landingPage} onClick={this.stop}>
+											<span style={{fontSize:12}}> – Homepage </span><i className="fa fa-home"/>
+										</a>: false}
 								</h3>
 
+
 								<p style={expansive}>{corpus.description}</p>
+								{this.renderExpansion(corpus)}
 							</div>
-							{this.renderExpansion(corpus)}
 						</div>
 						<div className="col-sm-3 vcenter">
 							<p style={expansive}>
@@ -233,15 +262,19 @@ var CorpusView = window.MyAggregator.CorpusView = React.createClass({
 							</h3>
 						</div>
 						<div className="float-right inline">
-							<div className="inline" style={{ marginRight: 20 }} >
-								<SearchCorpusBox search={this.searchCorpus}/>
-							</div>
 							<button className="btn btn-default" style={{ marginRight: 10 }} onClick={this.selectAll.bind(this,true)}>
 								{" Select all"}</button>
 							<button className="btn btn-default" style={{ marginRight: 20 }} onClick={this.selectAll.bind(this,false)}>
 								{" Deselect all"}</button>
 						</div>
+						<div className="float-right inline">
+							<div className="inline" style={{ marginRight: 20 }} >
+								<SearchCorpusBox search={this.searchCorpus}/>
+								{this.renderFilteredMessage()}
+							</div>
+						</div>
 					</div>
+					
 					{this.props.corpora.corpora.map(this.renderCorpus.bind(this, 0, minmaxp))}
 				</div>;
 	}

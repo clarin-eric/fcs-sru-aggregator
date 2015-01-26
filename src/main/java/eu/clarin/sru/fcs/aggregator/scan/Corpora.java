@@ -3,10 +3,8 @@ package eu.clarin.sru.fcs.aggregator.scan;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import org.slf4j.LoggerFactory;
 
@@ -22,8 +20,6 @@ public class Corpora {
 	private static final org.slf4j.Logger log = LoggerFactory.getLogger(Corpora.class);
 
 	@JsonProperty
-	private Map<String, Diagnostic> endpointDiagnostics = Collections.synchronizedMap(new HashMap<String, Diagnostic>());
-	@JsonProperty
 	private List<Institution> institutions = Collections.synchronizedList(new ArrayList<Institution>());
 	@JsonProperty
 	private List<Corpus> corpora = new ArrayList<Corpus>();
@@ -34,10 +30,6 @@ public class Corpora {
 
 	public List<Corpus> getCorpora() {
 		return Collections.unmodifiableList(corpora);
-	}
-
-	public Map<String, Diagnostic> getEndpointDiagnostics() {
-		return Collections.unmodifiableMap(endpointDiagnostics);
 	}
 
 	public void addInstitution(Institution institution) {
@@ -54,10 +46,6 @@ public class Corpora {
 			parentCorpus.addCorpus(c);
 		}
 		return true;
-	}
-
-	public void addEndpointDiagnostic(String endpoint, Diagnostic diagnostic) {
-		endpointDiagnostics.put(endpoint, diagnostic);
 	}
 
 	public Set<String> getLanguages() {
