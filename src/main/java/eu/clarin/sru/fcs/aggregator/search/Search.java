@@ -33,6 +33,7 @@ public class Search {
 	private static final AtomicLong counter = new AtomicLong(Math.abs(new Random().nextInt()));
 
 	private final Long id;
+	private final String query;
 	private final long createdAt = System.currentTimeMillis();
 	private final String searchLanguage;
 	private final List<Request> requests = Collections.synchronizedList(new ArrayList<Request>());
@@ -44,6 +45,7 @@ public class Search {
 			String searchLanguage, int startRecord, int maxRecords
 	) {
 		this.id = counter.getAndIncrement();
+		this.query = searchString;
 		this.searchLanguage = searchLanguage;
 		this.statistics = statistics;
 		for (Corpus corpus : corpora) {
@@ -128,28 +130,7 @@ public class Search {
 		return statistics;
 	}
 
-	public void exportTCF(TokenizerModel tokenizerModel) throws ExportException {
-		byte[] bytes = Exports.getExportTokenizedTCF(results, searchLanguage, tokenizerModel);
-		if (bytes != null) {
-			Filedownload.save(bytes, "text/tcf+xml", "ClarinDFederatedContentSearch.xml");
-		}
-	}
-
-	public void exportText() {
-		String text = Exports.getExportText(results);
-		if (text != null) {
-			Filedownload.save(text, "text/plain", "ClarinDFederatedContentSearch.txt");
-		}
-	}
-
-	void exportExcel() throws ExportException {
-		byte[] bytes = Exports.getExportExcel(results);
-		if (bytes != null) {
-			Filedownload.save(bytes, "text/tcf+xml", "ClarinDFederatedContentSearch.xls");
-		}
-	}
-
-	void exportPWText(String user, String pass) {
+	private void exportPWText(String user, String pass) {
 		byte[] bytes = null;
 		try {
 			String text = Exports.getExportText(results);
@@ -164,7 +145,7 @@ public class Search {
 		}
 	}
 
-	String useWebLichtOnText() {
+	private String useWebLichtOnText() {
 		String url = null;
 		try {
 			String text = Exports.getExportText(results);
@@ -178,7 +159,7 @@ public class Search {
 		return url;
 	}
 
-	String useWebLichtOnToks(TokenizerModel tokenizerModel) throws ExportException {
+	private String useWebLichtOnToks(TokenizerModel tokenizerModel) throws ExportException {
 		String url = null;
 		byte[] bytes = Exports.getExportTokenizedTCF(results, searchLanguage, tokenizerModel);
 		if (bytes != null) {
@@ -187,28 +168,21 @@ public class Search {
 		return url;
 	}
 
-	void exportPWExcel(String user, String pass) throws ExportException {
+	private void exportPWExcel(String user, String pass) throws ExportException {
 		byte[] bytes = Exports.getExportExcel(results);
 		if (bytes != null) {
 			DataTransfer.uploadToPW(user, pass, bytes, "application/vnd.ms-excel", ".xls");
 		}
 	}
 
-	public void exportPWTCF(String user, String pass, TokenizerModel tokenizerModel) throws ExportException {
+	private void exportPWTCF(String user, String pass, TokenizerModel tokenizerModel) throws ExportException {
 		byte[] bytes = Exports.getExportTokenizedTCF(results, searchLanguage, tokenizerModel);
 		if (bytes != null) {
 			DataTransfer.uploadToPW(user, pass, bytes, "text/tcf+xml", ".tcf");
 		}
 	}
 
-	public void exportCSV() {
-		String csv = Exports.getExportCSV(results, ";");
-		if (csv != null) {
-			Filedownload.save(csv, "text/plain", "ClarinDFederatedContentSearch.csv");
-		}
-	}
-
-	public void exportPWCSV(String user, String pass) {
+	private void exportPWCSV(String user, String pass) {
 		String csv = Exports.getExportCSV(results, ";");
 		if (csv != null) {
 			DataTransfer.uploadToPW(user, pass, csv.getBytes(), "text/csv", ".csv");
@@ -222,4 +196,13 @@ public class Search {
 	public long getCreatedAt() {
 		return createdAt;
 	}
+
+	public String getQuery() {
+		return query;
+	}
+
+	public String getSearchLanguage() {
+		return searchLanguage;
+	}
+
 }

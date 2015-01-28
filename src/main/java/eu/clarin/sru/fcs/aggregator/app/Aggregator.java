@@ -87,15 +87,14 @@ import org.slf4j.LoggerFactory;
  * @author Yana Panchenko
  * @author edima
  *
- * TODO: statistics page
- *
- * TODO: disable popups easily
+ * TODO: Download search results as csv, excel, tcf, plain text
  *
  * TODO: Use weblicht with results
  *
- * TODO: Export to personal workspace as csv, excel, tcf, plain text
+ * TODO: Export search results to personal workspace as csv, excel, tcf, plain
+ * text
  *
- * TODO: Download to personal workspace as csv, excel, tcf, plain text
+ * TODO: disable popups easily
  *
  * TODO: websockets
  *
@@ -280,6 +279,10 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 
 	public Search getSearchById(Long id) {
 		return activeSearches.get(id);
+	}
+
+	public TokenizerModel getTokenizerModel() {
+		return tokenizerModel;
 	}
 
 	private static void shutdownAndAwaitTermination(AggregatorConfiguration.Params params,

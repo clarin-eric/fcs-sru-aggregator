@@ -182,13 +182,13 @@ var StatisticsPage = React.createClass({displayName: 'StatisticsPage',
 	},
 
 	renderWaitTimeSecs: function(t) {
-		var hue = t * 3;
+		var hue = t * 4;
 		if (hue > 120) {
 			hue = 120;
 		}
 		var a = hue/120;
 		hue = 120 - hue;
-		var shue = "hsla("+hue+",100%,50%,"+a+")";
+		var shue = "hsla("+hue+",100%,80%,"+a+")";
 		return	React.createElement("span", {className: "badge", style: {backgroundColor:shue, color:"black"}}, 
 					t.toFixed(3), "s"
 				);
@@ -200,7 +200,12 @@ var StatisticsPage = React.createClass({displayName: 'StatisticsPage',
 		var diagnostics = _.values(stat.diagnostics);
 		return React.createElement("div", null, 
 					React.createElement("ul", {className: "list-inline list-unstyled"}, 
-						React.createElement("li", null,  endpoint[0], ":"), 
+						React.createElement("li", null, 
+							 stat.version == "LEGACY" ? 
+								React.createElement("span", {style: {color:'#a94442'}}, "legacy ", React.createElement("i", {className: "glyphicon glyphicon-thumbs-down"}), " ") 
+								: false, 
+							 " "+endpoint[0], ":" 
+						), 
 						React.createElement("li", null, 
 							React.createElement("span", null, stat.numberOfRequests), " request(s)," + ' ' +
 							"average:", this.renderWaitTimeSecs(stat.avgExecutionTime), "," + ' ' + 
@@ -389,7 +394,7 @@ var AboutPage = React.createClass({displayName: 'AboutPage',
 						React.createElement("button", {type: "button", className: "btn btn-default btn-lg", onClick: this.props.statistics}, 
 							React.createElement("span", {className: "glyphicon glyphicon-cog", 'aria-hidden': "true"}, " "), 
 							"View server log"
-						)					
+						)
 					)
 				);
 	}

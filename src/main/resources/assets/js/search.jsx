@@ -258,6 +258,10 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({
 		});
 	},
 
+	getDownloadLink: function(format) {
+		return 'rest/search/'+this.state.searchId+'/download?format='+format;
+	},
+
 	setLanguageAndFilter: function(languageObj, languageFilter) {
 		this.state.corpora.setVisibility(this.state.searchLayerId, 
 			languageFilter === 'byGuess' ? multipleLanguageCode : languageObj[0]);
@@ -414,6 +418,7 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({
 				<div className="top-gap">
 					<Results requests={this.state.hits.requests} 
 					         results={this.filterResults()} 
+					         getDownloadLink={this.getDownloadLink}
 					         searchedLanguage={this.state.language}/>
 				</div>
 			</div>
@@ -513,6 +518,7 @@ var Results = React.createClass({
 		requests: PT.array.isRequired,
 		results: PT.array.isRequired,
 		searchedLanguage: PT.array.isRequired,
+		getDownloadLink: PT.func.isRequired,
 	},
 
 	getInitialState: function () {
@@ -629,6 +635,14 @@ var Results = React.createClass({
 				</Panel>;
 	},
 
+	renderToolbox: function() {
+		return 	<div className="toolbox float-left">
+					<a className="btn btn-default" href={this.props.getDownloadLink("text")}>
+						<span className="glyphicon glyphicon-download-alt" aria-hidden="true"/> Download
+					</a>
+				</div>;
+	},
+
 	renderProgressBar: function() {
 		var percents = 100 * this.props.results.length / (this.props.requests.length + this.props.results.length);
 		var sperc = Math.round(percents);
@@ -638,7 +652,7 @@ var Results = React.createClass({
   				<div className="progress-bar progress-bar-striped active" role="progressbar" 
   					aria-valuenow={sperc} aria-valuemin="0" aria-valuemax="100" style={styleperc} />
 			</div> : 
-			<span />;
+			false;
 	},
 
 	renderSearchingMessage: function() {
@@ -683,6 +697,7 @@ var Results = React.createClass({
 						<div key="-progress-" style={margintop}>{this.renderProgressBar()}</div>
 						{hits > 0 ? 
 							<div key="-option-KWIC-" className="row">
+								{this.renderToolbox()}
 								{this.renderKwicCheckbox()}
 							</div>
 						 	: false }

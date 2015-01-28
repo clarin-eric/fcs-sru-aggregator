@@ -182,13 +182,13 @@ var StatisticsPage = React.createClass({
 	},
 
 	renderWaitTimeSecs: function(t) {
-		var hue = t * 3;
+		var hue = t * 4;
 		if (hue > 120) {
 			hue = 120;
 		}
 		var a = hue/120;
 		hue = 120 - hue;
-		var shue = "hsla("+hue+",100%,50%,"+a+")";
+		var shue = "hsla("+hue+",100%,80%,"+a+")";
 		return	<span className="badge" style={{backgroundColor:shue, color:"black"}}>
 					{t.toFixed(3)}s
 				</span>;
@@ -200,7 +200,12 @@ var StatisticsPage = React.createClass({
 		var diagnostics = _.values(stat.diagnostics);
 		return <div>
 					<ul className='list-inline list-unstyled'>
-						<li>{ endpoint[0] }:</li>
+						<li>
+							{ stat.version == "LEGACY" ? 
+								<span style={{color:'#a94442'}}>legacy <i className="glyphicon glyphicon-thumbs-down"></i> </span> 
+								: false}
+							{ " "+endpoint[0] }: 
+						</li>
 						<li>
 							<span>{stat.numberOfRequests}</span> request(s),
 							average:{this.renderWaitTimeSecs(stat.avgExecutionTime)}, 
@@ -389,7 +394,7 @@ var AboutPage = React.createClass({
 						<button type="button" className="btn btn-default btn-lg" onClick={this.props.statistics} >
 							<span className="glyphicon glyphicon-cog" aria-hidden="true"> </span> 
 							View server log
-						</button>					
+						</button>
 					</div>
 				</div>;
 	}

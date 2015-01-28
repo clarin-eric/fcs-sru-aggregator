@@ -27,11 +27,11 @@ server:
 # Logging settings.
 logging:
   # The default level of all loggers. Can be OFF, ERROR, WARN, INFO, DEBUG, TRACE, or ALL.
-  level: INFO
+  level: WARN
   # Logger-specific levels.
   loggers:
-    eu.clarin.sru.fcs.aggregator: INFO
-    eu.clarin.sru.client: INFO
+    eu.clarin.sru.fcs.aggregator: WARN
+    eu.clarin.sru.client: WARN
 
   appenders:
     - type: console

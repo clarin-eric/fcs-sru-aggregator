@@ -258,6 +258,10 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({dis
 		});
 	},
 
+	getDownloadLink: function(format) {
+		return 'rest/search/'+this.state.searchId+'/download?format='+format;
+	},
+
 	setLanguageAndFilter: function(languageObj, languageFilter) {
 		this.state.corpora.setVisibility(this.state.searchLayerId, 
 			languageFilter === 'byGuess' ? multipleLanguageCode : languageObj[0]);
@@ -414,6 +418,7 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({dis
 				React.createElement("div", {className: "top-gap"}, 
 					React.createElement(Results, {requests: this.state.hits.requests, 
 					         results: this.filterResults(), 
+					         getDownloadLink: this.getDownloadLink, 
 					         searchedLanguage: this.state.language})
 				)
 			)
@@ -513,6 +518,7 @@ var Results = React.createClass({displayName: 'Results',
 		requests: PT.array.isRequired,
 		results: PT.array.isRequired,
 		searchedLanguage: PT.array.isRequired,
+		getDownloadLink: PT.func.isRequired,
 	},
 
 	getInitialState: function () {
@@ -629,6 +635,14 @@ var Results = React.createClass({displayName: 'Results',
 				);
 	},
 
+	renderToolbox: function() {
+		return 	React.createElement("div", {className: "toolbox float-left"}, 
+					React.createElement("a", {className: "btn btn-default", href: this.props.getDownloadLink("text")}, 
+						React.createElement("span", {className: "glyphicon glyphicon-download-alt", 'aria-hidden': "true"}), " Download"
+					)
+				);
+	},
+
 	renderProgressBar: function() {
 		var percents = 100 * this.props.results.length / (this.props.requests.length + this.props.results.length);
 		var sperc = Math.round(percents);
@@ -638,7 +652,7 @@ var Results = React.createClass({displayName: 'Results',
   				React.createElement("div", {className: "progress-bar progress-bar-striped active", role: "progressbar", 
   					'aria-valuenow': sperc, 'aria-valuemin': "0", 'aria-valuemax': "100", style: styleperc})
 			) : 
-			React.createElement("span", null);
+			false;
 	},
 
 	renderSearchingMessage: function() {
@@ -683,6 +697,7 @@ var Results = React.createClass({displayName: 'Results',
 						React.createElement("div", {key: "-progress-", style: margintop}, this.renderProgressBar()), 
 						hits > 0 ? 
 							React.createElement("div", {key: "-option-KWIC-", className: "row"}, 
+								this.renderToolbox(), 
 								this.renderKwicCheckbox()
 							)
 						 	: false, 
