@@ -111,11 +111,12 @@ public class ScanCrawler {
 		@Override
 		public void onSuccess(SRUExplainResponse response, ThrottledClient.Stats stats) {
 			try {
-				statistics.addEndpointDatapoint(institution, endpoint.getUrl(), stats.getQueueTime(), stats.getExecutionTime());
+				statistics.addEndpointDatapoint(institution, endpoint, stats.getQueueTime(), stats.getExecutionTime());
 				if (response != null && response.hasExtraResponseData()) {
 					for (SRUExtraResponseData data : response.getExtraResponseData()) {
 						if (data instanceof ClarinFCSEndpointDescription) {
 							endpoint.setProtocol(FCSProtocolVersion.VERSION_1);
+							statistics.upgradeProtocolVersion(institution, endpoint);
 							ClarinFCSEndpointDescription desc = (ClarinFCSEndpointDescription) data;
 							addCorpora(corpora, institution, endpoint, desc.getResources(), null);
 						}
@@ -127,7 +128,7 @@ public class ScanCrawler {
 						SRUExplainRequest request = response.getRequest();
 						Diagnostic diag = new Diagnostic(request.getBaseURI().toString(), null,
 								d.getURI(), d.getMessage(), d.getDetails());
-						statistics.addEndpointDiagnostic(institution, endpoint.getUrl(), diag);
+						statistics.addEndpointDiagnostic(institution, endpoint, diag);
 						log.info("Diagnostic: {} {}: {} {} {}", diag.getReqEndpointUrl(), diag.getReqContext(),
 								diag.getDgnUri(), diag.getDgnMessage(), diag.getDgnDiagnostic());
 					}
@@ -150,12 +151,14 @@ public class ScanCrawler {
 		public void onError(SRUExplainRequest request, SRUClientException error, ThrottledClient.Stats stats) {
 			try {
 				log.error("{} Error while explaining {}: {}", latch.get(), endpoint.getUrl(), error.getMessage());
-				statistics.addEndpointDatapoint(institution, endpoint.getUrl(), stats.getQueueTime(), stats.getExecutionTime());
-				statistics.addErrorDatapoint(institution, endpoint.getUrl(), error);
+				statistics.addEndpointDatapoint(institution, endpoint, stats.getQueueTime(), stats.getExecutionTime());
+				statistics.addErrorDatapoint(institution, endpoint, error);
 				if (Throw.isCausedBy(error, SocketTimeoutException.class)) {
 					return;
 				}
 				log.error("--> " + request.getBaseURI() + " --> ", error);
+			} catch (Throwable xc) {
+				log.error("explain.onError exception:", xc);
 			} finally {
 				latch.decrement();
 			}
@@ -242,7 +245,7 @@ public class ScanCrawler {
 		@Override
 		public void onSuccess(SRUScanResponse response, ThrottledClient.Stats stats) {
 			try {
-				statistics.addEndpointDatapoint(institution, endpoint.getUrl(), stats.getQueueTime(), stats.getExecutionTime());
+				statistics.addEndpointDatapoint(institution, endpoint, stats.getQueueTime(), stats.getExecutionTime());
 				if (response != null && response.hasTerms()) {
 					for (SRUTerm term : response.getTerms()) {
 						if (term == null) {
@@ -268,7 +271,7 @@ public class ScanCrawler {
 						String handle = SRUCQL.SCAN_RESOURCE_PARAMETER + "=" + normalizeHandle(parentCorpus);
 						Diagnostic diag = new Diagnostic(request.getBaseURI().toString(), handle,
 								d.getURI(), d.getMessage(), d.getDetails());
-						statistics.addEndpointDiagnostic(institution, endpoint.getUrl(), diag);
+						statistics.addEndpointDiagnostic(institution, endpoint, diag);
 						log.info("Diagnostic: {} {}: {} {} {}", diag.getReqEndpointUrl(), diag.getReqContext(),
 								diag.getDgnUri(), diag.getDgnMessage(), diag.getDgnDiagnostic());
 					}
@@ -287,12 +290,14 @@ public class ScanCrawler {
 		public void onError(SRUScanRequest request, SRUClientException error, ThrottledClient.Stats stats) {
 			try {
 				log.error("{} Error while scanning {}#{}: {}", latch.get(), endpoint.getUrl(), normalizeHandle(parentCorpus), error.getMessage());
-				statistics.addEndpointDatapoint(institution, endpoint.getUrl(), stats.getQueueTime(), stats.getExecutionTime());
-				statistics.addErrorDatapoint(institution, endpoint.getUrl(), error);
+				statistics.addEndpointDatapoint(institution, endpoint, stats.getQueueTime(), stats.getExecutionTime());
+				statistics.addErrorDatapoint(institution, endpoint, error);
 				if (Throw.isCausedBy(error, SocketTimeoutException.class)) {
 					return;
 				}
 				log.error("--> " + request.getBaseURI() + "?" + request.getScanClause() + " --> ", error);
+			} catch (Throwable xc) {
+				log.error("scan.onError exception:", xc);
 			} finally {
 				latch.decrement();
 			}

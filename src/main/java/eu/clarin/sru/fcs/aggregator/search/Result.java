@@ -106,19 +106,19 @@ public final class Result {
 			if (dataview instanceof DataViewGenericDOM) {
 				final DataViewGenericDOM view = (DataViewGenericDOM) dataview;
 				final Node root = view.getDocument().getFirstChild();
-				log.info("DataView (generic dom): root element <{}> / {}",
+				log.debug("DataView (generic dom): root element <{}> / {}",
 						root.getNodeName(),
 						root.getOwnerDocument().hashCode());
 			} else if (dataview instanceof DataViewGenericString) {
 				final DataViewGenericString view
 						= (DataViewGenericString) dataview;
-				log.info("DataView (generic string): data = {}",
+				log.debug("DataView (generic string): data = {}",
 						view.getContent());
 			} else if (dataview instanceof DataViewHits) {
 				final DataViewHits hits = (DataViewHits) dataview;
 				Kwic kwic = new Kwic(hits, pid, reference);
 				kwics.add(kwic);
-				log.info("DataViewHits: {}", kwic.getFragments());
+				log.debug("DataViewHits: {}", kwic.getFragments());
 			}
 		}
 	}

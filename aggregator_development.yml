@@ -4,7 +4,7 @@ aggregatorParams:
 
   AGGREGATOR_FILE_PATH: /Users/edima/fcsAggregatorCorpora.json
   SCAN_MAX_DEPTH: 2
-  SCAN_TASK_INITIAL_DELAY: 6
+  SCAN_TASK_INITIAL_DELAY: 0
   SCAN_TASK_INTERVAL: 12
   SCAN_TASK_TIME_UNIT: HOURS
 
@@ -27,11 +27,11 @@ server:
 # Logging settings.
 logging:
   # The default level of all loggers. Can be OFF, ERROR, WARN, INFO, DEBUG, TRACE, or ALL.
-  level: WARNING
+  level: INFO
   # Logger-specific levels.
   loggers:
     eu.clarin.sru.fcs.aggregator: INFO
-    eu.clarin.sru.client: ERROR
+    eu.clarin.sru.client: INFO
 
   appenders:
     - type: console

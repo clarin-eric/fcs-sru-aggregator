@@ -5,10 +5,8 @@ import java.util.List;
 import eu.clarin.sru.client.SRUClientException;
 import eu.clarin.sru.client.SRUSearchRetrieveRequest;
 import eu.clarin.sru.client.SRUSearchRetrieveResponse;
-import eu.clarin.sru.client.fcs.ClarinFCSRecordData;
 import eu.clarin.sru.fcs.aggregator.client.ThrottledClient;
 import eu.clarin.sru.fcs.aggregator.scan.Corpus;
-import eu.clarin.sru.fcs.aggregator.scan.FCSProtocolVersion;
 import eu.clarin.sru.fcs.aggregator.scan.Statistics;
 import eu.clarin.sru.fcs.aggregator.util.SRUCQL;
 import java.util.ArrayList;
@@ -75,17 +73,29 @@ public class Search {
 			searchClient.searchRetrieve(searchRequest, new ThrottledClient.SearchCallback() {
 				@Override
 				public void onSuccess(SRUSearchRetrieveResponse response, ThrottledClient.Stats stats) {
-					statistics.addEndpointDatapoint(corpus.getInstitution(), corpus.getEndpoint().getUrl(), stats.getQueueTime(), stats.getExecutionTime());
-					results.add(new Result(request, response, null));
-					requests.remove(request);
+					try {
+						statistics.addEndpointDatapoint(corpus.getInstitution(), corpus.getEndpoint(), stats.getQueueTime(), stats.getExecutionTime());
+						Result result = new Result(request, response, null);
+						results.add(result);
+						requests.remove(request);
+						if (!result.getDiagnostics().isEmpty()) {
+							statistics.addEndpointDiagnostic(corpus.getInstitution(), corpus.getEndpoint(), null);
+						}
+					} catch (Throwable xc) {
+						log.error("search.onSuccess exception:", xc);
+					}
 				}
 
 				@Override
 				public void onError(SRUSearchRetrieveRequest srureq, SRUClientException xc, ThrottledClient.Stats stats) {
-					statistics.addEndpointDatapoint(corpus.getInstitution(), corpus.getEndpoint().getUrl(), stats.getQueueTime(), stats.getExecutionTime());
-					statistics.addErrorDatapoint(corpus.getInstitution(), corpus.getEndpoint().getUrl(), xc);
-					results.add(new Result(request, null, xc));
-					requests.remove(request);
+					try {
+						statistics.addEndpointDatapoint(corpus.getInstitution(), corpus.getEndpoint(), stats.getQueueTime(), stats.getExecutionTime());
+						statistics.addErrorDatapoint(corpus.getInstitution(), corpus.getEndpoint(), xc);
+						results.add(new Result(request, null, xc));
+						requests.remove(request);
+					} catch (Throwable xxc) {
+						log.error("search.onError exception:", xxc);
+					}
 				}
 			});
 		} catch (Throwable xc) {

@@ -456,3 +456,11 @@ code {
 	margin: 0 2px;
 	padding: 0px 5px;
 }
+
+
+/*** statistics ***/
+.statistics li, .statistics div
+{
+	font-family: Consolas,monaco,courier,monospace; 
+}
+

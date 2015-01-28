@@ -229,7 +229,8 @@ var CorpusView = window.MyAggregator.CorpusView = React.createClass({displayName
 									corpus.title, 
 									 corpus.landingPage ? 
 										React.createElement("a", {href: corpus.landingPage, onClick: this.stop}, 
-											React.createElement("span", {style: {fontSize:12}}, " – Homepage "), React.createElement("i", {className: "fa fa-home"})
+											React.createElement("span", {style: {fontSize:12}}, " – Homepage "), 
+											React.createElement("i", {className: "glyphicon glyphicon-home"})
 										): false
 								), 
 

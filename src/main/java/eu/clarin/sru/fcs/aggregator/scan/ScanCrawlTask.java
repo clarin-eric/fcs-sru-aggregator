@@ -20,21 +20,24 @@ public class ScanCrawlTask implements Runnable {
 	private EndpointFilter filter;
 	private AtomicReference<Corpora> corporaAtom;
 	private File cachedCorpora;
-	private AtomicReference<Statistics> statisticsAtom;
+	private AtomicReference<Statistics> scanStatisticsAtom;
+	private AtomicReference<Statistics> searchStatisticsAtom;
 	private String centerRegistryUrl;
 
 	public ScanCrawlTask(ThrottledClient sruClient, String centerRegistryUrl,
 			int cacheMaxDepth, EndpointFilter filter,
 			AtomicReference<Corpora> corporaAtom, File cachedCorpora,
-			AtomicReference<Statistics> statisticsAtom
-	) {
+			AtomicReference<Statistics> scanStatisticsAtom,
+			AtomicReference<Statistics> searchStatisticsAtom
+			) {
 		this.sruClient = sruClient;
 		this.centerRegistryUrl = centerRegistryUrl;
 		this.cacheMaxDepth = cacheMaxDepth;
 		this.filter = filter;
 		this.corporaAtom = corporaAtom;
 		this.cachedCorpora = cachedCorpora;
-		this.statisticsAtom = statisticsAtom;
+		this.scanStatisticsAtom = scanStatisticsAtom;
+		this.searchStatisticsAtom = searchStatisticsAtom;
 	}
 
 	@Override
@@ -44,12 +47,12 @@ public class ScanCrawlTask implements Runnable {
 
 			log.info("ScanCrawlTask: Initiating crawl");
 			CenterRegistry centerRegistry = new CenterRegistryLive(centerRegistryUrl, filter);
-			centerRegistry.getCQLInstitutions().add(0,
-					new Institution("test_IDS", null) {
-						{
-							addEndpoint("https://clarin.ids-mannheim.de/digibibsru-new");
-						}
-					});
+//			centerRegistry.getCQLInstitutions().add(0,
+//					new Institution("test_IDS", null) {
+//						{
+//							addEndpoint("https://clarin.ids-mannheim.de/digibibsru-new");
+//						}
+//					});
 //			CenterRegistry centerRegistry = new CenterRegistryForTesting();
 			ScanCrawler scanCrawler = new ScanCrawler(centerRegistry, sruClient, cacheMaxDepth);
 
@@ -57,7 +60,8 @@ public class ScanCrawlTask implements Runnable {
 			Corpora corpora = scanCrawler.crawl();
 
 			corporaAtom.set(corpora);
-			statisticsAtom.set(scanCrawler.getStatistics());
+			scanStatisticsAtom.set(scanCrawler.getStatistics());
+			searchStatisticsAtom.set(new Statistics()); // reset search stats
 			long time = System.currentTimeMillis() - time0;
 
 			log.info("ScanCrawlTask: crawl done in {}s, number of root corpora: {}",

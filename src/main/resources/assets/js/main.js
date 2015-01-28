@@ -12,6 +12,7 @@ var Main = React.createClass({displayName: 'Main',
 		return {
 			navbarCollapse: false,
 			navbarPageFn: this.renderAggregator,
+			// navbarPageFn: this.renderStatistics,
 			errorMessages: [],
 		};
 	},
@@ -61,17 +62,29 @@ var Main = React.createClass({displayName: 'Main',
 		return React.createElement(AggregatorPage, {ajax: this.ajax, corpora: this.state.corpora, languageMap: this.state.languageMap});
 	},
 
-	renderStatistics: function() {
-		return React.createElement(StatisticsPage, {ajax: this.ajax});
-	},
-
 	renderHelp: function() {
 		return React.createElement(HelpPage, null);
+	},
+
+	renderAbout: function() {
+		return React.createElement(AboutPage, {statistics: this.statistics});
+	},
+
+	renderStatistics: function() {
+		return React.createElement(StatisticsPage, {ajax: this.ajax});
 	},
 
 	toggleCollapse: function() {
 		this.setState({navbarCollapse: !this.state.navbarCollapse});
 	},
+
+	about: function(e) {
+		this.setState({navbarPageFn: this.renderAbout});
+	},
+	statistics: function(e) {
+		this.setState({navbarPageFn: this.renderStatistics});
+	},
+
 
 	setNavbarPageFn: function(pageFn) {
 		this.setState({navbarPageFn:pageFn});
@@ -168,55 +181,94 @@ var StatisticsPage = React.createClass({displayName: 'StatisticsPage',
 		});
 	},
 
-	listItem: function(it) {
-		return React.createElement("li", null, " ", it[0], ":", 
-					 typeof(it[1]) === "object" ? 
-						React.createElement("ul", null, _.pairs(it[1]).map(this.listItem)) : 
-						it[1]
+	renderWaitTimeSecs: function(t) {
+		var hue = t * 3;
+		if (hue > 120) {
+			hue = 120;
+		}
+		var a = hue/120;
+		hue = 120 - hue;
+		var shue = "hsla("+hue+",100%,50%,"+a+")";
+		return	React.createElement("span", {className: "badge", style: {backgroundColor:shue, color:"black"}}, 
+					t.toFixed(3), "s"
+				);
+	},
+
+	renderEndpoint: function(endpoint) {
+		var stat = endpoint[1];
+		var errors = _.pairs(stat.errors);
+		var diagnostics = _.values(stat.diagnostics);
+		return React.createElement("div", null, 
+					React.createElement("ul", {className: "list-inline list-unstyled"}, 
+						React.createElement("li", null,  endpoint[0], ":"), 
+						React.createElement("li", null, 
+							React.createElement("span", null, stat.numberOfRequests), " request(s)," + ' ' +
+							"average:", this.renderWaitTimeSecs(stat.avgExecutionTime), "," + ' ' + 
+							"max: ", this.renderWaitTimeSecs(stat.maxExecutionTime)
+						)
+					), 
+						(errors && errors.length) ? 
+						React.createElement("ul", {className: "list-unstyled inline", style: {marginLeft:40}}, 
+							 errors.map(function(e) { 
+								return 	React.createElement("div", null, 
+											React.createElement("div", {className: "inline alert alert-danger"}, " Exception: ", e[0]), 
+											" ", 
+											React.createElement("div", {className: "inline"}, React.createElement("span", {className: "badge"}, "x ", e[1]))
+										); 
+							  }) 
+						) : false, 
+					
+						(diagnostics && diagnostics.length) ? 
+						React.createElement("ul", {className: "list-unstyled inline", style: {marginLeft:40}}, 
+							 diagnostics.map(function(d) { 
+								return 	React.createElement("div", null, 
+											React.createElement("div", {className: "inline alert alert-warning"}, 
+												"Diagnostic: ", d.diagnostic.dgnMessage, ": ", d.diagnostic.dgnDiagnostic
+											), 
+											" ", 
+											React.createElement("div", {className: "inline"}, React.createElement("span", {className: "badge"}, "x ", d.counter))
+										); 
+							  }) 
+						) : false
 					
 				);
 	},
 
-	// renderEndpoint: function(endp) {
-	// 	return <li>
-	// 				<ul>
-	// 					<li>endpoint: {endp[0]}</li>
-	//           			<li>numberOfRequests: {endp[1].numberOfRequests}</li>
-	// 			        <li>avgQueueTime: {endp[1].avgQueueTime}</li>
-	// 			        <li>maxQueueTime: {endp[1].maxQueueTime}</li>
-	// 			        <li>avgExecutionTime: {endp[1].avgExecutionTime}</li>
-	// 			        <li>maxExecutionTime: {endp[1].maxExecutionTime}</li>
-	// 					<li>errors 
-	// 						<ul>
-	// 							{ _.pairs(object).map(endp[1].errors, function(e) { return <li>{e[0]}:{e[1]}</li>; }) }
-	// 						</ul>
-	// 					</li>
-	// 				</ul>
-	// 			</li>;
-	// },
-	// renderInstitution: function(instname, instendps) {
-	// 	return 	<li>
-	// 				<ul>
-	// 					<li>{instname}</li>
-	// 					<li>
-	// 						<ul>{_.pairs(object).map(instendps, this.renderEndpoint)}</ul>
-	// 					</li>
- // 					</ul>
- // 				</li>;
-	// },
+	renderInstitution: function(inst) {
+		return 	React.createElement("div", {style: {marginBottom:30}}, 
+					React.createElement("h4", null, inst[0]), 
+					React.createElement("div", {style: {marginLeft:20}}, " ", _.pairs(inst[1]).map(this.renderEndpoint) )
+ 				);
+	},
 
 	renderStatistics: function(stats) {
-		return React.createElement("ul", null, _.pairs(stats).map(this.listItem));
+		return 	React.createElement("div", {className: "container"}, 
+					React.createElement("ul", {className: "list-inline list-unstyled"}, 
+						 stats.maxConcurrentScanRequestsPerEndpoint ? 
+							React.createElement("li", null, "max concurrent scan requests per endpoint:", " ", 
+								React.createElement("kbd", null, stats.maxConcurrentScanRequestsPerEndpoint), ","
+							) : false, 
+						
+						 stats.maxConcurrentSearchRequestsPerEndpoint ? 
+							React.createElement("li", null, "max concurrent search requests per endpoint:", " ", 
+								React.createElement("kbd", null, stats.maxConcurrentSearchRequestsPerEndpoint), ","
+							) : false, 
+						
+						React.createElement("li", null, "timeout:", " ", React.createElement("kbd", null, stats.timeout, " seconds"))
+					), 
+					React.createElement("div", null, " ",  _.pairs(stats.institutions).map(this.renderInstitution), " ")
+				)
+				 ;
 	},
 
 	render: function() {
 		return	(
 			React.createElement("div", null, 
-				React.createElement("div", {className: "top-gap"}, 
+				React.createElement("div", {className: "top-gap statistics"}, 
 					React.createElement("h1", null, "Statistics"), 
-					React.createElement("h2", null, "Last Scan"), 
+					React.createElement("h2", null, "Last scan"), 
 					this.renderStatistics(this.state.lastScanStats), 
-					React.createElement("h2", null, "Search"), 
+					React.createElement("h2", null, "Searches since last scan"), 
 					this.renderStatistics(this.state.searchStats)
 				)
 			)
@@ -234,6 +286,7 @@ var HelpPage = React.createClass({displayName: 'HelpPage',
 		return	(
 			React.createElement("div", null, 
 				React.createElement("div", {className: "top-gap"}, 
+					React.createElement("h1", null, "Help"), 
 					React.createElement("h3", null, "Performing search in FCS corpora"), 
 					React.createElement("p", null, "To perform simple keyword search in all CLARIN-D Federated Content Search centers" + ' ' + 
 					"and their corpora, go to the search field at the top of the page," + ' ' + 
@@ -269,14 +322,93 @@ var HelpPage = React.createClass({displayName: 'HelpPage',
 	}
 });
 
+var AboutPage = React.createClass({displayName: 'AboutPage',
+	propTypes: {
+		statistics: PT.func.isRequired,
+	},
+
+	render: function() {
+		return	React.createElement("div", null, 
+					React.createElement("div", {className: "top-gap"}, 
+						React.createElement("h1", null, "About"), 
+						React.createElement("h3", null, "Technology"), 
+
+						React.createElement("p", null, "The Aggregator uses the following software components:"), 
+
+						React.createElement("ul", null, 
+							React.createElement("li", null, 
+								React.createElement("a", {href: "http://dropwizard.io/"}, "Dropwizard"), " ", 
+								"(", React.createElement("a", {href: "http://www.apache.org/licenses/LICENSE-2.0"}, "Apache License 2.0"), ")"
+							), 
+							React.createElement("li", null, 
+								React.createElement("a", {href: "http://eclipse.org/jetty/"}, "Jetty"), " ", 
+								"(", React.createElement("a", {href: "http://www.apache.org/licenses/LICENSE-2.0"}, "Apache License 2.0"), ")"
+							), 
+							React.createElement("li", null, 
+								React.createElement("a", {href: "http://jackson.codehaus.org/"}, "Jackson"), " ", 
+								"(", React.createElement("a", {href: "http://www.apache.org/licenses/LICENSE-2.0"}, "Apache License 2.0"), ")"
+							), 
+							React.createElement("li", null, 
+								React.createElement("a", {href: "https://jersey.java.net/"}, "Jersey"), " ", 
+								"(", React.createElement("a", {href: "https://jersey.java.net/license.html#/cddl"}, "CCDL 1.1"), ")"
+							), 
+							React.createElement("li", null, 
+								React.createElement("a", {href: "https://github.com/optimaize/language-detector"}, "Optimaize Language Detector"), " ", 
+								"(", React.createElement("a", {href: "http://www.apache.org/licenses/LICENSE-2.0"}, "Apache License 2.0"), ")"
+							), 
+							React.createElement("li", null, 
+								React.createElement("a", {href: "http://poi.apache.org/"}, "Apache POI"), " ", 
+								"(", React.createElement("a", {href: "http://www.apache.org/licenses/LICENSE-2.0"}, "Apache License 2.0"), ")"
+							)
+						), 
+
+						React.createElement("ul", null, 
+							React.createElement("li", null, 
+								React.createElement("a", {href: "http://facebook.github.io/react/"}, "React"), " ", 
+								"(", React.createElement("a", {href: "https://github.com/facebook/react/blob/master/LICENSE"}, "BSD license"), ")"
+							), 
+							React.createElement("li", null, 
+								React.createElement("a", {href: "http://getbootstrap.com/"}, "Bootstrap"), " ", 
+								"(", React.createElement("a", {href: "http://opensource.org/licenses/mit-license.html"}, "MIT license"), ")"
+							), 
+							React.createElement("li", null, 
+								React.createElement("a", {href: "http://jquery.com/"}, "jQuery"), " ", 
+								"(", React.createElement("a", {href: "http://opensource.org/licenses/mit-license.html"}, "MIT license"), ")"
+							), 
+							React.createElement("li", null, 
+								React.createElement("a", {href: "http://glyphicons.com/"}, "GLYPHICONS free"), " ", 
+								"(", React.createElement("a", {href: "https://creativecommons.org/licenses/by/3.0/"}, "CC-BY 3.0"), ")"
+							), 
+							React.createElement("li", null, 
+								React.createElement("a", {href: "http://fortawesome.github.io/Font-Awesome/"}, "FontAwesome"), " ", 
+								"(", React.createElement("a", {href: "http://opensource.org/licenses/mit-license.html"}, "MIT"), ", ", React.createElement("a", {href: "http://scripts.sil.org/OFL"}, "SIL Open Font License"), ")"
+							)
+						), 
+
+						React.createElement("h3", null, "Statistics"), 
+						React.createElement("button", {type: "button", className: "btn btn-default btn-lg", onClick: this.props.statistics}, 
+							React.createElement("span", {className: "glyphicon glyphicon-cog", 'aria-hidden': "true"}, " "), 
+							"View server log"
+						)					
+					)
+				);
+	}
+});
+
 var Footer = React.createClass({displayName: 'Footer',
+	about: function(e) {
+		main.about();
+		e.preventDefault();
+		e.stopPropagation();
+	},
+
 	render: function() {
 		return	(
 			React.createElement("div", {className: "container"}, 
 				React.createElement("div", {id: "CLARIN_footer_left"}, 
-						React.createElement("a", {title: "about", id: "aboutlink", href: "about"}, 
+						React.createElement("a", {title: "about", href: "#", onClick: this.about}, 
 						React.createElement("span", {className: "glyphicon glyphicon-info-sign"}), 
-						React.createElement("span", null, "VERSION 2.0.0.α15")
+						React.createElement("span", null, "VERSION 2.0.0.α16")
 					)
 				), 
 				React.createElement("div", {id: "CLARIN_footer_middle"}, 
@@ -295,7 +427,7 @@ var Footer = React.createClass({displayName: 'Footer',
 	}
 });
 
-React.render(React.createElement(Main, null),  document.getElementById('body'));
+var main = React.render(React.createElement(Main, null),  document.getElementById('body'));
 React.render(React.createElement(Footer, null), document.getElementById('footer') );
 
 })();

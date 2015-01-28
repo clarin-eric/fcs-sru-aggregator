@@ -712,6 +712,16 @@ var _ = window._ = window._ || {
 		}
 		return ret;
 	},
+
+	values: function(o){
+		var ret = [];
+		for (var x in o) {
+			if (o.hasOwnProperty(x)) {
+				ret.push(o[x]);
+			}
+		}
+		return ret;
+	},
 };
 
 })();

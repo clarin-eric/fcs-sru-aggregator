@@ -229,7 +229,8 @@ var CorpusView = window.MyAggregator.CorpusView = React.createClass({
 									{corpus.title}
 									{ corpus.landingPage ? 
 										<a href={corpus.landingPage} onClick={this.stop}>
-											<span style={{fontSize:12}}> – Homepage </span><i className="fa fa-home"/>
+											<span style={{fontSize:12}}> – Homepage </span>
+											<i className="glyphicon glyphicon-home"/>
 										</a>: false}
 								</h3>
 

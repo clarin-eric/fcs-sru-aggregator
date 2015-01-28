@@ -12,6 +12,7 @@ var Main = React.createClass({
 		return {
 			navbarCollapse: false,
 			navbarPageFn: this.renderAggregator,
+			// navbarPageFn: this.renderStatistics,
 			errorMessages: [],
 		};
 	},
@@ -61,17 +62,29 @@ var Main = React.createClass({
 		return <AggregatorPage ajax={this.ajax} corpora={this.state.corpora} languageMap={this.state.languageMap} />;
 	},
 
-	renderStatistics: function() {
-		return <StatisticsPage ajax={this.ajax} />;
-	},
-
 	renderHelp: function() {
 		return <HelpPage />;
+	},
+
+	renderAbout: function() {
+		return <AboutPage statistics={this.statistics}/>;
+	},
+
+	renderStatistics: function() {
+		return <StatisticsPage ajax={this.ajax} />;
 	},
 
 	toggleCollapse: function() {
 		this.setState({navbarCollapse: !this.state.navbarCollapse});
 	},
+
+	about: function(e) {
+		this.setState({navbarPageFn: this.renderAbout});
+	},
+	statistics: function(e) {
+		this.setState({navbarPageFn: this.renderStatistics});
+	},
+
 
 	setNavbarPageFn: function(pageFn) {
 		this.setState({navbarPageFn:pageFn});
@@ -168,55 +181,94 @@ var StatisticsPage = React.createClass({
 		});
 	},
 
-	listItem: function(it) {
-		return <li>	{it[0]}:
-					{ typeof(it[1]) === "object" ? 
-						<ul>{_.pairs(it[1]).map(this.listItem)}</ul> : 
-						it[1]
-					}
-				</li>;
+	renderWaitTimeSecs: function(t) {
+		var hue = t * 3;
+		if (hue > 120) {
+			hue = 120;
+		}
+		var a = hue/120;
+		hue = 120 - hue;
+		var shue = "hsla("+hue+",100%,50%,"+a+")";
+		return	<span className="badge" style={{backgroundColor:shue, color:"black"}}>
+					{t.toFixed(3)}s
+				</span>;
 	},
 
-	// renderEndpoint: function(endp) {
-	// 	return <li>
-	// 				<ul>
-	// 					<li>endpoint: {endp[0]}</li>
-	//           			<li>numberOfRequests: {endp[1].numberOfRequests}</li>
-	// 			        <li>avgQueueTime: {endp[1].avgQueueTime}</li>
-	// 			        <li>maxQueueTime: {endp[1].maxQueueTime}</li>
-	// 			        <li>avgExecutionTime: {endp[1].avgExecutionTime}</li>
-	// 			        <li>maxExecutionTime: {endp[1].maxExecutionTime}</li>
-	// 					<li>errors 
-	// 						<ul>
-	// 							{ _.pairs(object).map(endp[1].errors, function(e) { return <li>{e[0]}:{e[1]}</li>; }) }
-	// 						</ul>
-	// 					</li>
-	// 				</ul>
-	// 			</li>;
-	// },
-	// renderInstitution: function(instname, instendps) {
-	// 	return 	<li>
-	// 				<ul>
-	// 					<li>{instname}</li>
-	// 					<li>
-	// 						<ul>{_.pairs(object).map(instendps, this.renderEndpoint)}</ul>
-	// 					</li>
- // 					</ul>
- // 				</li>;
-	// },
+	renderEndpoint: function(endpoint) {
+		var stat = endpoint[1];
+		var errors = _.pairs(stat.errors);
+		var diagnostics = _.values(stat.diagnostics);
+		return <div>
+					<ul className='list-inline list-unstyled'>
+						<li>{ endpoint[0] }:</li>
+						<li>
+							<span>{stat.numberOfRequests}</span> request(s),
+							average:{this.renderWaitTimeSecs(stat.avgExecutionTime)}, 
+							max: {this.renderWaitTimeSecs(stat.maxExecutionTime)}
+						</li>
+					</ul>
+					{	(errors && errors.length) ? 
+						<ul className='list-unstyled inline' style={{marginLeft:40}}>
+							{ errors.map(function(e) { 
+								return 	<div >
+											<div className="inline alert alert-danger"> Exception: {e[0]}</div>
+											{" "}
+											<div className="inline"><span className="badge">x {e[1]}</span></div>
+										</div>; 
+							  }) }
+						</ul> : false
+					}
+					{	(diagnostics && diagnostics.length) ? 
+						<ul className='list-unstyled inline' style={{marginLeft:40}}>
+							{ diagnostics.map(function(d) { 
+								return 	<div >
+											<div className="inline alert alert-warning"> 
+												Diagnostic: {d.diagnostic.dgnMessage}: {d.diagnostic.dgnDiagnostic}
+											</div>
+											{" "}
+											<div className="inline"><span className="badge">x {d.counter}</span></div>
+										</div>; 
+							  }) }
+						</ul> : false
+					}
+				</div>;
+	},
+
+	renderInstitution: function(inst) {
+		return 	<div style={{marginBottom:30}}>
+					<h4>{inst[0]}</h4>
+					<div style={{marginLeft:20}}> {_.pairs(inst[1]).map(this.renderEndpoint) }</div>
+ 				</div>;
+	},
 
 	renderStatistics: function(stats) {
-		return <ul>{_.pairs(stats).map(this.listItem)}</ul>;
+		return 	<div className="container">
+					<ul className='list-inline list-unstyled'>
+						{ stats.maxConcurrentScanRequestsPerEndpoint ? 
+							<li>max concurrent scan requests per endpoint:{" "}
+								<kbd>{stats.maxConcurrentScanRequestsPerEndpoint}</kbd>,
+							</li> : false
+						}
+						{ stats.maxConcurrentSearchRequestsPerEndpoint ? 
+							<li>max concurrent search requests per endpoint:{" "}
+								<kbd>{stats.maxConcurrentSearchRequestsPerEndpoint}</kbd>,
+							</li> : false
+						}
+						<li>timeout:{" "}<kbd>{stats.timeout} seconds</kbd></li>
+					</ul>
+					<div> { _.pairs(stats.institutions).map(this.renderInstitution) } </div>
+				</div>
+				 ;
 	},
 
 	render: function() {
 		return	(
 			<div>
-				<div className="top-gap">
+				<div className="top-gap statistics">
 					<h1>Statistics</h1>
-					<h2>Last Scan</h2>
+					<h2>Last scan</h2>
 					{this.renderStatistics(this.state.lastScanStats)}
-					<h2>Search</h2>
+					<h2>Searches since last scan</h2>
 					{this.renderStatistics(this.state.searchStats)}
 				</div>
 			</div>
@@ -234,6 +286,7 @@ var HelpPage = React.createClass({
 		return	(
 			<div>
 				<div className="top-gap">
+					<h1>Help</h1>
 					<h3>Performing search in FCS corpora</h3>
 					<p>To perform simple keyword search in all CLARIN-D Federated Content Search centers 
 					and their corpora, go to the search field at the top of the page, 
@@ -269,14 +322,93 @@ var HelpPage = React.createClass({
 	}
 });
 
+var AboutPage = React.createClass({
+	propTypes: {
+		statistics: PT.func.isRequired,
+	},
+
+	render: function() {
+		return	<div>
+					<div className="top-gap">
+						<h1>About</h1>
+						<h3>Technology</h3>
+
+						<p>The Aggregator uses the following software components:</p>
+
+						<ul>
+							<li>
+								<a href="http://dropwizard.io/">Dropwizard</a>{" "}
+								(<a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License 2.0</a>)
+							</li>
+							<li>
+								<a href="http://eclipse.org/jetty/">Jetty</a>{" "}
+								(<a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License 2.0</a>)
+							</li>
+							<li>
+								<a href="http://jackson.codehaus.org/">Jackson</a>{" "}
+								(<a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License 2.0</a>)
+							</li>
+							<li>
+								<a href="https://jersey.java.net/">Jersey</a>{" "}
+								(<a href="https://jersey.java.net/license.html#/cddl">CCDL 1.1</a>)
+							</li>
+							<li>
+								<a href="https://github.com/optimaize/language-detector">Optimaize Language Detector</a>{" "}
+								(<a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License 2.0</a>)
+							</li>
+							<li>
+								<a href="http://poi.apache.org/">Apache POI</a>{" "}
+								(<a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License 2.0</a>)
+							</li>
+						</ul>
+
+						<ul>
+							<li>
+								<a href="http://facebook.github.io/react/">React</a>{" "}
+								(<a href="https://github.com/facebook/react/blob/master/LICENSE">BSD license</a>)
+							</li>
+							<li>
+								<a href="http://getbootstrap.com/">Bootstrap</a>{" "}
+								(<a href="http://opensource.org/licenses/mit-license.html">MIT license</a>)
+							</li>
+							<li>
+								<a href="http://jquery.com/">jQuery</a>{" "}
+								(<a href="http://opensource.org/licenses/mit-license.html">MIT license</a>)
+							</li>
+							<li>
+								<a href="http://glyphicons.com/">GLYPHICONS free</a>{" "}
+								(<a href="https://creativecommons.org/licenses/by/3.0/">CC-BY 3.0</a>)
+							</li>
+							<li>
+								<a href="http://fortawesome.github.io/Font-Awesome/">FontAwesome</a>{" "}
+								(<a href="http://opensource.org/licenses/mit-license.html">MIT</a>, <a href="http://scripts.sil.org/OFL">SIL Open Font License</a>)
+							</li>
+						</ul>
+
+						<h3>Statistics</h3>
+						<button type="button" className="btn btn-default btn-lg" onClick={this.props.statistics} >
+							<span className="glyphicon glyphicon-cog" aria-hidden="true"> </span> 
+							View server log
+						</button>					
+					</div>
+				</div>;
+	}
+});
+
 var Footer = React.createClass({
+	about: function(e) {
+		main.about();
+		e.preventDefault();
+		e.stopPropagation();
+	},
+
 	render: function() {
 		return	(
 			<div className="container">
 				<div id="CLARIN_footer_left">
-						<a title="about" id="aboutlink" href="about"> 
+						<a title="about" href="#" onClick={this.about}> 
 						<span className="glyphicon glyphicon-info-sign"></span>
-						<span>VERSION 2.0.0.α15</span>
+						<span>VERSION 2.0.0.α16</span>
 					</a>
 				</div>
 				<div id="CLARIN_footer_middle">
@@ -295,7 +427,7 @@ var Footer = React.createClass({
 	}
 });
 
-React.render(<Main />,  document.getElementById('body'));
+var main = React.render(<Main />,  document.getElementById('body'));
 React.render(<Footer />, document.getElementById('footer') );
 
 })();

@@ -87,13 +87,7 @@ import org.slf4j.LoggerFactory;
  * @author Yana Panchenko
  * @author edima
  *
- * DONE: support new spec-compatible centre
- *
- * TODO: version page: credits, open source, see vcr/version page
- *
- * TODO: statistics page linked from version page
- *
- * TODO: add diagnostics messages to statistics page
+ * TODO: statistics page
  *
  * TODO: disable popups easily
  *
@@ -238,7 +232,7 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 
 		ScanCrawlTask task = new ScanCrawlTask(sruScanClient,
 				params.CENTER_REGISTRY_URL, params.SCAN_MAX_DEPTH,
-				null, scanCacheAtom, corporaCacheFile, scanStatsAtom);
+				null, scanCacheAtom, corporaCacheFile, scanStatsAtom, searchStatsAtom);
 		scheduler.scheduleAtFixedRate(task, params.SCAN_TASK_INITIAL_DELAY,
 				params.SCAN_TASK_INTERVAL, params.getScanTaskTimeUnit());
 

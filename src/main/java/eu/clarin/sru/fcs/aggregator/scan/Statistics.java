@@ -13,13 +13,28 @@ import java.util.Map;
  * @author edima
  */
 public class Statistics {
+
 	public static class EndpointStats {
+
+		@JsonProperty
+		FCSProtocolVersion version = FCSProtocolVersion.LEGACY;
 
 		List<Long> queueTimes = Collections.synchronizedList(new ArrayList<Long>());
 		List<Long> executionTimes = Collections.synchronizedList(new ArrayList<Long>());
 
+		public static class DiagPair {
+
+			public DiagPair(Diagnostic diagnostic, int counter) {
+				this.diagnostic = diagnostic;
+				this.counter = counter;
+			}
+
+			public Diagnostic diagnostic;
+			public int counter;
+		}
+
 		@JsonProperty
-		List<Diagnostic> diagnostics = Collections.synchronizedList(new ArrayList<Diagnostic>());
+		Map<String, DiagPair> diagnostics = Collections.synchronizedMap(new HashMap<String, DiagPair>());
 		@JsonProperty
 		Map<String, Integer> errors = Collections.synchronizedMap(new HashMap<String, Integer>());
 
@@ -73,18 +88,22 @@ public class Statistics {
 		return institutions;
 	}
 
-	public void addEndpointDatapoint(Institution institution, String endpoint, long enqueuedTime, long executionTime) {
+	public void addEndpointDatapoint(Institution institution, Endpoint endpoint, long enqueuedTime, long executionTime) {
 		EndpointStats stats = getEndpointStats(institution, endpoint);
 		stats.queueTimes.add(enqueuedTime);
 		stats.executionTimes.add(executionTime);
 	}
 
-	public void addEndpointDiagnostic(Institution institution, String endpoint, Diagnostic diag) {
+	public void addEndpointDiagnostic(Institution institution, Endpoint endpoint, Diagnostic diag) {
 		EndpointStats stats = getEndpointStats(institution, endpoint);
-		stats.diagnostics.add(diag);
+		if (!stats.diagnostics.containsKey(diag.getDgnUri())) {
+			stats.diagnostics.put(diag.getDgnUri(), new EndpointStats.DiagPair(diag, 1));
+		} else {
+			stats.diagnostics.get(diag.getDgnUri()).counter++;
+		}
 	}
 
-	public void addErrorDatapoint(Institution institution, String endpoint, SRUClientException error) {
+	public void addErrorDatapoint(Institution institution, Endpoint endpoint, SRUClientException error) {
 		EndpointStats stats = getEndpointStats(institution, endpoint);
 		int number = 0;
 		if (stats.errors.containsKey(error.getMessage())) {
@@ -93,16 +112,22 @@ public class Statistics {
 		stats.errors.put(error.getMessage(), number + 1);
 	}
 
-	private EndpointStats getEndpointStats(Institution institution, String endpoint) {
+	public void upgradeProtocolVersion(Institution institution, Endpoint endpoint) {
+		EndpointStats stats = getEndpointStats(institution, endpoint);
+		stats.version = FCSProtocolVersion.VERSION_1;
+	}
+
+	private EndpointStats getEndpointStats(Institution institution, Endpoint endpoint) {
 		if (!institutions.containsKey(institution.getName())) {
 			institutions.put(institution.getName(),
 					Collections.synchronizedMap(new HashMap<String, EndpointStats>()));
 		}
 		Map<String, EndpointStats> esmap = institutions.get(institution.getName());
-		if (!esmap.containsKey(endpoint)) {
-			esmap.put(endpoint, new EndpointStats());
+		if (!esmap.containsKey(endpoint.getUrl())) {
+			EndpointStats es = new EndpointStats();
+			es.version = endpoint.getProtocol();
+			esmap.put(endpoint.getUrl(), es);
 		}
-		return esmap.get(endpoint);
+		return esmap.get(endpoint.getUrl());
 	}
-
 }
