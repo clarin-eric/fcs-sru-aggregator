@@ -13,8 +13,8 @@ aggregatorParams:
 
 
   ENDPOINTS_SCAN_TIMEOUT_MS: 60000
-  ENDPOINTS_SEARCH_TIMEOUT_MS: 10000
-  EXECUTOR_SHUTDOWN_TIMEOUT_MS: 100
+  ENDPOINTS_SEARCH_TIMEOUT_MS: 30000
+  EXECUTOR_SHUTDOWN_TIMEOUT_MS: 1000
 
 # use the simple server factory, run on a single port
 server:
@@ -31,7 +31,7 @@ logging:
   # Logger-specific levels.
   loggers:
     eu.clarin.sru.fcs.aggregator: INFO
-    eu.clarin.sru.client: INFO
+    eu.clarin.sru.client: ERROR
 
   appenders:
     - type: console

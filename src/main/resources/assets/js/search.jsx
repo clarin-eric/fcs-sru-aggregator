@@ -51,9 +51,7 @@ function Corpora(corpora, updateFn) {
 		if (r !== 0) {
 			return r;
 		}
-		var t1 = x.title ? x.title : x.displayName;
-		var t2 = y.title ? y.title : y.displayName;
-		return t1.toLowerCase().localeCompare(t2.toLowerCase()); 
+		return x.title.toLowerCase().localeCompare(y.title.toLowerCase()); 
 	};
 
 	this.recurse(function(corpus) { corpus.subCorpora.sort(sortFn); });
@@ -176,6 +174,7 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({
 		return {
 			corpora: new Corpora([], this.updateCorpora),
 			languageMap: {},
+			query: "",
 			language: this.anyLanguage,
 			languageFilter: 'byMeta',
 			searchLayerId: "text",
@@ -213,8 +212,8 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({
 		this.setState({corpora:corpora});
 	},
 
-	search: function(query) {
-		// console.log(query);
+	search: function() {
+		var query = this.state.query;
 		if (!query) {
 			this.setState({ hits: this.nohits, searchId: null });
 			return;			
@@ -252,10 +251,9 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({
 					setTimeout(this.refreshSearchResults, this.timeout);
 					// console.log("new search in: " + this.timeout+ "ms");
 				} else {
-					// console.log("search ended");
+					console.log("search ended; hits:", json);
 				}
 				this.setState({hits:json});
-				// console.log("hits:", json);
 			}.bind(this),
 		});
 	},
@@ -315,6 +313,16 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({
 		e.stopPropagation();
 	},
 
+	handleChange: function(event) {
+    	this.setState({query: event.target.value});
+	},
+
+	handleKey: function(event) {
+    	if (event.keyCode==13) {
+    		this.search();
+    	}
+	},
+
 	renderAggregator: function() {
 		var layer = layerMap[this.state.searchLayerId];
 		return	(
@@ -326,7 +334,9 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({
 								{layer.searchLabel}
 							</span>
 
-							<SearchBox search={this.search} placeholder={layer.searchPlaceholder} />
+							<input className="form-control input-lg search" name="query" type="text"
+								value={this.state.query} placeholder={this.props.placeholder}
+								tabIndex="1" onChange={this.handleChange} onKeyDown={this.handleKey} />
 							<div className="input-group-btn">
 								<button className="btn btn-default input-lg" type="button" onClick={this.search}>
 									<i className="glyphicon glyphicon-search"></i>
@@ -495,45 +505,6 @@ var LanguageSelector = React.createClass({
 				</div>;
 	}
 });
-/////////////////////////////////
-
-var SearchBox = React.createClass({
-	propTypes: {
-		search: PT.func.isRequired,
-		placeholder: PT.string.isRequired,
-	},
-
-	getInitialState: function () {
-		return {
-			query: "",
-		};
-	},
-
-	handleChange: function(event) {
-    	this.setState({query: event.target.value});
-	},
-
-	handleKey: function(event) {
-    	if (event.keyCode==13) {
-    		this.search();
-    	}
-	},
-
-	search: function() {
-		this.props.search(this.state.query);
-	},
-
-	render: function() {
-		return 	<input className="form-control input-lg search" 
-					name="query" 
-					type="text"
-					value={this.state.query} 
-					placeholder={this.props.placeholder} 
-					tabIndex="1" 
-					onChange={this.handleChange}
-					onKeyDown={this.handleKey} />  ;
-	}
-});
 
 /////////////////////////////////
 
@@ -583,7 +554,7 @@ var Results = React.createClass({
 	renderPanelTitle: function(corpus) {
 		var inline = {display:"inline-block"};
 		return	<div style={inline}>
-					<span className="corpusName"> {corpus.title ? corpus.title : corpus.displayName}</span>
+					<span className="corpusName"> {corpus.title}</span>
 					<span className="institutionName"> — {corpus.institution.name}</span>
 				</div>;
 	},
@@ -591,8 +562,7 @@ var Results = React.createClass({
 	renderPanelInfo: function(corpus) {
 		var inline = {display:"inline-block"};
 		return	<div>
-					<InfoPopover placement="left" 
-							title={corpus.title ? corpus.title : corpus.displayName}>
+					<InfoPopover placement="left" title={corpus.title}>
 						<dl className="dl-horizontal">
 							<dt>Institution</dt>
 							<dd>{corpus.institution.name}</dd>
@@ -624,7 +594,7 @@ var Results = React.createClass({
 		}
 
 		return corpusHit.diagnostics.map(function(d) {
-			return 	<div className="alert alert-danger" role="alert">
+			return 	<div className="alert alert-danger" role="alert" key={d.dgnUri}>
 						{d.dgnMessage}{": "}{d.dgnDiagnostic}
 					</div>;
 		});
@@ -652,7 +622,7 @@ var Results = React.createClass({
 			corpusHit.diagnostics.length === 0) {
 			return false;
 		}
-		return 	<Panel key={corpusHit.corpus.displayName} 
+		return 	<Panel key={corpusHit.corpus.title} 
 						title={this.renderPanelTitle(corpusHit.corpus)} 
 						info={this.renderPanelInfo(corpusHit.corpus)}>
 					{this.renderPanelBody(corpusHit)}

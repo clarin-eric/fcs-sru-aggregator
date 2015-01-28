@@ -12,10 +12,11 @@ import java.util.Queue;
  * @author edima
  */
 class GenericClient {
+
 	private final SRUThreadedClient sruClient;
 	public final int maxConcurrentRequests;
-	// queue of operations waiting for execution
 
+	// queue of operations waiting for execution
 	static class ExecQueue {
 
 		int nowExecuting = 0;
@@ -59,5 +60,13 @@ class GenericClient {
 			op.stats().startedTime = System.currentTimeMillis();
 			op.execute(sruClient);
 		}
+	}
+
+	public void shutdown() {
+		sruClient.shutdown();
+	}
+
+	public void shutdownNow() {
+		sruClient.shutdownNow();
 	}
 }

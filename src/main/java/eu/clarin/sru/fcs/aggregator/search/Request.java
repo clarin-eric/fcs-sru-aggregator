@@ -37,8 +37,4 @@ public class Request {
 	public String getSearchString() {
 		return searchString;
 	}
-
-	public boolean hasCorpusHandle() {
-		return corpus != null && corpus.getHandle() != null;
-	}
 }

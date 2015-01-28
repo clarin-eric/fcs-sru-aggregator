@@ -95,7 +95,7 @@ var CorpusView = window.MyAggregator.CorpusView = React.createClass({displayName
 		// find priority for each corpus
 		var querytokens = query.split(" ").filter(function(x){ return x.length > 0; });
 		this.props.corpora.recurse(function(corpus){
-			var title = corpus.title ? corpus.title : corpus.displayName;
+			var title = corpus.title;
 			querytokens.forEach(function(qtoken){
 				if (title && title.toLowerCase().indexOf(qtoken) >= 0) {
 					corpus.priority ++;
@@ -216,8 +216,7 @@ var CorpusView = window.MyAggregator.CorpusView = React.createClass({displayName
 		var priorityStyle = {paddingBottom: 4, paddingLeft: 2, borderBottom: '3px solid '+color };
 		var expansive = corpus.expanded ? {overflow:'hidden'} 
 			: {whiteSpace:'nowrap', overflow:'hidden', textOverflow: 'ellipsis'};
-		var title = corpus.title || corpus.displayName;
-		return	React.createElement("div", {className: corpusContainerClass, key: corpus.displayName}, 
+		return	React.createElement("div", {className: corpusContainerClass, key: corpus.title}, 
 					React.createElement("div", {className: "row corpus", onClick: this.toggleExpansion.bind(this, corpus)}, 
 						React.createElement("div", {className: "col-sm-1 vcenter"}, 
 								React.createElement("div", {className: "inline", style: priorityStyle, onClick: this.toggleSelection.bind(this,corpus)}, 
@@ -227,7 +226,7 @@ var CorpusView = window.MyAggregator.CorpusView = React.createClass({displayName
 						React.createElement("div", {className: "col-sm-8 vcenter"}, 
 							React.createElement("div", {style: indent}, 
 								React.createElement("h3", {style: expansive}, 
-									title, 
+									corpus.title, 
 									 corpus.landingPage ? 
 										React.createElement("a", {href: corpus.landingPage, onClick: this.stop}, 
 											React.createElement("span", {style: {fontSize:12}}, " – Homepage "), React.createElement("i", {className: "fa fa-home"})

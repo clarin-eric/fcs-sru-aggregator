@@ -1,6 +1,8 @@
 package eu.clarin.sru.fcs.aggregator.client;
 
 import eu.clarin.sru.client.SRUClientException;
+import eu.clarin.sru.client.SRUExplainRequest;
+import eu.clarin.sru.client.SRUExplainResponse;
 import eu.clarin.sru.client.SRUScanRequest;
 import eu.clarin.sru.client.SRUScanResponse;
 import eu.clarin.sru.client.SRUSearchRetrieveRequest;
@@ -19,6 +21,13 @@ public class ThrottledClient {
 		long getExecutionTime();
 	}
 
+	public interface ExplainCallback {
+
+		void onSuccess(SRUExplainResponse response, Stats stats);
+
+		void onError(SRUExplainRequest request, SRUClientException error, Stats stats);
+	}
+
 	public interface ScanCallback {
 
 		void onSuccess(SRUScanResponse response, Stats stats);
@@ -33,29 +42,29 @@ public class ThrottledClient {
 		void onError(SRUSearchRetrieveRequest request, SRUClientException error, Stats stats);
 	}
 
-	SRUThreadedClient sruClient;
-	GenericClient scanClient;
-	GenericClient searchClient;
+	GenericClient client;
 
-	public ThrottledClient(SRUThreadedClient sruClient, int maxConcurrentScanRequests, int maxConcurrentSearchRequests) {
-		this.sruClient = sruClient;
-		this.scanClient = new GenericClient(sruClient, maxConcurrentScanRequests);
-		this.searchClient = new GenericClient(sruClient, maxConcurrentSearchRequests);
+	public ThrottledClient(SRUThreadedClient sruClient, int maxConcurrentRequests) {
+		this.client = new GenericClient(sruClient, maxConcurrentRequests);
+	}
+
+	public void explain(SRUExplainRequest request, ExplainCallback callback) {
+		client.execute(request.getBaseURI(), new ExplainOperation(request, callback));
 	}
 
 	public void scan(SRUScanRequest request, ScanCallback callback) {
-		scanClient.execute(request.getBaseURI(), new ScanOperation(request, callback));
+		client.execute(request.getBaseURI(), new ScanOperation(request, callback));
 	}
 
 	public void searchRetrieve(SRUSearchRetrieveRequest request, SearchCallback callback) {
-		searchClient.execute(request.getBaseURI(), new SearchOperation(request, callback));
+		client.execute(request.getBaseURI(), new SearchOperation(request, callback));
 	}
 
 	public void shutdown() {
-		sruClient.shutdown();
+		client.shutdown();
 	}
 
 	public void shutdownNow() {
-		sruClient.shutdownNow();
+		client.shutdownNow();
 	}
 }

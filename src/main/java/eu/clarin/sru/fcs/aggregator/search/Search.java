@@ -8,6 +8,7 @@ import eu.clarin.sru.client.SRUSearchRetrieveResponse;
 import eu.clarin.sru.client.fcs.ClarinFCSRecordData;
 import eu.clarin.sru.fcs.aggregator.client.ThrottledClient;
 import eu.clarin.sru.fcs.aggregator.scan.Corpus;
+import eu.clarin.sru.fcs.aggregator.scan.FCSProtocolVersion;
 import eu.clarin.sru.fcs.aggregator.scan.Statistics;
 import eu.clarin.sru.fcs.aggregator.util.SRUCQL;
 import java.util.ArrayList;
@@ -34,6 +35,7 @@ public class Search {
 	private static final AtomicLong counter = new AtomicLong(Math.abs(new Random().nextInt()));
 
 	private final Long id;
+	private final long createdAt = System.currentTimeMillis();
 	private final String searchLanguage;
 	private final List<Request> requests = Collections.synchronizedList(new ArrayList<Request>());
 	private final List<Result> results = Collections.synchronizedList(new ArrayList<Result>());
@@ -55,13 +57,16 @@ public class Search {
 		final Request request = new Request(corpus, searchString, startRecord, startRecord + maxRecords - 1);
 		log.info("Executing search in '{}' query='{}' maxRecords='{}'", corpus, searchString, maxRecords);
 
-		SRUSearchRetrieveRequest searchRequest = new SRUSearchRetrieveRequest(corpus.getEndpointUrl());
+		SRUSearchRetrieveRequest searchRequest = new SRUSearchRetrieveRequest(corpus.getEndpoint().getUrl());
 		searchRequest.setVersion(version);
 		searchRequest.setMaximumRecords(maxRecords);
-		searchRequest.setRecordSchema(ClarinFCSRecordData.RECORD_SCHEMA);
+//		searchRequest.setRecordSchema(
+//				corpus.getEndpoint().getProtocol().equals(FCSProtocolVersion.LEGACY)
+//						? ClarinFCSRecordData.LEGACY_RECORD_SCHEMA
+//						: ClarinFCSRecordData.RECORD_SCHEMA);
 		searchRequest.setQuery("\"" + searchString + "\"");
 		searchRequest.setStartRecord(startRecord);
-		if (request.hasCorpusHandle()) {
+		if (corpus.getHandle() != null) {
 			searchRequest.setExtraRequestData(SRUCQL.SEARCH_CORPUS_HANDLE_PARAMETER, corpus.getHandle());
 		}
 		requests.add(request);
@@ -70,21 +75,21 @@ public class Search {
 			searchClient.searchRetrieve(searchRequest, new ThrottledClient.SearchCallback() {
 				@Override
 				public void onSuccess(SRUSearchRetrieveResponse response, ThrottledClient.Stats stats) {
-					statistics.addEndpointDatapoint(corpus.getInstitution(), corpus.getEndpointUrl(), stats.getQueueTime(), stats.getExecutionTime());
+					statistics.addEndpointDatapoint(corpus.getInstitution(), corpus.getEndpoint().getUrl(), stats.getQueueTime(), stats.getExecutionTime());
 					results.add(new Result(request, response, null));
 					requests.remove(request);
 				}
 
 				@Override
 				public void onError(SRUSearchRetrieveRequest srureq, SRUClientException xc, ThrottledClient.Stats stats) {
-					statistics.addEndpointDatapoint(corpus.getInstitution(), corpus.getEndpointUrl(), stats.getQueueTime(), stats.getExecutionTime());
-					statistics.addErrorDatapoint(corpus.getInstitution(), corpus.getEndpointUrl(), xc);
+					statistics.addEndpointDatapoint(corpus.getInstitution(), corpus.getEndpoint().getUrl(), stats.getQueueTime(), stats.getExecutionTime());
+					statistics.addErrorDatapoint(corpus.getInstitution(), corpus.getEndpoint().getUrl(), xc);
 					results.add(new Result(request, null, xc));
 					requests.remove(request);
 				}
 			});
 		} catch (Throwable xc) {
-			log.error("SearchRetrieve error for " + corpus.getEndpointUrl(), xc);
+			log.error("SearchRetrieve error for " + corpus.getEndpoint().getUrl(), xc);
 		}
 		return request;
 	}
@@ -202,5 +207,9 @@ public class Search {
 
 	public void shutdown() {
 		// nothing to do 
+	}
+
+	public long getCreatedAt() {
+		return createdAt;
 	}
 }

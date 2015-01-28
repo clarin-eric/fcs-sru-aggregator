@@ -1,18 +1,19 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<title>Aggregator2</title>
+	<title>Aggregator - Federated Content Search</title>
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 	<link href="lib/bootstrap.min.css" rel="stylesheet">
 	<link href="lib/font-awesome.min.css" rel="stylesheet">
 	<link href="CLARIN.css" rel="stylesheet">
 	<link href="base.css" rel="stylesheet">
-</head>
-<body>
-	<noscript>
-		<div>Federated Content Search Aggregator requires JavaScript to be enabled!</div>
-	</noscript>
+
+	<!--[if lt IE 9]>
+		<script src="http://cdnjs.cloudflare.com/ajax/libs/es5-shim/3.4.0/es5-shim.js"></script>
+		<script src="http://cdnjs.cloudflare.com/ajax/libs/es5-shim/3.4.0/es5-sham.js"></script>
+	<![endif]-->   
 
 	<style>
 		html,
@@ -21,7 +22,7 @@
 			padding:0;
 			height:100%;
 		}
-		#container {
+		#main-container {
 			min-height:100%;
 			position:relative;
 		}
@@ -35,38 +36,17 @@
 			height:100px;   /* Height of the footer */
 		}
 	</style>
+</head>
 
-	<div id="container">
-		<div id="body">
-			<div id="reactMain">
-		</div>
-		<div id="footer">
-			<div class="container">
-				<div id="CLARIN_footer_left">
-						<a title="about" id="aboutlink" href="about"> 
-						<span class="glyphicon glyphicon-info-sign"></span>
-						<span>VERSION 2.0.0.α14</span>
-					</a>
-				</div>
-				<div id="CLARIN_footer_middle">
-					<a title="CLARIN ERIC" href="https://www.clarin.eu/">
-					<img src="img/clarindLogo.png" alt="CLARIN ERIC logo" style="height:80px"/>
-					</a>
-				</div>
-				<div id="CLARIN_footer_right">
-					<a title="contact" href="mailto:fcs@clarin.eu">
-						<span class="glyphicon glyphicon-envelope"></span>
-						<span> CONTACT</span>
-					</a>
-				</div>
-			</div>
-		</div>
+<body>
+	<noscript>
+		<div>Federated Content Search Aggregator requires JavaScript to be enabled!</div>
+	</noscript>
+	<div id="main-container">
+		<div id="body"></div>
+		<div id="footer"></div>
 	</div>
 
-	<!--[if lt IE 9]>
-		<script src="http://cdnjs.cloudflare.com/ajax/libs/es5-shim/3.4.0/es5-shim.js"></script>
-		<script src="http://cdnjs.cloudflare.com/ajax/libs/es5-shim/3.4.0/es5-sham.js"></script>
-	<![endif]-->   
 	<script src="lib/jquery.min.js"></script>
 	<script src="lib/react-with-addons.js"></script>
 	<script src="lib/react-router.min.js"></script>

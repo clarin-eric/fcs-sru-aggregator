@@ -51,9 +51,7 @@ function Corpora(corpora, updateFn) {
 		if (r !== 0) {
 			return r;
 		}
-		var t1 = x.title ? x.title : x.displayName;
-		var t2 = y.title ? y.title : y.displayName;
-		return t1.toLowerCase().localeCompare(t2.toLowerCase()); 
+		return x.title.toLowerCase().localeCompare(y.title.toLowerCase()); 
 	};
 
 	this.recurse(function(corpus) { corpus.subCorpora.sort(sortFn); });
@@ -176,6 +174,7 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({dis
 		return {
 			corpora: new Corpora([], this.updateCorpora),
 			languageMap: {},
+			query: "",
 			language: this.anyLanguage,
 			languageFilter: 'byMeta',
 			searchLayerId: "text",
@@ -213,8 +212,8 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({dis
 		this.setState({corpora:corpora});
 	},
 
-	search: function(query) {
-		// console.log(query);
+	search: function() {
+		var query = this.state.query;
 		if (!query) {
 			this.setState({ hits: this.nohits, searchId: null });
 			return;			
@@ -252,10 +251,9 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({dis
 					setTimeout(this.refreshSearchResults, this.timeout);
 					// console.log("new search in: " + this.timeout+ "ms");
 				} else {
-					// console.log("search ended");
+					console.log("search ended; hits:", json);
 				}
 				this.setState({hits:json});
-				// console.log("hits:", json);
 			}.bind(this),
 		});
 	},
@@ -315,6 +313,16 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({dis
 		e.stopPropagation();
 	},
 
+	handleChange: function(event) {
+    	this.setState({query: event.target.value});
+	},
+
+	handleKey: function(event) {
+    	if (event.keyCode==13) {
+    		this.search();
+    	}
+	},
+
 	renderAggregator: function() {
 		var layer = layerMap[this.state.searchLayerId];
 		return	(
@@ -326,7 +334,9 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({dis
 								layer.searchLabel
 							), 
 
-							React.createElement(SearchBox, {search: this.search, placeholder: layer.searchPlaceholder}), 
+							React.createElement("input", {className: "form-control input-lg search", name: "query", type: "text", 
+								value: this.state.query, placeholder: this.props.placeholder, 
+								tabIndex: "1", onChange: this.handleChange, onKeyDown: this.handleKey}), 
 							React.createElement("div", {className: "input-group-btn"}, 
 								React.createElement("button", {className: "btn btn-default input-lg", type: "button", onClick: this.search}, 
 									React.createElement("i", {className: "glyphicon glyphicon-search"})
@@ -495,45 +505,6 @@ var LanguageSelector = React.createClass({displayName: 'LanguageSelector',
 				);
 	}
 });
-/////////////////////////////////
-
-var SearchBox = React.createClass({displayName: 'SearchBox',
-	propTypes: {
-		search: PT.func.isRequired,
-		placeholder: PT.string.isRequired,
-	},
-
-	getInitialState: function () {
-		return {
-			query: "",
-		};
-	},
-
-	handleChange: function(event) {
-    	this.setState({query: event.target.value});
-	},
-
-	handleKey: function(event) {
-    	if (event.keyCode==13) {
-    		this.search();
-    	}
-	},
-
-	search: function() {
-		this.props.search(this.state.query);
-	},
-
-	render: function() {
-		return 	React.createElement("input", {className: "form-control input-lg search", 
-					name: "query", 
-					type: "text", 
-					value: this.state.query, 
-					placeholder: this.props.placeholder, 
-					tabIndex: "1", 
-					onChange: this.handleChange, 
-					onKeyDown: this.handleKey})  ;
-	}
-});
 
 /////////////////////////////////
 
@@ -583,7 +554,7 @@ var Results = React.createClass({displayName: 'Results',
 	renderPanelTitle: function(corpus) {
 		var inline = {display:"inline-block"};
 		return	React.createElement("div", {style: inline}, 
-					React.createElement("span", {className: "corpusName"}, " ", corpus.title ? corpus.title : corpus.displayName), 
+					React.createElement("span", {className: "corpusName"}, " ", corpus.title), 
 					React.createElement("span", {className: "institutionName"}, " — ", corpus.institution.name)
 				);
 	},
@@ -591,8 +562,7 @@ var Results = React.createClass({displayName: 'Results',
 	renderPanelInfo: function(corpus) {
 		var inline = {display:"inline-block"};
 		return	React.createElement("div", null, 
-					React.createElement(InfoPopover, {placement: "left", 
-							title: corpus.title ? corpus.title : corpus.displayName}, 
+					React.createElement(InfoPopover, {placement: "left", title: corpus.title}, 
 						React.createElement("dl", {className: "dl-horizontal"}, 
 							React.createElement("dt", null, "Institution"), 
 							React.createElement("dd", null, corpus.institution.name), 
@@ -624,7 +594,7 @@ var Results = React.createClass({displayName: 'Results',
 		}
 
 		return corpusHit.diagnostics.map(function(d) {
-			return 	React.createElement("div", {className: "alert alert-danger", role: "alert"}, 
+			return 	React.createElement("div", {className: "alert alert-danger", role: "alert", key: d.dgnUri}, 
 						d.dgnMessage, ": ", d.dgnDiagnostic
 					);
 		});
@@ -652,7 +622,7 @@ var Results = React.createClass({displayName: 'Results',
 			corpusHit.diagnostics.length === 0) {
 			return false;
 		}
-		return 	React.createElement(Panel, {key: corpusHit.corpus.displayName, 
+		return 	React.createElement(Panel, {key: corpusHit.corpus.title, 
 						title: this.renderPanelTitle(corpusHit.corpus), 
 						info: this.renderPanelInfo(corpusHit.corpus)}, 
 					this.renderPanelBody(corpusHit)

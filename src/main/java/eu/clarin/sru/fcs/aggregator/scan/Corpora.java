@@ -77,7 +77,7 @@ public class Corpora {
 		visit(corpora, new CallCorpus() {
 			@Override
 			public void call(Corpus c) {
-				if (c.getEndpointUrl().equals(endpointUrl)) {
+				if (c.getEndpoint().getUrl().equals(endpointUrl)) {
 					found.add(c);
 				}
 			}

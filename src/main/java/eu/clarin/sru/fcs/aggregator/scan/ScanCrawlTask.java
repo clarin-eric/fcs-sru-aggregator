@@ -44,6 +44,13 @@ public class ScanCrawlTask implements Runnable {
 
 			log.info("ScanCrawlTask: Initiating crawl");
 			CenterRegistry centerRegistry = new CenterRegistryLive(centerRegistryUrl, filter);
+			centerRegistry.getCQLInstitutions().add(0,
+					new Institution("test_IDS", null) {
+						{
+							addEndpoint("https://clarin.ids-mannheim.de/digibibsru-new");
+						}
+					});
+//			CenterRegistry centerRegistry = new CenterRegistryForTesting();
 			ScanCrawler scanCrawler = new ScanCrawler(centerRegistry, sruClient, cacheMaxDepth);
 
 			log.info("ScanCrawlTask: Starting crawl");

@@ -12,7 +12,7 @@ public class Institution {
 
 	private String name;
 	private String link;
-	private Set<String> endpoints;
+	private Set<Endpoint> endpoints;
 
 	// for JSON deserialization
 	public Institution() {
@@ -21,11 +21,11 @@ public class Institution {
 	public Institution(String name, String link) {
 		this.name = name;
 		this.link = link;
-		this.endpoints = new LinkedHashSet<String>();
+		this.endpoints = new LinkedHashSet<Endpoint>();
 	}
 
 	public String addEndpoint(String endpointUrl) {
-		endpoints.add(endpointUrl);
+		endpoints.add(new Endpoint(endpointUrl, FCSProtocolVersion.LEGACY));
 		return endpointUrl;
 	}
 
@@ -37,7 +37,7 @@ public class Institution {
 		return link;
 	}
 
-	public Set<String> getEndpoints() {
+	public Set<Endpoint> getEndpoints() {
 		return this.endpoints;
 	}
 

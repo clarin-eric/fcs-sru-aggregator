@@ -29,7 +29,7 @@ public class ScanCrawlerTest {
 		ThrottledClient sruClient = new ThrottledClient(
 				new ClarinFCSClientBuilder()
 				.addDefaultDataViewParsers()
-				.buildThreadedClient(), 2, 2);
+				.buildThreadedClient(), 2);
 
 		try {
 			EndpointUrlFilterAllow filter = new EndpointUrlFilterAllow("uni-tuebingen.de"); //, "leipzig", ".mpi.nl", "dspin.dwds.de", "lindat."
@@ -52,7 +52,7 @@ public class ScanCrawlerTest {
 			String tueDescSubstring = "Tübingen Treebank";
 			Assert.assertTrue("Description problem", tueRootCorpus.getDescription().contains(tueDescSubstring));
 			String tueNameSubstring = "TuebaDDC";
-			Assert.assertTrue("Name problem", tueRootCorpus.getDisplayName().contains(tueNameSubstring));
+			Assert.assertTrue("Name problem", tueRootCorpus.getTitle().contains(tueNameSubstring));
 			String tuePageSubstring = "sfs.uni-tuebingen.de";
 			Assert.assertTrue("Landing page problem", tueRootCorpus.getLandingPage().contains(tuePageSubstring));
 			Assert.assertTrue("Number of records problem", mpiRootCorpus.getNumberOfRecords() > 10);

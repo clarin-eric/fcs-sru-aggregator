@@ -53,6 +53,7 @@ var Main = React.createClass({
 				console.log("ajax error, jqXHR: ", jqXHR);
 			};
 		}
+		// console.log("ajax", ajaxObject);
 		jQuery.ajax(ajaxObject);
 	},
 
@@ -268,6 +269,33 @@ var HelpPage = React.createClass({
 	}
 });
 
-React.render(<Main />, document.getElementById('reactMain') );
+var Footer = React.createClass({
+	render: function() {
+		return	(
+			<div className="container">
+				<div id="CLARIN_footer_left">
+						<a title="about" id="aboutlink" href="about"> 
+						<span className="glyphicon glyphicon-info-sign"></span>
+						<span>VERSION 2.0.0.α15</span>
+					</a>
+				</div>
+				<div id="CLARIN_footer_middle">
+					<a title="CLARIN ERIC" href="https://www.clarin.eu/">
+					<img src="img/clarindLogo.png" alt="CLARIN ERIC logo" style={{height:80}}/>
+					</a>
+				</div>
+				<div id="CLARIN_footer_right">
+					<a title="contact" href="mailto:fcs@clarin.eu">
+						<span className="glyphicon glyphicon-envelope"></span>
+						<span> CONTACT</span>
+					</a>
+				</div>
+			</div>
+		);
+	}
+});
+
+React.render(<Main />,  document.getElementById('body'));
+React.render(<Footer />, document.getElementById('footer') );
 
 })();

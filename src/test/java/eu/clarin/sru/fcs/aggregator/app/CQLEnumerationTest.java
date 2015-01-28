@@ -2,6 +2,7 @@ package eu.clarin.sru.fcs.aggregator.app;
 
 import eu.clarin.sru.fcs.aggregator.scan.CenterRegistry;
 import eu.clarin.sru.fcs.aggregator.scan.CenterRegistryLive;
+import eu.clarin.sru.fcs.aggregator.scan.Endpoint;
 import eu.clarin.sru.fcs.aggregator.scan.Institution;
 import javax.naming.NamingException;
 import org.junit.Ignore;
@@ -23,7 +24,7 @@ public class CQLEnumerationTest {
 			CenterRegistry centerRegistry = new CenterRegistryLive(centerRegistryUrl, null);
 			for (Institution institution : centerRegistry.getCQLInstitutions()) {
 				System.out.println(institution.getName() + ": ");
-				for (String e : institution.getEndpoints()) {
+				for (Endpoint e : institution.getEndpoints()) {
 					System.out.println("\t -> " + e);
 				}
 			}

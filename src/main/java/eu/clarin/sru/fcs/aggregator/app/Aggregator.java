@@ -12,6 +12,7 @@ import eu.clarin.sru.fcs.aggregator.scan.ScanCrawlTask;
 import eu.clarin.sru.fcs.aggregator.scan.Corpora;
 import eu.clarin.sru.client.SRUVersion;
 import eu.clarin.sru.client.fcs.ClarinFCSClientBuilder;
+import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescriptionParser;
 import eu.clarin.sru.fcs.aggregator.client.ThrottledClient;
 import eu.clarin.sru.fcs.aggregator.scan.Corpus;
 import eu.clarin.sru.fcs.aggregator.rest.RestService;
@@ -24,6 +25,7 @@ import io.dropwizard.setup.Environment;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -85,8 +87,7 @@ import org.slf4j.LoggerFactory;
  * @author Yana Panchenko
  * @author edima
  *
- * TODO: support new spec-compatible centres, see Oliver's mail
- * (use SRUClient's extraResponseData POJOs)
+ * DONE: support new spec-compatible centre
  *
  * TODO: version page: credits, open source, see vcr/version page
  *
@@ -95,8 +96,6 @@ import org.slf4j.LoggerFactory;
  * TODO: add diagnostics messages to statistics page
  *
  * TODO: disable popups easily
- *
- * TODO: Fix activeSearch memory leak (gc searches older than...)
  *
  * TODO: Use weblicht with results
  *
@@ -208,10 +207,11 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 				.setConnectTimeout(params.ENDPOINTS_SCAN_TIMEOUT_MS)
 				.setSocketTimeout(params.ENDPOINTS_SCAN_TIMEOUT_MS)
 				.addDefaultDataViewParsers()
+				.registerExtraResponseDataParser(
+						new ClarinFCSEndpointDescriptionParser())
 				.enableLegacySupport()
 				.buildThreadedClient(),
-				params.SCAN_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT,
-				params.SEARCH_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT
+				params.SCAN_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT
 		);
 		sruSearchClient = new ThrottledClient(
 				new ClarinFCSClientBuilder()
@@ -220,7 +220,6 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 				.addDefaultDataViewParsers()
 				.enableLegacySupport()
 				.buildThreadedClient(),
-				params.SCAN_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT,
 				params.SEARCH_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT
 		);
 
@@ -268,6 +267,18 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 		} else {
 			Search sr = new Search(sruSearchClient, version, searchStatsAtom.get(),
 					corpora, searchString, searchLang, 1, maxRecords);
+			if ((activeSearches.size() % 100) == 0) {
+				List<Long> toBeRemoved = new ArrayList<Long>();
+				long t0 = System.currentTimeMillis();
+				for (Map.Entry<Long, Search> e : activeSearches.entrySet()) {
+					if (t0 - e.getValue().getCreatedAt() > 1800 * 1000) {
+						toBeRemoved.add(e.getKey());
+					}
+				}
+				for (Long l : toBeRemoved) {
+					activeSearches.remove(l);
+				}
+			}
 			activeSearches.put(sr.getId(), sr);
 			return sr;
 		}

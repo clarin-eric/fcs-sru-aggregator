@@ -17,16 +17,16 @@ import org.slf4j.LoggerFactory;
  * @author Yana Panchenko
  */
 public class Corpus {
+
 	private static final org.slf4j.Logger log = LoggerFactory.getLogger(Corpus.class);
 
 	public static final String ROOT_HANDLE = "root";
 	public static final Pattern HANDLE_WITH_SPECIAL_CHARS = Pattern.compile(".*[<>=/()\\s].*");
 
 	private Institution institution;
-	private String endpointUrl;
+	private Endpoint endpoint;
 	private String handle;
 	private Integer numberOfRecords;
-	private String displayName;
 	private Set<String> languages = new HashSet<String>();
 	private String landingPage;
 	private String title;
@@ -36,13 +36,13 @@ public class Corpus {
 	public Corpus() {
 	}
 
-	public Corpus(Institution institution, String endpointUrl) {
+	public Corpus(Institution institution, Endpoint endpoint) {
 		this.institution = institution;
-		this.endpointUrl = endpointUrl;
+		this.endpoint = endpoint;
 	}
 
 	public String getId() {
-		return endpointUrl + "#" + handle;
+		return endpoint.getUrl() + "#" + handle;
 	}
 
 	public void setId(String id) { // dumb setter for JsonDeserialization
@@ -60,7 +60,6 @@ public class Corpus {
 		this.subCorpora = subCorpora;
 	}
 
-
 	public String getHandle() {
 		return handle;
 	}
@@ -77,20 +76,12 @@ public class Corpus {
 		this.numberOfRecords = numberOfRecords;
 	}
 
-	public String getDisplayName() {
-		return displayName;
+	public Endpoint getEndpoint() {
+		return endpoint;
 	}
 
-	public void setDisplayName(String displayName) {
-		this.displayName = displayName;
-	}
-
-	public String getEndpointUrl() {
-		return endpointUrl;
-	}
-
-	public void setEndpointUrl(String endpointUrl) {
-		this.endpointUrl = endpointUrl;
+	public void setEndpoint(Endpoint endpoint) {
+		this.endpoint = endpoint;
 	}
 
 	public Institution getInstitution() {
@@ -145,7 +136,7 @@ public class Corpus {
 	@Override
 	public int hashCode() {
 		int hash = 3;
-		hash = 29 * hash + (this.endpointUrl != null ? this.endpointUrl.hashCode() : 0);
+		hash = 29 * hash + (this.endpoint != null ? this.endpoint.hashCode() : 0);
 		hash = 29 * hash + (this.handle != null ? this.handle.hashCode() : 0);
 		return hash;
 	}
@@ -159,7 +150,7 @@ public class Corpus {
 			return false;
 		}
 		final Corpus other = (Corpus) obj;
-		if ((this.endpointUrl == null) ? (other.endpointUrl != null) : !this.endpointUrl.equals(other.endpointUrl)) {
+		if ((this.endpoint == null) ? (other.endpoint != null) : !this.endpoint.equals(other.endpoint)) {
 			return false;
 		}
 		if ((this.handle == null) ? (other.handle != null) : !this.handle.equals(other.handle)) {
@@ -170,7 +161,7 @@ public class Corpus {
 
 	@Override
 	public String toString() {
-		return "Corpus{" + "endpointUrl=" + endpointUrl + ", handle=" + handle + '}';
+		return "Corpus{" + "endpoint=" + endpoint + ", handle=" + handle + '}';
 	}
 
 }

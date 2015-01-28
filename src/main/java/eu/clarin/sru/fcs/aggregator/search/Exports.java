@@ -285,7 +285,7 @@ public class Exports {
             tc.createSentencesLayer();
             tc.createMatchesLayer("FCS", resultsProcessed.get(0).getSearchString());
             for (Result result : resultsProcessed) {
-                MatchedCorpus mCorpus = tc.getMatchesLayer().addCorpus(result.getCorpus().getDisplayName(), result.getCorpus().getHandle());
+				MatchedCorpus mCorpus = tc.getMatchesLayer().addCorpus(result.getCorpus().getTitle(), result.getCorpus().getHandle());
                 for (Kwic kwic : result.getKwics()) {
                     List<Token> tokens = new ArrayList<Token>();
                     addToTcfTokens(tokens, tc, tokenizer.tokenize(kwic.getLeft()));

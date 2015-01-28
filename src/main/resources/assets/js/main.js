@@ -53,6 +53,7 @@ var Main = React.createClass({displayName: 'Main',
 				console.log("ajax error, jqXHR: ", jqXHR);
 			};
 		}
+		// console.log("ajax", ajaxObject);
 		jQuery.ajax(ajaxObject);
 	},
 
@@ -268,6 +269,33 @@ var HelpPage = React.createClass({displayName: 'HelpPage',
 	}
 });
 
-React.render(React.createElement(Main, null), document.getElementById('reactMain') );
+var Footer = React.createClass({displayName: 'Footer',
+	render: function() {
+		return	(
+			React.createElement("div", {className: "container"}, 
+				React.createElement("div", {id: "CLARIN_footer_left"}, 
+						React.createElement("a", {title: "about", id: "aboutlink", href: "about"}, 
+						React.createElement("span", {className: "glyphicon glyphicon-info-sign"}), 
+						React.createElement("span", null, "VERSION 2.0.0.α15")
+					)
+				), 
+				React.createElement("div", {id: "CLARIN_footer_middle"}, 
+					React.createElement("a", {title: "CLARIN ERIC", href: "https://www.clarin.eu/"}, 
+					React.createElement("img", {src: "img/clarindLogo.png", alt: "CLARIN ERIC logo", style: {height:80}})
+					)
+				), 
+				React.createElement("div", {id: "CLARIN_footer_right"}, 
+					React.createElement("a", {title: "contact", href: "mailto:fcs@clarin.eu"}, 
+						React.createElement("span", {className: "glyphicon glyphicon-envelope"}), 
+						React.createElement("span", null, " CONTACT")
+					)
+				)
+			)
+		);
+	}
+});
+
+React.render(React.createElement(Main, null),  document.getElementById('body'));
+React.render(React.createElement(Footer, null), document.getElementById('footer') );
 
 })();
