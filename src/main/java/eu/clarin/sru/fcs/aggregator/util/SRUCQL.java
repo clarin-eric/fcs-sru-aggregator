@@ -12,8 +12,9 @@ public class SRUCQL {
 	public static final String EXPLAIN_ASK_FOR_RESOURCES_PARAM = "x-fcs-endpoint-description";
 
 	public static final String SEARCH_RETRIEVE = "searchRetrieve";
-	public static final String SEARCH_CORPUS_HANDLE_PARAMETER = "x-cmd-context";
 	public static final String SEARCH_QUERY_PARAMETER = "query";
+	public static final String SEARCH_CORPUS_HANDLE_LEGACY_PARAMETER = "x-cmd-context";
+	public static final String SEARCH_CORPUS_HANDLE_PARAMETER = "x-fcs-context";
 
 	public static final String SCAN = "scan";
 	public static final String SCAN_RESOURCE_PARAMETER = "fcs.resource";

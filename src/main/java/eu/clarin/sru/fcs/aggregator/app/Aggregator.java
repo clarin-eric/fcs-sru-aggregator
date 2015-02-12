@@ -87,6 +87,15 @@ import org.slf4j.LoggerFactory;
  * @author Yana Panchenko
  * @author edima
  *
+ * TODO: Send mail to Dieter with centers that do not accept recordSchema
+ * parameter
+ *
+ * TODO: mail to LINDAT-Clarin devel about matching whole word in search
+ *
+ * TODO: routing
+ *
+ * TODO: stats page as tabs
+ *
  * TODO: Download search results as csv, excel, tcf, plain text
  *
  * TODO: Use weblicht with results
@@ -231,7 +240,9 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 
 		ScanCrawlTask task = new ScanCrawlTask(sruScanClient,
 				params.CENTER_REGISTRY_URL, params.SCAN_MAX_DEPTH,
-				null, scanCacheAtom, corporaCacheFile, scanStatsAtom, searchStatsAtom);
+				params.additionalCQLEndpoints,
+				null, scanCacheAtom, corporaCacheFile,
+				scanStatsAtom, searchStatsAtom);
 		scheduler.scheduleAtFixedRate(task, params.SCAN_TASK_INITIAL_DELAY,
 				params.SCAN_TASK_INTERVAL, params.getScanTaskTimeUnit());
 

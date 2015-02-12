@@ -218,6 +218,8 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({
 			this.setState({ hits: this.nohits, searchId: null });
 			return;			
 		}
+		var selectedIds = this.state.corpora.getSelectedIds();
+		// console.log("searching in the following corpora:", selectedIds);
 		this.props.ajax({
 			url: 'rest/search',
 			type: "POST",
@@ -226,7 +228,7 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({
 				language: this.state.language[0],
 				query: query,
 				numberOfResults: this.state.numberOfResults,
-				corporaIds: this.state.corpora.getSelectedIds(),
+				corporaIds: selectedIds,
 			},
 			success: function(searchId, textStatus, jqXHR) {
 				// console.log("search ["+query+"] ok: ", searchId, jqXHR);
@@ -594,22 +596,38 @@ var Results = React.createClass({
 				</div>;
 	},
 
+	renderDiagnostic: function(d) {
+		return 	<div className="alert alert-warning"> 
+					<div>Diagnostic: {d.diagnostic.message}</div>
+				</div>; 
+	},
+
 	renderDiagnostics: function(corpusHit) {
 		if (!corpusHit.diagnostics || corpusHit.diagnostics.length === 0) {
 			return false;
 		}
 
-		return corpusHit.diagnostics.map(function(d) {
-			return 	<div className="alert alert-danger" role="alert" key={d.dgnUri}>
-						{d.dgnMessage}{": "}{d.dgnDiagnostic}
-					</div>;
-		});
+		return corpusHit.diagnostics.map(this.renderDiagnostic);
+	},
+
+	renderErrors: function(corpusHit) {
+		var xc = corpusHit.exception;
+		if (!xc) {
+			return false;
+		}
+		return 	(
+			<div className="alert alert-danger" role="alert">
+				<div>Exception: {xc.message}</div>
+				{ xc.cause ? <div>Caused by: {xc.cause}</div> : false}
+			</div>
+		);
 	},
 
 	renderPanelBody: function(corpusHit) {
 		var fulllength = {width:"100%"};
 		if (this.state.displayKwic) {
 			return 	<div>
+						{this.renderErrors(corpusHit)}
 						{this.renderDiagnostics(corpusHit)}
 						<table className="table table-condensed table-hover" style={fulllength}>
 							<tbody>{corpusHit.kwics.map(this.renderRowsAsKwic)}</tbody>
@@ -617,6 +635,7 @@ var Results = React.createClass({
 					</div>;
 		} else {
 			return	<div>
+						{this.renderErrors(corpusHit)}
 						{this.renderDiagnostics(corpusHit)}
 						{corpusHit.kwics.map(this.renderRowsAsHits)}
 					</div>;
@@ -624,9 +643,10 @@ var Results = React.createClass({
 	},
 
 	renderResultPanels: function(corpusHit) {
-		if (corpusHit.kwics.length === 0 &&
+		if (corpusHit.kwics.length === 0 && 
+			!corpusHit.exception &&
 			corpusHit.diagnostics.length === 0) {
-			return false;
+				return false;
 		}
 		return 	<Panel key={corpusHit.corpus.title} 
 						title={this.renderPanelTitle(corpusHit.corpus)} 
@@ -636,6 +656,9 @@ var Results = React.createClass({
 	},
 
 	renderToolbox: function() {
+		if (this.props.requests.length > 0) {
+			return false;
+		}
 		return 	<div className="toolbox float-left">
 					<a className="btn btn-default" href={this.props.getDownloadLink("text")}>
 						<span className="glyphicon glyphicon-download-alt" aria-hidden="true"/> Download

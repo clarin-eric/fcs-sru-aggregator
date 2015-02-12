@@ -14,6 +14,7 @@ import eu.clarin.sru.client.fcs.DataViewGenericString;
 import eu.clarin.sru.client.fcs.DataViewHits;
 import eu.clarin.sru.client.fcs.Resource;
 import eu.clarin.sru.fcs.aggregator.scan.Diagnostic;
+import eu.clarin.sru.fcs.aggregator.scan.JsonException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -34,7 +35,7 @@ public final class Result {
 
 	private Request request;
 	private List<Kwic> kwics = new ArrayList<Kwic>();
-	private SRUClientException exception;
+	private JsonException exception;
 	private List<Diagnostic> diagnostics = new ArrayList<Diagnostic>();
 
 	public List<Kwic> getKwics() {
@@ -44,7 +45,9 @@ public final class Result {
 	public Result(Request request, SRUSearchRetrieveResponse response,
 			SRUClientException xc) {
 		this.request = request;
-		this.exception = xc;
+		if (xc != null) {
+			exception = new JsonException(xc);
+		}
 		if (response != null && response.hasRecords()) {
 			setResponse(response);
 		}
@@ -74,9 +77,7 @@ public final class Result {
 	void setDiagnostics(SRUSearchRetrieveResponse response) {
 		for (SRUDiagnostic d : response.getDiagnostics()) {
 			SRUSearchRetrieveRequest srurequest = response.getRequest();
-			diagnostics.add(new Diagnostic(srurequest.getBaseURI().toString(),
-					srurequest.getQuery(),
-					d.getURI(), d.getMessage(), d.getDetails()));
+			diagnostics.add(new Diagnostic(d.getURI(), d.getMessage(), d.getDetails()));
 		}
 	}
 
@@ -123,12 +124,12 @@ public final class Result {
 		}
 	}
 
-	public SRUClientException getException() {
-		return exception;
-	}
-
 	public List<Diagnostic> getDiagnostics() {
 		return Collections.unmodifiableList(diagnostics);
+	}
+
+	public JsonException getException() {
+		return exception;
 	}
 
 	public int getStartRecord() {

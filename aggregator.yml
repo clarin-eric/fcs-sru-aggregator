@@ -1,20 +1,33 @@
 aggregatorParams:
-  CENTER_REGISTRY_URL: http://centerregistry-clarin.esc.rzg.mpg.de/restxml/
-  WEBLICHT_URL: https://weblicht.sfs.uni-tuebingen.de/WebLicht-4/?input=
+  CENTER_REGISTRY_URL: http://centres.clarin.eu/restxml/
+#  additionalCQLEndpoints:
+#    - https://clarin.ids-mannheim.de/digibibsru-new
+    # - https://lux17.mpi.nl/ds/cqlsearch
+    # - http://www.meertens.knaw.nl/mimore/srucql/
+    # - http://gysseling.corpus.taalbanknederlands.inl.nl/gyssru/
+    # - http://brievenalsbuit.inl.nl/zbsru/
+    # - http://corpus3.aac.ac.at/ddconsru/
 
-  AGGREGATOR_FILE_PATH: /data/fcsAggregator/fcsAggregatorCorpora.json
-  SCAN_MAX_DEPTH: 3
+  # AGGREGATOR_FILE_PATH: /data/fcsAggregator/fcsAggregatorCorpora.json
+  AGGREGATOR_FILE_PATH: /Users/edima/fcsAggregatorCorpora.json
+
+  SCAN_MAX_DEPTH: 1 # recommended 3
   SCAN_TASK_INITIAL_DELAY: 0
-  SCAN_TASK_INTERVAL: 6
+  SCAN_TASK_INTERVAL: 12
   SCAN_TASK_TIME_UNIT: HOURS
 
-  ENDPOINTS_SCAN_TIMEOUT_MS: 60000
-  ENDPOINTS_SEARCH_TIMEOUT_MS: 10000
-  EXECUTOR_SHUTDOWN_TIMEOUT_MS: 70000
+  SCAN_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT: 4  # @depth2: 1=361s; 2=225s; 4=207s
+  SEARCH_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT: 4
+
+  ENDPOINTS_SCAN_TIMEOUT_MS: 10000
+  ENDPOINTS_SEARCH_TIMEOUT_MS: 30000
+  EXECUTOR_SHUTDOWN_TIMEOUT_MS: 1000
+
+  WEBLICHT_URL: https://weblicht.sfs.uni-tuebingen.de/WebLicht-4/?input=
 
 # use the simple server factory, run on a single port
 server:
-  applicationContextPath: /Aggregator-testing/
+  applicationContextPath: /Aggregator-testing
   type: simple
   connector:
     type: http
@@ -23,11 +36,11 @@ server:
 # Logging settings.
 logging:
   # The default level of all loggers. Can be OFF, ERROR, WARN, INFO, DEBUG, TRACE, or ALL.
-  level: INFO
+  level: WARN
   # Logger-specific levels.
   loggers:
-    eu.clarin.sru.fcs.aggregator: INFO
-    eu.clarin.sru.client: INFO
+    eu.clarin.sru.fcs.aggregator: WARN
+    eu.clarin.sru.client: WARN
 
   appenders:
     - type: console

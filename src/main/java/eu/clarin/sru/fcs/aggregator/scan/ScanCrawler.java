@@ -9,12 +9,14 @@ import eu.clarin.sru.client.SRUExtraResponseData;
 import eu.clarin.sru.client.SRUScanRequest;
 import eu.clarin.sru.client.SRUScanResponse;
 import eu.clarin.sru.client.SRUTerm;
+import eu.clarin.sru.client.SRUVersion;
 import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescription;
 import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescription.ResourceInfo;
 import eu.clarin.sru.fcs.aggregator.client.ThrottledClient;
 import eu.clarin.sru.fcs.aggregator.util.SRUCQL;
 import eu.clarin.sru.fcs.aggregator.util.Throw;
 import java.net.SocketTimeoutException;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -35,14 +37,14 @@ public class ScanCrawler {
 
 	private static final org.slf4j.Logger log = LoggerFactory.getLogger(ScanCrawler.class);
 
-	private final CenterRegistry centerRegistry;
+	private final List<Institution> institutions;
 	private final int maxDepth;
 	private final CounterLatch latch;
 	private final ThrottledClient sruClient;
 	private final Statistics statistics = new Statistics();
 
-	public ScanCrawler(CenterRegistry centerRegistry, ThrottledClient sruClient, int maxDepth) {
-		this.centerRegistry = centerRegistry;
+	public ScanCrawler(List<Institution> institutions, ThrottledClient sruClient, int maxDepth) {
+		this.institutions = institutions;
 		this.sruClient = sruClient;
 		this.maxDepth = maxDepth;
 		this.latch = new CounterLatch();
@@ -50,7 +52,7 @@ public class ScanCrawler {
 
 	public Corpora crawl() {
 		Corpora cache = new Corpora();
-		for (Institution institution : centerRegistry.getCQLInstitutions()) {
+		for (Institution institution : institutions) {
 			cache.addInstitution(institution);
 			Iterable<Endpoint> endpoints = institution.getEndpoints();
 			for (Endpoint endp : endpoints) {
@@ -67,7 +69,7 @@ public class ScanCrawler {
 
 		log.info("done crawling");
 
-		for (Institution institution : centerRegistry.getCQLInstitutions()) {
+		for (Institution institution : institutions) {
 			Iterable<Endpoint> endpoints = institution.getEndpoints();
 			for (Endpoint endp : endpoints) {
 				log.info("inst/endpoint type: {} / {}", institution.getName(), endp.getProtocol());
@@ -82,6 +84,7 @@ public class ScanCrawler {
 		final Institution institution;
 		final Endpoint endpoint;
 		final Corpora corpora;
+		String fullRequestUrl;
 
 		ExplainTask(final Institution institution, final Endpoint endpoint, final Corpora corpora) {
 			this.institution = institution;
@@ -95,6 +98,7 @@ public class ScanCrawler {
 				explainRequest = new SRUExplainRequest(endpoint.getUrl());
 				explainRequest.setExtraRequestData(SRUCQL.EXPLAIN_ASK_FOR_RESOURCES_PARAM, "true");
 				explainRequest.setParseRecordDataEnabled(true);
+				fullRequestUrl = explainRequest.makeURI(SRUVersion.VERSION_1_2).toString();
 			} catch (Throwable ex) {
 				log.error("Exception creating explain request for {}: {}", endpoint.getUrl(), ex.getMessage());
 				log.error("--> ", ex);
@@ -112,25 +116,26 @@ public class ScanCrawler {
 		public void onSuccess(SRUExplainResponse response, ThrottledClient.Stats stats) {
 			try {
 				statistics.addEndpointDatapoint(institution, endpoint, stats.getQueueTime(), stats.getExecutionTime());
+
+				List<String> rootCollections = new ArrayList<String>();
 				if (response != null && response.hasExtraResponseData()) {
 					for (SRUExtraResponseData data : response.getExtraResponseData()) {
 						if (data instanceof ClarinFCSEndpointDescription) {
 							endpoint.setProtocol(FCSProtocolVersion.VERSION_1);
 							statistics.upgradeProtocolVersion(institution, endpoint);
 							ClarinFCSEndpointDescription desc = (ClarinFCSEndpointDescription) data;
-							addCorpora(corpora, institution, endpoint, desc.getResources(), null);
+							addCorpora(corpora, institution, endpoint, rootCollections, desc.getResources(), null);
 						}
 					}
 				}
+				statistics.addEndpointCollections(institution, endpoint, rootCollections);
 
 				if (response != null && response.hasDiagnostics()) {
 					for (SRUDiagnostic d : response.getDiagnostics()) {
 						SRUExplainRequest request = response.getRequest();
-						Diagnostic diag = new Diagnostic(request.getBaseURI().toString(), null,
-								d.getURI(), d.getMessage(), d.getDetails());
-						statistics.addEndpointDiagnostic(institution, endpoint, diag);
-						log.info("Diagnostic: {} {}: {} {} {}", diag.getReqEndpointUrl(), diag.getReqContext(),
-								diag.getDgnUri(), diag.getDgnMessage(), diag.getDgnDiagnostic());
+						Diagnostic diag = new Diagnostic(d.getURI(), d.getMessage(), d.getDetails());
+						statistics.addEndpointDiagnostic(institution, endpoint, diag, fullRequestUrl);
+						log.info("Diagnostic: {}: {}", fullRequestUrl, diag.message);
 					}
 				}
 
@@ -138,9 +143,12 @@ public class ScanCrawler {
 			} catch (Exception xc) {
 				log.error("{} Exception in explain callback {}", latch.get(), endpoint.getUrl());
 				log.error("--> ", xc);
+				statistics.addErrorDatapoint(institution, endpoint, xc, fullRequestUrl);
 			} finally {
 				if (endpoint.getProtocol().equals(FCSProtocolVersion.LEGACY)) {
 					new ScanTask(institution, endpoint, null, corpora, 0).start();
+					Diagnostic diag = new Diagnostic("LEGACY", "Endpoint didn't return any resource on EXPLAIN, presuming legacy support", "");
+					statistics.addEndpointDiagnostic(institution, endpoint, diag, fullRequestUrl);
 				}
 
 				latch.decrement();
@@ -152,7 +160,7 @@ public class ScanCrawler {
 			try {
 				log.error("{} Error while explaining {}: {}", latch.get(), endpoint.getUrl(), error.getMessage());
 				statistics.addEndpointDatapoint(institution, endpoint, stats.getQueueTime(), stats.getExecutionTime());
-				statistics.addErrorDatapoint(institution, endpoint, error);
+				statistics.addErrorDatapoint(institution, endpoint, error, fullRequestUrl);
 				if (Throw.isCausedBy(error, SocketTimeoutException.class)) {
 					return;
 				}
@@ -165,7 +173,9 @@ public class ScanCrawler {
 		}
 	}
 
-	private static void addCorpora(Corpora corpora, Institution institution, Endpoint endpoint,
+	private static void addCorpora(Corpora corpora,
+			Institution institution, Endpoint endpoint,
+			List<String> rootCollections,
 			List<ResourceInfo> resources, Corpus parentCorpus) {
 		if (resources == null) {
 			return;
@@ -179,7 +189,10 @@ public class ScanCrawler {
 			c.setLandingPage(ri.getLandingPageURI());
 
 			if (corpora.addCorpus(c, parentCorpus)) {
-				addCorpora(corpora, institution, endpoint, ri.getSubResources(), c);
+				if (rootCollections != null) {
+					rootCollections.add(c.getTitle());
+				}
+				addCorpora(corpora, institution, endpoint, null, ri.getSubResources(), c);
 			}
 		}
 	}
@@ -207,6 +220,7 @@ public class ScanCrawler {
 		final Corpus parentCorpus;
 		final Corpora corpora;
 		final int depth;
+		String fullRequestUrl;
 
 		ScanTask(final Institution institution, final Endpoint endpoint,
 				final Corpus parentCorpus, final Corpora corpora, final int depth) {
@@ -229,6 +243,7 @@ public class ScanCrawler {
 						+ "=" + normalizeHandle(parentCorpus));
 				scanRequest.setExtraRequestData(SRUCQL.SCAN_RESOURCE_INFO_PARAMETER,
 						SRUCQL.SCAN_RESOURCE_INFO_PARAMETER_DEFAULT_VALUE);
+				fullRequestUrl = scanRequest.makeURI(SRUVersion.VERSION_1_2).toString();
 			} catch (Throwable ex) {
 				log.error("Exception creating scan request for {}: {}", endpoint.getUrl(), ex.getMessage());
 				log.error("--> ", ex);
@@ -254,26 +269,17 @@ public class ScanCrawler {
 							Corpus c = createCorpus(institution, endpoint, term);
 							if (corpora.addCorpus(c, parentCorpus)) {
 								new ScanTask(institution, endpoint, c, corpora, depth + 1).start();
+								statistics.addEndpointCollection(institution, endpoint, c.getTitle());
 							}
 						}
-					}
-				} else if (parentCorpus == null) {
-					Corpus c = createCorpus(institution, endpoint, null);
-					if (corpora.addCorpus(c, parentCorpus)) {
-						new ScanTask(institution, endpoint, c, corpora, depth + 1).start();
 					}
 				}
 
 				if (response != null && response.hasDiagnostics()) {
 					for (SRUDiagnostic d : response.getDiagnostics()) {
-						SRUScanRequest request = response.getRequest();
-
-						String handle = SRUCQL.SCAN_RESOURCE_PARAMETER + "=" + normalizeHandle(parentCorpus);
-						Diagnostic diag = new Diagnostic(request.getBaseURI().toString(), handle,
-								d.getURI(), d.getMessage(), d.getDetails());
-						statistics.addEndpointDiagnostic(institution, endpoint, diag);
-						log.info("Diagnostic: {} {}: {} {} {}", diag.getReqEndpointUrl(), diag.getReqContext(),
-								diag.getDgnUri(), diag.getDgnMessage(), diag.getDgnDiagnostic());
+						Diagnostic diag = new Diagnostic(d.getURI(), d.getMessage(), d.getDetails());
+						statistics.addEndpointDiagnostic(institution, endpoint, diag, fullRequestUrl);
+						log.info("Diagnostic: {}: {}", fullRequestUrl, diag.message);
 					}
 				}
 
@@ -281,6 +287,7 @@ public class ScanCrawler {
 			} catch (Exception xc) {
 				log.error("{} Exception in scan callback {}#{}", latch.get(), endpoint.getUrl(), normalizeHandle(parentCorpus));
 				log.error("--> ", xc);
+				statistics.addErrorDatapoint(institution, endpoint, xc, fullRequestUrl);
 			} finally {
 				latch.decrement();
 			}
@@ -291,7 +298,7 @@ public class ScanCrawler {
 			try {
 				log.error("{} Error while scanning {}#{}: {}", latch.get(), endpoint.getUrl(), normalizeHandle(parentCorpus), error.getMessage());
 				statistics.addEndpointDatapoint(institution, endpoint, stats.getQueueTime(), stats.getExecutionTime());
-				statistics.addErrorDatapoint(institution, endpoint, error);
+				statistics.addErrorDatapoint(institution, endpoint, error, fullRequestUrl);
 				if (Throw.isCausedBy(error, SocketTimeoutException.class)) {
 					return;
 				}
@@ -321,7 +328,7 @@ public class ScanCrawler {
 
 	private static Corpus createCorpus(Institution institution, Endpoint endpoint, SRUTerm term) {
 		Corpus c = new Corpus(institution, endpoint);
-		c.setTitle(term.getDisplayTerm());
+		c.setTitle("" + term.getDisplayTerm());
 		String handle = term.getValue();
 		if (handle == null) {
 			log.error("null handle for corpus: {} : {}", endpoint, term.getDisplayTerm());

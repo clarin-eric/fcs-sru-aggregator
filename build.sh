@@ -17,6 +17,7 @@ then
 	cp bower_components/bootstrap/dist/css/bootstrap.min.css $LIBDIR/
 	cp bower_components/bootstrap/dist/js/bootstrap.min.js $LIBDIR/
 	cp bower_components/jquery/dist/jquery.min.js $LIBDIR/
+	cp bower_components/jquery/dist/jquery.min.map $LIBDIR/
 	cp bower_components/react/react-with-addons.js $LIBDIR/
 	cp bower_components/react/react-with-addons.min.js $LIBDIR/
 	cp bower_components/react-router/dist/react-router.min.js $LIBDIR/

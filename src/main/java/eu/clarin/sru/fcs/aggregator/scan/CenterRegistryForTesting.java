@@ -17,13 +17,7 @@ public class CenterRegistryForTesting implements CenterRegistry {
 
     private static final Logger logger = Logger.getLogger(CenterRegistryForTesting.class.getName());
     private boolean hasChildrenLoaded = false;
-	private List<Institution> centers = new ArrayList<Institution>() {
-		{
-			Institution inst = new Institution("test_IDS", null);
-			inst.addEndpoint("https://clarin.ids-mannheim.de/digibibsru-new");
-			add(inst);
-		}
-	};
+	private List<Institution> centers = new ArrayList<Institution>();
 
     @Override
     public boolean hasCQLInstitutionsLoaded() {

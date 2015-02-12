@@ -218,6 +218,8 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({dis
 			this.setState({ hits: this.nohits, searchId: null });
 			return;			
 		}
+		var selectedIds = this.state.corpora.getSelectedIds();
+		// console.log("searching in the following corpora:", selectedIds);
 		this.props.ajax({
 			url: 'rest/search',
 			type: "POST",
@@ -226,7 +228,7 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({dis
 				language: this.state.language[0],
 				query: query,
 				numberOfResults: this.state.numberOfResults,
-				corporaIds: this.state.corpora.getSelectedIds(),
+				corporaIds: selectedIds,
 			},
 			success: function(searchId, textStatus, jqXHR) {
 				// console.log("search ["+query+"] ok: ", searchId, jqXHR);
@@ -594,22 +596,38 @@ var Results = React.createClass({displayName: 'Results',
 				);
 	},
 
+	renderDiagnostic: function(d) {
+		return 	React.createElement("div", {className: "alert alert-warning"}, 
+					React.createElement("div", null, "Diagnostic: ", d.diagnostic.message)
+				); 
+	},
+
 	renderDiagnostics: function(corpusHit) {
 		if (!corpusHit.diagnostics || corpusHit.diagnostics.length === 0) {
 			return false;
 		}
 
-		return corpusHit.diagnostics.map(function(d) {
-			return 	React.createElement("div", {className: "alert alert-danger", role: "alert", key: d.dgnUri}, 
-						d.dgnMessage, ": ", d.dgnDiagnostic
-					);
-		});
+		return corpusHit.diagnostics.map(this.renderDiagnostic);
+	},
+
+	renderErrors: function(corpusHit) {
+		var xc = corpusHit.exception;
+		if (!xc) {
+			return false;
+		}
+		return 	(
+			React.createElement("div", {className: "alert alert-danger", role: "alert"}, 
+				React.createElement("div", null, "Exception: ", xc.message), 
+				 xc.cause ? React.createElement("div", null, "Caused by: ", xc.cause) : false
+			)
+		);
 	},
 
 	renderPanelBody: function(corpusHit) {
 		var fulllength = {width:"100%"};
 		if (this.state.displayKwic) {
 			return 	React.createElement("div", null, 
+						this.renderErrors(corpusHit), 
 						this.renderDiagnostics(corpusHit), 
 						React.createElement("table", {className: "table table-condensed table-hover", style: fulllength}, 
 							React.createElement("tbody", null, corpusHit.kwics.map(this.renderRowsAsKwic))
@@ -617,6 +635,7 @@ var Results = React.createClass({displayName: 'Results',
 					);
 		} else {
 			return	React.createElement("div", null, 
+						this.renderErrors(corpusHit), 
 						this.renderDiagnostics(corpusHit), 
 						corpusHit.kwics.map(this.renderRowsAsHits)
 					);
@@ -624,9 +643,10 @@ var Results = React.createClass({displayName: 'Results',
 	},
 
 	renderResultPanels: function(corpusHit) {
-		if (corpusHit.kwics.length === 0 &&
+		if (corpusHit.kwics.length === 0 && 
+			!corpusHit.exception &&
 			corpusHit.diagnostics.length === 0) {
-			return false;
+				return false;
 		}
 		return 	React.createElement(Panel, {key: corpusHit.corpus.title, 
 						title: this.renderPanelTitle(corpusHit.corpus), 
@@ -636,6 +656,9 @@ var Results = React.createClass({displayName: 'Results',
 	},
 
 	renderToolbox: function() {
+		if (this.props.requests.length > 0) {
+			return false;
+		}
 		return 	React.createElement("div", {className: "toolbox float-left"}, 
 					React.createElement("a", {className: "btn btn-default", href: this.props.getDownloadLink("text")}, 
 						React.createElement("span", {className: "glyphicon glyphicon-download-alt", 'aria-hidden': "true"}), " Download"

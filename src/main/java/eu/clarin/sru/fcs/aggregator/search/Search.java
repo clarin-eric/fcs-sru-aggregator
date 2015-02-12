@@ -7,6 +7,8 @@ import eu.clarin.sru.client.SRUSearchRetrieveRequest;
 import eu.clarin.sru.client.SRUSearchRetrieveResponse;
 import eu.clarin.sru.fcs.aggregator.client.ThrottledClient;
 import eu.clarin.sru.fcs.aggregator.scan.Corpus;
+import eu.clarin.sru.fcs.aggregator.scan.Diagnostic;
+import eu.clarin.sru.fcs.aggregator.scan.FCSProtocolVersion;
 import eu.clarin.sru.fcs.aggregator.scan.Statistics;
 import eu.clarin.sru.fcs.aggregator.util.SRUCQL;
 import java.util.ArrayList;
@@ -60,16 +62,28 @@ public class Search {
 		SRUSearchRetrieveRequest searchRequest = new SRUSearchRetrieveRequest(corpus.getEndpoint().getUrl());
 		searchRequest.setVersion(version);
 		searchRequest.setMaximumRecords(maxRecords);
+		FCSProtocolVersion fcsVersion = corpus.getEndpoint().getProtocol();
 //		searchRequest.setRecordSchema(
-//				corpus.getEndpoint().getProtocol().equals(FCSProtocolVersion.LEGACY)
+//				fcsVersion.equals(FCSProtocolVersion.LEGACY)
 //						? ClarinFCSRecordData.LEGACY_RECORD_SCHEMA
 //						: ClarinFCSRecordData.RECORD_SCHEMA);
 		searchRequest.setQuery("\"" + searchString + "\"");
 		searchRequest.setStartRecord(startRecord);
 		if (corpus.getHandle() != null) {
-			searchRequest.setExtraRequestData(SRUCQL.SEARCH_CORPUS_HANDLE_PARAMETER, corpus.getHandle());
+			searchRequest.setExtraRequestData(
+					fcsVersion.equals(FCSProtocolVersion.LEGACY)
+							? SRUCQL.SEARCH_CORPUS_HANDLE_LEGACY_PARAMETER
+							: SRUCQL.SEARCH_CORPUS_HANDLE_PARAMETER,
+					corpus.getHandle());
 		}
 		requests.add(request);
+
+		String url = null;
+		try {
+			url = searchRequest.makeURI(SRUVersion.VERSION_1_2).toString();
+		} catch (SRUClientException ex) {
+		}
+		final String fullRequestUrl = url;
 
 		try {
 			searchClient.searchRetrieve(searchRequest, new ThrottledClient.SearchCallback() {
@@ -80,8 +94,12 @@ public class Search {
 						Result result = new Result(request, response, null);
 						results.add(result);
 						requests.remove(request);
-						if (!result.getDiagnostics().isEmpty()) {
-							statistics.addEndpointDiagnostic(corpus.getInstitution(), corpus.getEndpoint(), null);
+						List<Diagnostic> diagnostics = result.getDiagnostics();
+						if (diagnostics != null && !diagnostics.isEmpty()) {
+							log.error("diagnostic for url: " + response.getRequest().makeURI(SRUVersion.VERSION_1_2));
+							for (Diagnostic diagnostic : diagnostics) {
+								statistics.addEndpointDiagnostic(corpus.getInstitution(), corpus.getEndpoint(), diagnostic, fullRequestUrl);
+							}
 						}
 					} catch (Throwable xc) {
 						log.error("search.onSuccess exception:", xc);
@@ -92,9 +110,10 @@ public class Search {
 				public void onError(SRUSearchRetrieveRequest srureq, SRUClientException xc, ThrottledClient.Stats stats) {
 					try {
 						statistics.addEndpointDatapoint(corpus.getInstitution(), corpus.getEndpoint(), stats.getQueueTime(), stats.getExecutionTime());
-						statistics.addErrorDatapoint(corpus.getInstitution(), corpus.getEndpoint(), xc);
+						statistics.addErrorDatapoint(corpus.getInstitution(), corpus.getEndpoint(), xc, fullRequestUrl);
 						results.add(new Result(request, null, xc));
 						requests.remove(request);
+						log.error("search.onError: ", xc);
 					} catch (Throwable xxc) {
 						log.error("search.onError exception:", xxc);
 					}

@@ -2,6 +2,8 @@
 (function() {
 "use strict";
 
+var VERSION = "VERSION 2.0.0.α18";
+
 var PT = React.PropTypes;
 
 var ErrorPane = window.MyReact.ErrorPane;
@@ -194,16 +196,56 @@ var StatisticsPage = React.createClass({displayName: 'StatisticsPage',
 				);
 	},
 
-	renderEndpoint: function(endpoint) {
+	renderCollections: function(colls) {
+		return	React.createElement("div", {style: {marginLeft:40}}, 
+					 colls.length === 0 ? 
+						React.createElement("div", {style: {color:"#a94442"}}, "NO collections found")
+						: 
+						React.createElement("div", null, 
+							colls.length, " root collection(s):", 
+							React.createElement("ul", {className: "list-unstyled", style: {marginLeft:40}}, 
+								 colls.map(function(name) { return React.createElement("div", null, name); }) 
+							)
+						)
+					
+				);
+	},
+
+	renderDiagnostic: function(d) {
+		return 	React.createElement("div", {key: d.diagnostic.uri}, 
+					React.createElement("div", {className: "inline alert alert-warning"}, 
+						React.createElement("div", null, "Diagnostic: ", d.diagnostic.message, ": ", d.diagnostic.diagnostic), 
+						React.createElement("div", null, "Context: ", React.createElement("a", {href: d.context}, d.context))
+					), 
+					" ", 
+					React.createElement("div", {className: "inline"}, React.createElement("span", {className: "badge"}, "x ", d.counter))
+				); 
+	},
+
+	renderError: function(e) {
+		var xc = e.exception;
+		return 	React.createElement("div", {key: xc.message}, 
+					React.createElement("div", {className: "inline alert alert-danger", role: "alert"}, 
+						React.createElement("div", null, "Exception: ", xc.message), 
+						React.createElement("div", null, "Context: ", React.createElement("a", {href: e.context}, e.context)), 
+						 xc.cause ? React.createElement("div", null, "Caused by: ", xc.cause) : false
+					), 
+					" ", 
+					React.createElement("div", {className: "inline"}, React.createElement("span", {className: "badge"}, "x ", e.counter))
+				); 
+	},
+
+	renderEndpoint: function(isScan, endpoint) {
 		var stat = endpoint[1];
-		var errors = _.pairs(stat.errors);
+		var errors = _.values(stat.errors);
 		var diagnostics = _.values(stat.diagnostics);
-		return React.createElement("div", null, 
-					React.createElement("ul", {className: "list-inline list-unstyled"}, 
+		return React.createElement("div", {style: {marginTop:10}}, 
+					React.createElement("ul", {className: "list-inline list-unstyled", style: {marginBottom:0}}, 
 						React.createElement("li", null, 
 							 stat.version == "LEGACY" ? 
 								React.createElement("span", {style: {color:'#a94442'}}, "legacy ", React.createElement("i", {className: "glyphicon glyphicon-thumbs-down"}), " ") 
-								: false, 
+								: React.createElement("span", {style: {color:'#3c763d'}}, React.createElement("i", {className: "glyphicon glyphicon-thumbs-up"}), " "), 
+							
 							 " "+endpoint[0], ":" 
 						), 
 						React.createElement("li", null, 
@@ -212,41 +254,28 @@ var StatisticsPage = React.createClass({displayName: 'StatisticsPage',
 							"max: ", this.renderWaitTimeSecs(stat.maxExecutionTime)
 						)
 					), 
+					 isScan ? this.renderCollections(stat.rootCollections) : false, 
 						(errors && errors.length) ? 
-						React.createElement("ul", {className: "list-unstyled inline", style: {marginLeft:40}}, 
-							 errors.map(function(e) { 
-								return 	React.createElement("div", null, 
-											React.createElement("div", {className: "inline alert alert-danger"}, " Exception: ", e[0]), 
-											" ", 
-											React.createElement("div", {className: "inline"}, React.createElement("span", {className: "badge"}, "x ", e[1]))
-										); 
-							  }) 
+						React.createElement("div", {className: "inline", style: {marginLeft:40}}, 
+							 errors.map(this.renderError) 
 						) : false, 
 					
 						(diagnostics && diagnostics.length) ? 
-						React.createElement("ul", {className: "list-unstyled inline", style: {marginLeft:40}}, 
-							 diagnostics.map(function(d) { 
-								return 	React.createElement("div", null, 
-											React.createElement("div", {className: "inline alert alert-warning"}, 
-												"Diagnostic: ", d.diagnostic.dgnMessage, ": ", d.diagnostic.dgnDiagnostic
-											), 
-											" ", 
-											React.createElement("div", {className: "inline"}, React.createElement("span", {className: "badge"}, "x ", d.counter))
-										); 
-							  }) 
+						React.createElement("div", {className: "inline", style: {marginLeft:40}}, 
+							 diagnostics.map(this.renderDiagnostic) 
 						) : false
 					
 				);
 	},
 
-	renderInstitution: function(inst) {
+	renderInstitution: function(isScan, inst) {
 		return 	React.createElement("div", {style: {marginBottom:30}}, 
 					React.createElement("h4", null, inst[0]), 
-					React.createElement("div", {style: {marginLeft:20}}, " ", _.pairs(inst[1]).map(this.renderEndpoint) )
+					React.createElement("div", {style: {marginLeft:20}}, " ", _.pairs(inst[1]).map(this.renderEndpoint.bind(this, isScan)) )
  				);
 	},
 
-	renderStatistics: function(stats) {
+	renderStatistics: function(isScan, stats) {
 		return 	React.createElement("div", {className: "container"}, 
 					React.createElement("ul", {className: "list-inline list-unstyled"}, 
 						 stats.maxConcurrentScanRequestsPerEndpoint ? 
@@ -261,7 +290,7 @@ var StatisticsPage = React.createClass({displayName: 'StatisticsPage',
 						
 						React.createElement("li", null, "timeout:", " ", React.createElement("kbd", null, stats.timeout, " seconds"))
 					), 
-					React.createElement("div", null, " ",  _.pairs(stats.institutions).map(this.renderInstitution), " ")
+					React.createElement("div", null, " ",  _.pairs(stats.institutions).map(this.renderInstitution.bind(this, isScan)), " ")
 				)
 				 ;
 	},
@@ -272,9 +301,9 @@ var StatisticsPage = React.createClass({displayName: 'StatisticsPage',
 				React.createElement("div", {className: "top-gap statistics"}, 
 					React.createElement("h1", null, "Statistics"), 
 					React.createElement("h2", null, "Last scan"), 
-					this.renderStatistics(this.state.lastScanStats), 
+					this.renderStatistics(true, this.state.lastScanStats), 
 					React.createElement("h2", null, "Searches since last scan"), 
-					this.renderStatistics(this.state.searchStats)
+					this.renderStatistics(false, this.state.searchStats)
 				)
 			)
 			);
@@ -413,7 +442,7 @@ var Footer = React.createClass({displayName: 'Footer',
 				React.createElement("div", {id: "CLARIN_footer_left"}, 
 						React.createElement("a", {title: "about", href: "#", onClick: this.about}, 
 						React.createElement("span", {className: "glyphicon glyphicon-info-sign"}), 
-						React.createElement("span", null, "VERSION 2.0.0.α16")
+						React.createElement("span", null, VERSION)
 					)
 				), 
 				React.createElement("div", {id: "CLARIN_footer_middle"}, 

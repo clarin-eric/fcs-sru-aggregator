@@ -3,6 +3,8 @@ package eu.clarin.sru.fcs.aggregator.app;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.dropwizard.Configuration;
+import java.net.URL;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.hibernate.validator.constraints.NotEmpty;
 import org.hibernate.validator.constraints.Range;
@@ -58,6 +60,9 @@ public class AggregatorConfiguration extends Configuration {
 		@JsonProperty
 		@Range
 		long EXECUTOR_SHUTDOWN_TIMEOUT_MS;
+
+		@JsonProperty
+		List<URL> additionalCQLEndpoints;
 
 		@JsonIgnore
 		public TimeUnit getScanTaskTimeUnit() {

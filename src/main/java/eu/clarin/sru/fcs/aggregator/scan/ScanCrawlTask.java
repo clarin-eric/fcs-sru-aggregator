@@ -4,6 +4,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.clarin.sru.fcs.aggregator.client.ThrottledClient;
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
+import java.util.List;
+import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicReference;
 import org.slf4j.LoggerFactory;
 
@@ -23,9 +26,11 @@ public class ScanCrawlTask implements Runnable {
 	private AtomicReference<Statistics> scanStatisticsAtom;
 	private AtomicReference<Statistics> searchStatisticsAtom;
 	private String centerRegistryUrl;
+	private List<URL> additionalCQLEndpoints;
 
 	public ScanCrawlTask(ThrottledClient sruClient, String centerRegistryUrl,
-			int cacheMaxDepth, EndpointFilter filter,
+			int cacheMaxDepth, List<URL> additionalCQLEndpoints,
+			EndpointFilter filter,
 			AtomicReference<Corpora> corporaAtom, File cachedCorpora,
 			AtomicReference<Statistics> scanStatisticsAtom,
 			AtomicReference<Statistics> searchStatisticsAtom
@@ -33,6 +38,7 @@ public class ScanCrawlTask implements Runnable {
 		this.sruClient = sruClient;
 		this.centerRegistryUrl = centerRegistryUrl;
 		this.cacheMaxDepth = cacheMaxDepth;
+		this.additionalCQLEndpoints = additionalCQLEndpoints;
 		this.filter = filter;
 		this.corporaAtom = corporaAtom;
 		this.cachedCorpora = cachedCorpora;
@@ -46,15 +52,21 @@ public class ScanCrawlTask implements Runnable {
 			long time0 = System.currentTimeMillis();
 
 			log.info("ScanCrawlTask: Initiating crawl");
-			CenterRegistry centerRegistry = new CenterRegistryLive(centerRegistryUrl, filter);
-//			centerRegistry.getCQLInstitutions().add(0,
-//					new Institution("test_IDS", null) {
-//						{
-//							addEndpoint("https://clarin.ids-mannheim.de/digibibsru-new");
-//						}
-//					});
-//			CenterRegistry centerRegistry = new CenterRegistryForTesting();
-			ScanCrawler scanCrawler = new ScanCrawler(centerRegistry, sruClient, cacheMaxDepth);
+			List<Institution> institutions = new ArrayList<Institution>();
+			if (centerRegistryUrl != null && !centerRegistryUrl.isEmpty()) {
+				institutions = new CenterRegistryLive(centerRegistryUrl, filter).getCQLInstitutions();
+			}
+			if (additionalCQLEndpoints != null && !additionalCQLEndpoints.isEmpty()) {
+				institutions.add(0,
+						new Institution("ZZZ", null) {
+							{
+								for (URL u : additionalCQLEndpoints) {
+									addEndpoint(u.toExternalForm());
+								}
+							}
+						});
+			}
+			ScanCrawler scanCrawler = new ScanCrawler(institutions, sruClient, cacheMaxDepth);
 
 			log.info("ScanCrawlTask: Starting crawl");
 			Corpora corpora = scanCrawler.crawl();

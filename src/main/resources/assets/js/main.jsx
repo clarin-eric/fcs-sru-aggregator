@@ -2,6 +2,8 @@
 (function() {
 "use strict";
 
+var VERSION = "VERSION 2.0.0.α19";
+
 var PT = React.PropTypes;
 
 var ErrorPane = window.MyReact.ErrorPane;
@@ -194,16 +196,56 @@ var StatisticsPage = React.createClass({
 				</span>;
 	},
 
-	renderEndpoint: function(endpoint) {
+	renderCollections: function(colls) {
+		return	<div style={{marginLeft:40}}>
+					{ colls.length === 0 ? 
+						<div style={{color:"#a94442"}}>NO collections found</div>
+						: 
+						<div>
+							{colls.length} root collection(s):
+							<ul className='list-unstyled' style={{marginLeft:40}}>
+								{ colls.map(function(name) { return <div>{name}</div>; }) }
+							</ul>
+						</div>
+					}
+				</div>;
+	},
+
+	renderDiagnostic: function(d) {
+		return 	<div key={d.diagnostic.uri}>
+					<div className="inline alert alert-warning"> 
+						<div>Diagnostic: {d.diagnostic.message}: {d.diagnostic.diagnostic}</div>
+						<div>Context: <a href={d.context}>{d.context}</a></div>
+					</div>
+					{" "}
+					<div className="inline"><span className="badge">x {d.counter}</span></div>
+				</div>; 
+	},
+
+	renderError: function(e) {
+		var xc = e.exception;
+		return 	<div key={xc.message}>
+					<div className="inline alert alert-danger" role="alert">
+						<div>Exception: {xc.message}</div>
+						<div>Context: <a href={e.context}>{e.context}</a></div>
+						{ xc.cause ? <div>Caused by: {xc.cause}</div> : false}
+					</div>
+					{" "}
+					<div className="inline"><span className="badge">x {e.counter}</span></div>
+				</div>; 
+	},
+
+	renderEndpoint: function(isScan, endpoint) {
 		var stat = endpoint[1];
-		var errors = _.pairs(stat.errors);
+		var errors = _.values(stat.errors);
 		var diagnostics = _.values(stat.diagnostics);
-		return <div>
-					<ul className='list-inline list-unstyled'>
+		return <div style={{marginTop:10}}>
+					<ul className='list-inline list-unstyled' style={{marginBottom:0}}>
 						<li>
 							{ stat.version == "LEGACY" ? 
 								<span style={{color:'#a94442'}}>legacy <i className="glyphicon glyphicon-thumbs-down"></i> </span> 
-								: false}
+								: <span style={{color:'#3c763d'}}><i className="glyphicon glyphicon-thumbs-up"></i> </span> 
+							}
 							{ " "+endpoint[0] }: 
 						</li>
 						<li>
@@ -212,41 +254,28 @@ var StatisticsPage = React.createClass({
 							max: {this.renderWaitTimeSecs(stat.maxExecutionTime)}
 						</li>
 					</ul>
+					{ isScan ? this.renderCollections(stat.rootCollections) : false }
 					{	(errors && errors.length) ? 
-						<ul className='list-unstyled inline' style={{marginLeft:40}}>
-							{ errors.map(function(e) { 
-								return 	<div >
-											<div className="inline alert alert-danger"> Exception: {e[0]}</div>
-											{" "}
-											<div className="inline"><span className="badge">x {e[1]}</span></div>
-										</div>; 
-							  }) }
-						</ul> : false
+						<div className='inline' style={{marginLeft:40}}>
+							{ errors.map(this.renderError) }
+						</div> : false
 					}
 					{	(diagnostics && diagnostics.length) ? 
-						<ul className='list-unstyled inline' style={{marginLeft:40}}>
-							{ diagnostics.map(function(d) { 
-								return 	<div >
-											<div className="inline alert alert-warning"> 
-												Diagnostic: {d.diagnostic.dgnMessage}: {d.diagnostic.dgnDiagnostic}
-											</div>
-											{" "}
-											<div className="inline"><span className="badge">x {d.counter}</span></div>
-										</div>; 
-							  }) }
-						</ul> : false
+						<div className='inline' style={{marginLeft:40}}>
+							{ diagnostics.map(this.renderDiagnostic) }
+						</div> : false
 					}
 				</div>;
 	},
 
-	renderInstitution: function(inst) {
+	renderInstitution: function(isScan, inst) {
 		return 	<div style={{marginBottom:30}}>
 					<h4>{inst[0]}</h4>
-					<div style={{marginLeft:20}}> {_.pairs(inst[1]).map(this.renderEndpoint) }</div>
+					<div style={{marginLeft:20}}> {_.pairs(inst[1]).map(this.renderEndpoint.bind(this, isScan)) }</div>
  				</div>;
 	},
 
-	renderStatistics: function(stats) {
+	renderStatistics: function(isScan, stats) {
 		return 	<div className="container">
 					<ul className='list-inline list-unstyled'>
 						{ stats.maxConcurrentScanRequestsPerEndpoint ? 
@@ -261,7 +290,7 @@ var StatisticsPage = React.createClass({
 						}
 						<li>timeout:{" "}<kbd>{stats.timeout} seconds</kbd></li>
 					</ul>
-					<div> { _.pairs(stats.institutions).map(this.renderInstitution) } </div>
+					<div> { _.pairs(stats.institutions).map(this.renderInstitution.bind(this, isScan)) } </div>
 				</div>
 				 ;
 	},
@@ -272,9 +301,9 @@ var StatisticsPage = React.createClass({
 				<div className="top-gap statistics">
 					<h1>Statistics</h1>
 					<h2>Last scan</h2>
-					{this.renderStatistics(this.state.lastScanStats)}
+					{this.renderStatistics(true, this.state.lastScanStats)}
 					<h2>Searches since last scan</h2>
-					{this.renderStatistics(this.state.searchStats)}
+					{this.renderStatistics(false, this.state.searchStats)}
 				</div>
 			</div>
 			);
@@ -413,7 +442,7 @@ var Footer = React.createClass({
 				<div id="CLARIN_footer_left">
 						<a title="about" href="#" onClick={this.about}> 
 						<span className="glyphicon glyphicon-info-sign"></span>
-						<span>VERSION 2.0.0.α16</span>
+						<span>{VERSION}</span>
 					</a>
 				</div>
 				<div id="CLARIN_footer_middle">

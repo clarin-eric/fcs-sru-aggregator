@@ -36,8 +36,9 @@ public class ScanCrawlerTest {
 
 			InitialContext context = new InitialContext();
 			String centerRegistryUrl = (String) context.lookup("java:comp/env/center-registry-url");
-			CenterRegistry centerRegistry = new CenterRegistryLive(centerRegistryUrl, filter);
-			ScanCrawler crawler = new ScanCrawler(centerRegistry, sruClient, 2);
+			ScanCrawler crawler = new ScanCrawler(
+					new CenterRegistryLive(centerRegistryUrl, filter).getCQLInstitutions(),
+					sruClient, 2);
 			Corpora cache = crawler.crawl();
 			Corpus tueRootCorpus = cache.findByEndpoint("http://weblicht.sfs.uni-tuebingen.de/rws/sru/").get(0);
 			Corpus mpiRootCorpus = cache.findByEndpoint("http://cqlservlet.mpi.nl/").get(0);
