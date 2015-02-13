@@ -2,7 +2,8 @@
 (function() {
 "use strict";
 
-var VERSION = "VERSION 2.0.0.α19";
+var VERSION = "VERSION 2.0.0.α20";
+var URLROOT = "/Aggregator-testing";
 
 var PT = React.PropTypes;
 
@@ -10,6 +11,10 @@ var ErrorPane = window.MyReact.ErrorPane;
 var AggregatorPage = window.MyAggregator.AggregatorPage;
 
 var Main = React.createClass({
+	componentWillMount: function() {
+		routeFromLocation(this);
+	},
+
 	getInitialState: function () {
 		return {
 			navbarCollapse: false,
@@ -60,6 +65,10 @@ var Main = React.createClass({
 		jQuery.ajax(ajaxObject);
 	},
 
+	toggleCollapse: function() {
+		this.setState({navbarCollapse: !this.state.navbarCollapse});
+	},
+
 	renderAggregator: function() {
 		return <AggregatorPage ajax={this.ajax} corpora={this.state.corpora} languageMap={this.state.languageMap} />;
 	},
@@ -69,28 +78,37 @@ var Main = React.createClass({
 	},
 
 	renderAbout: function() {
-		return <AboutPage statistics={this.statistics}/>;
+		return <AboutPage/>;
 	},
 
 	renderStatistics: function() {
 		return <StatisticsPage ajax={this.ajax} />;
 	},
 
-	toggleCollapse: function() {
-		this.setState({navbarCollapse: !this.state.navbarCollapse});
+	getPageFns: function() { 
+		return {
+			'': this.renderAggregator,
+			'help': this.renderHelp,
+			'about': this.renderAbout,
+			'stats': this.renderStatistics,
+		};
 	},
 
-	about: function(e) {
-		this.setState({navbarPageFn: this.renderAbout});
-	},
-	statistics: function(e) {
-		this.setState({navbarPageFn: this.renderStatistics});
+	gotoPage: function(doPushHistory, pageFnName) {
+		var pageFn = this.getPageFns()[pageFnName];
+		if (this.state.navbarPageFn !== pageFn) {
+			if (doPushHistory) {
+				window.history.pushState({page:pageFnName}, '', URLROOT+"/"+pageFnName);
+			}
+			this.setState({navbarPageFn: pageFn});
+			console.log("new page: " + document.location + ", name: " + pageFnName);
+		}
 	},
 
-
-	setNavbarPageFn: function(pageFn) {
-		this.setState({navbarPageFn:pageFn});
-	},
+	toAggregator: function(doPushHistory) { this.gotoPage(doPushHistory, ''); },
+	toHelp: function(doPushHistory) { this.gotoPage(doPushHistory, 'help'); },
+	toAbout: function(doPushHistory) { this.gotoPage(doPushHistory, 'about'); },
+	toStatistics: function(doPushHistory) { this.gotoPage(doPushHistory, 'stats'); },
 
 	renderCollapsible: function() {
 		var classname = "navbar-collapse collapse " + (this.state.navbarCollapse?"in":"");
@@ -98,12 +116,10 @@ var Main = React.createClass({
 			<div className={classname}>
 				<ul className="nav navbar-nav">
 					<li className={this.state.navbarPageFn === this.renderAggregator ? "active":""}>
-						<a className="link" tabIndex="-1" 
-							onClick={this.setNavbarPageFn.bind(this, this.renderAggregator)}>Aggregator</a>
+						<a className="link" tabIndex="-1" onClick={this.toAggregator.bind(this, true)}>Aggregator</a>
 					</li>
 					<li className={this.state.navbarPageFn === this.renderHelp ? "active":""}>
-						<a className="link" tabIndex="-1" 
-							onClick={this.setNavbarPageFn.bind(this, this.renderHelp)}>Help</a>
+						<a className="link" tabIndex="-1" onClick={this.toHelp.bind(this, true)}>Help</a>
 					</li>
 				</ul>
 				<ul id="CLARIN_header_right" className="nav navbar-nav navbar-right">
@@ -153,7 +169,6 @@ var Main = React.createClass({
 });
 
 
-
 var StatisticsPage = React.createClass({
 	propTypes: {
 		ajax: PT.func.isRequired,
@@ -161,8 +176,10 @@ var StatisticsPage = React.createClass({
 
 	getInitialState: function () {
 		return {
-			searchStats: {}, 
-			lastScanStats: {}, 
+			stats: {},
+			activeTab: 0,
+			// searchStats: {}, 
+			// lastScanStats: {}, 
 		};
 	},
 
@@ -174,10 +191,7 @@ var StatisticsPage = React.createClass({
 		this.props.ajax({
 			url: 'rest/statistics',
 			success: function(json, textStatus, jqXHR) {
-				this.setState({
-					searchStats: json.searchStats, 
-					lastScanStats: json.lastScanStats, 
-				});
+				this.setState({stats: json});
 				console.log("stats:", json);
 			}.bind(this),
 		});
@@ -204,7 +218,7 @@ var StatisticsPage = React.createClass({
 						<div>
 							{colls.length} root collection(s):
 							<ul className='list-unstyled' style={{marginLeft:40}}>
-								{ colls.map(function(name) { return <div>{name}</div>; }) }
+								{ colls.map(function(name, i) { return <div key={i}>{name}</div>; }) }
 							</ul>
 						</div>
 					}
@@ -214,11 +228,16 @@ var StatisticsPage = React.createClass({
 	renderDiagnostic: function(d) {
 		return 	<div key={d.diagnostic.uri}>
 					<div className="inline alert alert-warning"> 
-						<div>Diagnostic: {d.diagnostic.message}: {d.diagnostic.diagnostic}</div>
+						<div>
+							{ d.counter <= 1 ? false : 
+								<div className="inline" style={{margin:"5px 5px 5px 5px"}}>
+									<span className="badge" style={{backgroundColor:'#ae7241'}}>x {d.counter}</span>
+								</div>
+							}
+							Diagnostic: {d.diagnostic.message}: {d.diagnostic.diagnostic}
+						</div>
 						<div>Context: <a href={d.context}>{d.context}</a></div>
 					</div>
-					{" "}
-					<div className="inline"><span className="badge">x {d.counter}</span></div>
 				</div>; 
 	},
 
@@ -226,12 +245,17 @@ var StatisticsPage = React.createClass({
 		var xc = e.exception;
 		return 	<div key={xc.message}>
 					<div className="inline alert alert-danger" role="alert">
-						<div>Exception: {xc.message}</div>
+						<div>
+							{ e.counter <= 1 ? false : 
+								<div className="inline" style={{margin:"5px 5px 5px 5px"}}>
+									<span className="badge" style={{backgroundColor:'#c94442'}}>x {e.counter} </span>
+								</div>
+							}
+							Exception: {xc.message}
+						</div>
 						<div>Context: <a href={e.context}>{e.context}</a></div>
 						{ xc.cause ? <div>Caused by: {xc.cause}</div> : false}
 					</div>
-					{" "}
-					<div className="inline"><span className="badge">x {e.counter}</span></div>
 				</div>; 
 	},
 
@@ -239,7 +263,7 @@ var StatisticsPage = React.createClass({
 		var stat = endpoint[1];
 		var errors = _.values(stat.errors);
 		var diagnostics = _.values(stat.diagnostics);
-		return <div style={{marginTop:10}}>
+		return <div style={{marginTop:10}} key={endpoint[0]}>
 					<ul className='list-inline list-unstyled' style={{marginBottom:0}}>
 						<li>
 							{ stat.version == "LEGACY" ? 
@@ -269,14 +293,14 @@ var StatisticsPage = React.createClass({
 	},
 
 	renderInstitution: function(isScan, inst) {
-		return 	<div style={{marginBottom:30}}>
+		return 	<div style={{marginBottom:30}} key={inst[0]}>
 					<h4>{inst[0]}</h4>
 					<div style={{marginLeft:20}}> {_.pairs(inst[1]).map(this.renderEndpoint.bind(this, isScan)) }</div>
  				</div>;
 	},
 
-	renderStatistics: function(isScan, stats) {
-		return 	<div className="container">
+	renderStatistics: function(stats) {
+		return 	<div className="container statistics" style={{marginTop:20}}>
 					<ul className='list-inline list-unstyled'>
 						{ stats.maxConcurrentScanRequestsPerEndpoint ? 
 							<li>max concurrent scan requests per endpoint:{" "}
@@ -290,20 +314,42 @@ var StatisticsPage = React.createClass({
 						}
 						<li>timeout:{" "}<kbd>{stats.timeout} seconds</kbd></li>
 					</ul>
-					<div> { _.pairs(stats.institutions).map(this.renderInstitution.bind(this, isScan)) } </div>
+					<div> { _.pairs(stats.institutions).map(this.renderInstitution.bind(this, stats.isScan)) } </div>
 				</div>
 				 ;
+	},
+
+	setTab: function(idx) {
+		this.setState({activeTab:idx});
 	},
 
 	render: function() {
 		return	(
 			<div>
-				<div className="top-gap statistics">
+				<div className="top-gap">
 					<h1>Statistics</h1>
-					<h2>Last scan</h2>
-					{this.renderStatistics(true, this.state.lastScanStats)}
-					<h2>Searches since last scan</h2>
-					{this.renderStatistics(false, this.state.searchStats)}
+					<p/>
+					<div role="tabpanel">
+						<ul className="nav nav-tabs" role="tablist">
+							{ _.pairs(this.state.stats).map(function(st, idx){
+									var classname = idx === this.state.activeTab ? "active":"";
+									return 	<li role="presentation" className={classname} key={st[0]}>
+												<a href="#" role="tab" onClick={this.setTab.bind(this, idx)}>{st[0]}</a>
+											</li>;
+								}.bind(this))
+							}
+						</ul>
+
+						<div className="tab-content">
+							{ _.pairs(this.state.stats).map(function(st, idx){
+									var classname = idx === this.state.activeTab ? "tab-pane active" : "tab-pane";
+									return 	<div role="tabpanel" className={classname} key={st[0]}>
+												{this.renderStatistics(st[1])}
+											</div>;
+								}.bind(this))
+							}
+						</div>
+					</div>
 				</div>
 			</div>
 			);
@@ -357,10 +403,6 @@ var HelpPage = React.createClass({
 });
 
 var AboutPage = React.createClass({
-	propTypes: {
-		statistics: PT.func.isRequired,
-	},
-
 	render: function() {
 		return	<div>
 					<div className="top-gap">
@@ -420,7 +462,7 @@ var AboutPage = React.createClass({
 						</ul>
 
 						<h3>Statistics</h3>
-						<button type="button" className="btn btn-default btn-lg" onClick={this.props.statistics} >
+						<button type="button" className="btn btn-default btn-lg" onClick={function() {main.toStatistics(true);}} >
 							<span className="glyphicon glyphicon-cog" aria-hidden="true"> </span> 
 							View server log
 						</button>
@@ -430,8 +472,8 @@ var AboutPage = React.createClass({
 });
 
 var Footer = React.createClass({
-	about: function(e) {
-		main.about();
+	toAbout: function(e) {
+		main.toAbout(true);
 		e.preventDefault();
 		e.stopPropagation();
 	},
@@ -440,7 +482,7 @@ var Footer = React.createClass({
 		return	(
 			<div className="container">
 				<div id="CLARIN_footer_left">
-						<a title="about" href="#" onClick={this.about}> 
+						<a title="about" href="about" onClick={this.toAbout}> 
 						<span className="glyphicon glyphicon-info-sign"></span>
 						<span>{VERSION}</span>
 					</a>
@@ -461,7 +503,55 @@ var Footer = React.createClass({
 	}
 });
 
+function endsWith(str, suffix) {
+    return str.indexOf(suffix, str.length - suffix.length) !== -1;
+}
+
+var routeFromLocation = function(com) {
+	var path = window.location.pathname.split('/');
+	if (path.length === 3) {
+		var p = path[2];
+		if (p === 'help') {
+			com.toHelp(false);
+		} else if (p === 'about') {
+			com.toAbout(false);
+		} else if (p === 'stats') {
+			com.toStatistics(false);
+		} else {
+			com.toAggregator(false);
+		}
+	} else {
+		com.toAggregator(false);
+	}
+};
+
 var main = React.render(<Main />,  document.getElementById('body'));
 React.render(<Footer />, document.getElementById('footer') );
 
+window.onpopstate = function(event) {
+	console.log("popped location: " + document.location + ", state: " + JSON.stringify(event.state));
+	routeFromLocation(main);
+};
+
+window.main = main;
+
 })();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

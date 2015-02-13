@@ -2,7 +2,8 @@
 (function() {
 "use strict";
 
-var VERSION = "VERSION 2.0.0.α18";
+var VERSION = "VERSION 2.0.0.α20";
+var URLROOT = "/Aggregator-testing";
 
 var PT = React.PropTypes;
 
@@ -10,6 +11,10 @@ var ErrorPane = window.MyReact.ErrorPane;
 var AggregatorPage = window.MyAggregator.AggregatorPage;
 
 var Main = React.createClass({displayName: 'Main',
+	componentWillMount: function() {
+		routeFromLocation(this);
+	},
+
 	getInitialState: function () {
 		return {
 			navbarCollapse: false,
@@ -60,6 +65,10 @@ var Main = React.createClass({displayName: 'Main',
 		jQuery.ajax(ajaxObject);
 	},
 
+	toggleCollapse: function() {
+		this.setState({navbarCollapse: !this.state.navbarCollapse});
+	},
+
 	renderAggregator: function() {
 		return React.createElement(AggregatorPage, {ajax: this.ajax, corpora: this.state.corpora, languageMap: this.state.languageMap});
 	},
@@ -69,28 +78,37 @@ var Main = React.createClass({displayName: 'Main',
 	},
 
 	renderAbout: function() {
-		return React.createElement(AboutPage, {statistics: this.statistics});
+		return React.createElement(AboutPage, null);
 	},
 
 	renderStatistics: function() {
 		return React.createElement(StatisticsPage, {ajax: this.ajax});
 	},
 
-	toggleCollapse: function() {
-		this.setState({navbarCollapse: !this.state.navbarCollapse});
+	getPageFns: function() { 
+		return {
+			'': this.renderAggregator,
+			'help': this.renderHelp,
+			'about': this.renderAbout,
+			'stats': this.renderStatistics,
+		};
 	},
 
-	about: function(e) {
-		this.setState({navbarPageFn: this.renderAbout});
-	},
-	statistics: function(e) {
-		this.setState({navbarPageFn: this.renderStatistics});
+	gotoPage: function(doPushHistory, pageFnName) {
+		var pageFn = this.getPageFns()[pageFnName];
+		if (this.state.navbarPageFn !== pageFn) {
+			if (doPushHistory) {
+				window.history.pushState({page:pageFnName}, '', URLROOT+"/"+pageFnName);
+			}
+			this.setState({navbarPageFn: pageFn});
+			console.log("new page: " + document.location + ", name: " + pageFnName);
+		}
 	},
 
-
-	setNavbarPageFn: function(pageFn) {
-		this.setState({navbarPageFn:pageFn});
-	},
+	toAggregator: function(doPushHistory) { this.gotoPage(doPushHistory, ''); },
+	toHelp: function(doPushHistory) { this.gotoPage(doPushHistory, 'help'); },
+	toAbout: function(doPushHistory) { this.gotoPage(doPushHistory, 'about'); },
+	toStatistics: function(doPushHistory) { this.gotoPage(doPushHistory, 'stats'); },
 
 	renderCollapsible: function() {
 		var classname = "navbar-collapse collapse " + (this.state.navbarCollapse?"in":"");
@@ -98,12 +116,10 @@ var Main = React.createClass({displayName: 'Main',
 			React.createElement("div", {className: classname}, 
 				React.createElement("ul", {className: "nav navbar-nav"}, 
 					React.createElement("li", {className: this.state.navbarPageFn === this.renderAggregator ? "active":""}, 
-						React.createElement("a", {className: "link", tabIndex: "-1", 
-							onClick: this.setNavbarPageFn.bind(this, this.renderAggregator)}, "Aggregator")
+						React.createElement("a", {className: "link", tabIndex: "-1", onClick: this.toAggregator.bind(this, true)}, "Aggregator")
 					), 
 					React.createElement("li", {className: this.state.navbarPageFn === this.renderHelp ? "active":""}, 
-						React.createElement("a", {className: "link", tabIndex: "-1", 
-							onClick: this.setNavbarPageFn.bind(this, this.renderHelp)}, "Help")
+						React.createElement("a", {className: "link", tabIndex: "-1", onClick: this.toHelp.bind(this, true)}, "Help")
 					)
 				), 
 				React.createElement("ul", {id: "CLARIN_header_right", className: "nav navbar-nav navbar-right"}, 
@@ -153,7 +169,6 @@ var Main = React.createClass({displayName: 'Main',
 });
 
 
-
 var StatisticsPage = React.createClass({displayName: 'StatisticsPage',
 	propTypes: {
 		ajax: PT.func.isRequired,
@@ -161,8 +176,10 @@ var StatisticsPage = React.createClass({displayName: 'StatisticsPage',
 
 	getInitialState: function () {
 		return {
-			searchStats: {}, 
-			lastScanStats: {}, 
+			stats: {},
+			activeTab: 0,
+			// searchStats: {}, 
+			// lastScanStats: {}, 
 		};
 	},
 
@@ -174,10 +191,7 @@ var StatisticsPage = React.createClass({displayName: 'StatisticsPage',
 		this.props.ajax({
 			url: 'rest/statistics',
 			success: function(json, textStatus, jqXHR) {
-				this.setState({
-					searchStats: json.searchStats, 
-					lastScanStats: json.lastScanStats, 
-				});
+				this.setState({stats: json});
 				console.log("stats:", json);
 			}.bind(this),
 		});
@@ -204,7 +218,7 @@ var StatisticsPage = React.createClass({displayName: 'StatisticsPage',
 						React.createElement("div", null, 
 							colls.length, " root collection(s):", 
 							React.createElement("ul", {className: "list-unstyled", style: {marginLeft:40}}, 
-								 colls.map(function(name) { return React.createElement("div", null, name); }) 
+								 colls.map(function(name, i) { return React.createElement("div", {key: i}, name); }) 
 							)
 						)
 					
@@ -214,11 +228,16 @@ var StatisticsPage = React.createClass({displayName: 'StatisticsPage',
 	renderDiagnostic: function(d) {
 		return 	React.createElement("div", {key: d.diagnostic.uri}, 
 					React.createElement("div", {className: "inline alert alert-warning"}, 
-						React.createElement("div", null, "Diagnostic: ", d.diagnostic.message, ": ", d.diagnostic.diagnostic), 
+						React.createElement("div", null, 
+							 d.counter <= 1 ? false : 
+								React.createElement("div", {className: "inline", style: {margin:"5px 5px 5px 5px"}}, 
+									React.createElement("span", {className: "badge", style: {backgroundColor:'#ae7241'}}, "x ", d.counter)
+								), 
+							
+							"Diagnostic: ", d.diagnostic.message, ": ", d.diagnostic.diagnostic
+						), 
 						React.createElement("div", null, "Context: ", React.createElement("a", {href: d.context}, d.context))
-					), 
-					" ", 
-					React.createElement("div", {className: "inline"}, React.createElement("span", {className: "badge"}, "x ", d.counter))
+					)
 				); 
 	},
 
@@ -226,12 +245,17 @@ var StatisticsPage = React.createClass({displayName: 'StatisticsPage',
 		var xc = e.exception;
 		return 	React.createElement("div", {key: xc.message}, 
 					React.createElement("div", {className: "inline alert alert-danger", role: "alert"}, 
-						React.createElement("div", null, "Exception: ", xc.message), 
+						React.createElement("div", null, 
+							 e.counter <= 1 ? false : 
+								React.createElement("div", {className: "inline", style: {margin:"5px 5px 5px 5px"}}, 
+									React.createElement("span", {className: "badge", style: {backgroundColor:'#c94442'}}, "x ", e.counter, " ")
+								), 
+							
+							"Exception: ", xc.message
+						), 
 						React.createElement("div", null, "Context: ", React.createElement("a", {href: e.context}, e.context)), 
 						 xc.cause ? React.createElement("div", null, "Caused by: ", xc.cause) : false
-					), 
-					" ", 
-					React.createElement("div", {className: "inline"}, React.createElement("span", {className: "badge"}, "x ", e.counter))
+					)
 				); 
 	},
 
@@ -239,7 +263,7 @@ var StatisticsPage = React.createClass({displayName: 'StatisticsPage',
 		var stat = endpoint[1];
 		var errors = _.values(stat.errors);
 		var diagnostics = _.values(stat.diagnostics);
-		return React.createElement("div", {style: {marginTop:10}}, 
+		return React.createElement("div", {style: {marginTop:10}, key: endpoint[0]}, 
 					React.createElement("ul", {className: "list-inline list-unstyled", style: {marginBottom:0}}, 
 						React.createElement("li", null, 
 							 stat.version == "LEGACY" ? 
@@ -269,14 +293,14 @@ var StatisticsPage = React.createClass({displayName: 'StatisticsPage',
 	},
 
 	renderInstitution: function(isScan, inst) {
-		return 	React.createElement("div", {style: {marginBottom:30}}, 
+		return 	React.createElement("div", {style: {marginBottom:30}, key: inst[0]}, 
 					React.createElement("h4", null, inst[0]), 
 					React.createElement("div", {style: {marginLeft:20}}, " ", _.pairs(inst[1]).map(this.renderEndpoint.bind(this, isScan)) )
  				);
 	},
 
-	renderStatistics: function(isScan, stats) {
-		return 	React.createElement("div", {className: "container"}, 
+	renderStatistics: function(stats) {
+		return 	React.createElement("div", {className: "container statistics", style: {marginTop:20}}, 
 					React.createElement("ul", {className: "list-inline list-unstyled"}, 
 						 stats.maxConcurrentScanRequestsPerEndpoint ? 
 							React.createElement("li", null, "max concurrent scan requests per endpoint:", " ", 
@@ -290,20 +314,42 @@ var StatisticsPage = React.createClass({displayName: 'StatisticsPage',
 						
 						React.createElement("li", null, "timeout:", " ", React.createElement("kbd", null, stats.timeout, " seconds"))
 					), 
-					React.createElement("div", null, " ",  _.pairs(stats.institutions).map(this.renderInstitution.bind(this, isScan)), " ")
+					React.createElement("div", null, " ",  _.pairs(stats.institutions).map(this.renderInstitution.bind(this, stats.isScan)), " ")
 				)
 				 ;
+	},
+
+	setTab: function(idx) {
+		this.setState({activeTab:idx});
 	},
 
 	render: function() {
 		return	(
 			React.createElement("div", null, 
-				React.createElement("div", {className: "top-gap statistics"}, 
+				React.createElement("div", {className: "top-gap"}, 
 					React.createElement("h1", null, "Statistics"), 
-					React.createElement("h2", null, "Last scan"), 
-					this.renderStatistics(true, this.state.lastScanStats), 
-					React.createElement("h2", null, "Searches since last scan"), 
-					this.renderStatistics(false, this.state.searchStats)
+					React.createElement("p", null), 
+					React.createElement("div", {role: "tabpanel"}, 
+						React.createElement("ul", {className: "nav nav-tabs", role: "tablist"}, 
+							 _.pairs(this.state.stats).map(function(st, idx){
+									var classname = idx === this.state.activeTab ? "active":"";
+									return 	React.createElement("li", {role: "presentation", className: classname, key: st[0]}, 
+												React.createElement("a", {href: "#", role: "tab", onClick: this.setTab.bind(this, idx)}, st[0])
+											);
+								}.bind(this))
+							
+						), 
+
+						React.createElement("div", {className: "tab-content"}, 
+							 _.pairs(this.state.stats).map(function(st, idx){
+									var classname = idx === this.state.activeTab ? "tab-pane active" : "tab-pane";
+									return 	React.createElement("div", {role: "tabpanel", className: classname, key: st[0]}, 
+												this.renderStatistics(st[1])
+											);
+								}.bind(this))
+							
+						)
+					)
 				)
 			)
 			);
@@ -357,10 +403,6 @@ var HelpPage = React.createClass({displayName: 'HelpPage',
 });
 
 var AboutPage = React.createClass({displayName: 'AboutPage',
-	propTypes: {
-		statistics: PT.func.isRequired,
-	},
-
 	render: function() {
 		return	React.createElement("div", null, 
 					React.createElement("div", {className: "top-gap"}, 
@@ -420,7 +462,7 @@ var AboutPage = React.createClass({displayName: 'AboutPage',
 						), 
 
 						React.createElement("h3", null, "Statistics"), 
-						React.createElement("button", {type: "button", className: "btn btn-default btn-lg", onClick: this.props.statistics}, 
+						React.createElement("button", {type: "button", className: "btn btn-default btn-lg", onClick: function() {main.toStatistics(true);}}, 
 							React.createElement("span", {className: "glyphicon glyphicon-cog", 'aria-hidden': "true"}, " "), 
 							"View server log"
 						)
@@ -430,8 +472,8 @@ var AboutPage = React.createClass({displayName: 'AboutPage',
 });
 
 var Footer = React.createClass({displayName: 'Footer',
-	about: function(e) {
-		main.about();
+	toAbout: function(e) {
+		main.toAbout(true);
 		e.preventDefault();
 		e.stopPropagation();
 	},
@@ -440,7 +482,7 @@ var Footer = React.createClass({displayName: 'Footer',
 		return	(
 			React.createElement("div", {className: "container"}, 
 				React.createElement("div", {id: "CLARIN_footer_left"}, 
-						React.createElement("a", {title: "about", href: "#", onClick: this.about}, 
+						React.createElement("a", {title: "about", href: "about", onClick: this.toAbout}, 
 						React.createElement("span", {className: "glyphicon glyphicon-info-sign"}), 
 						React.createElement("span", null, VERSION)
 					)
@@ -461,7 +503,55 @@ var Footer = React.createClass({displayName: 'Footer',
 	}
 });
 
+function endsWith(str, suffix) {
+    return str.indexOf(suffix, str.length - suffix.length) !== -1;
+}
+
+var routeFromLocation = function(com) {
+	var path = window.location.pathname.split('/');
+	if (path.length === 3) {
+		var p = path[2];
+		if (p === 'help') {
+			com.toHelp(false);
+		} else if (p === 'about') {
+			com.toAbout(false);
+		} else if (p === 'stats') {
+			com.toStatistics(false);
+		} else {
+			com.toAggregator(false);
+		}
+	} else {
+		com.toAggregator(false);
+	}
+};
+
 var main = React.render(React.createElement(Main, null),  document.getElementById('body'));
 React.render(React.createElement(Footer, null), document.getElementById('footer') );
 
+window.onpopstate = function(event) {
+	console.log("popped location: " + document.location + ", state: " + JSON.stringify(event.state));
+	routeFromLocation(main);
+};
+
+window.main = main;
+
 })();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

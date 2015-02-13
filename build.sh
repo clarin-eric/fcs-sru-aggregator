@@ -12,7 +12,7 @@ then
 	mkdir -p $JSDIR
 
 	npm install bower react-tools
-	node_modules/bower/bin/bower install jquery bootstrap react react-addons react-router font-awesome
+	node_modules/bower/bin/bower install jquery bootstrap react react-addons font-awesome
 
 	cp bower_components/bootstrap/dist/css/bootstrap.min.css $LIBDIR/
 	cp bower_components/bootstrap/dist/js/bootstrap.min.js $LIBDIR/
@@ -20,7 +20,6 @@ then
 	cp bower_components/jquery/dist/jquery.min.map $LIBDIR/
 	cp bower_components/react/react-with-addons.js $LIBDIR/
 	cp bower_components/react/react-with-addons.min.js $LIBDIR/
-	cp bower_components/react-router/dist/react-router.min.js $LIBDIR/
 	cp bower_components/font-awesome/css/font-awesome.min.css $LIBDIR/
 
 	cp bower_components/bootstrap/fonts/*  $FONTDIR/

@@ -87,15 +87,6 @@ import org.slf4j.LoggerFactory;
  * @author Yana Panchenko
  * @author edima
  *
- * TODO: Send mail to Dieter with centers that do not accept recordSchema
- * parameter
- *
- * TODO: mail to LINDAT-Clarin devel about matching whole word in search
- *
- * TODO: routing
- *
- * TODO: stats page as tabs
- *
  * TODO: Download search results as csv, excel, tcf, plain text
  *
  * TODO: Use weblicht with results
@@ -156,8 +147,9 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 
 	@Override
 	public void initialize(Bootstrap<AggregatorConfiguration> bootstrap) {
-		bootstrap.addBundle(new AssetsBundle("/assets", "/", "index.html"));
+		bootstrap.addBundle(new AssetsBundle("/assets", "/", "index.html", "static"));
 	}
+
 
 	@Override
 	public void run(AggregatorConfiguration config, Environment environment) throws Exception {
@@ -171,6 +163,7 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 		} catch (IOException xc) {
 		}
 
+		environment.getApplicationContext().setErrorHandler(new ErrorPageHandler());
 		environment.jersey().setUrlPattern("/rest/*");
 		environment.jersey().register(new RestService());
 

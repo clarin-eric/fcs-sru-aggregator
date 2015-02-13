@@ -1,12 +1,13 @@
 aggregatorParams:
   CENTER_REGISTRY_URL: http://centres.clarin.eu/restxml/
-#  additionalCQLEndpoints:
-#    - https://clarin.ids-mannheim.de/digibibsru-new
-    # - https://lux17.mpi.nl/ds/cqlsearch
-    # - http://www.meertens.knaw.nl/mimore/srucql/
-    # - http://gysseling.corpus.taalbanknederlands.inl.nl/gyssru/
-    # - http://brievenalsbuit.inl.nl/zbsru/
-    # - http://corpus3.aac.ac.at/ddconsru/
+ # additionalCQLEndpoints:
+ #    - https://clarin.ids-mannheim.de/digibibsru-new
+ #    - https://lux17.mpi.nl/ds/cqlsearch
+ #    - http://www.meertens.knaw.nl/mimore/srucql/
+ #    - http://gysseling.corpus.taalbanknederlands.inl.nl/gyssru/
+ #    - http://brievenalsbuit.inl.nl/zbsru/
+ #    - http://corpus3.aac.ac.at/ddconsru/
+#      - http://dspin.dwds.de:8088/ddc-sru/dta/
 
   # AGGREGATOR_FILE_PATH: /data/fcsAggregator/fcsAggregatorCorpora.json
   AGGREGATOR_FILE_PATH: /Users/edima/fcsAggregatorCorpora.json
@@ -19,7 +20,7 @@ aggregatorParams:
   SCAN_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT: 4  # @depth2: 1=361s; 2=225s; 4=207s
   SEARCH_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT: 4
 
-  ENDPOINTS_SCAN_TIMEOUT_MS: 10000
+  ENDPOINTS_SCAN_TIMEOUT_MS: 60000
   ENDPOINTS_SEARCH_TIMEOUT_MS: 30000
   EXECUTOR_SHUTDOWN_TIMEOUT_MS: 1000
 

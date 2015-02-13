@@ -269,7 +269,9 @@ public class ScanCrawler {
 							Corpus c = createCorpus(institution, endpoint, term);
 							if (corpora.addCorpus(c, parentCorpus)) {
 								new ScanTask(institution, endpoint, c, corpora, depth + 1).start();
-								statistics.addEndpointCollection(institution, endpoint, c.getTitle());
+								if (parentCorpus == null) {
+									statistics.addEndpointCollection(institution, endpoint, c.getTitle());
+								}
 							}
 						}
 					}

@@ -5,6 +5,7 @@ import java.util.List;
 import eu.clarin.sru.client.SRUClientException;
 import eu.clarin.sru.client.SRUSearchRetrieveRequest;
 import eu.clarin.sru.client.SRUSearchRetrieveResponse;
+import eu.clarin.sru.client.fcs.ClarinFCSRecordData;
 import eu.clarin.sru.fcs.aggregator.client.ThrottledClient;
 import eu.clarin.sru.fcs.aggregator.scan.Corpus;
 import eu.clarin.sru.fcs.aggregator.scan.Diagnostic;
@@ -62,18 +63,16 @@ public class Search {
 		SRUSearchRetrieveRequest searchRequest = new SRUSearchRetrieveRequest(corpus.getEndpoint().getUrl());
 		searchRequest.setVersion(version);
 		searchRequest.setMaximumRecords(maxRecords);
-		FCSProtocolVersion fcsVersion = corpus.getEndpoint().getProtocol();
-//		searchRequest.setRecordSchema(
-//				fcsVersion.equals(FCSProtocolVersion.LEGACY)
-//						? ClarinFCSRecordData.LEGACY_RECORD_SCHEMA
-//						: ClarinFCSRecordData.RECORD_SCHEMA);
+		boolean legacy = corpus.getEndpoint().getProtocol().equals(FCSProtocolVersion.LEGACY);
+		searchRequest.setRecordSchema(legacy
+				? ClarinFCSRecordData.LEGACY_RECORD_SCHEMA
+				: ClarinFCSRecordData.RECORD_SCHEMA);
 		searchRequest.setQuery("\"" + searchString + "\"");
 		searchRequest.setStartRecord(startRecord);
 		if (corpus.getHandle() != null) {
-			searchRequest.setExtraRequestData(
-					fcsVersion.equals(FCSProtocolVersion.LEGACY)
-							? SRUCQL.SEARCH_CORPUS_HANDLE_LEGACY_PARAMETER
-							: SRUCQL.SEARCH_CORPUS_HANDLE_PARAMETER,
+			searchRequest.setExtraRequestData(legacy
+					? SRUCQL.SEARCH_CORPUS_HANDLE_LEGACY_PARAMETER
+					: SRUCQL.SEARCH_CORPUS_HANDLE_PARAMETER,
 					corpus.getHandle());
 		}
 		requests.add(request);
