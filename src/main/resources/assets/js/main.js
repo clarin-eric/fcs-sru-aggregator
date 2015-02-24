@@ -2,7 +2,7 @@
 (function() {
 "use strict";
 
-var VERSION = "VERSION 2.0.0.α20";
+var VERSION = "VERSION 2.0.0.α21";
 var URLROOT = "/Aggregator-testing";
 
 var PT = React.PropTypes;
@@ -12,7 +12,7 @@ var AggregatorPage = window.MyAggregator.AggregatorPage;
 
 var Main = React.createClass({displayName: 'Main',
 	componentWillMount: function() {
-		routeFromLocation(this);
+		routeFromLocation.bind(this);
 	},
 
 	getInitialState: function () {
@@ -101,7 +101,7 @@ var Main = React.createClass({displayName: 'Main',
 				window.history.pushState({page:pageFnName}, '', URLROOT+"/"+pageFnName);
 			}
 			this.setState({navbarPageFn: pageFn});
-			console.log("new page: " + document.location + ", name: " + pageFnName);
+			// console.log("new page: " + document.location + ", name: " + pageFnName);
 		}
 	},
 
@@ -192,7 +192,7 @@ var StatisticsPage = React.createClass({displayName: 'StatisticsPage',
 			url: 'rest/statistics',
 			success: function(json, textStatus, jqXHR) {
 				this.setState({stats: json});
-				console.log("stats:", json);
+				// console.log("stats:", json);
 			}.bind(this),
 		});
 	},
@@ -293,7 +293,7 @@ var StatisticsPage = React.createClass({displayName: 'StatisticsPage',
 	},
 
 	renderInstitution: function(isScan, inst) {
-		return 	React.createElement("div", {style: {marginBottom:30}, key: inst[0]}, 
+		return 	React.createElement("div", {style: {marginTop:30}, key: inst[0]}, 
 					React.createElement("h4", null, inst[0]), 
 					React.createElement("div", {style: {marginLeft:20}}, " ", _.pairs(inst[1]).map(this.renderEndpoint.bind(this, isScan)) )
  				);
@@ -301,18 +301,18 @@ var StatisticsPage = React.createClass({displayName: 'StatisticsPage',
 
 	renderStatistics: function(stats) {
 		return 	React.createElement("div", {className: "container statistics", style: {marginTop:20}}, 
-					React.createElement("ul", {className: "list-inline list-unstyled"}, 
-						 stats.maxConcurrentScanRequestsPerEndpoint ? 
-							React.createElement("li", null, "max concurrent scan requests per endpoint:", " ", 
-								React.createElement("kbd", null, stats.maxConcurrentScanRequestsPerEndpoint), ","
-							) : false, 
+					React.createElement("div", null, 
+						React.createElement("div", null, "Start date: ", new Date(stats.date).toLocaleString()), 
+						 stats.isScan ? 
+							React.createElement("div", null, "Max concurrent scan requests per endpoint:", " ", 
+								React.createElement("kbd", null, stats.maxConcurrentScanRequestsPerEndpoint)
+							) 
+							: 
+							React.createElement("div", null, "Max concurrent search requests per endpoint:", " ", 
+								React.createElement("kbd", null, stats.maxConcurrentSearchRequestsPerEndpoint)
+							), 
 						
-						 stats.maxConcurrentSearchRequestsPerEndpoint ? 
-							React.createElement("li", null, "max concurrent search requests per endpoint:", " ", 
-								React.createElement("kbd", null, stats.maxConcurrentSearchRequestsPerEndpoint), ","
-							) : false, 
-						
-						React.createElement("li", null, "timeout:", " ", React.createElement("kbd", null, stats.timeout, " seconds"))
+						React.createElement("div", null, "Timeout: ", " ", React.createElement("kbd", null, stats.timeout, " seconds"))
 					), 
 					React.createElement("div", null, " ",  _.pairs(stats.institutions).map(this.renderInstitution.bind(this, stats.isScan)), " ")
 				)
@@ -507,47 +507,34 @@ function endsWith(str, suffix) {
     return str.indexOf(suffix, str.length - suffix.length) !== -1;
 }
 
-var routeFromLocation = function(com) {
+var routeFromLocation = function() {
+	// console.log("routeFromLocation: " + document.location);
+	if (!this) throw "routeFromLocation must be bound to main";
 	var path = window.location.pathname.split('/');
 	if (path.length === 3) {
 		var p = path[2];
 		if (p === 'help') {
-			com.toHelp(false);
+			this.toHelp(false);
 		} else if (p === 'about') {
-			com.toAbout(false);
+			this.toAbout(false);
 		} else if (p === 'stats') {
-			com.toStatistics(false);
+			this.toStatistics(false);
 		} else {
-			com.toAggregator(false);
+			this.toAggregator(false);
 		}
 	} else {
-		com.toAggregator(false);
+		this.toAggregator(false);
 	}
 };
 
 var main = React.render(React.createElement(Main, null),  document.getElementById('body'));
 React.render(React.createElement(Footer, null), document.getElementById('footer') );
 
-window.onpopstate = function(event) {
-	console.log("popped location: " + document.location + ", state: " + JSON.stringify(event.state));
-	routeFromLocation(main);
-};
+window.onpopstate = routeFromLocation.bind(main);
 
-window.main = main;
+routeFromLocation.bind(main)();
 
 })();
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

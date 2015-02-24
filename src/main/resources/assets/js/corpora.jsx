@@ -12,42 +12,6 @@ var Panel = window.MyReact.Panel;
 
 /////////////////////////////////
 
-var SearchCorpusBox = React.createClass({
-	propTypes: {
-		search: PT.func.isRequired,
-	},
-
-	getInitialState: function () {
-		return {
-			query: ""
-		};
-	},
-
-	handleChange: function(event) {
-		var query = event.target.value;
-		this.setState({query: query});
-
-		if (query.length === 0 || 2 <= query.length) {
-			this.props.search(query);
-		}
-		event.stopPropagation();
-	},
-
-	handleKey: function(event) {
-		if (event.keyCode==13) {
-			this.props.search(event.target.value);
-		}
-	},
-
-	render: function() {
-		return 	<div className="form-group">
-					<input className="form-control search search-collection" type="text" 
-						value={this.state.query} placeholder="Search for collection" 
-						onChange={this.handleChange} />
-				</div>;
-	}
-});
-
 var CorpusView = window.MyAggregator.CorpusView = React.createClass({
 	propTypes: {
 		corpora: PT.object.isRequired,
@@ -276,6 +240,42 @@ var CorpusView = window.MyAggregator.CorpusView = React.createClass({
 					</div>
 					
 					{this.props.corpora.corpora.map(this.renderCorpus.bind(this, 0, minmaxp))}
+				</div>;
+	}
+});
+
+var SearchCorpusBox = React.createClass({
+	propTypes: {
+		search: PT.func.isRequired,
+	},
+
+	getInitialState: function () {
+		return {
+			query: ""
+		};
+	},
+
+	handleChange: function(event) {
+		var query = event.target.value;
+		this.setState({query: query});
+
+		if (query.length === 0 || 2 <= query.length) {
+			this.props.search(query);
+		}
+		event.stopPropagation();
+	},
+
+	handleKey: function(event) {
+		if (event.keyCode==13) {
+			this.props.search(event.target.value);
+		}
+	},
+
+	render: function() {
+		return 	<div className="form-group">
+					<input className="form-control search search-collection" type="text" 
+						value={this.state.query} placeholder="Search for collection" 
+						onChange={this.handleChange} />
 				</div>;
 	}
 });

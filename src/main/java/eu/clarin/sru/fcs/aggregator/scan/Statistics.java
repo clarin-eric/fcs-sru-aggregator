@@ -3,6 +3,7 @@ package eu.clarin.sru.fcs.aggregator.scan;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -108,6 +109,12 @@ public class Statistics {
 
 	private final Object lock = new Object();
 
+	Date date = new Date();
+
+	public Date getDate() {
+		return date;
+	}
+
 	// institution to endpoint to statistics_per_endpoint map
 	Map<String, Map<String, EndpointStats>> institutions
 			= Collections.synchronizedMap(new HashMap<String, Map<String, EndpointStats>>());
@@ -185,4 +192,5 @@ public class Statistics {
 		}
 		return stats;
 	}
+
 }

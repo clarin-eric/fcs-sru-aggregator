@@ -2,7 +2,7 @@
 (function() {
 "use strict";
 
-var VERSION = "VERSION 2.0.0.α20";
+var VERSION = "VERSION 2.0.0.α21";
 var URLROOT = "/Aggregator-testing";
 
 var PT = React.PropTypes;
@@ -12,7 +12,7 @@ var AggregatorPage = window.MyAggregator.AggregatorPage;
 
 var Main = React.createClass({
 	componentWillMount: function() {
-		routeFromLocation(this);
+		routeFromLocation.bind(this);
 	},
 
 	getInitialState: function () {
@@ -101,7 +101,7 @@ var Main = React.createClass({
 				window.history.pushState({page:pageFnName}, '', URLROOT+"/"+pageFnName);
 			}
 			this.setState({navbarPageFn: pageFn});
-			console.log("new page: " + document.location + ", name: " + pageFnName);
+			// console.log("new page: " + document.location + ", name: " + pageFnName);
 		}
 	},
 
@@ -192,7 +192,7 @@ var StatisticsPage = React.createClass({
 			url: 'rest/statistics',
 			success: function(json, textStatus, jqXHR) {
 				this.setState({stats: json});
-				console.log("stats:", json);
+				// console.log("stats:", json);
 			}.bind(this),
 		});
 	},
@@ -293,7 +293,7 @@ var StatisticsPage = React.createClass({
 	},
 
 	renderInstitution: function(isScan, inst) {
-		return 	<div style={{marginBottom:30}} key={inst[0]}>
+		return 	<div style={{marginTop:30}} key={inst[0]}>
 					<h4>{inst[0]}</h4>
 					<div style={{marginLeft:20}}> {_.pairs(inst[1]).map(this.renderEndpoint.bind(this, isScan)) }</div>
  				</div>;
@@ -301,19 +301,19 @@ var StatisticsPage = React.createClass({
 
 	renderStatistics: function(stats) {
 		return 	<div className="container statistics" style={{marginTop:20}}>
-					<ul className='list-inline list-unstyled'>
-						{ stats.maxConcurrentScanRequestsPerEndpoint ? 
-							<li>max concurrent scan requests per endpoint:{" "}
-								<kbd>{stats.maxConcurrentScanRequestsPerEndpoint}</kbd>,
-							</li> : false
+					<div>
+						<div>Start date: {new Date(stats.date).toLocaleString()}</div>
+						{ stats.isScan ? 
+							<div>Max concurrent scan requests per endpoint:{" "}
+								<kbd>{stats.maxConcurrentScanRequestsPerEndpoint}</kbd>
+							</div> 
+							: 
+							<div>Max concurrent search requests per endpoint:{" "}
+								<kbd>{stats.maxConcurrentSearchRequestsPerEndpoint}</kbd>
+							</div>
 						}
-						{ stats.maxConcurrentSearchRequestsPerEndpoint ? 
-							<li>max concurrent search requests per endpoint:{" "}
-								<kbd>{stats.maxConcurrentSearchRequestsPerEndpoint}</kbd>,
-							</li> : false
-						}
-						<li>timeout:{" "}<kbd>{stats.timeout} seconds</kbd></li>
-					</ul>
+						<div>Timeout: {" "}<kbd>{stats.timeout} seconds</kbd></div>
+					</div>
 					<div> { _.pairs(stats.institutions).map(this.renderInstitution.bind(this, stats.isScan)) } </div>
 				</div>
 				 ;
@@ -507,47 +507,34 @@ function endsWith(str, suffix) {
     return str.indexOf(suffix, str.length - suffix.length) !== -1;
 }
 
-var routeFromLocation = function(com) {
+var routeFromLocation = function() {
+	// console.log("routeFromLocation: " + document.location);
+	if (!this) throw "routeFromLocation must be bound to main";
 	var path = window.location.pathname.split('/');
 	if (path.length === 3) {
 		var p = path[2];
 		if (p === 'help') {
-			com.toHelp(false);
+			this.toHelp(false);
 		} else if (p === 'about') {
-			com.toAbout(false);
+			this.toAbout(false);
 		} else if (p === 'stats') {
-			com.toStatistics(false);
+			this.toStatistics(false);
 		} else {
-			com.toAggregator(false);
+			this.toAggregator(false);
 		}
 	} else {
-		com.toAggregator(false);
+		this.toAggregator(false);
 	}
 };
 
 var main = React.render(<Main />,  document.getElementById('body'));
 React.render(<Footer />, document.getElementById('footer') );
 
-window.onpopstate = function(event) {
-	console.log("popped location: " + document.location + ", state: " + JSON.stringify(event.state));
-	routeFromLocation(main);
-};
+window.onpopstate = routeFromLocation.bind(main);
 
-window.main = main;
+routeFromLocation.bind(main)();
 
 })();
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

@@ -61,7 +61,7 @@ function Corpora(corpora, updateFn) {
 		corpus.visible = true; // visible in the corpus view
 		corpus.selected = true; // selected in the corpus view
 		corpus.expanded = false; // not expanded in the corpus view
-		corpus.priority = 1; // priority in corpus view
+		corpus.priority = 1; // used for ordering search results in corpus view 
 		corpus.index = index; // original order, used for stable sort
 	});
 }
@@ -163,7 +163,6 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({dis
 		ajax: PT.func.isRequired
 	},
 
-	timeout: 0,
 	nohits: { 
 		requests: [],
 		results: [],
@@ -181,7 +180,8 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({dis
 			numberOfResults: 10,
 
 			searchId: null,
-			hits: this.nohits,
+			timeout: 0,
+			hits: this.nohits,			
 		};
 	},
 
@@ -194,7 +194,9 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({dis
 		this.props.ajax({
 			url: 'rest/corpora',
 			success: function(json, textStatus, jqXHR) {
-				this.setState({corpora : new Corpora(json, this.updateCorpora)});
+				if (this.isMounted()) {
+					this.setState({corpora : new Corpora(json, this.updateCorpora)});
+				}
 			}.bind(this),
 		});
 	},
@@ -203,7 +205,9 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({dis
 		this.props.ajax({
 			url: 'rest/languages',
 			success: function(json, textStatus, jqXHR) {
-				this.setState({languageMap : json});
+				if (this.isMounted()) {
+					this.setState({languageMap : json});
+				}
 			}.bind(this),
 		});
 	},
@@ -232,30 +236,31 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({dis
 			},
 			success: function(searchId, textStatus, jqXHR) {
 				// console.log("search ["+query+"] ok: ", searchId, jqXHR);
-				this.setState({searchId : searchId});
-				this.timeout = 250;
-				setTimeout(this.refreshSearchResults, this.timeout);
+				var timeout = 250;
+				setTimeout(this.refreshSearchResults, timeout);
+				this.setState({ searchId: searchId, timeout: timeout });
 			}.bind(this),
 		});
 	},
 
 	refreshSearchResults: function() {
-		if (!this.state.searchId) {
+		if (!this.state.searchId || !this.isMounted()) {
 			return;
 		}
 		this.props.ajax({
 			url: 'rest/search/'+this.state.searchId,
 			success: function(json, textStatus, jqXHR) {
+				var timeout = this.state.timeout;
 				if (json.requests.length > 0) {
-					if (this.timeout < 10000) {
-						this.timeout = 1.5 * this.timeout;
+					if (timeout < 10000) {
+						timeout = 1.5 * timeout;
 					}
-					setTimeout(this.refreshSearchResults, this.timeout);
-					// console.log("new search in: " + this.timeout+ "ms");
+					setTimeout(this.refreshSearchResults, timeout);
+					// console.log("new search in: " + this.timeout + "ms");
 				} else {
 					console.log("search ended; hits:", json);
 				}
-				this.setState({hits:json});
+				this.setState({ hits: json, timeout: timeout });
 			}.bind(this),
 		});
 	},
@@ -655,17 +660,6 @@ var Results = React.createClass({displayName: 'Results',
 				);
 	},
 
-	renderToolbox: function() {
-		if (this.props.requests.length > 0) {
-			return false;
-		}
-		return 	React.createElement("div", {className: "toolbox float-left"}, 
-					React.createElement("a", {className: "btn btn-default", href: this.props.getDownloadLink("text")}, 
-						React.createElement("span", {className: "glyphicon glyphicon-download-alt", 'aria-hidden': "true"}), " Download"
-					)
-				);
-	},
-
 	renderProgressBar: function() {
 		var percents = 100 * this.props.results.length / (this.props.requests.length + this.props.results.length);
 		var sperc = Math.round(percents);
@@ -692,16 +686,46 @@ var Results = React.createClass({displayName: 'Results',
 		return hits + " collections with results found in " + total + " searched collections";
 	},
 
-	renderKwicCheckbox: function() {
-		return	React.createElement("div", {className: "float-right", style: {marginRight:17}}, 
-					React.createElement("div", {className: "btn-group", style: {display:"inline-block"}}, 
-						React.createElement("label", {forHtml: "inputKwic", className: "btn-default"}, 
-							 this.state.displayKwic ? 
-								React.createElement("input", {id: "inputKwic", type: "checkbox", value: "kwic", checked: true, onChange: this.toggleKwic}) :
-								React.createElement("input", {id: "inputKwic", type: "checkbox", value: "kwic", onChange: this.toggleKwic}), 
-							
-							" " + ' ' +
-							"Display as Key Word In Context"
+	renderDownloadLinks: function() {
+		return (
+			React.createElement("div", {className: "dropdown"}, 
+				React.createElement("button", {className: "btn btn-default", 'aria-expanded': "false", 'data-toggle': "dropdown"}, 
+					React.createElement("span", {className: "glyphicon glyphicon-download-alt", 'aria-hidden': "true"}), 
+					" ", " Download ", " ", 
+					React.createElement("span", {className: "caret"})
+				), 
+				React.createElement("ul", {className: "dropdown-menu"}, 
+					React.createElement("li", null, " ", React.createElement("a", {href: this.props.getDownloadLink("csv")}, 
+							" ", " As CSV file")), 
+					React.createElement("li", null, " ", React.createElement("a", {href: this.props.getDownloadLink("excel")}, 
+							" ", " As Excel file")), 
+					React.createElement("li", null, " ", React.createElement("a", {href: this.props.getDownloadLink("tcf")}, 
+							" ", " As TCF file")), 
+					React.createElement("li", null, " ", React.createElement("a", {href: this.props.getDownloadLink("text")}, 
+							" ", " As Plain Text file"))
+				)
+			)
+		);
+	},
+
+	renderToolbox: function(hits) {
+		if (hits <= 0) {
+			return false;
+		}
+		return 	React.createElement("div", {key: "-toolbox-", style: {marginBottom:10}}, 
+					React.createElement("div", {className: "toolbox float-left inline"}, 
+						this.renderDownloadLinks()
+					), 
+					React.createElement("div", {className: "float-right inline", style: {marginTop:15}}, 
+						React.createElement("div", {className: "btn-group", style: {display:"inline-block"}}, 
+							React.createElement("label", {forHtml: "inputKwic", className: "btn-default"}, 
+								 this.state.displayKwic ? 
+									React.createElement("input", {id: "inputKwic", type: "checkbox", value: "kwic", checked: true, onChange: this.toggleKwic}) :
+									React.createElement("input", {id: "inputKwic", type: "checkbox", value: "kwic", onChange: this.toggleKwic}), 
+								
+								" " + ' ' +
+								"Display as Key Word In Context"
+							)
 						)
 					)
 				);
@@ -718,12 +742,7 @@ var Results = React.createClass({displayName: 'Results',
 						React.createElement("div", {key: "-searching-message-", style: margintop}, this.renderSearchingMessage(), " "), 
 						React.createElement("div", {key: "-found-message-", style: margintop}, this.renderFoundMessage(hits), " "), 
 						React.createElement("div", {key: "-progress-", style: margintop}, this.renderProgressBar()), 
-						hits > 0 ? 
-							React.createElement("div", {key: "-option-KWIC-", className: "row"}, 
-								this.renderToolbox(), 
-								this.renderKwicCheckbox()
-							)
-						 	: false, 
+						this.renderToolbox(hits), 
 						this.props.results.map(this.renderResultPanels)
 					)
 				);

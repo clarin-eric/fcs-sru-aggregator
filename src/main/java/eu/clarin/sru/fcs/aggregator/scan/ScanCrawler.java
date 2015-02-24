@@ -367,36 +367,42 @@ public class ScanCrawler {
 					}
 				} else if (infoNode.getNodeType() == Node.ELEMENT_NODE && infoNode.getLocalName().equals("Title")) {
 					Element element = (Element) infoNode;
-					String descr = infoNode.getTextContent().replaceAll("&lt;br/&gt;", " ");
-					descr = descr.replaceAll("<br/>", " ");
-					descr = descr.replaceAll("[\t\n\r ]+", " ");
-					c.setTitle(descr.trim());
-					//String lang = element.getAttributeNS("http://clarin.eu/fcs/1.0/resource-info", "lang");
-					//System.out.println("ATTRIBUTE LANG: " + lang);
-					if ("en".equals(element.getAttribute("xml:lang"))) {
-						enTitle = c.getDescription();
+					String x = cleanup(infoNode.getTextContent());
+					if (!x.isEmpty()) {
+						c.setTitle(x);
+						if ("en".equals(element.getAttribute("xml:lang"))) {
+							enTitle = x;
+						}
 					}
 				} else if (infoNode.getNodeType() == Node.ELEMENT_NODE && infoNode.getLocalName().equals("Description")) {
 					Element element = (Element) infoNode;
-					String descr = infoNode.getTextContent().replaceAll("&lt;br/&gt;", " ");
-					descr = descr.replaceAll("<br/>", " ");
-					descr = descr.replaceAll("[\t\n\r ]+", " ");
-					c.setDescription(descr.trim());
+					String x = cleanup(infoNode.getTextContent());
+					c.setDescription(x);
 					//String lang = element.getAttributeNS("http://clarin.eu/fcs/1.0/resource-info", "lang");
 					//System.out.println("ATTRIBUTE LANG: " + lang);
 					if ("en".equals(element.getAttribute("xml:lang"))) {
-						enDescription = c.getDescription();
+						enDescription = x;
 					}
 				}
 			}
-			// title in Engish has priority
+			// title in English has priority
 			if (enTitle != null && !enTitle.isEmpty()) {
 				c.setTitle(enTitle);
 			}
-			// description in Engish has priority
+			// description in English has priority
 			if (enDescription != null && !enDescription.isEmpty()) {
 				c.setDescription(enDescription);
 			}
 		}
+	}
+
+	private static String cleanup(String x) {
+		if (x == null) {
+			return "";
+		}
+		x = x.replaceAll("&lt;br/&gt;", " ");
+		x = x.replaceAll("<br/>", " ");
+		x = x.replaceAll("[\t\n\r ]+", " ");
+		return x.trim();
 	}
 }

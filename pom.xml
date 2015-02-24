@@ -7,7 +7,7 @@
 
 	<groupId>eu.clarin.sru.fcs</groupId>
 	<artifactId>Aggregator2</artifactId>
-	<version>2.0.0-alpha-20</version>
+	<version>2.0.0-alpha-21</version>
 	<name>FCS Aggregator</name>
 
 	<properties>
@@ -24,14 +24,6 @@
 			<id>sonatype-nexus-snapshots</id>
 			<name>Sonatype Nexus Snapshots</name>
 			<url>http://oss.sonatype.org/content/repositories/snapshots</url>
-		</repository>
-		<repository>
-			<id>sardine-google-svn-repo</id>
-			<snapshots>
-				<enabled>true</enabled>
-			</snapshots>
-			<name>Sardine maven repo at Google Code</name>
-			<url>http://sardine.googlecode.com/svn/maven/</url>
 		</repository>
 	</repositories> 
 
@@ -62,6 +54,16 @@
 			<groupId>eu.clarin.sru</groupId>
 			<artifactId>sru-client</artifactId>
 			<version>0.9.5-DEBUG</version>
+			<exclusions>
+				<exclusion>
+					<groupId>org.slf4j</groupId>
+					<artifactId>slf4j-api</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>commons-codec</groupId>
+					<artifactId>commons-codec</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 
 		<dependency>
@@ -73,6 +75,12 @@
 			<groupId>eu.clarin.weblicht</groupId>
 			<artifactId>connectors</artifactId>
 			<version>1.0.6</version>
+			<exclusions>
+				<exclusion>
+					<groupId>com.sun.jersey</groupId>
+					<artifactId>jersey-client</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>eu.clarin.weblicht</groupId>
@@ -88,29 +96,25 @@
 		<dependency>
 		    <groupId>com.optimaize.languagedetector</groupId>
 		    <artifactId>language-detector</artifactId>
-		    <version>0.4</version>
-		</dependency>
-		
-		<dependency>
-			<groupId>com.googlecode.sardine</groupId>
-			<artifactId>sardine</artifactId>
-			<version>314</version>
-			<type>jar</type>
+			<version>0.4</version>
 			<exclusions>
 				<exclusion>
-					<groupId>org.apache.httpcomponents</groupId>
-					<artifactId>httpcore</artifactId>
-				</exclusion>
-				<exclusion>
-					<artifactId>commons-codec</artifactId>
-					<groupId>commons-codec</groupId>
+					<groupId>com.google.guava</groupId>
+					<artifactId>guava</artifactId>
 				</exclusion>
 			</exclusions>
 		</dependency>
+		
 		<dependency>
 			<groupId>org.apache.poi</groupId>
 			<artifactId>poi-ooxml</artifactId>
 			<version>3.11-beta2</version>
+		</dependency>
+		<dependency>
+			<groupId>com.sun.jersey</groupId>
+			<artifactId>jersey-client</artifactId>
+			<version>1.18.1</version>
+			<type>jar</type>
 		</dependency>
 	</dependencies>
 
@@ -129,7 +133,7 @@
 							</rules>
 						</configuration>
 						<goals>
-							<!--<goal>enforce</goal>-->
+							<goal>enforce</goal>
 						</goals>
 					</execution>
 				</executions>

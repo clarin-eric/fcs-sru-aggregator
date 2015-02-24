@@ -61,7 +61,7 @@ function Corpora(corpora, updateFn) {
 		corpus.visible = true; // visible in the corpus view
 		corpus.selected = true; // selected in the corpus view
 		corpus.expanded = false; // not expanded in the corpus view
-		corpus.priority = 1; // priority in corpus view
+		corpus.priority = 1; // used for ordering search results in corpus view 
 		corpus.index = index; // original order, used for stable sort
 	});
 }
@@ -163,7 +163,6 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({
 		ajax: PT.func.isRequired
 	},
 
-	timeout: 0,
 	nohits: { 
 		requests: [],
 		results: [],
@@ -181,7 +180,8 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({
 			numberOfResults: 10,
 
 			searchId: null,
-			hits: this.nohits,
+			timeout: 0,
+			hits: this.nohits,			
 		};
 	},
 
@@ -194,7 +194,9 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({
 		this.props.ajax({
 			url: 'rest/corpora',
 			success: function(json, textStatus, jqXHR) {
-				this.setState({corpora : new Corpora(json, this.updateCorpora)});
+				if (this.isMounted()) {
+					this.setState({corpora : new Corpora(json, this.updateCorpora)});
+				}
 			}.bind(this),
 		});
 	},
@@ -203,7 +205,9 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({
 		this.props.ajax({
 			url: 'rest/languages',
 			success: function(json, textStatus, jqXHR) {
-				this.setState({languageMap : json});
+				if (this.isMounted()) {
+					this.setState({languageMap : json});
+				}
 			}.bind(this),
 		});
 	},
@@ -232,30 +236,31 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({
 			},
 			success: function(searchId, textStatus, jqXHR) {
 				// console.log("search ["+query+"] ok: ", searchId, jqXHR);
-				this.setState({searchId : searchId});
-				this.timeout = 250;
-				setTimeout(this.refreshSearchResults, this.timeout);
+				var timeout = 250;
+				setTimeout(this.refreshSearchResults, timeout);
+				this.setState({ searchId: searchId, timeout: timeout });
 			}.bind(this),
 		});
 	},
 
 	refreshSearchResults: function() {
-		if (!this.state.searchId) {
+		if (!this.state.searchId || !this.isMounted()) {
 			return;
 		}
 		this.props.ajax({
 			url: 'rest/search/'+this.state.searchId,
 			success: function(json, textStatus, jqXHR) {
+				var timeout = this.state.timeout;
 				if (json.requests.length > 0) {
-					if (this.timeout < 10000) {
-						this.timeout = 1.5 * this.timeout;
+					if (timeout < 10000) {
+						timeout = 1.5 * timeout;
 					}
-					setTimeout(this.refreshSearchResults, this.timeout);
-					// console.log("new search in: " + this.timeout+ "ms");
+					setTimeout(this.refreshSearchResults, timeout);
+					// console.log("new search in: " + this.timeout + "ms");
 				} else {
 					console.log("search ended; hits:", json);
 				}
-				this.setState({hits:json});
+				this.setState({ hits: json, timeout: timeout });
 			}.bind(this),
 		});
 	},
@@ -655,17 +660,6 @@ var Results = React.createClass({
 				</Panel>;
 	},
 
-	renderToolbox: function() {
-		if (this.props.requests.length > 0) {
-			return false;
-		}
-		return 	<div className="toolbox float-left">
-					<a className="btn btn-default" href={this.props.getDownloadLink("text")}>
-						<span className="glyphicon glyphicon-download-alt" aria-hidden="true"/> Download
-					</a>
-				</div>;
-	},
-
 	renderProgressBar: function() {
 		var percents = 100 * this.props.results.length / (this.props.requests.length + this.props.results.length);
 		var sperc = Math.round(percents);
@@ -692,17 +686,47 @@ var Results = React.createClass({
 		return hits + " collections with results found in " + total + " searched collections";
 	},
 
-	renderKwicCheckbox: function() {
-		return	<div className="float-right" style={{marginRight:17}}>
-					<div className="btn-group" style={{display:"inline-block"}}>
-						<label forHtml="inputKwic" className="btn-default">
-							{ this.state.displayKwic ? 
-								<input id="inputKwic" type="checkbox" value="kwic" checked onChange={this.toggleKwic} /> :
-								<input id="inputKwic" type="checkbox" value="kwic" onChange={this.toggleKwic} />
-							}
-							&nbsp;
-							Display as Key Word In Context
-						</label>
+	renderDownloadLinks: function() {
+		return (
+			<div className="dropdown">
+				<button className="btn btn-default" aria-expanded="false" data-toggle="dropdown" >
+					<span className="glyphicon glyphicon-download-alt" aria-hidden="true"/>
+					{" "} Download {" "} 
+					<span className="caret"/>
+				</button>
+				<ul className="dropdown-menu">
+					<li> <a href={this.props.getDownloadLink("csv")}>
+							{" "} As CSV file</a></li>
+					<li> <a href={this.props.getDownloadLink("excel")}>
+							{" "} As Excel file</a></li>
+					<li> <a href={this.props.getDownloadLink("tcf")}>
+							{" "} As TCF file</a></li>
+					<li> <a href={this.props.getDownloadLink("text")}>
+							{" "} As Plain Text file</a></li>
+				</ul>
+			</div>
+		);
+	},
+
+	renderToolbox: function(hits) {
+		if (hits <= 0) {
+			return false;
+		}
+		return 	<div key="-toolbox-" style={{marginBottom:10}}>
+					<div className="toolbox float-left inline">
+						{this.renderDownloadLinks()}
+					</div>
+					<div className="float-right inline" style={{marginTop:15}}>
+						<div className="btn-group" style={{display:"inline-block"}}>
+							<label forHtml="inputKwic" className="btn-default">
+								{ this.state.displayKwic ? 
+									<input id="inputKwic" type="checkbox" value="kwic" checked onChange={this.toggleKwic} /> :
+									<input id="inputKwic" type="checkbox" value="kwic" onChange={this.toggleKwic} />
+								}
+								&nbsp;
+								Display as Key Word In Context
+							</label>
+						</div>
 					</div>
 				</div>;
 	},
@@ -718,12 +742,7 @@ var Results = React.createClass({
 						<div key="-searching-message-" style={margintop}>{this.renderSearchingMessage()} </div>
 						<div key="-found-message-" style={margintop}>{this.renderFoundMessage(hits)} </div>
 						<div key="-progress-" style={margintop}>{this.renderProgressBar()}</div>
-						{hits > 0 ? 
-							<div key="-option-KWIC-" className="row">
-								{this.renderToolbox()}
-								{this.renderKwicCheckbox()}
-							</div>
-						 	: false }
+						{this.renderToolbox(hits)}
 						{this.props.results.map(this.renderResultPanels)}
 					</ReactCSSTransitionGroup>
 				</div>;

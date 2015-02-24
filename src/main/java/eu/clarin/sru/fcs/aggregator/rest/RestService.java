@@ -12,6 +12,7 @@ import eu.clarin.sru.fcs.aggregator.search.Request;
 import eu.clarin.sru.fcs.aggregator.search.Result;
 import eu.clarin.sru.fcs.aggregator.search.Search;
 import eu.clarin.sru.fcs.aggregator.lang.LanguagesISO693_3;
+import eu.clarin.sru.fcs.aggregator.search.ExportException;
 import eu.clarin.sru.fcs.aggregator.search.Exports;
 import java.io.IOException;
 import java.net.URI;
@@ -20,6 +21,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.FormParam;
@@ -32,6 +35,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import opennlp.tools.tokenize.TokenizerModel;
 import org.slf4j.LoggerFactory;
 
 /**
@@ -41,9 +45,11 @@ import org.slf4j.LoggerFactory;
 @Produces(MediaType.APPLICATION_JSON)
 @Path("/")
 public class RestService {
+
 	private static final String EXPORT_FILENAME_PREFIX = "ClarinDFederatedContentSearch-";
 	private static final String TCF_MEDIA_TYPE = "text/tcf+xml";
 	private static final String EXCEL_MEDIA_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+	private static final String SEARCH_RESULTS_ENCODING = "UTF-8";
 
 	private static final org.slf4j.Logger log = LoggerFactory.getLogger(RestService.class);
 
@@ -81,6 +87,7 @@ public class RestService {
 						put("timeout", params.getENDPOINTS_SCAN_TIMEOUT_MS() / 1000.);
 						put("isScan", true);
 						put("institutions", scan.getInstitutions());
+						put("date", scan.getDate());
 					}
 				});
 				put("Recent Searches", new HashMap<String, Object>() {
@@ -90,6 +97,7 @@ public class RestService {
 						put("timeout", params.getENDPOINTS_SEARCH_TIMEOUT_MS() / 1000.);
 						put("isScan", false);
 						put("institutions", search.getInstitutions());
+						put("date", scan.getDate());
 					}
 				});
 			}
@@ -104,7 +112,7 @@ public class RestService {
 		Set<String> codes = Aggregator.getInstance().getCorpora().getLanguages();
 		log.info("get language codes", codes);
 		for (String code : codes) {
-			String name = LanguagesISO693_3.getInstance().nameForCode(code);
+			String name = LanguagesISO693_3.getInstance().nameForCode_3(code);
 			languages.put(code, name != null ? name : code);
 		}
 		return Response.ok(toJson(languages)).build();
@@ -183,7 +191,7 @@ public class RestService {
 			return Response.status(Response.Status.NOT_FOUND).entity("Search job not found").build();
 		}
 
-		if (format == null || format.trim().isEmpty() || format.trim().equals("text")) {
+	if (format == null || format.trim().isEmpty() || format.trim().equals("text")) {
 			String text = Exports.getExportText(search.getResults());
 			return download(text, MediaType.TEXT_PLAIN, search.getQuery() + ".txt");
 		} else if (format.equals("tcf")) {
@@ -213,5 +221,36 @@ public class RestService {
 		return Response.ok(entity, mediaType)
 				.header("Content-Disposition", "attachment; filename=\"" + filename + "\"")
 				.build();
+	}
+
+	@GET
+	@Path("search/{id}/toWeblicht")
+	public Response sendSearchResultsToWeblicht(@PathParam("id") Long searchId,
+			@QueryParam("format") String format) throws Exception {
+		Search search = Aggregator.getInstance().getSearchById(searchId);
+		if (search == null) {
+			return Response.status(Response.Status.NOT_FOUND).entity("Search job not found").build();
+		}
+
+		String url = null;
+		if (format == null || format.isEmpty() || format.trim().equals("text")) {
+			String text = Exports.getExportText(search.getResults());
+			if (text != null) {
+				byte[] bytes = text.getBytes(SEARCH_RESULTS_ENCODING);
+				url = DataTransfer.uploadToDropOff(bytes, "text/plan", ".txt");
+			}
+		} else if (format.equals("tokens")) {
+			byte[] bytes = Exports.getExportTokenizedTCF(
+					search.getResults(), search.getSearchLanguage(),
+					Aggregator.getInstance().getTokenizerModel());
+			if (bytes != null) {
+				url = DataTransfer.uploadToDropOff(bytes, "text/tcf+xml", ".tcf");
+			}
+		} else {
+			return Response.status(400).entity("incorrect format parameter").build();
+		}
+
+		return url == null ? Response.status(503).entity("error while exporting to weblicht").build()
+				: Response.ok().entity(url).build();
 	}
 }

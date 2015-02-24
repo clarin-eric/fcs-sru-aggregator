@@ -16,9 +16,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import opennlp.tools.tokenize.TokenizerModel;
 import org.slf4j.LoggerFactory;
 
 /**
@@ -67,7 +64,7 @@ public class Search {
 		searchRequest.setRecordSchema(legacy
 				? ClarinFCSRecordData.LEGACY_RECORD_SCHEMA
 				: ClarinFCSRecordData.RECORD_SCHEMA);
-		searchRequest.setQuery("\"" + searchString + "\"");
+		searchRequest.setQuery(searchString);
 		searchRequest.setStartRecord(startRecord);
 		if (corpus.getHandle() != null) {
 			searchRequest.setExtraRequestData(legacy
@@ -146,65 +143,6 @@ public class Search {
 
 	public Statistics getStatistics() {
 		return statistics;
-	}
-
-	private void exportPWText(String user, String pass) {
-		byte[] bytes = null;
-		try {
-			String text = Exports.getExportText(results);
-			if (text != null) {
-				bytes = text.getBytes(SEARCH_RESULTS_ENCODING);
-			}
-		} catch (Exception ex) {
-			Logger.getLogger(Search.class.getName()).log(Level.SEVERE, null, ex);
-		}
-		if (bytes != null) {
-			DataTransfer.uploadToPW(user, pass, bytes, "text/plan", ".txt");
-		}
-	}
-
-	private String useWebLichtOnText() {
-		String url = null;
-		try {
-			String text = Exports.getExportText(results);
-			if (text != null) {
-				byte[] bytes = text.getBytes(SEARCH_RESULTS_ENCODING);
-				url = DataTransfer.uploadToDropOff(bytes, "text/plan", ".txt");
-			}
-		} catch (Exception ex) {
-			Logger.getLogger(Search.class.getName()).log(Level.SEVERE, null, ex);
-		}
-		return url;
-	}
-
-	private String useWebLichtOnToks(TokenizerModel tokenizerModel) throws ExportException {
-		String url = null;
-		byte[] bytes = Exports.getExportTokenizedTCF(results, searchLanguage, tokenizerModel);
-		if (bytes != null) {
-			url = DataTransfer.uploadToDropOff(bytes, "text/tcf+xml", ".tcf");
-		}
-		return url;
-	}
-
-	private void exportPWExcel(String user, String pass) throws ExportException {
-		byte[] bytes = Exports.getExportExcel(results);
-		if (bytes != null) {
-			DataTransfer.uploadToPW(user, pass, bytes, "application/vnd.ms-excel", ".xls");
-		}
-	}
-
-	private void exportPWTCF(String user, String pass, TokenizerModel tokenizerModel) throws ExportException {
-		byte[] bytes = Exports.getExportTokenizedTCF(results, searchLanguage, tokenizerModel);
-		if (bytes != null) {
-			DataTransfer.uploadToPW(user, pass, bytes, "text/tcf+xml", ".tcf");
-		}
-	}
-
-	private void exportPWCSV(String user, String pass) {
-		String csv = Exports.getExportCSV(results, ";");
-		if (csv != null) {
-			DataTransfer.uploadToPW(user, pass, csv.getBytes(), "text/csv", ".csv");
-		}
 	}
 
 	public void shutdown() {

@@ -101,10 +101,10 @@ public class Corpus {
 	}
 
 	public void addLanguage(String language) {
-		if (LanguagesISO693_3.getInstance().getCodes().contains(language)) {
+		if (LanguagesISO693_3.getInstance().getCodes_3().contains(language)) {
 			this.languages.add(language);
 		} else {
-			String code = LanguagesISO693_3.getInstance().codeForName(language);
+			String code = LanguagesISO693_3.getInstance().code_3ForName(language);
 			this.languages.add(code == null ? language : code);
 		}
 	}

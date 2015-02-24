@@ -1,6 +1,7 @@
 package eu.clarin.sru.fcs.aggregator.search;
 
 import eu.clarin.sru.fcs.aggregator.lang.LanguagesISO693_2;
+import eu.clarin.sru.fcs.aggregator.lang.LanguagesISO693_3;
 import eu.clarin.weblicht.wlfxb.io.WLDObjector;
 import eu.clarin.weblicht.wlfxb.io.WLFormatException;
 import eu.clarin.weblicht.wlfxb.md.xb.MetaData;
@@ -11,6 +12,7 @@ import eu.clarin.weblicht.wlfxb.xb.WLData;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -224,17 +226,18 @@ public class Exports {
 	public static byte[] getExportTokenizedTCF(List<Result> resultsProcessed,
 			String searchLanguage, TokenizerModel tokenizerModel) throws ExportException {
         StringBuilder text = new StringBuilder();
-        Set<String> resultsLangs = new HashSet<String>();
         if (resultsProcessed != null && !resultsProcessed.isEmpty()) {
-            for (Result result : resultsProcessed) {
-                resultsLangs.addAll(result.getCorpus().getLanguages());
-                for (Kwic kwic : result.getKwics()) {
-                    text.append(kwic.getLeft());
-                    text.append(" ");
-                    text.append(kwic.getKeyword());
-                    text.append(" ");
-                    text.append(kwic.getRight());
-                    text.append("\n");
+			for (Result result : resultsProcessed) {
+				for (Kwic kwic : result.getKwics()) {
+					int i = kwic.getFragments().size() - 1;
+					for (Kwic.TextFragment tf : kwic.getFragments()) {
+						text.append(tf.text);
+						if (i > 0) {
+							text.append(" ");
+						}
+						i--;
+					}
+					text.append("\n");
                 }
             }
 
@@ -243,23 +246,9 @@ public class Exports {
 			return null;
         } else {
             WLData data;
-            MetaData md = new MetaData();
-            String resultsLang = "unknown";
-            if (resultsLangs.size() == 1) {
-                resultsLang = resultsLangs.iterator().next();
-				String code2 = LanguagesISO693_2.getInstance().langForCode(resultsLang).getCode_639_1();
-                if (code2 != null) {
-                    resultsLang = code2;
-                }
-            } else if (!searchLanguage.equals("anylang")) {
-				String code2 = LanguagesISO693_2.getInstance().langForCode(resultsLang).getCode_639_1();
-                if (code2 == null) {
-                    resultsLang = searchLanguage;
-                } else {
-                    resultsLang = code2;
-                }
-            }
-            TextCorpusStored tc = new TextCorpusStored(resultsLang);
+			MetaData md = new MetaData();
+			String languageCode = LanguagesISO693_3.getInstance().code_1ForCode_3(searchLanguage);
+			TextCorpusStored tc = new TextCorpusStored(languageCode);
             tc.createTextLayer().addText(text.toString());
 			addTokensSentencesMatches(resultsProcessed, tc, tokenizerModel);
             data = new WLData(md, tc);
@@ -275,7 +264,7 @@ public class Exports {
     }
 
 	private static void addTokensSentencesMatches(List<Result> resultsProcessed, TextCorpusStored tc, TokenizerModel model) {
-        if (model == null || !tc.getLanguage().equals("de")) {
+		if (model == null || !"de".equals(tc.getLanguage())) {
             return;
         }
         TokenizerME tokenizer = new TokenizerME(model);

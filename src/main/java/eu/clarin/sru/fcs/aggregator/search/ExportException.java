@@ -10,4 +10,7 @@ public class ExportException extends Exception {
 		super(message, ex);
 	}
 
+	public ExportException(String message) {
+		super(message);
+	}
 }

@@ -63,9 +63,9 @@ public class Kwic {
 			fragments.add(new TextFragment(text.substring(lastOffset, text.length()), false));
 		}
 
-		String code_iso639_2 = Aggregator.getInstance().detectLanguage(hits.getText());
-		language = code_iso639_2 == null ? null
-				: LanguagesISO693_3.getInstance().codeForCode639_2(code_iso639_2);
+		String code_iso639_1 = Aggregator.getInstance().detectLanguage(hits.getText());
+		language = code_iso639_1 == null ? null
+				: LanguagesISO693_3.getInstance().code_3ForCode_1(code_iso639_1);
 	}
 
 	public List<TextFragment> getFragments() {

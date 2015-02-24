@@ -87,23 +87,24 @@ import org.slf4j.LoggerFactory;
  * @author Yana Panchenko
  * @author edima
  *
- * TODO: Download search results as csv, excel, tcf, plain text
- *
  * TODO: Use weblicht with results
  *
- * TODO: Export search results to personal workspace as csv, excel, tcf, plain
- * text
- *
  * TODO: disable popups easily
- *
- * TODO: websockets
- *
+ * 
  * TODO: atomic replace of cached corpora (file)
- *
- * TODO: show multiple hits on the same result in multiple rows, linked visually
  *
  * TODO: zoom into the results from a corpus, allow functionality only for
  * the view (search for next set of results)
+ *
+ * TODO: fix search bug after going to stats
+ *
+ * TODO: Export search results to personal workspace as csv, excel, tcf, plain
+ * text: ask Marie/Wei about oauth ways to do that ndg oauth; ask Menzo, Willem,
+ * Twan (they did a test, it worked)
+ *
+ * TODO: websockets
+ *
+ * TODO: show multiple hits on the same result in multiple rows, linked visually
  *
  * TODO: optimise page load
  *
