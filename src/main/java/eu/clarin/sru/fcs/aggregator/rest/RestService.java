@@ -250,7 +250,10 @@ public class RestService {
 			return Response.status(400).entity("incorrect format parameter").build();
 		}
 
-		return url == null ? Response.status(503).entity("error while exporting to weblicht").build()
-				: Response.ok().entity(url).build();
+		URI weblichtUri = new URI(Aggregator.getInstance().getParams().getWEBLICHT_URL()
+				+ url);
+		return url == null
+				? Response.status(503).entity("error while exporting to weblicht").build()
+				: Response.seeOther(weblichtUri).entity(weblichtUri).build();
 	}
 }

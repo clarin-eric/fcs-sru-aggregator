@@ -269,6 +269,10 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({
 		return 'rest/search/'+this.state.searchId+'/download?format='+format;
 	},
 
+	getToWeblichtLink: function(format) {
+		return 'rest/search/'+this.state.searchId+'/toWeblicht?format='+format;
+	},
+
 	setLanguageAndFilter: function(languageObj, languageFilter) {
 		this.state.corpora.setVisibility(this.state.searchLayerId, 
 			languageFilter === 'byGuess' ? multipleLanguageCode : languageObj[0]);
@@ -426,6 +430,7 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({
 					<Results requests={this.state.hits.requests} 
 					         results={this.filterResults()} 
 					         getDownloadLink={this.getDownloadLink}
+					         getToWeblichtLink={this.getToWeblichtLink}
 					         searchedLanguage={this.state.language}/>
 				</div>
 			</div>
@@ -526,6 +531,7 @@ var Results = React.createClass({
 		results: PT.array.isRequired,
 		searchedLanguage: PT.array.isRequired,
 		getDownloadLink: PT.func.isRequired,
+		getToWeblichtLink: PT.func.isRequired,
 	},
 
 	getInitialState: function () {
@@ -536,6 +542,10 @@ var Results = React.createClass({
 
 	toggleKwic: function() {
 		this.setState({displayKwic:!this.state.displayKwic});
+	},
+
+	zoom: function(e) {
+		e.stopPropagation();
 	},
 
 	renderRowLanguage: function(hit) {
@@ -602,7 +612,7 @@ var Results = React.createClass({
 	},
 
 	renderDiagnostic: function(d) {
-		return 	<div className="alert alert-warning"> 
+		return 	<div className="alert alert-warning" key={d.uri}> 
 					<div>Diagnostic: {d.message}</div>
 				</div>; 
 	},
@@ -653,7 +663,7 @@ var Results = React.createClass({
 			corpusHit.diagnostics.length === 0) {
 				return false;
 		}
-		return 	<Panel key={corpusHit.corpus.title} 
+		return 	<Panel key={corpusHit.corpus.id} 
 						title={this.renderPanelTitle(corpusHit.corpus)} 
 						info={this.renderPanelInfo(corpusHit.corpus)}>
 					{this.renderPanelBody(corpusHit)}
@@ -708,6 +718,22 @@ var Results = React.createClass({
 		);
 	},
 
+	renderToWeblichtLinks: function() {
+		return (
+			<div className="dropdown">
+				<button className="btn btn-default" aria-expanded="false" data-toggle="dropdown" >
+					<span className="glyphicon glyphicon-download-alt" aria-hidden="true"/>
+					{" "} Use Weblicht {" "} 
+					<span className="caret"/>
+				</button>
+				<ul className="dropdown-menu">
+					<li> <a href={this.props.getToWeblichtLink("text")}>
+							{" "} As Plain Text file</a></li>
+				</ul>
+			</div>
+		);
+	},
+
 	renderToolbox: function(hits) {
 		if (hits <= 0) {
 			return false;
@@ -715,6 +741,9 @@ var Results = React.createClass({
 		return 	<div key="-toolbox-" style={{marginBottom:10}}>
 					<div className="toolbox float-left inline">
 						{this.renderDownloadLinks()}
+					</div>
+					<div className="toolbox float-left inline">
+						{this.renderToWeblichtLinks()}
 					</div>
 					<div className="float-right inline" style={{marginTop:15}}>
 						<div className="btn-group" style={{display:"inline-block"}}>

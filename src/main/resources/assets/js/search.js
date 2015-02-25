@@ -269,6 +269,10 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({dis
 		return 'rest/search/'+this.state.searchId+'/download?format='+format;
 	},
 
+	getToWeblichtLink: function(format) {
+		return 'rest/search/'+this.state.searchId+'/toWeblicht?format='+format;
+	},
+
 	setLanguageAndFilter: function(languageObj, languageFilter) {
 		this.state.corpora.setVisibility(this.state.searchLayerId, 
 			languageFilter === 'byGuess' ? multipleLanguageCode : languageObj[0]);
@@ -426,6 +430,7 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({dis
 					React.createElement(Results, {requests: this.state.hits.requests, 
 					         results: this.filterResults(), 
 					         getDownloadLink: this.getDownloadLink, 
+					         getToWeblichtLink: this.getToWeblichtLink, 
 					         searchedLanguage: this.state.language})
 				)
 			)
@@ -526,6 +531,7 @@ var Results = React.createClass({displayName: 'Results',
 		results: PT.array.isRequired,
 		searchedLanguage: PT.array.isRequired,
 		getDownloadLink: PT.func.isRequired,
+		getToWeblichtLink: PT.func.isRequired,
 	},
 
 	getInitialState: function () {
@@ -536,6 +542,10 @@ var Results = React.createClass({displayName: 'Results',
 
 	toggleKwic: function() {
 		this.setState({displayKwic:!this.state.displayKwic});
+	},
+
+	zoom: function(e) {
+		e.stopPropagation();
 	},
 
 	renderRowLanguage: function(hit) {
@@ -602,7 +612,7 @@ var Results = React.createClass({displayName: 'Results',
 	},
 
 	renderDiagnostic: function(d) {
-		return 	React.createElement("div", {className: "alert alert-warning"}, 
+		return 	React.createElement("div", {className: "alert alert-warning", key: d.uri}, 
 					React.createElement("div", null, "Diagnostic: ", d.message)
 				); 
 	},
@@ -653,7 +663,7 @@ var Results = React.createClass({displayName: 'Results',
 			corpusHit.diagnostics.length === 0) {
 				return false;
 		}
-		return 	React.createElement(Panel, {key: corpusHit.corpus.title, 
+		return 	React.createElement(Panel, {key: corpusHit.corpus.id, 
 						title: this.renderPanelTitle(corpusHit.corpus), 
 						info: this.renderPanelInfo(corpusHit.corpus)}, 
 					this.renderPanelBody(corpusHit)
@@ -708,6 +718,22 @@ var Results = React.createClass({displayName: 'Results',
 		);
 	},
 
+	renderToWeblichtLinks: function() {
+		return (
+			React.createElement("div", {className: "dropdown"}, 
+				React.createElement("button", {className: "btn btn-default", 'aria-expanded': "false", 'data-toggle': "dropdown"}, 
+					React.createElement("span", {className: "glyphicon glyphicon-download-alt", 'aria-hidden': "true"}), 
+					" ", " Use Weblicht ", " ", 
+					React.createElement("span", {className: "caret"})
+				), 
+				React.createElement("ul", {className: "dropdown-menu"}, 
+					React.createElement("li", null, " ", React.createElement("a", {href: this.props.getToWeblichtLink("text")}, 
+							" ", " As Plain Text file"))
+				)
+			)
+		);
+	},
+
 	renderToolbox: function(hits) {
 		if (hits <= 0) {
 			return false;
@@ -715,6 +741,9 @@ var Results = React.createClass({displayName: 'Results',
 		return 	React.createElement("div", {key: "-toolbox-", style: {marginBottom:10}}, 
 					React.createElement("div", {className: "toolbox float-left inline"}, 
 						this.renderDownloadLinks()
+					), 
+					React.createElement("div", {className: "toolbox float-left inline"}, 
+						this.renderToWeblichtLinks()
 					), 
 					React.createElement("div", {className: "float-right inline", style: {marginTop:15}}, 
 						React.createElement("div", {className: "btn-group", style: {display:"inline-block"}}, 

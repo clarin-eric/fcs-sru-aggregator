@@ -92,6 +92,11 @@ public class AggregatorConfiguration extends Configuration {
 		public int getSEARCH_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT() {
 			return SEARCH_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT;
 		}
+
+		@JsonIgnore
+		public String getWEBLICHT_URL() {
+			return WEBLICHT_URL;
+		}
 	}
 	public Params aggregatorParams = new Params();
 }

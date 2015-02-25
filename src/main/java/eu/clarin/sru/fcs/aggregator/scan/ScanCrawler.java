@@ -200,10 +200,16 @@ public class ScanCrawler {
 	private static String getBestValueFrom(Map<String, String> map) {
 		String ret = map.get("en");
 		if (ret == null || ret.trim().isEmpty()) {
+			ret = map.get("eng");
+		}
+		if (ret == null || ret.trim().isEmpty()) {
 			ret = map.get(null);
 		}
 		if (ret == null || ret.trim().isEmpty()) {
 			ret = map.get("de");
+		}
+		if (ret == null || ret.trim().isEmpty()) {
+			ret = map.get("deu");
 		}
 		if (ret == null || ret.trim().isEmpty()) {
 			ret = map.size() > 0

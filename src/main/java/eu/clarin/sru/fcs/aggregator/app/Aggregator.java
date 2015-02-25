@@ -90,8 +90,6 @@ import org.slf4j.LoggerFactory;
  * TODO: zoom into the results from a corpus, allow functionality only for
  * the view (search for next set of results)
  *
- * TODO: Use weblicht with results
- *
  * TODO: Export search results to personal workspace as csv, excel, tcf, plain
  * text: ask Marie/Wei about oauth ways to do that ndg oauth; ask Menzo, Willem,
  * Twan (they did a test, it worked)
