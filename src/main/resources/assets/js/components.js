@@ -121,7 +121,6 @@ var PopoverMixin = window.MyReact.PopoverMixin = {
 	},
 
 	refresh: function() {
-		console.log("popover refresh", this.props.title);
 		$(this.getDOMNode()).popover('destroy');
 
 		var content;

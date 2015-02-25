@@ -290,7 +290,6 @@ div.panel-title .institutionName{
 	/*color: rgb(215, 180, 105);*/
 	font-weight: bold;
 	padding: .15em .5em .25em;
-	white-space: nowrap;
 	border-radius: .2em;
 	/*display: inline;*/
 }
@@ -299,7 +298,6 @@ div.panel-title .institutionName{
 	color: #00406F;
 	font-weight: bold;
 	font-weight: bold;
-	white-space: nowrap;
 }
  
 .bs-callout {
