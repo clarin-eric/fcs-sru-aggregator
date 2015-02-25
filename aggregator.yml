@@ -1,10 +1,10 @@
 aggregatorParams:
-  # CENTER_REGISTRY_URL: http://centres.clarin.eu/restxml/
+  CENTER_REGISTRY_URL: http://centres.clarin.eu/restxml/
   additionalCQLEndpoints:
-    # - http://cqlservlet.mpi.nl/
-    - http://dspin.dwds.de:8088/ddc-sru/dingler/
     - https://clarin.ids-mannheim.de/digibibsru-new
     - https://lux17.mpi.nl/ds/cqlsearch
+    # - http://cqlservlet.mpi.nl/
+    # - http://dspin.dwds.de:8088/ddc-sru/dingler/
     # - http://www.meertens.knaw.nl/mimore/srucql/
     # - http://gysseling.corpus.taalbanknederlands.inl.nl/gyssru/
     # - http://brievenalsbuit.inl.nl/zbsru/

@@ -180,7 +180,7 @@ var CorpusView = window.MyAggregator.CorpusView = React.createClass({
 		var priorityStyle = {paddingBottom: 4, paddingLeft: 2, borderBottom: '3px solid '+color };
 		var expansive = corpus.expanded ? {overflow:'hidden'} 
 			: {whiteSpace:'nowrap', overflow:'hidden', textOverflow: 'ellipsis'};
-		return	<div className={corpusContainerClass} key={corpus.title}>
+		return	<div className={corpusContainerClass} key={corpus.id}>
 					<div className="row corpus" onClick={this.toggleExpansion.bind(this, corpus)}>
 						<div className="col-sm-1 vcenter">
 								<div className="inline" style={priorityStyle} onClick={this.toggleSelection.bind(this,corpus)}>
