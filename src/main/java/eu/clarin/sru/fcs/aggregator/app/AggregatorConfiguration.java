@@ -25,6 +25,10 @@ public class AggregatorConfiguration extends Configuration {
 		@JsonProperty
 		String AGGREGATOR_FILE_PATH;
 
+		@NotEmpty
+		@JsonProperty
+		String AGGREGATOR_FILE_PATH_BACKUP;
+
 		@JsonProperty
 		@Range
 		int SCAN_MAX_DEPTH;

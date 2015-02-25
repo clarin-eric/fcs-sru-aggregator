@@ -23,6 +23,7 @@ public class ScanCrawlTask implements Runnable {
 	private EndpointFilter filter;
 	private AtomicReference<Corpora> corporaAtom;
 	private File cachedCorpora;
+	private File oldCachedCorpora;
 	private AtomicReference<Statistics> scanStatisticsAtom;
 	private AtomicReference<Statistics> searchStatisticsAtom;
 	private String centerRegistryUrl;
@@ -31,10 +32,11 @@ public class ScanCrawlTask implements Runnable {
 	public ScanCrawlTask(ThrottledClient sruClient, String centerRegistryUrl,
 			int cacheMaxDepth, List<URL> additionalCQLEndpoints,
 			EndpointFilter filter,
-			AtomicReference<Corpora> corporaAtom, File cachedCorpora,
+			AtomicReference<Corpora> corporaAtom,
+			File cachedCorpora, File oldCachedCorpora,
 			AtomicReference<Statistics> scanStatisticsAtom,
 			AtomicReference<Statistics> searchStatisticsAtom
-			) {
+	) {
 		this.sruClient = sruClient;
 		this.centerRegistryUrl = centerRegistryUrl;
 		this.cacheMaxDepth = cacheMaxDepth;
@@ -42,6 +44,7 @@ public class ScanCrawlTask implements Runnable {
 		this.filter = filter;
 		this.corporaAtom = corporaAtom;
 		this.cachedCorpora = cachedCorpora;
+		this.oldCachedCorpora = oldCachedCorpora;
 		this.scanStatisticsAtom = scanStatisticsAtom;
 		this.searchStatisticsAtom = searchStatisticsAtom;
 	}
@@ -82,8 +85,7 @@ public class ScanCrawlTask implements Runnable {
 			if (corpora.getCorpora().isEmpty()) {
 				log.warn("ScanCrawlTask: Skipped writing to disk (no corpora). Finished.");
 			} else {
-				ObjectMapper mapper = new ObjectMapper();
-				mapper.writerWithDefaultPrettyPrinter().writeValue(cachedCorpora, corpora);
+				dump(corpora, cachedCorpora, oldCachedCorpora);
 				log.info("ScanCrawlTask: wrote to disk, finished");
 			}
 		} catch (IOException xc) {
@@ -92,5 +94,23 @@ public class ScanCrawlTask implements Runnable {
 			log.error("!!! Scan Crawler task throwable exception", xc);
 			throw xc;
 		}
+	}
+
+	private static void dump(Corpora corpora,
+			File cachedCorpora, File oldCachedCorpora) throws IOException {
+		if (cachedCorpora.exists()) {
+			try {
+				oldCachedCorpora.delete();
+			} catch (Throwable txc) {
+				//ignore
+			}
+			try {
+				cachedCorpora.renameTo(oldCachedCorpora);
+			} catch (Throwable txc) {
+				// ignore
+			}
+		}
+		ObjectMapper mapper = new ObjectMapper();
+		mapper.writerWithDefaultPrettyPrinter().writeValue(cachedCorpora, corpora);
 	}
 }

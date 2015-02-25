@@ -12,8 +12,9 @@ aggregatorParams:
     #  - http://dspin.dwds.de:8088/ddc-sru/dta/
 
   # AGGREGATOR_FILE_PATH: /data/fcsAggregator/fcsAggregatorCorpora.json
+  # AGGREGATOR_FILE_PATH_BACKUP: /data/fcsAggregator/fcsAggregatorCorpora.backup.json
   AGGREGATOR_FILE_PATH: /Users/edima/fcsAggregatorCorpora.json
-
+  AGGREGATOR_FILE_PATH_BACKUP: /Users/edima/fcsAggregatorCorpora.backup.json
   SCAN_MAX_DEPTH: 1 # recommended 3
   SCAN_TASK_INITIAL_DELAY: 0
   SCAN_TASK_INTERVAL: 12

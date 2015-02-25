@@ -603,7 +603,7 @@ var Results = React.createClass({
 
 	renderDiagnostic: function(d) {
 		return 	<div className="alert alert-warning"> 
-					<div>Diagnostic: {d.diagnostic.message}</div>
+					<div>Diagnostic: {d.message}</div>
 				</div>; 
 	},
 

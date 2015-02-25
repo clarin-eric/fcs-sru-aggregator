@@ -603,7 +603,7 @@ var Results = React.createClass({displayName: 'Results',
 
 	renderDiagnostic: function(d) {
 		return 	React.createElement("div", {className: "alert alert-warning"}, 
-					React.createElement("div", null, "Diagnostic: ", d.diagnostic.message)
+					React.createElement("div", null, "Diagnostic: ", d.message)
 				); 
 	},
 

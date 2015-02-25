@@ -125,7 +125,7 @@ var PopoverMixin = window.MyReact.PopoverMixin = {
 
 		var content;
 		if (Array.isArray(this.props.children))
-			content = this.props.children.map(React.renderToString).join(" ");
+			content = this.props.children.map(React.renderToString).join("");
 		else 
 			content = React.renderToString(this.props.children);
 		// console.log("children: ", this.props.children);
@@ -135,7 +135,7 @@ var PopoverMixin = window.MyReact.PopoverMixin = {
 			animation: this.props.animation,
 			placement: this.props.placement,
 			title: this.props.title,
-			trigger: 'click',
+			trigger: 'focus',
 			html: true,
 		});
 	},

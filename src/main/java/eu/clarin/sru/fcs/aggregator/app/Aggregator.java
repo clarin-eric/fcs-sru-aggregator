@@ -87,16 +87,10 @@ import org.slf4j.LoggerFactory;
  * @author Yana Panchenko
  * @author edima
  *
- * TODO: Use weblicht with results
- *
- * TODO: disable popups easily
- * 
- * TODO: atomic replace of cached corpora (file)
- *
  * TODO: zoom into the results from a corpus, allow functionality only for
  * the view (search for next set of results)
  *
- * TODO: fix search bug after going to stats
+ * TODO: Use weblicht with results
  *
  * TODO: Export search results to personal workspace as csv, excel, tcf, plain
  * text: ask Marie/Wei about oauth ways to do that ndg oauth; ask Menzo, Willem,
@@ -150,7 +144,6 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 	public void initialize(Bootstrap<AggregatorConfiguration> bootstrap) {
 		bootstrap.addBundle(new AssetsBundle("/assets", "/", "index.html", "static"));
 	}
-
 
 	@Override
 	public void run(AggregatorConfiguration config, Environment environment) throws Exception {
@@ -220,12 +213,27 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 		);
 
 		File corporaCacheFile = new File(params.AGGREGATOR_FILE_PATH);
-		try {
-			Corpora corpora = new ObjectMapper().readValue(corporaCacheFile, Corpora.class);
-			scanCacheAtom.set(corpora);
-			log.info("corpus list read from file; number of root corpora: " + scanCacheAtom.get().getCorpora().size());
-		} catch (Exception e) {
-			log.error("Error while reading cached corpora:", e);
+		File corporaOldCacheFile = new File(params.AGGREGATOR_FILE_PATH_BACKUP);
+
+		// init corpora from file
+		{
+			Corpora corpora = null;
+			try {
+				corpora = new ObjectMapper().readValue(corporaCacheFile, Corpora.class);
+			} catch (Exception xc) {
+				log.error("Failed to load cached corpora from primary file:", xc);
+			}
+			if (corpora == null) {
+				try {
+					corpora = new ObjectMapper().readValue(corporaOldCacheFile, Corpora.class);
+				} catch (Exception e) {
+					log.error("Failed to load cached corpora from backup file:", e);
+				}
+			}
+			if (corpora != null) {
+				scanCacheAtom.set(corpora);
+				log.info("corpus list read from file; number of root corpora: " + scanCacheAtom.get().getCorpora().size());
+			}
 		}
 
 		LanguagesISO693_3.getInstance(); // force init
@@ -235,7 +243,7 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 		ScanCrawlTask task = new ScanCrawlTask(sruScanClient,
 				params.CENTER_REGISTRY_URL, params.SCAN_MAX_DEPTH,
 				params.additionalCQLEndpoints,
-				null, scanCacheAtom, corporaCacheFile,
+				null, scanCacheAtom, corporaCacheFile, corporaOldCacheFile,
 				scanStatsAtom, searchStatsAtom);
 		scheduler.scheduleAtFixedRate(task, params.SCAN_TASK_INITIAL_DELAY,
 				params.SCAN_TASK_INTERVAL, params.getScanTaskTimeUnit());
