@@ -1,4 +1,4 @@
-package eu.clarin.sru.fcs.aggregator.lang;
+package eu.clarin.sru.fcs.aggregator.util;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -9,7 +9,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 import org.slf4j.LoggerFactory;
 
 /**
@@ -17,18 +16,18 @@ import org.slf4j.LoggerFactory;
  *
  * @author Yana Panchenko
  */
-public class LanguagesISO693_3 {
+public class LanguagesISO693 {
 
-	private static final org.slf4j.Logger log = LoggerFactory.getLogger(LanguagesISO693_3.class);
+	private static final org.slf4j.Logger log = LoggerFactory.getLogger(LanguagesISO693.class);
 	public static final String LANGUAGES_FILE_PATH = "/lang/iso-639-3_20140320.tab";
 	public static final String LANGUAGES_FILE_ENCODING = "UTF-8";
 
-	private static LanguagesISO693_3 instance = null;
+	private static LanguagesISO693 instance = null;
 
 	public static class Language {
 
 		// code is ISO-639-3 (3 letters) while code_2 is ISO-639-1 (2 letters)
-		String code_3, code_1, name;
+		private String code_3, code_1, name;
 
 		public Language(String code_3, String code_1, String name) {
 			this.code_3 = code_3;
@@ -37,14 +36,14 @@ public class LanguagesISO693_3 {
 		}
 	}
 
-	private Map<String, Language> code_3ToLang = new HashMap<String, Language>();
+	private Map<String, Language> codeToLang = new HashMap<String, Language>();
 	private Map<String, Language> nameToLang = new HashMap<String, Language>();
-	private Map<String, Language> code_1ToLang = new HashMap<String, Language>();
 
-	private LanguagesISO693_3() {
-		InputStream is = LanguagesISO693_3.class.getResourceAsStream(LANGUAGES_FILE_PATH);
+	private LanguagesISO693() {
+		InputStream is = LanguagesISO693.class.getResourceAsStream(LANGUAGES_FILE_PATH);
 		try (BufferedReader br = new BufferedReader(new InputStreamReader(is, LANGUAGES_FILE_ENCODING))) {
-			String line = br.readLine(); // ignore first line
+			br.readLine(); // ignore first line (header)
+			String line;
 			while ((line = br.readLine()) != null) {
 				if (line.length() > 0) {
 					String[] toks = line.split("\\t");
@@ -59,9 +58,9 @@ public class LanguagesISO693_3 {
 					}
 					String name = toks[6].trim();
 					Language l = new Language(code_3, code_1, name);
-					code_3ToLang.put(code_3, l);
+					codeToLang.put(code_3, l);
 					if (code_1 != null) {
-						code_1ToLang.put(code_1, l);
+						codeToLang.put(code_1, l);
 					}
 					nameToLang.put(name, l);
 				}
@@ -72,27 +71,27 @@ public class LanguagesISO693_3 {
 
 		ObjectWriter ow = new ObjectMapper().writerWithDefaultPrettyPrinter();
 		try {
-			System.out.println(ow.writeValueAsString(code_3ToLang));
+			System.out.println(ow.writeValueAsString(codeToLang));
 		} catch (JsonProcessingException ex) {
 		}
 	}
 
-	public static LanguagesISO693_3 getInstance() {
+	public static LanguagesISO693 getInstance() {
 		if (instance == null) {
-			instance = new LanguagesISO693_3();
+			instance = new LanguagesISO693();
 		}
 		return instance;
 	}
 
-	public Set<String> getCodes_3() {
-		return code_3ToLang.keySet();
+	public boolean isCode(String code) {
+		return codeToLang.containsKey(code);
 	}
 
-	public String code_3ForCode_1(String code639_1) {
+	public String code_3ForCode(String code639_1) {
 		if (code639_1 == null) {
 			return null;
 		}
-		Language l = code_1ToLang.get(code639_1);
+		Language l = codeToLang.get(code639_1);
 		if (l == null) {
 			log.error("Unknown ISO-639-1 code: " + code639_1);
 			return null;
@@ -104,7 +103,7 @@ public class LanguagesISO693_3 {
 		if (code639_3 == null) {
 			return null;
 		}
-		Language l = code_3ToLang.get(code639_3);
+		Language l = codeToLang.get(code639_3);
 		if (l == null) {
 			log.error("Unknown ISO-639-3 code: " + code639_3);
 			return null;
@@ -121,13 +120,12 @@ public class LanguagesISO693_3 {
 		return l.code_3;
 	}
 
-	public String nameForCode_3(String code) {
-		Language l = code_3ToLang.get(code);
+	public String nameForCode(String code) {
+		Language l = codeToLang.get(code);
 		if (l == null) {
 			log.error("Unknown language code: " + code);
 			return null;
 		}
 		return l.name;
 	}
-
 }

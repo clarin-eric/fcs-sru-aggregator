@@ -1,6 +1,6 @@
 package eu.clarin.sru.fcs.aggregator.scan;
 
-import eu.clarin.sru.fcs.aggregator.lang.LanguagesISO693_3;
+import eu.clarin.sru.fcs.aggregator.util.LanguagesISO693;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -101,10 +101,10 @@ public class Corpus {
 	}
 
 	public void addLanguage(String language) {
-		if (LanguagesISO693_3.getInstance().getCodes_3().contains(language)) {
+		if (LanguagesISO693.getInstance().isCode(language)) {
 			this.languages.add(language);
 		} else {
-			String code = LanguagesISO693_3.getInstance().code_3ForName(language);
+			String code = LanguagesISO693.getInstance().code_3ForName(language);
 			this.languages.add(code == null ? language : code);
 		}
 	}

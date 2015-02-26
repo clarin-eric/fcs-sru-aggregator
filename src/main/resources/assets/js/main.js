@@ -2,7 +2,7 @@
 (function() {
 "use strict";
 
-var VERSION = "VERSION 2.0.0.α24";
+var VERSION = "VERSION 2.0.0.α25";
 var URLROOT = "/Aggregator-testing";
 
 var PT = React.PropTypes;
@@ -149,7 +149,7 @@ var Main = React.createClass({displayName: 'Main',
 								React.createElement("span", {className: "icon-bar"}), 
 								React.createElement("span", {className: "icon-bar"})
 							), 
-							React.createElement("a", {className: "navbar-brand", href: "#", tabIndex: "-1"}, React.createElement("header", null, "Federated Content Search"))
+							React.createElement("a", {className: "navbar-brand", href: URLROOT, tabIndex: "-1"}, React.createElement("header", null, "Federated Content Search"))
 						), 
 						this.renderCollapsible()
 					)

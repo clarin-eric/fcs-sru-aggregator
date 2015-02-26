@@ -1,8 +1,8 @@
 aggregatorParams:
-  # CENTER_REGISTRY_URL: http://centres.clarin.eu/restxml/
+  CENTER_REGISTRY_URL: http://centres.clarin.eu/restxml/
   additionalCQLEndpoints:
     - https://clarin.ids-mannheim.de/digibibsru-new
-    - https://lux17.mpi.nl/ds/cqlsearch
+    # - https://lux17.mpi.nl/ds/cqlsearch
     # - http://cqlservlet.mpi.nl/
     # - http://dspin.dwds.de:8088/ddc-sru/dingler/
     # - http://www.meertens.knaw.nl/mimore/srucql/
@@ -27,7 +27,16 @@ aggregatorParams:
   ENDPOINTS_SEARCH_TIMEOUT_MS: 30000
   EXECUTOR_SHUTDOWN_TIMEOUT_MS: 1000
 
-  WEBLICHT_URL: https://weblicht.sfs.uni-tuebingen.de/WebLicht-4/?input=
+  weblichtConfig:
+    url: https://weblicht.sfs.uni-tuebingen.de/WebLicht-4/?input=
+    acceptedTcfLanguages:
+      - en
+      - de
+      - nl
+      - fr
+      - it
+      - sp
+      - pl
 
 # use the simple server factory, run on a single port
 server:

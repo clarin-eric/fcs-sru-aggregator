@@ -17,14 +17,13 @@ import eu.clarin.sru.fcs.aggregator.client.ThrottledClient;
 import eu.clarin.sru.fcs.aggregator.scan.Corpus;
 import eu.clarin.sru.fcs.aggregator.rest.RestService;
 import eu.clarin.sru.fcs.aggregator.scan.Statistics;
-import eu.clarin.sru.fcs.aggregator.lang.LanguagesISO693_3;
+import eu.clarin.sru.fcs.aggregator.util.LanguagesISO693;
 import io.dropwizard.Application;
 import io.dropwizard.assets.AssetsBundle;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -34,7 +33,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
-import opennlp.tools.tokenize.TokenizerModel;
 import org.slf4j.LoggerFactory;
 
 /**
@@ -87,12 +85,22 @@ import org.slf4j.LoggerFactory;
  * @author Yana Panchenko
  * @author edima
  *
+ * TODO: ?use weblicht only to show up in zoomed mode
+ * - send only tcf with only a text layer and language (from the list in params)
+ *
+ * TODO: add the modes described above (except live)
+ *
  * TODO: zoom into the results from a corpus, allow functionality only for
  * the view (search for next set of results)
  *
  * TODO: Export search results to personal workspace as csv, excel, tcf, plain
  * text: ask Marie/Wei about oauth ways to do that ndg oauth; ask Menzo, Willem,
  * Twan (they did a test, it worked)
+ *
+ * TODO: add PiWik support, tracking the following:
+ * - visits, searches, search per corpus
+ *
+ * TODO: BUG: language detection is immediate, in UI; export implications
  *
  * TODO: websockets
  *
@@ -121,7 +129,6 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 	private AtomicReference<Statistics> scanStatsAtom = new AtomicReference<Statistics>(new Statistics());
 	private AtomicReference<Statistics> searchStatsAtom = new AtomicReference<Statistics>(new Statistics());
 
-	private TokenizerModel tokenizerModel;
 	private LanguageDetector languageDetector;
 	private TextObjectFactory textObjectFactory;
 
@@ -234,8 +241,7 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 			}
 		}
 
-		LanguagesISO693_3.getInstance(); // force init
-		initTokenizer();
+		LanguagesISO693.getInstance(); // force init
 		initLanguageDetector();
 
 		ScanCrawlTask task = new ScanCrawlTask(sruScanClient,
@@ -292,10 +298,6 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 		return activeSearches.get(id);
 	}
 
-	public TokenizerModel getTokenizerModel() {
-		return tokenizerModel;
-	}
-
 	private static void shutdownAndAwaitTermination(AggregatorConfiguration.Params params,
 			ThrottledClient sruClient, ExecutorService scheduler) {
 		try {
@@ -310,18 +312,6 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 			scheduler.shutdownNow();
 			Thread.currentThread().interrupt();
 		}
-	}
-
-	private void initTokenizer() {
-		TokenizerModel model = null;
-		try {
-			try (InputStream tokenizerModelDeAsIS = Thread.currentThread().getContextClassLoader().getResourceAsStream(DE_TOK_MODEL)) {
-				model = new TokenizerModel(tokenizerModelDeAsIS);
-			}
-		} catch (IOException ex) {
-			log.error("Failed to load tokenizer model", ex);
-		}
-		tokenizerModel = model;
 	}
 
 	public void initLanguageDetector() throws IOException {

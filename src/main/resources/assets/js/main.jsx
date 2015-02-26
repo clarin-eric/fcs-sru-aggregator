@@ -2,7 +2,7 @@
 (function() {
 "use strict";
 
-var VERSION = "VERSION 2.0.0.α24";
+var VERSION = "VERSION 2.0.0.α25";
 var URLROOT = "/Aggregator-testing";
 
 var PT = React.PropTypes;
@@ -149,7 +149,7 @@ var Main = React.createClass({
 								<span className="icon-bar"></span>
 								<span className="icon-bar"></span>
 							</button>
-							<a className="navbar-brand" href="#" tabIndex="-1"><header>Federated Content Search</header></a>
+							<a className="navbar-brand" href={URLROOT} tabIndex="-1"><header>Federated Content Search</header></a>
 						</div>
 						{this.renderCollapsible()}
 					</div>

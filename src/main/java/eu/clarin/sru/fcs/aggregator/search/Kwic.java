@@ -2,9 +2,10 @@ package eu.clarin.sru.fcs.aggregator.search;
 
 import eu.clarin.sru.client.fcs.DataViewHits;
 import eu.clarin.sru.fcs.aggregator.app.Aggregator;
-import eu.clarin.sru.fcs.aggregator.lang.LanguagesISO693_3;
+import eu.clarin.sru.fcs.aggregator.util.LanguagesISO693;
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.commons.lang.StringEscapeUtils;
 
 /**
  * Represents keyword in context data view and information about its PID and
@@ -47,25 +48,31 @@ public class Kwic {
 		this.pid = pid;
 		this.reference = reference;
 
-		String text = hits.getText();
+		// warning: the client library doesn't unescape the xml
+		// so the text can still contains &lt; and &amp; codes
+		String str = hits.getText();
+
 		int lastOffset = 0;
 		for (int i = 0; i < hits.getHitCount(); i++) {
 			int[] offsets = hits.getHitOffsets(i);
 			if (lastOffset < offsets[0]) {
-				fragments.add(new TextFragment(text.substring(lastOffset, offsets[0]), false));
+				String text = StringEscapeUtils.unescapeXml(str.substring(lastOffset, offsets[0]));
+				fragments.add(new TextFragment(text, false));
 			}
 			if (offsets[0] < offsets[1]) {
-				fragments.add(new TextFragment(text.substring(offsets[0], offsets[1]), true));
+				String text = StringEscapeUtils.unescapeXml(str.substring(offsets[0], offsets[1]));
+				fragments.add(new TextFragment(text, true));
 			}
 			lastOffset = offsets[1];
 		}
-		if (lastOffset < text.length()) {
-			fragments.add(new TextFragment(text.substring(lastOffset, text.length()), false));
+		if (lastOffset < str.length()) {
+			String text = StringEscapeUtils.unescapeXml(str.substring(lastOffset, str.length()));
+			fragments.add(new TextFragment(text, false));
 		}
 
-		String code_iso639_1 = Aggregator.getInstance().detectLanguage(hits.getText());
+		String code_iso639_1 = Aggregator.getInstance().detectLanguage(str);
 		language = code_iso639_1 == null ? null
-				: LanguagesISO693_3.getInstance().code_3ForCode_1(code_iso639_1);
+				: LanguagesISO693.getInstance().code_3ForCode(code_iso639_1);
 	}
 
 	public List<TextFragment> getFragments() {
@@ -86,12 +93,14 @@ public class Kwic {
 
 	@Deprecated
 	public String getLeft() {
+		StringBuilder sb = new StringBuilder();
 		for (TextFragment tf : fragments) {
-			if (!tf.isHit) {
-				return tf.text;
+			if (tf.isHit) {
+				break;
 			}
+			sb.append(tf.text);
 		}
-		return "";
+		return sb.toString();
 	}
 
 	@Deprecated

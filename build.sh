@@ -31,10 +31,13 @@ for f in $JSDIR/*.jsx; do
 done
 node_modules/react-tools/bin/jsx --no-cache-dir $JSDIR $JSDIR
 
-# mvn -q clean package
+if [ "$1" == "--jar" ]
+then
+	mvn -q clean package
+fi
 
 # Run in production:
-#java -jar target/Aggregator2-2.0.0-alpha-6.jar server aggregator.yml
+#java -jar target/Aggregator2-2.0.0.jar server aggregator.yml
 
 # Run for development:
-# java -cp src/main/resources:target/Aggregator2-2.0.0-alpha-10.jar eu.clarin.sru.fcs.aggregator.app.Aggregator server aggregator_development.yml
+# java -cp src/main/resources:target/Aggregator2-2.0.0.jar eu.clarin.sru.fcs.aggregator.app.Aggregator server aggregator_development.yml

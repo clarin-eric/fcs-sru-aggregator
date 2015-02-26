@@ -13,13 +13,11 @@ public class AggregatorConfiguration extends Configuration {
 
 	public static class Params {
 
-		@NotEmpty
 		@JsonProperty
 		String CENTER_REGISTRY_URL;
 
-		@NotEmpty
 		@JsonProperty
-		String WEBLICHT_URL;
+		List<URL> additionalCQLEndpoints;
 
 		@NotEmpty
 		@JsonProperty
@@ -65,8 +63,27 @@ public class AggregatorConfiguration extends Configuration {
 		@Range
 		long EXECUTOR_SHUTDOWN_TIMEOUT_MS;
 
+		public static class WeblichtConfig {
+			@JsonProperty
+			String url;
+
+			@JsonProperty
+			List<String> acceptedTcfLanguages;
+
+			@JsonIgnore
+			public String getUrl() {
+				return url;
+			}
+
+			@JsonIgnore
+			public List<String> getAcceptedTcfLanguages() {
+				return acceptedTcfLanguages;
+			}
+		}
+
+		@NotEmpty
 		@JsonProperty
-		List<URL> additionalCQLEndpoints;
+		WeblichtConfig weblichtConfig;
 
 		@JsonIgnore
 		public TimeUnit getScanTaskTimeUnit() {
@@ -94,8 +111,8 @@ public class AggregatorConfiguration extends Configuration {
 		}
 
 		@JsonIgnore
-		public String getWEBLICHT_URL() {
-			return WEBLICHT_URL;
+		public WeblichtConfig getWeblichtConfig() {
+			return weblichtConfig;
 		}
 	}
 	public Params aggregatorParams = new Params();

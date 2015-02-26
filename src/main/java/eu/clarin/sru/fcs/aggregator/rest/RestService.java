@@ -6,13 +6,13 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 import eu.clarin.sru.client.SRUVersion;
 import eu.clarin.sru.fcs.aggregator.app.Aggregator;
 import eu.clarin.sru.fcs.aggregator.app.AggregatorConfiguration;
+import eu.clarin.sru.fcs.aggregator.app.AggregatorConfiguration.Params.WeblichtConfig;
 import eu.clarin.sru.fcs.aggregator.scan.Corpus;
 import eu.clarin.sru.fcs.aggregator.scan.Statistics;
 import eu.clarin.sru.fcs.aggregator.search.Request;
 import eu.clarin.sru.fcs.aggregator.search.Result;
 import eu.clarin.sru.fcs.aggregator.search.Search;
-import eu.clarin.sru.fcs.aggregator.lang.LanguagesISO693_3;
-import eu.clarin.sru.fcs.aggregator.search.ExportException;
+import eu.clarin.sru.fcs.aggregator.util.LanguagesISO693;
 import eu.clarin.sru.fcs.aggregator.search.Exports;
 import java.io.IOException;
 import java.net.URI;
@@ -21,8 +21,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.FormParam;
@@ -35,7 +33,6 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import opennlp.tools.tokenize.TokenizerModel;
 import org.slf4j.LoggerFactory;
 
 /**
@@ -112,7 +109,7 @@ public class RestService {
 		Set<String> codes = Aggregator.getInstance().getCorpora().getLanguages();
 		log.info("get language codes", codes);
 		for (String code : codes) {
-			String name = LanguagesISO693_3.getInstance().nameForCode_3(code);
+			String name = LanguagesISO693.getInstance().nameForCode(code);
 			languages.put(code, name != null ? name : code);
 		}
 		return Response.ok(toJson(languages)).build();
@@ -191,13 +188,12 @@ public class RestService {
 			return Response.status(Response.Status.NOT_FOUND).entity("Search job not found").build();
 		}
 
-	if (format == null || format.trim().isEmpty() || format.trim().equals("text")) {
+		if (format == null || format.trim().isEmpty() || format.trim().equals("text")) {
 			String text = Exports.getExportText(search.getResults());
 			return download(text, MediaType.TEXT_PLAIN, search.getQuery() + ".txt");
 		} else if (format.equals("tcf")) {
-			byte[] bytes = Exports.getExportTokenizedTCF(
-					search.getResults(), search.getSearchLanguage(),
-					Aggregator.getInstance().getTokenizerModel());
+			byte[] bytes = Exports.getExportTCF(
+					search.getResults(), search.getSearchLanguage());
 			return download(bytes, TCF_MEDIA_TYPE, search.getQuery() + ".xml");
 		} else if (format.equals("excel")) {
 			byte[] bytes = Exports.getExportExcel(search.getResults());
@@ -239,10 +235,9 @@ public class RestService {
 				byte[] bytes = text.getBytes(SEARCH_RESULTS_ENCODING);
 				url = DataTransfer.uploadToDropOff(bytes, "text/plan", ".txt");
 			}
-		} else if (format.equals("tokens")) {
-			byte[] bytes = Exports.getExportTokenizedTCF(
-					search.getResults(), search.getSearchLanguage(),
-					Aggregator.getInstance().getTokenizerModel());
+		} else if (format.equals("tcf")) {
+			byte[] bytes = Exports.getExportTCF(
+					search.getResults(), search.getSearchLanguage());
 			if (bytes != null) {
 				url = DataTransfer.uploadToDropOff(bytes, "text/tcf+xml", ".tcf");
 			}
@@ -250,8 +245,8 @@ public class RestService {
 			return Response.status(400).entity("incorrect format parameter").build();
 		}
 
-		URI weblichtUri = new URI(Aggregator.getInstance().getParams().getWEBLICHT_URL()
-				+ url);
+		WeblichtConfig weblicht = Aggregator.getInstance().getParams().getWeblichtConfig();
+		URI weblichtUri = new URI(weblicht.getUrl() + url);
 		return url == null
 				? Response.status(503).entity("error while exporting to weblicht").build()
 				: Response.seeOther(weblichtUri).entity(weblichtUri).build();
