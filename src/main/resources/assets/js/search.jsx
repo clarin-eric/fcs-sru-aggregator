@@ -14,6 +14,7 @@ var CorpusView = window.MyAggregator.CorpusView;
 var Popover = window.MyReact.Popover;
 var InfoPopover = window.MyReact.InfoPopover;
 var Panel = window.MyReact.Panel;
+var ModalMixin = window.MyReact.ModalMixin;
 var Modal = window.MyReact.Modal;
 
 var multipleLanguageCode = "mul"; // see ISO-693-3
@@ -63,6 +64,11 @@ function Corpora(corpora, updateFn) {
 		corpus.expanded = false; // not expanded in the corpus view
 		corpus.priority = 1; // used for ordering search results in corpus view 
 		corpus.index = index; // original order, used for stable sort
+	});
+	this.recurse(function(corpus, index) {
+		if (corpus.institution.link > 1) {
+			corpus.selected = false;
+		}
 	});
 }
 
@@ -157,6 +163,15 @@ Corpora.prototype.getSelectedMessage = function() {
 	return selected+" selected collections";
 };
 
+function encodeQueryData(data)
+{
+	var ret = [];
+	for (var d in data) {
+		ret.push(encodeURIComponent(d) + "=" + encodeURIComponent(data[d]));
+	}
+	return ret.join("&");
+}
+
 
 var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({
 	propTypes: {
@@ -173,6 +188,7 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({
 		return {
 			corpora: new Corpora([], this.updateCorpora),
 			languageMap: {},
+			weblichtLanguages: [],
 			query: "",
 			language: this.anyLanguage,
 			languageFilter: 'byMeta',
@@ -181,32 +197,22 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({
 
 			searchId: null,
 			timeout: 0,
-			hits: this.nohits,			
+			hits: this.nohits,
+
+			zoomedCorpusHit: null,
 		};
 	},
 
 	componentDidMount: function() {
-		this.refreshCorpora();
-		this.refreshLanguages();
-	},
-
-	refreshCorpora: function() {
 		this.props.ajax({
-			url: 'rest/corpora',
+			url: 'rest/init',
 			success: function(json, textStatus, jqXHR) {
 				if (this.isMounted()) {
-					this.setState({corpora : new Corpora(json, this.updateCorpora)});
-				}
-			}.bind(this),
-		});
-	},
-
-	refreshLanguages: function() {
-		this.props.ajax({
-			url: 'rest/languages',
-			success: function(json, textStatus, jqXHR) {
-				if (this.isMounted()) {
-					this.setState({languageMap : json});
+					this.setState({
+						corpora : new Corpora(json.corpora, this.updateCorpora),
+						languageMap: json.languages,
+						weblichtLanguages: json.weblichtLanguages,
+					});
 				}
 			}.bind(this),
 		});
@@ -265,12 +271,22 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({
 		});
 	},
 
-	getDownloadLink: function(format) {
-		return 'rest/search/'+this.state.searchId+'/download?format='+format;
+	getExportParams: function(corpusId, format) {
+		var params = corpusId ? {corpusId:corpusId}:{};
+		if (format) params.format = format;
+		if (this.state.languageFilter === 'byGuess' || this.state.languageFilter === 'byMetaAndGuess') {
+			params.filterLanguage = this.state.language[0];
+		}
+		return encodeQueryData(params);
 	},
 
-	getToWeblichtLink: function(format) {
-		return 'rest/search/'+this.state.searchId+'/toWeblicht?format='+format;
+	getDownloadLink: function(corpusId, format) {
+		return 'rest/search/'+this.state.searchId+'/download?' + this.getExportParams(corpusId, format);
+	},
+
+	getToWeblichtLink: function(corpusId) {
+		var params = corpusId ? {corpusId:corpusId}:{};
+		return 'rest/search/'+this.state.searchId+'/toWeblicht?' + this.getExportParams(corpusId);
 	},
 
 	setLanguageAndFilter: function(languageObj, languageFilter) {
@@ -300,6 +316,7 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({
 	},
 
 	filterResults: function() {
+		var noLangFiltering = this.state.languageFilter === 'byMeta';
 		var langCode = this.state.language[0];
 		return this.state.hits.results.map(function(corpusHit) { 
 			return {
@@ -309,9 +326,10 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({
 				exception: corpusHit.exception,
 				diagnostics: corpusHit.diagnostics,
 				searchString: corpusHit.searchString,
-				kwics: corpusHit.kwics.filter(function(kwic){
-					return kwic.language === langCode || langCode === multipleLanguageCode || langCode === null; 
-				}),
+				kwics: noLangFiltering ? corpusHit.kwics :
+					corpusHit.kwics.filter(function(kwic) {
+						return kwic.language === langCode || langCode === multipleLanguageCode || langCode === null; 
+					}),
 			};
 		});
 	},
@@ -328,14 +346,34 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({
 		e.stopPropagation();
 	},
 
+	toggleResultModal: function(e, corpusHit) {
+		$(this.refs.resultModal.getDOMNode()).modal();
+		this.setState({zoomedCorpusHit: corpusHit});
+		e.preventDefault();
+		e.stopPropagation();
+	},
+
 	handleChange: function(event) {
-    	this.setState({query: event.target.value});
+		this.setState({query: event.target.value});
 	},
 
 	handleKey: function(event) {
-    	if (event.keyCode==13) {
-    		this.search();
-    	}
+		if (event.keyCode==13) {
+			this.search();
+		}
+	},
+
+	renderZoomedResultTitle: function(corpusHit) {
+		if (!corpusHit) return <span/>;
+		var corpus = corpusHit.corpus;
+		return <h3 style={{fontSize:'1em'}}> 
+					{corpus.title}
+					{ corpus.landingPage ? 
+						<a href={corpus.landingPage} onClick={this.stop} style={{fontSize:12}}>
+							<span> – Homepage </span>
+							<i className="glyphicon glyphicon-home"/>
+						</a>: false}
+				</h3>;
 	},
 
 	renderAggregator: function() {
@@ -414,24 +452,34 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({
 					</div>
 				</div>
 
-	            <Modal ref="corporaModal" title="Collections">
+				<Modal ref="corporaModal" title={<span>Collections</span>}>
 					<CorpusView corpora={this.state.corpora} languageMap={this.state.languageMap} />
-	            </Modal>
+				</Modal>
 
-	            <Modal ref="languageModal" title="Select Language">
+				<Modal ref="languageModal" title={<span>Select Language</span>}>
 					<LanguageSelector anyLanguage={this.anyLanguage}
 									  languageMap={this.state.languageMap}
 									  selectedLanguage={this.state.language}
 									  languageFilter={this.state.languageFilter}
 									  languageChangeHandler={this.setLanguageAndFilter} />
-	            </Modal>
+				</Modal>
+
+				<Modal ref="resultModal" title={this.renderZoomedResultTitle(this.state.zoomedCorpusHit)}>
+					<ZoomedResult corpusHit={this.state.zoomedCorpusHit}
+								  getDownloadLink={this.getDownloadLink}
+								  getToWeblichtLink={this.getToWeblichtLink}
+								  searchedLanguage={this.state.language}
+								  weblichtLanguages={this.state.weblichtLanguages}
+								  languageMap={this.state.languageMap} />
+				</Modal>
 
 				<div className="top-gap">
 					<Results requests={this.state.hits.requests} 
-					         results={this.filterResults()} 
-					         getDownloadLink={this.getDownloadLink}
-					         getToWeblichtLink={this.getToWeblichtLink}
-					         searchedLanguage={this.state.language}/>
+							 results={this.filterResults()} 
+							 toggleResultModal={this.toggleResultModal}
+							 getDownloadLink={this.getDownloadLink}
+							 getToWeblichtLink={this.getToWeblichtLink}
+							 searchedLanguage={this.state.language}/>
 				</div>
 			</div>
 			);
@@ -482,7 +530,7 @@ var LanguageSelector = React.createClass({
 
 	render: function() {
 		var languages = _.pairs(this.props.languageMap)
-		                 .sort(function(l1, l2){return l1[1].localeCompare(l2[1]); });
+						 .sort(function(l1, l2){return l1[1].localeCompare(l2[1]); });
 		languages.unshift(this.props.anyLanguage);
 		languages = languages.map(this.renderLanguageObject);
 		var third = Math.round(languages.length/3);
@@ -502,19 +550,19 @@ var LanguageSelector = React.createClass({
 							<div>
 							<label style={{color:'black'}}>
 								{ this.renderRadio('byMeta') }{" "}
-		  						Use the collections{"'"} specified language to filter results 
+								Use the collections{"'"} specified language to filter results 
 							</label>
 							</div>
 							<div>
 							<label style={{color:'black'}}>
 								{ this.renderRadio('byGuess') }{" "}
-		  						Filter results by using a language detector 
+								Filter results by using a language detector 
 							</label>
 							</div>
 							<div>
 							<label style={{color:'black'}}>
 								{ this.renderRadio('byMetaAndGuess') }{" "}
-		  						First use the collections{"'"} specified language then also use a language detector
+								First use the collections{"'"} specified language then also use a language detector
 							</label>
 							</div>
 						</div>
@@ -525,15 +573,11 @@ var LanguageSelector = React.createClass({
 
 /////////////////////////////////
 
-var Results = React.createClass({
-	propTypes: {
-		requests: PT.array.isRequired,
-		results: PT.array.isRequired,
-		searchedLanguage: PT.array.isRequired,
-		getDownloadLink: PT.func.isRequired,
-		getToWeblichtLink: PT.func.isRequired,
-	},
-
+var ResultMixin = window.MyReact.ResultMixin = {
+	// getDefaultProps: function(){
+	// 	return {hasPopover: true};
+	// },
+ 
 	getInitialState: function () {
 		return { 
 			displayKwic: false,
@@ -544,8 +588,11 @@ var Results = React.createClass({
 		this.setState({displayKwic:!this.state.displayKwic});
 	},
 
-	zoom: function(e) {
-		e.stopPropagation();
+	renderPanelTitle: function(corpus) {
+		return	<div className='inline'>
+					<span className="corpusName"> {corpus.title}</span>
+					<span className="institutionName"> — {corpus.institution.name}</span>
+				</div>;
 	},
 
 	renderRowLanguage: function(hit) {
@@ -572,43 +619,6 @@ var Results = React.createClass({
 					<td style={scenter} className="keyword">{hit.keyword}</td>
 					<td style={sleft}>{hit.right}</td>
 				</tr>;
-	},
-
-	renderPanelTitle: function(corpus) {
-		var inline = {display:"inline-block"};
-		return	<div style={inline}>
-					<span className="corpusName"> {corpus.title}</span>
-					<span className="institutionName"> — {corpus.institution.name}</span>
-				</div>;
-	},
-
-	renderPanelInfo: function(corpus) {
-		var inline = {display:"inline-block"};
-		return	<div>
-					<InfoPopover placement="left" title={corpus.title}>
-						<dl className="dl-horizontal">
-							<dt>Institution</dt>
-							<dd>{corpus.institution.name}</dd>
-
-							{corpus.description ? <dt>Description</dt>:false}
-							{corpus.description ? <dd>{corpus.description}</dd>: false}
-
-							{corpus.landingPage ? <dt>Landing Page</dt> : false }
-							{corpus.landingPage ? 
-								<dd><a href={corpus.landingPage}>{corpus.landingPage}</a></dd>:
-								false}
-
-							<dt>Languages</dt>
-							<dd>{corpus.languages.join(", ")}</dd>
-						</dl>
-					</InfoPopover>
-					{" "}
-					<div style={inline}>
-						<button className="btn btn-default btn-xs" onClick={this.zoom}>
-							<span className="glyphicon glyphicon-fullscreen"/>
-						</button>
-					</div>
-				</div>;
 	},
 
 	renderDiagnostic: function(d) {
@@ -657,7 +667,151 @@ var Results = React.createClass({
 		}
 	},
 
-	renderResultPanels: function(corpusHit) {
+	renderDisplayKWIC: function() {
+		return 	<div className="inline btn-group" style={{display:"inline-block"}}>
+					<label forHtml="inputKwic" className="btn btn-flat">
+						{ this.state.displayKwic ? 
+							<input id="inputKwic" type="checkbox" value="kwic" checked onChange={this.toggleKwic} /> :
+							<input id="inputKwic" type="checkbox" value="kwic" onChange={this.toggleKwic} />
+						}
+						&nbsp;
+						Display as Key Word In Context
+					</label>
+				</div>;
+	},
+
+	renderDownloadLinks: function(corpusId) {
+		return (
+			<div className="dropdown">
+				<button className="btn btn-flat" aria-expanded="false" data-toggle="dropdown">
+					<span className="glyphicon glyphicon-download-alt" aria-hidden="true"/>
+					{" "} Download {" "} 
+					<span className="caret"/>
+				</button>
+				<ul className="dropdown-menu">
+					<li> <a href={this.props.getDownloadLink(corpusId, "csv")}>
+							{" "} As CSV file</a></li>
+					<li> <a href={this.props.getDownloadLink(corpusId, "excel")}>
+							{" "} As Excel file</a></li>
+					<li> <a href={this.props.getDownloadLink(corpusId, "tcf")}>
+							{" "} As TCF file</a></li>
+					<li> <a href={this.props.getDownloadLink(corpusId, "text")}>
+							{" "} As Plain Text file</a></li>
+				</ul>
+			</div>
+		);
+	},
+
+	renderToWeblichtLinks: function(corpusId, error) {
+		return (
+			<div className="dropdown">
+				<button className="btn btn-flat" aria-expanded="false" data-toggle="dropdown">
+					<span className="glyphicon glyphicon-export" aria-hidden="true"/>
+					{" "} Use Weblicht {" "} 
+					<span className="caret"/>
+				</button>
+				<ul className="dropdown-menu">
+					<li> 
+						{error ? 
+							<div className="alert alert-danger" style={{margin:10}}>{error}</div> :
+							<a href={this.props.getToWeblichtLink(corpusId)} target="_blank">{" "} 
+								Send to Weblicht</a>
+						}
+					</li>
+				</ul>
+			</div>
+		);
+	},
+
+};
+
+var ZoomedResult = React.createClass({
+	propTypes: {
+		corpusHit: PT.object,
+		languageMap: PT.object.isRequired,
+		weblichtLanguages: PT.array.isRequired,
+		searchedLanguage: PT.array.isRequired,
+		getDownloadLink: PT.func.isRequired,
+		getToWeblichtLink: PT.func.isRequired,
+	},
+	mixins: [ResultMixin],
+
+	renderLanguages: function(languages) {
+		return languages
+				.map(function(l) { return this.props.languageMap[l]; }.bind(this))
+				.sort()
+				.join(", ");
+	},
+
+	render: function() {
+		var corpusHit = this.props.corpusHit;
+		if (!corpusHit) {
+			return false;
+		}
+		var wlerror = null;
+		if (this.props.weblichtLanguages.indexOf(this.props.searchedLanguage[0]) < 0) {
+			wlerror = "Cannot use WebLicht: unsupported language";
+		}
+		var corpus = corpusHit.corpus;
+		return 	<div> 
+					<ReactCSSTransitionGroup transitionName="fade">
+						<div className='corpusDescription'>
+							<p><i className="fa fa-institution"/> {corpus.institution.name}</p>
+							{corpus.description ? 
+								<p><i className="glyphicon glyphicon-info-sign"/> {corpus.description}</p>: false}
+							<p><i className="fa fa-language"/> {this.renderLanguages(corpus.languages)}</p>
+						</div>
+						<div style={{marginBottom:2}}>
+							<div className="float-right">
+								<div>
+									{ this.renderDisplayKWIC() }
+									<div className="inline"> {this.renderDownloadLinks(corpusHit.corpus.id)} </div>
+									<div className="inline"> {this.renderToWeblichtLinks(corpus.id, wlerror)} </div>
+								</div>
+							</div>
+							<div style={{clear:'both'}}/>
+						</div>
+						<div className="panel">
+							<div className="panel-body corpusResults">{this.renderPanelBody(corpusHit)}</div>
+						</div>
+
+						<div style={{textAlign:'center', marginTop:10}}>
+							<button className="btn btn-default">
+								<span className="glyphicon glyphicon-option-horizontal" aria-hidden="true"/> More Results
+							</button>
+						</div>
+
+					</ReactCSSTransitionGroup>
+				</div>;
+	},
+});
+
+var Results = React.createClass({
+	propTypes: {
+		requests: PT.array.isRequired,
+		results: PT.array.isRequired,
+		searchedLanguage: PT.array.isRequired,
+		toggleResultModal: PT.func.isRequired,
+		getDownloadLink: PT.func.isRequired,
+		getToWeblichtLink: PT.func.isRequired,
+	},
+	mixins: [ResultMixin],
+
+	renderPanelInfo: function(corpusHit) {
+		var corpus = corpusHit.corpus;
+		var inline = {display:"inline-block"};
+		return	<div>
+					{" "}
+					<div style={inline}>
+						<button className="btn btn-default zoomResultButton"
+								onClick={function(e){this.props.toggleResultModal(e,corpusHit)}.bind(this)}>
+								<span className="glyphicon glyphicon-eye-open"/> View
+						</button>
+					</div>
+				</div>;
+	},
+
+	renderResultPanel: function(corpusHit) {
 		if (corpusHit.kwics.length === 0 && 
 			!corpusHit.exception &&
 			corpusHit.diagnostics.length === 0) {
@@ -665,114 +819,59 @@ var Results = React.createClass({
 		}
 		return 	<Panel key={corpusHit.corpus.id} 
 						title={this.renderPanelTitle(corpusHit.corpus)} 
-						info={this.renderPanelInfo(corpusHit.corpus)}>
+						info={this.renderPanelInfo(corpusHit)}>
 					{this.renderPanelBody(corpusHit)}
 				</Panel>;
 	},
 
-	renderProgressBar: function() {
-		var percents = 100 * this.props.results.length / (this.props.requests.length + this.props.results.length);
-		var sperc = Math.round(percents);
-		var styleperc = {width: sperc+"%"};
-		return this.props.requests.length > 0 ? 
-			<div className="progress" style={{marginBottom:10}}>
-  				<div className="progress-bar progress-bar-striped active" role="progressbar" 
-  					aria-valuenow={sperc} aria-valuemin="0" aria-valuemax="100" style={styleperc} />
-			</div> : 
-			false;
-	},
-
-	renderSearchingMessage: function() {
-		return false;
-		// if (this.props.requests.length === 0)
-		// 	return false;
-		// return "Searching in " + this.props.requests.length + " collections...";
-	},
-
-	renderFoundMessage: function(hits) {
-		if (this.props.results.length === 0)
-			return false;
-		var total = this.props.results.length;
-		return hits + " collections with results found in " + total + " searched collections";
-	},
-
-	renderDownloadLinks: function() {
-		return (
-			<div className="dropdown">
-				<button className="btn btn-default" aria-expanded="false" data-toggle="dropdown" >
-					<span className="glyphicon glyphicon-download-alt" aria-hidden="true"/>
-					{" "} Download {" "} 
-					<span className="caret"/>
-				</button>
-				<ul className="dropdown-menu">
-					<li> <a href={this.props.getDownloadLink("csv")}>
-							{" "} As CSV file</a></li>
-					<li> <a href={this.props.getDownloadLink("excel")}>
-							{" "} As Excel file</a></li>
-					<li> <a href={this.props.getDownloadLink("tcf")}>
-							{" "} As TCF file</a></li>
-					<li> <a href={this.props.getDownloadLink("text")}>
-							{" "} As Plain Text file</a></li>
-				</ul>
-			</div>
-		);
-	},
-
-	renderToWeblichtLinks: function() {
-		return (
-			<div className="dropdown">
-				<button className="btn btn-default" aria-expanded="false" data-toggle="dropdown" >
-					<span className="glyphicon glyphicon-download-alt" aria-hidden="true"/>
-					{" "} Use Weblicht {" "} 
-					<span className="caret"/>
-				</button>
-				<ul className="dropdown-menu">
-					<li> <a href={this.props.getToWeblichtLink("text")}>
-							{" "} As Plain Text file</a></li>
-				</ul>
-			</div>
-		);
-	},
-
-	renderToolbox: function(hits) {
-		if (hits <= 0) {
-			return false;
-		}
-		return 	<div key="-toolbox-" style={{marginBottom:10}}>
-					<div className="toolbox float-left inline">
-						{this.renderDownloadLinks()}
-					</div>
-					<div className="toolbox float-left inline">
-						{this.renderToWeblichtLinks()}
-					</div>
-					<div className="float-right inline" style={{marginTop:15}}>
-						<div className="btn-group" style={{display:"inline-block"}}>
-							<label forHtml="inputKwic" className="btn-default">
-								{ this.state.displayKwic ? 
-									<input id="inputKwic" type="checkbox" value="kwic" checked onChange={this.toggleKwic} /> :
-									<input id="inputKwic" type="checkbox" value="kwic" onChange={this.toggleKwic} />
-								}
-								&nbsp;
-								Display as Key Word In Context
-							</label>
-						</div>
-					</div>
+	renderProgressMessage: function(hits) {
+		var total = this.props.requests.length + this.props.results.length;
+		var msg = hits + " matching collections found in " + this.props.results.length + " searched collections";
+		var percents = Math.round(100 * this.props.results.length / total);
+		var styleperc = {width: percents+"%"};
+		return 	<div style={{marginTop:10}}>
+					<div>{msg}</div>
+					{this.props.requests.length > 0 ? 
+						<div className="progress" style={{marginBottom:10}}>
+							<div className="progress-bar progress-bar-striped active" role="progressbar" 
+								aria-valuenow={percents} aria-valuemin="0" aria-valuemax="100" style={styleperc} />
+							{percents > 2 ? false :
+								<div className="progress-bar progress-bar-striped active" role="progressbar" 
+									aria-valuenow='100' aria-valuemin="0" aria-valuemax="100"
+									style={{width: '100%', backgroundColor:'#888'}} />
+							}
+						</div> : 
+						false}
 				</div>;
 	},
 
 	render: function() {
+		if (this.props.results.length + this.props.requests.length === 0) {
+			return false;
+		}
 		var hits = this.props.results.filter(function(corpusHit) { return corpusHit.kwics.length > 0; }).length;
-		var margintop = {marginTop:"10px"};
-		var margin = {marginTop:"0", padding:"20px"};
-		var inlinew = {display:"inline-block", margin:"0 5px 0 0", width:"240px;"};
-		var right= {float:"right"};
+		var showprogress = this.props.requests.length > 0;
 		return 	<div> 
 					<ReactCSSTransitionGroup transitionName="fade">
-						<div key="-searching-message-" style={margintop}>{this.renderSearchingMessage()} </div>
-						<div key="-found-message-" style={margintop}>{this.renderFoundMessage(hits)} </div>
-						<div key="-progress-" style={margintop}>{this.renderProgressBar()}</div>
-						{this.renderToolbox(hits)}
-						{this.props.results.map(this.renderResultPanels)}
+						{ showprogress ? this.renderProgressMessage(hits) : <div style={{height:20}} />}
+						<div style={{marginBottom:2}}>
+							{ showprogress ? false : 
+								<div className="float-left"> {hits + " matching collections found"} </div>
+							}
+							{ hits === 0 ? false : 
+								<div className="float-right">
+									<div>
+										{ this.renderDisplayKWIC() }
+										{ this.props.requests.length === 0 ? 
+											<div className="inline"> {this.renderDownloadLinks()} </div>
+											:false
+										}
+									</div>
+								</div>
+							}
+							<div style={{clear:'both'}}/>
+						</div>
+						{this.props.results.map(this.renderResultPanel)}
 					</ReactCSSTransitionGroup>
 				</div>;
 	}

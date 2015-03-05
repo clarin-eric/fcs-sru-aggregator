@@ -69,9 +69,45 @@ window.MyReact.ErrorPane = React.createClass({displayName: 'ErrorPane',
 });
 
 
+window.MyReact.ModalMixin = {
+	componentDidMount: function() {
+		$(this.getDOMNode()).modal({background: true, keyboard: true, show: false});
+	},
+	componentWillUnmount: function() {
+		$(this.getDOMNode()).off('hidden');
+	},
+	handleClick: function(e) {
+		e.stopPropagation();
+	},
+	renderModal: function(title, content) {
+		return (
+			React.createElement("div", {onClick: this.handleClick, className: "modal fade", role: "dialog", 'aria-hidden': "true"}, 
+				React.createElement("div", {className: "modal-dialog"}, 
+					React.createElement("div", {className: "modal-content"}, 
+						React.createElement("div", {className: "modal-header"}, 
+							React.createElement("button", {type: "button", className: "close", 'data-dismiss': "modal"}, 
+								React.createElement("span", {'aria-hidden': "true"}, "×"), 
+								React.createElement("span", {className: "sr-only"}, "Close")
+							), 
+							React.createElement("h2", {className: "modal-title"}, title)
+						), 
+						React.createElement("div", {className: "modal-body"}, 
+							content
+						), 
+						React.createElement("div", {className: "modal-footer"}, 
+							React.createElement("button", {type: "button", className: "btn btn-default", 'data-dismiss': "modal"}, "Close")
+						)
+					)
+				)
+			)
+		);
+	}
+};
+
+
 window.MyReact.Modal = React.createClass({displayName: 'Modal',
 	propTypes: {
-		title: PT.string.isRequired,
+		title: PT.object.isRequired,
 	},
 	componentDidMount: function() {
 		$(this.getDOMNode()).modal({background: true, keyboard: true, show: false});
@@ -202,16 +238,14 @@ window.MyReact.Panel = React.createClass({displayName: 'Panel',
 
 	render: function() {
 		var chevron = "glyphicon glyphicon-chevron-" + (this.state.open ? "down":"right");
-		var chevronStyle = {fontSize:12};
-		var right = {float:"right"};
 		return 	React.createElement("div", {className: "bs-callout bs-callout-info"}, 
 					React.createElement("div", {className: "panel"}, 
 						React.createElement("div", {className: "panel-heading unselectable row", onClick: this.toggleState}, 
 							React.createElement("div", {className: "panel-title unselectable col-sm-11"}, 
-								React.createElement("span", {className: chevron, style: chevronStyle}), " ", 
+								React.createElement("span", {className: chevron, style: {fontSize:12}}), " ", 
 								this.props.title
 							), 
-							React.createElement("div", {style: right}, 
+							React.createElement("div", {className: "float-right"}, 
 								this.props.info
 							)
 						), 

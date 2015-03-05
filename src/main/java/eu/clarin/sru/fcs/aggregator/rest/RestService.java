@@ -7,6 +7,7 @@ import eu.clarin.sru.client.SRUVersion;
 import eu.clarin.sru.fcs.aggregator.app.Aggregator;
 import eu.clarin.sru.fcs.aggregator.app.AggregatorConfiguration;
 import eu.clarin.sru.fcs.aggregator.app.AggregatorConfiguration.Params.WeblichtConfig;
+import eu.clarin.sru.fcs.aggregator.scan.Corpora;
 import eu.clarin.sru.fcs.aggregator.scan.Corpus;
 import eu.clarin.sru.fcs.aggregator.scan.Statistics;
 import eu.clarin.sru.fcs.aggregator.search.Request;
@@ -69,50 +70,27 @@ public class RestService {
 	}
 
 	@GET
-	@Path("statistics")
-	public Response getStatistics() throws IOException {
-		final Statistics scan = Aggregator.getInstance().getScanStatistics();
-		final Statistics search = Aggregator.getInstance().getSearchStatistics();
-		final AggregatorConfiguration.Params params = Aggregator.getInstance().getParams();
-
-		Object j = new HashMap<String, Object>() {
-			{
-				put("Last Scan", new HashMap<String, Object>() {
-					{
-						put("maxConcurrentScanRequestsPerEndpoint",
-								Aggregator.getInstance().getParams().getSCAN_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT());
-						put("timeout", params.getENDPOINTS_SCAN_TIMEOUT_MS() / 1000.);
-						put("isScan", true);
-						put("institutions", scan.getInstitutions());
-						put("date", scan.getDate());
-					}
-				});
-				put("Recent Searches", new HashMap<String, Object>() {
-					{
-						put("maxConcurrentSearchRequestsPerEndpoint",
-								Aggregator.getInstance().getParams().getSEARCH_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT());
-						put("timeout", params.getENDPOINTS_SEARCH_TIMEOUT_MS() / 1000.);
-						put("isScan", false);
-						put("institutions", search.getInstitutions());
-						put("date", scan.getDate());
-					}
-				});
-			}
-		};
-		return Response.ok(toJson(j)).build();
+	@Path("languages")
+	public Response getLanguages() throws IOException {
+		Set<String> codes = Aggregator.getInstance().getCorpora().getLanguages();
+		log.info("get language codes", codes);
+		Map<String, String> languages = LanguagesISO693.getInstance().getLanguageMap(codes);
+		return Response.ok(toJson(languages)).build();
 	}
 
 	@GET
-	@Path("languages")
-	public Response getLanguages() throws IOException {
-		Map<String, String> languages = new HashMap<String, String>();
-		Set<String> codes = Aggregator.getInstance().getCorpora().getLanguages();
-		log.info("get language codes", codes);
-		for (String code : codes) {
-			String name = LanguagesISO693.getInstance().nameForCode(code);
-			languages.put(code, name != null ? name : code);
-		}
-		return Response.ok(toJson(languages)).build();
+	@Path("init")
+	public Response getInit() throws IOException {
+		log.info("get initial data");
+		final Corpora corpora = Aggregator.getInstance().getCorpora();
+		Object j = new HashMap<String, Object>() {
+			{
+				put("corpora", corpora.getCorpora());
+				put("languages", LanguagesISO693.getInstance().getLanguageMap(corpora.getLanguages()));
+				put("weblichtLanguages", Aggregator.getInstance().getParams().getWeblichtConfig().getAcceptedTcfLanguages());
+			}
+		};
+		return Response.ok(toJson(j)).build();
 	}
 
 	@POST
@@ -169,37 +147,43 @@ public class RestService {
 
 	@GET
 	@Path("search/{id}")
-	public Response getSearch(@PathParam("id") Long searchId) throws Exception {
+	public Response getSearch(@PathParam("id") Long searchId,
+			@QueryParam("corpusId") String corpusId) throws Exception {
 		Search search = Aggregator.getInstance().getSearchById(searchId);
 		if (search == null) {
 			return Response.status(Response.Status.NOT_FOUND).entity("Search job not found").build();
 		}
 
-		JsonSearch js = new JsonSearch(search.getRequests(), search.getResults());
+		JsonSearch js = new JsonSearch(search.getRequests(), search.getResults(corpusId));
 		return Response.ok(js).build();
 	}
 
 	@GET
 	@Path("search/{id}/download")
 	public Response downloadSearchResults(@PathParam("id") Long searchId,
+			@QueryParam("corpusId") String corpusId,
+			@QueryParam("filterLanguage") String filterLanguage,
 			@QueryParam("format") String format) throws Exception {
 		Search search = Aggregator.getInstance().getSearchById(searchId);
 		if (search == null) {
 			return Response.status(Response.Status.NOT_FOUND).entity("Search job not found").build();
 		}
+		if (filterLanguage == null || filterLanguage.isEmpty()) {
+			filterLanguage = null;
+		}
 
 		if (format == null || format.trim().isEmpty() || format.trim().equals("text")) {
-			String text = Exports.getExportText(search.getResults());
+			String text = Exports.getExportText(search.getResults(corpusId), filterLanguage);
 			return download(text, MediaType.TEXT_PLAIN, search.getQuery() + ".txt");
 		} else if (format.equals("tcf")) {
 			byte[] bytes = Exports.getExportTCF(
-					search.getResults(), search.getSearchLanguage());
+					search.getResults(corpusId), search.getSearchLanguage(), filterLanguage);
 			return download(bytes, TCF_MEDIA_TYPE, search.getQuery() + ".xml");
 		} else if (format.equals("excel")) {
-			byte[] bytes = Exports.getExportExcel(search.getResults());
+			byte[] bytes = Exports.getExportExcel(search.getResults(corpusId), filterLanguage);
 			return download(bytes, EXCEL_MEDIA_TYPE, search.getQuery() + ".xls");
 		} else if (format.equals("csv")) {
-			String csv = Exports.getExportCSV(search.getResults(), ";");
+			String csv = Exports.getExportCSV(search.getResults(corpusId), filterLanguage, ";");
 			return download(csv, MediaType.TEXT_PLAIN, search.getQuery() + ".csv");
 		}
 
@@ -222,27 +206,21 @@ public class RestService {
 	@GET
 	@Path("search/{id}/toWeblicht")
 	public Response sendSearchResultsToWeblicht(@PathParam("id") Long searchId,
-			@QueryParam("format") String format) throws Exception {
+			@QueryParam("filterLanguage") String filterLanguage,
+			@QueryParam("corpusId") String corpusId) throws Exception {
 		Search search = Aggregator.getInstance().getSearchById(searchId);
 		if (search == null) {
 			return Response.status(Response.Status.NOT_FOUND).entity("Search job not found").build();
 		}
+		if (filterLanguage == null || filterLanguage.isEmpty()) {
+			filterLanguage = null;
+		}
 
 		String url = null;
-		if (format == null || format.isEmpty() || format.trim().equals("text")) {
-			String text = Exports.getExportText(search.getResults());
-			if (text != null) {
-				byte[] bytes = text.getBytes(SEARCH_RESULTS_ENCODING);
-				url = DataTransfer.uploadToDropOff(bytes, "text/plan", ".txt");
-			}
-		} else if (format.equals("tcf")) {
-			byte[] bytes = Exports.getExportTCF(
-					search.getResults(), search.getSearchLanguage());
-			if (bytes != null) {
-				url = DataTransfer.uploadToDropOff(bytes, "text/tcf+xml", ".tcf");
-			}
-		} else {
-			return Response.status(400).entity("incorrect format parameter").build();
+		byte[] bytes = Exports.getExportTCF(
+				search.getResults(corpusId), search.getSearchLanguage(), filterLanguage);
+		if (bytes != null) {
+			url = DataTransfer.uploadToDropOff(bytes, "text/tcf+xml", ".tcf");
 		}
 
 		WeblichtConfig weblicht = Aggregator.getInstance().getParams().getWeblichtConfig();
@@ -251,4 +229,39 @@ public class RestService {
 				? Response.status(503).entity("error while exporting to weblicht").build()
 				: Response.seeOther(weblichtUri).entity(weblichtUri).build();
 	}
+
+	@GET
+	@Path("statistics")
+	public Response getStatistics() throws IOException {
+		final Statistics scan = Aggregator.getInstance().getScanStatistics();
+		final Statistics search = Aggregator.getInstance().getSearchStatistics();
+		final AggregatorConfiguration.Params params = Aggregator.getInstance().getParams();
+
+		Object j = new HashMap<String, Object>() {
+			{
+				put("Last Scan", new HashMap<String, Object>() {
+					{
+						put("maxConcurrentScanRequestsPerEndpoint",
+								Aggregator.getInstance().getParams().getSCAN_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT());
+						put("timeout", params.getENDPOINTS_SCAN_TIMEOUT_MS() / 1000.);
+						put("isScan", true);
+						put("institutions", scan.getInstitutions());
+						put("date", scan.getDate());
+					}
+				});
+				put("Recent Searches", new HashMap<String, Object>() {
+					{
+						put("maxConcurrentSearchRequestsPerEndpoint",
+								Aggregator.getInstance().getParams().getSEARCH_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT());
+						put("timeout", params.getENDPOINTS_SEARCH_TIMEOUT_MS() / 1000.);
+						put("isScan", false);
+						put("institutions", search.getInstitutions());
+						put("date", scan.getDate());
+					}
+				});
+			}
+		};
+		return Response.ok(toJson(j)).build();
+	}
+
 }

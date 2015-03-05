@@ -84,7 +84,6 @@ public class ScanCrawler {
 		final Institution institution;
 		final Endpoint endpoint;
 		final Corpora corpora;
-		String fullRequestUrl;
 
 		ExplainTask(final Institution institution, final Endpoint endpoint, final Corpora corpora) {
 			this.institution = institution;
@@ -98,7 +97,6 @@ public class ScanCrawler {
 				explainRequest = new SRUExplainRequest(endpoint.getUrl());
 				explainRequest.setExtraRequestData(SRUCQL.EXPLAIN_ASK_FOR_RESOURCES_PARAM, "true");
 				explainRequest.setParseRecordDataEnabled(true);
-				fullRequestUrl = explainRequest.makeURI(SRUVersion.VERSION_1_2).toString();
 			} catch (Throwable ex) {
 				log.error("Exception creating explain request for {}: {}", endpoint.getUrl(), ex.getMessage());
 				log.error("--> ", ex);
@@ -134,8 +132,8 @@ public class ScanCrawler {
 					for (SRUDiagnostic d : response.getDiagnostics()) {
 						SRUExplainRequest request = response.getRequest();
 						Diagnostic diag = new Diagnostic(d.getURI(), d.getMessage(), d.getDetails());
-						statistics.addEndpointDiagnostic(institution, endpoint, diag, fullRequestUrl);
-						log.info("Diagnostic: {}: {}", fullRequestUrl, diag.message);
+						statistics.addEndpointDiagnostic(institution, endpoint, diag, response.getRequest().getRequestedURI().toString());
+						log.info("Diagnostic: {}: {}", response.getRequest().getRequestedURI().toString(), diag.message);
 					}
 				}
 
@@ -143,12 +141,12 @@ public class ScanCrawler {
 			} catch (Exception xc) {
 				log.error("{} Exception in explain callback {}", latch.get(), endpoint.getUrl());
 				log.error("--> ", xc);
-				statistics.addErrorDatapoint(institution, endpoint, xc, fullRequestUrl);
+				statistics.addErrorDatapoint(institution, endpoint, xc, response.getRequest().getRequestedURI().toString());
 			} finally {
 				if (endpoint.getProtocol().equals(FCSProtocolVersion.LEGACY)) {
 					new ScanTask(institution, endpoint, null, corpora, 0).start();
 					Diagnostic diag = new Diagnostic("LEGACY", "Endpoint didn't return any resource on EXPLAIN, presuming legacy support", "");
-					statistics.addEndpointDiagnostic(institution, endpoint, diag, fullRequestUrl);
+					statistics.addEndpointDiagnostic(institution, endpoint, diag, response.getRequest().getRequestedURI().toString());
 				}
 
 				latch.decrement();
@@ -160,7 +158,7 @@ public class ScanCrawler {
 			try {
 				log.error("{} Error while explaining {}: {}", latch.get(), endpoint.getUrl(), error.getMessage());
 				statistics.addEndpointDatapoint(institution, endpoint, stats.getQueueTime(), stats.getExecutionTime());
-				statistics.addErrorDatapoint(institution, endpoint, error, fullRequestUrl);
+				statistics.addErrorDatapoint(institution, endpoint, error, request.getRequestedURI().toString());
 				if (Throw.isCausedBy(error, SocketTimeoutException.class)) {
 					return;
 				}
@@ -249,7 +247,7 @@ public class ScanCrawler {
 						+ "=" + normalizeHandle(parentCorpus));
 				scanRequest.setExtraRequestData(SRUCQL.SCAN_RESOURCE_INFO_PARAMETER,
 						SRUCQL.SCAN_RESOURCE_INFO_PARAMETER_DEFAULT_VALUE);
-				fullRequestUrl = scanRequest.makeURI(SRUVersion.VERSION_1_2).toString();
+				fullRequestUrl = scanRequest.getRequestedURI().toString();
 			} catch (Throwable ex) {
 				log.error("Exception creating scan request for {}: {}", endpoint.getUrl(), ex.getMessage());
 				log.error("--> ", ex);

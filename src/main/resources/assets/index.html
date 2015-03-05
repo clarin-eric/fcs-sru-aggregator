@@ -40,7 +40,7 @@
 
 <body>
 	<noscript>
-		<div>Federated Content Search Aggregator requires JavaScript to be enabled!</div>
+		<p>Federated Content Search Aggregator requires JavaScript to be enabled!</p>
 	</noscript>
 
 	<div id="main-container">
@@ -55,5 +55,21 @@
 	<script src="js/corpora.js"></script>
 	<script src="js/search.js"></script>
 	<script src="js/main.js"></script>
+
+	<!-- Piwik -->
+	<script type="text/javascript">
+		var _paq = _paq || [];
+		_paq.push(['trackPageView']);
+		_paq.push(['enableLinkTracking']);
+		(function() {
+		var u="https://stats.clarin.eu/";
+		_paq.push(['setTrackerUrl', u+'piwik.php']);
+		_paq.push(['setSiteId', 10]);
+		var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
+		g.type='text/javascript'; g.async=true; g.defer=true; g.src=u+'piwik.js'; s.parentNode.insertBefore(g,s);
+		})();
+	</script>
+	<noscript><p><img src="https://stats.clarin.eu/piwik.php?idsite=10" style="border:0;" alt="" /></p></noscript>
+	<!-- End Piwik Code -->
 </body>
 </html>

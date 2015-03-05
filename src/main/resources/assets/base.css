@@ -45,6 +45,23 @@
     float: right;
 }
 
+.float-left {
+    float: left;
+}
+
+.btn-flat {
+  color: #333;
+  margin: 2px;
+  background-color: #fff;
+  border-color: transparent;
+}
+.btn-flat:hover {
+  color: #333;
+  margin: 2px;
+  background-color: #e6e6e6;
+  border-color: #adadad;
+}
+
 /*** error ***/
 
 .errorDiv {
@@ -269,8 +286,23 @@ div.panel-title {
 	font-size:16px;
 }
 
-div.panel-title .institutionName{
+.zoomResultButton {
+	border: 1px solid transparent;
+}
+div.panel:hover .zoomResultButton {
+	color: white;
+	background-color: #00406F;
+	border: 1px solid black;
+}
+
+div.panel-title span.institutionName{
 	font-size: 12px;
+	font-weight:300;
+	color: #888;
+}
+
+.modal-title span.institutionName{
+	font-size: 14px;
 	font-weight:300;
 	color: #888;
 }
@@ -312,6 +344,7 @@ div.panel-title .institutionName{
 .bs-callout .panel-heading {
 	margin-top: 0;
 	margin-bottom: 5px;
+	padding: 10px 15px 4px;
 }
 .bs-callout .panel-title {
 	color: #806a52;
@@ -351,6 +384,23 @@ td {
 div.popover {
 	max-width:552px;
 }
+
+/*** zoomed result ***/
+
+.modal-body .corpusDescription {
+	padding-left: 15px;
+}
+.modal-body .corpusDescription p {
+	margin: 4px 0;
+}
+
+.modal-body .corpusResults {
+	padding: 15px;
+	border: 1px solid #ddd;
+	border-left: 5px solid #00406F; /*blue*/
+	border-radius: 4px;
+}
+
 
 /*** transitions css ***/
 

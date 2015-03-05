@@ -53,7 +53,9 @@ public class Search {
 		}
 	}
 
-	private Request executeSearch(ThrottledClient searchClient, SRUVersion version, final Corpus corpus, String searchString, int startRecord, int maxRecords) {
+	private Request executeSearch(ThrottledClient searchClient, SRUVersion version,
+			final Corpus corpus, String searchString,
+			int startRecord, int maxRecords) {
 		final Request request = new Request(corpus, searchString, startRecord, startRecord + maxRecords - 1);
 		log.info("Executing search in '{}' query='{}' maxRecords='{}'", corpus, searchString, maxRecords);
 
@@ -74,13 +76,6 @@ public class Search {
 		}
 		requests.add(request);
 
-		String url = null;
-		try {
-			url = searchRequest.makeURI(SRUVersion.VERSION_1_2).toString();
-		} catch (SRUClientException ex) {
-		}
-		final String fullRequestUrl = url;
-
 		try {
 			searchClient.searchRetrieve(searchRequest, new ThrottledClient.SearchCallback() {
 				@Override
@@ -92,9 +87,10 @@ public class Search {
 						requests.remove(request);
 						List<Diagnostic> diagnostics = result.getDiagnostics();
 						if (diagnostics != null && !diagnostics.isEmpty()) {
-							log.error("diagnostic for url: " + response.getRequest().makeURI(SRUVersion.VERSION_1_2));
+							log.error("diagnostic for url: " + response.getRequest().getRequestedURI().toString());
 							for (Diagnostic diagnostic : diagnostics) {
-								statistics.addEndpointDiagnostic(corpus.getInstitution(), corpus.getEndpoint(), diagnostic, fullRequestUrl);
+								statistics.addEndpointDiagnostic(corpus.getInstitution(), corpus.getEndpoint(),
+										diagnostic, response.getRequest().getRequestedURI().toString());
 							}
 						}
 					} catch (Throwable xc) {
@@ -106,7 +102,7 @@ public class Search {
 				public void onError(SRUSearchRetrieveRequest srureq, SRUClientException xc, ThrottledClient.Stats stats) {
 					try {
 						statistics.addEndpointDatapoint(corpus.getInstitution(), corpus.getEndpoint(), stats.getQueueTime(), stats.getExecutionTime());
-						statistics.addErrorDatapoint(corpus.getInstitution(), corpus.getEndpoint(), xc, fullRequestUrl);
+						statistics.addErrorDatapoint(corpus.getInstitution(), corpus.getEndpoint(), xc, srureq.getRequestedURI().toString());
 						results.add(new Result(request, null, xc));
 						requests.remove(request);
 						log.error("search.onError: ", xc);
@@ -133,10 +129,18 @@ public class Search {
 		return copy;
 	}
 
-	public List<Result> getResults() {
+	public List<Result> getResults(String corpusId) {
 		List<Result> copy = new ArrayList<>();
 		synchronized (results) {
-			copy.addAll(results);
+			if (corpusId == null || corpusId.isEmpty()) {
+				copy.addAll(results);
+			} else {
+				for (Result r : results) {
+					if (corpusId.equals(r.getCorpus().getId())) {
+						copy.add(r);
+					}
+				}
+			}
 		}
 		return copy;
 	}

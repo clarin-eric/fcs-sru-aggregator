@@ -9,6 +9,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import org.slf4j.LoggerFactory;
 
 /**
@@ -127,5 +128,14 @@ public class LanguagesISO693 {
 			return null;
 		}
 		return l.name;
+	}
+
+	public Map<String, String> getLanguageMap(Set<String> codes) {
+		Map<String, String> languages = new HashMap<String, String>();
+		for (String code : codes) {
+			String name = LanguagesISO693.getInstance().nameForCode(code);
+			languages.put(code, name != null ? name : code);
+		}
+		return languages;
 	}
 }

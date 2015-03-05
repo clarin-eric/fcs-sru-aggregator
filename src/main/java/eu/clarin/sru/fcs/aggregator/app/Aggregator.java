@@ -85,22 +85,9 @@ import org.slf4j.LoggerFactory;
  * @author Yana Panchenko
  * @author edima
  *
- * TODO: ?use weblicht only to show up in zoomed mode
- * - send only tcf with only a text layer and language (from the list in params)
- *
  * TODO: add the modes described above (except live)
  *
- * TODO: zoom into the results from a corpus, allow functionality only for
- * the view (search for next set of results)
- *
- * TODO: Export search results to personal workspace as csv, excel, tcf, plain
- * text: ask Marie/Wei about oauth ways to do that ndg oauth; ask Menzo, Willem,
- * Twan (they did a test, it worked)
- *
- * TODO: add PiWik support, tracking the following:
- * - visits, searches, search per corpus
- *
- * TODO: BUG: language detection is immediate, in UI; export implications
+ * TODO: Export search results to personal workspace using oauth
  *
  * TODO: websockets
  *
@@ -154,6 +141,12 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 	public void run(AggregatorConfiguration config, Environment environment) throws Exception {
 		params = config.aggregatorParams;
 		instance = this;
+
+		List<String> wll = new ArrayList<String>();
+		for (String l : config.aggregatorParams.weblichtConfig.getAcceptedTcfLanguages()) {
+			wll.add(LanguagesISO693.getInstance().code_3ForCode(l));
+		}
+		config.aggregatorParams.weblichtConfig.acceptedTcfLanguages = wll;
 
 		System.out.println("Using parameters: ");
 		try {

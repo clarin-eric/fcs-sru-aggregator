@@ -35,7 +35,7 @@ aggregatorParams:
       - nl
       - fr
       - it
-      - sp
+      - es
       - pl
 
 # use the simple server factory, run on a single port

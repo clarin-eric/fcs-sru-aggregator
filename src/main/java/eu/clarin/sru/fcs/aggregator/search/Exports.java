@@ -27,8 +27,7 @@ public class Exports {
 
 	private static final Logger LOGGER = Logger.getLogger(Exports.class.getName());
 
-	public static String getExportCSV(List<Result> resultsProcessed, String separator) {
-
+	public static String getExportCSV(List<Result> resultsProcessed, String filterLanguage, String separator) {
 		boolean noResult = true;
 		StringBuilder csv = new StringBuilder();
 		if (resultsProcessed != null && !resultsProcessed.isEmpty()) {
@@ -44,6 +43,9 @@ public class Exports {
 
 			for (Result result : resultsProcessed) {
 				for (Kwic kwic : result.getKwics()) {
+					if (filterLanguage != null && !filterLanguage.equals(kwic.getLanguage())) {
+						continue;
+					}
 					csv.append("\"");
 					csv.append(escapeQuotes(kwic.getLeft()));
 					csv.append("\"");
@@ -91,11 +93,10 @@ public class Exports {
 		return sb;
 	}
 
-	public static byte[] getExportExcel(List<Result> resultsProcessed) throws ExportException {
-
-		boolean noResult = true;
+	public static byte[] getExportExcel(List<Result> resultsProcessed, String filterLanguage) throws ExportException {
 		SXSSFWorkbook workbook = null;
 		ByteArrayOutputStream excelStream = new ByteArrayOutputStream();
+		int rownum = 0;
 		if (resultsProcessed != null && !resultsProcessed.isEmpty()) {
 			try {
 				String[] headers = new String[]{
@@ -111,7 +112,7 @@ public class Exports {
 				CellStyle headerStyle = workbook.createCellStyle();
 				headerStyle.setFont(boldFont);
 
-				Row row = sheet.createRow(0);
+				Row row = sheet.createRow(rownum++);
 
 				for (int j = 0; j < headers.length; ++j) {
 					Cell cell = row.createCell(j, Cell.CELL_TYPE_STRING);
@@ -121,12 +122,12 @@ public class Exports {
 
 				// Body
 				Cell cell;
-				for (int k = 0; k < resultsProcessed.size(); k++) {
-					Result result = resultsProcessed.get(k);
-					List<Kwic> kwics = result.getKwics();
-					for (int i = 0; i < kwics.size(); i++) {
-						Kwic kwic = kwics.get(i);
-						row = sheet.createRow(k + i + 1);
+				for (Result result : resultsProcessed) {
+					for (Kwic kwic : result.getKwics()) {
+						if (filterLanguage != null && !filterLanguage.equals(kwic.getLanguage())) {
+							continue;
+						}
+						row = sheet.createRow(rownum++);
 						cell = row.createCell(0, Cell.CELL_TYPE_STRING);
 						cell.setCellValue(kwic.getLeft());
 						cell = row.createCell(1, Cell.CELL_TYPE_STRING);
@@ -141,7 +142,6 @@ public class Exports {
 							cell = row.createCell(3, Cell.CELL_TYPE_STRING);
 							cell.setCellValue(kwic.getReference());
 						}
-						noResult = false;
 					}
 				}
 				workbook.write(excelStream);
@@ -154,24 +154,26 @@ public class Exports {
 				}
 			}
 		}
-		if (noResult) {
+		if (rownum <= 1) {
 			return null;
 		} else {
 			return excelStream.toByteArray();
 		}
-
 	}
 
 	public static byte[] getExportTCF(List<Result> resultsProcessed,
-			String searchLanguage) throws ExportException {
-		String text = getExportText(resultsProcessed);
+			String searchLanguage, String filterLanguage) throws ExportException {
+		String text = getExportText(resultsProcessed, filterLanguage);
 		if (text == null || text.isEmpty()) {
 			return null;
 		} else {
 			WLData data;
 			MetaData md = new MetaData();
-			String languageCode = LanguagesISO693.getInstance().code_1ForCode_3(searchLanguage);
-			TextCorpusStored tc = new TextCorpusStored(languageCode);
+			String lang = LanguagesISO693.getInstance().code_1ForCode_3(searchLanguage);
+			if (filterLanguage != null) {
+				lang = LanguagesISO693.getInstance().code_1ForCode_3(filterLanguage);
+			}
+			TextCorpusStored tc = new TextCorpusStored(lang);
 			tc.createTextLayer().addText(text);
 			data = new WLData(md, tc);
 			ByteArrayOutputStream os = new ByteArrayOutputStream();
@@ -185,15 +187,19 @@ public class Exports {
 		}
 	}
 
-	public static String getExportText(List<Result> resultsProcessed) {
+	public static String getExportText(List<Result> resultsProcessed, String filterLanguage) {
 		StringBuilder text = new StringBuilder();
 		if (resultsProcessed != null && !resultsProcessed.isEmpty()) {
 			for (Result result : resultsProcessed) {
 				for (Kwic kwic : result.getKwics()) {
+					if (filterLanguage != null && !filterLanguage.equals(kwic.getLanguage())) {
+						continue;
+					}
 					int i = kwic.getFragments().size() - 1;
 					for (Kwic.TextFragment tf : kwic.getFragments()) {
 						text.append(tf.text);
-						if (i > 0) {
+						char last = text.length() > 0 ? text.charAt(text.length() - 1) : ' ';
+						if (i > 0 && !Character.isWhitespace(last)) {
 							text.append(" ");
 						}
 						i--;
