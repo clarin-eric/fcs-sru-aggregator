@@ -2,6 +2,8 @@
 (function() {
 "use strict";
 
+var NO_MORE_RECORDS_DIAGNOSTIC_URI = "info:srw/diagnostic/1/61";
+
 window.MyAggregator = window.MyAggregator || {};
 
 var React = window.React;
@@ -64,11 +66,6 @@ function Corpora(corpora, updateFn) {
 		corpus.expanded = false; // not expanded in the corpus view
 		corpus.priority = 1; // used for ordering search results in corpus view 
 		corpus.index = index; // original order, used for stable sort
-	});
-	this.recurse(function(corpus, index) {
-		if (corpus.institution.link > 1) {
-			corpus.selected = false;
-		}
 	});
 }
 
@@ -179,8 +176,7 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({dis
 	},
 
 	nohits: { 
-		requests: [],
-		results: [],
+		results: null,
 	},
 	anyLanguage: [multipleLanguageCode, "Any Language"],
 
@@ -248,6 +244,23 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({dis
 			}.bind(this),
 		});
 	},
+	nextResults: function(corpusId) {
+		// console.log("searching next results in corpus:", corpusId);
+		this.props.ajax({
+			url: 'rest/search/'+this.state.searchId,
+			type: "POST",
+			data: {
+				corpusId: corpusId,
+				numberOfResults: this.state.numberOfResults,
+			},
+			success: function(searchId, textStatus, jqXHR) {
+				// console.log("search ["+query+"] ok: ", searchId, jqXHR);
+				var timeout = 250;
+				setTimeout(this.refreshSearchResults, timeout);
+				this.setState({ searchId: searchId, timeout: timeout });
+			}.bind(this),
+		});
+	},
 
 	refreshSearchResults: function() {
 		if (!this.state.searchId || !this.isMounted()) {
@@ -257,7 +270,7 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({dis
 			url: 'rest/search/'+this.state.searchId,
 			success: function(json, textStatus, jqXHR) {
 				var timeout = this.state.timeout;
-				if (json.requests.length > 0) {
+				if (json.inProgress) {
 					if (timeout < 10000) {
 						timeout = 1.5 * timeout;
 					}
@@ -266,7 +279,17 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({dis
 				} else {
 					console.log("search ended; hits:", json);
 				}
-				this.setState({ hits: json, timeout: timeout });
+				var corpusHit = this.state.zoomedCorpusHit;
+				if (corpusHit) {
+					for (var resi = 0; resi < json.results.length; resi++) {
+						var res = json.results[resi];
+						if (res.corpus.id === corpusHit.corpus.id) {
+							corpusHit = res;
+							break;
+						}
+					}
+				}
+				this.setState({ hits: json, timeout: timeout, zoomedCorpusHit: corpusHit});
 			}.bind(this),
 		});
 	},
@@ -292,14 +315,21 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({dis
 	setLanguageAndFilter: function(languageObj, languageFilter) {
 		this.state.corpora.setVisibility(this.state.searchLayerId, 
 			languageFilter === 'byGuess' ? multipleLanguageCode : languageObj[0]);
-		this.setState({language: languageObj, languageFilter: languageFilter});
-		this.state.corpora.update();
+		this.setState({
+			language: languageObj, 
+			languageFilter: languageFilter, 
+			corpora: this.state.corpora, // === this.state.corpora.update();
+		});
 	},
 
 	setLayer: function(layerId) {
 		this.state.corpora.setVisibility(layerId, this.state.language[0]);
-		this.state.corpora.update();
-		this.setState({searchLayerId: layerId});
+		this.setState({
+			searchLayerId: layerId, 
+			hits: this.nohits, 
+			searchId: null,
+			corpora: this.state.corpora, // === this.state.corpora.update();
+		});
 	},
 
 	setNumberOfResults: function(e) {
@@ -318,20 +348,37 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({dis
 	filterResults: function() {
 		var noLangFiltering = this.state.languageFilter === 'byMeta';
 		var langCode = this.state.language[0];
-		return this.state.hits.results.map(function(corpusHit) { 
-			return {
-				corpus: corpusHit.corpus,
-				startRecord: corpusHit.startRecord,
-				endRecord: corpusHit.endRecord,
-				exception: corpusHit.exception,
-				diagnostics: corpusHit.diagnostics,
-				searchString: corpusHit.searchString,
-				kwics: noLangFiltering ? corpusHit.kwics :
-					corpusHit.kwics.filter(function(kwic) {
-						return kwic.language === langCode || langCode === multipleLanguageCode || langCode === null; 
-					}),
-			};
-		});
+		var results = null, inProgress = 0, hits = 0;
+		if (this.state.hits.results) {
+			results = this.state.hits.results.map(function(corpusHit) { 
+				return {
+					corpus: corpusHit.corpus,
+					inProgress: corpusHit.inProgress,
+					exception: corpusHit.exception,
+					diagnostics: corpusHit.diagnostics,
+					kwics: noLangFiltering ? corpusHit.kwics :
+						corpusHit.kwics.filter(function(kwic) {
+							return kwic.language === langCode || 
+							       langCode === multipleLanguageCode || 
+							       langCode === null; 
+						}),
+				};
+			});
+			for (var i = 0; i < results.length; i++) {
+				var result = results[i];
+				if (result.inProgress) {
+					inProgress++;
+				}
+				if (result.kwics.length > 0) {
+					hits ++;
+				}
+			}
+		}
+		return {
+			results: results,
+			hits: hits,
+			inProgress: inProgress,
+		};
 	},
 
 	toggleLanguageSelection: function(e) {
@@ -353,7 +400,7 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({dis
 		e.stopPropagation();
 	},
 
-	handleChange: function(event) {
+	onQuery: function(event) {
 		this.setState({query: event.target.value});
 	},
 
@@ -376,7 +423,7 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({dis
 				);
 	},
 
-	renderAggregator: function() {
+	render: function() {
 		var layer = layerMap[this.state.searchLayerId];
 		return	(
 			React.createElement("div", {className: "top-gap"}, 
@@ -389,7 +436,7 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({dis
 
 							React.createElement("input", {className: "form-control input-lg search", name: "query", type: "text", 
 								value: this.state.query, placeholder: this.props.placeholder, 
-								tabIndex: "1", onChange: this.handleChange, onKeyDown: this.handleKey}), 
+								tabIndex: "1", onChange: this.onQuery, onKeyDown: this.handleKey}), 
 							React.createElement("div", {className: "input-group-btn"}, 
 								React.createElement("button", {className: "btn btn-default input-lg", type: "button", onClick: this.search}, 
 									React.createElement("i", {className: "glyphicon glyphicon-search"})
@@ -466,6 +513,7 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({dis
 
 				React.createElement(Modal, {ref: "resultModal", title: this.renderZoomedResultTitle(this.state.zoomedCorpusHit)}, 
 					React.createElement(ZoomedResult, {corpusHit: this.state.zoomedCorpusHit, 
+								  nextResults: this.nextResults, 
 								  getDownloadLink: this.getDownloadLink, 
 								  getToWeblichtLink: this.getToWeblichtLink, 
 								  searchedLanguage: this.state.language, 
@@ -474,8 +522,7 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({dis
 				), 
 
 				React.createElement("div", {className: "top-gap"}, 
-					React.createElement(Results, {requests: this.state.hits.requests, 
-							 results: this.filterResults(), 
+					React.createElement(Results, {collhits: this.filterResults(), 
 							 toggleResultModal: this.toggleResultModal, 
 							 getDownloadLink: this.getDownloadLink, 
 							 getToWeblichtLink: this.getToWeblichtLink, 
@@ -484,9 +531,6 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({dis
 			)
 			);
 	},
-	render: function() {
-		return this.renderAggregator();
-	}
 });
 
 
@@ -621,8 +665,11 @@ var ResultMixin = window.MyReact.ResultMixin = {
 				);
 	},
 
-	renderDiagnostic: function(d) {
-		return 	React.createElement("div", {className: "alert alert-warning", key: d.uri}, 
+	renderDiagnostic: function(d, key) {
+		if (d.uri === NO_MORE_RECORDS_DIAGNOSTIC_URI) {
+			return false;
+		}
+		return 	React.createElement("div", {className: "alert alert-warning", key: key}, 
 					React.createElement("div", null, "Diagnostic: ", d.message)
 				); 
 	},
@@ -631,7 +678,6 @@ var ResultMixin = window.MyReact.ResultMixin = {
 		if (!corpusHit.diagnostics || corpusHit.diagnostics.length === 0) {
 			return false;
 		}
-
 		return corpusHit.diagnostics.map(this.renderDiagnostic);
 	},
 
@@ -713,7 +759,7 @@ var ResultMixin = window.MyReact.ResultMixin = {
 				React.createElement("ul", {className: "dropdown-menu"}, 
 					React.createElement("li", null, 
 						error ? 
-							React.createElement("div", {className: "alert alert-danger", style: {margin:10}}, error) :
+							React.createElement("div", {className: "alert alert-danger", style: {margin:10, width:200}}, error) :
 							React.createElement("a", {href: this.props.getToWeblichtLink(corpusId), target: "_blank"}, " ", 
 								"Send to Weblicht")
 						
@@ -728,6 +774,7 @@ var ResultMixin = window.MyReact.ResultMixin = {
 var ZoomedResult = React.createClass({displayName: 'ZoomedResult',
 	propTypes: {
 		corpusHit: PT.object,
+		nextResults: PT.func.isRequired,
 		languageMap: PT.object.isRequired,
 		weblichtLanguages: PT.array.isRequired,
 		searchedLanguage: PT.array.isRequired,
@@ -736,11 +783,45 @@ var ZoomedResult = React.createClass({displayName: 'ZoomedResult',
 	},
 	mixins: [ResultMixin],
 
+	getInitialState: function() {
+		return {
+			inProgress: false,
+		};
+	},
+
+	componentWillReceiveProps: function() {
+		this.setState({inProgress: false});
+	},
+
+	nextResults: function(e) {
+		this.setState({inProgress: true});
+		this.props.nextResults(this.props.corpusHit.corpus.id);
+	},
+
 	renderLanguages: function(languages) {
 		return languages
 				.map(function(l) { return this.props.languageMap[l]; }.bind(this))
 				.sort()
 				.join(", ");
+	},
+
+	renderMoreResults:function(){
+		if (this.state.inProgress || this.props.corpusHit.inProgress) 
+			return React.createElement("span", {style: {fontStyle:'italic'}}, "Retrieving results, please wait...");
+
+		var moreResults = true;
+		for (var i = 0; i < this.props.corpusHit.diagnostics.length; i++) {
+			var d = this.props.corpusHit.diagnostics[i];
+			if (d.uri === NO_MORE_RECORDS_DIAGNOSTIC_URI) {
+				moreResults = false;
+				break;
+			}
+		}
+		if (!moreResults)
+			return React.createElement("span", {style: {fontStyle:'italic'}}, "No other results available for this query");
+		return	React.createElement("button", {className: "btn btn-default", onClick: this.nextResults}, 
+					React.createElement("span", {className: "glyphicon glyphicon-option-horizontal", 'aria-hidden': "true"}), " More Results"
+				);
 	},
 
 	render: function() {
@@ -776,9 +857,7 @@ var ZoomedResult = React.createClass({displayName: 'ZoomedResult',
 						), 
 
 						React.createElement("div", {style: {textAlign:'center', marginTop:10}}, 
-							React.createElement("button", {className: "btn btn-default"}, 
-								React.createElement("span", {className: "glyphicon glyphicon-option-horizontal", 'aria-hidden': "true"}), " More Results"
-							)
+							 this.renderMoreResults() 
 						)
 
 					)
@@ -788,8 +867,7 @@ var ZoomedResult = React.createClass({displayName: 'ZoomedResult',
 
 var Results = React.createClass({displayName: 'Results',
 	propTypes: {
-		requests: PT.array.isRequired,
-		results: PT.array.isRequired,
+		collhits: PT.object.isRequired,
 		searchedLanguage: PT.array.isRequired,
 		toggleResultModal: PT.func.isRequired,
 		getDownloadLink: PT.func.isRequired,
@@ -824,14 +902,15 @@ var Results = React.createClass({displayName: 'Results',
 				);
 	},
 
-	renderProgressMessage: function(hits) {
-		var total = this.props.requests.length + this.props.results.length;
-		var msg = hits + " matching collections found in " + this.props.results.length + " searched collections";
-		var percents = Math.round(100 * this.props.results.length / total);
+	renderProgressMessage: function() {
+		var collhits = this.props.collhits;
+		var done = collhits.results.length - collhits.inProgress;
+		var msg = collhits.hits + " matching collections found in " + done + " searched collections";
+		var percents = Math.round(100 * collhits.hits / collhits.results.length);
 		var styleperc = {width: percents+"%"};
 		return 	React.createElement("div", {style: {marginTop:10}}, 
 					React.createElement("div", null, msg), 
-					this.props.requests.length > 0 ? 
+					collhits.inProgress > 0 ? 
 						React.createElement("div", {className: "progress", style: {marginBottom:10}}, 
 							React.createElement("div", {className: "progress-bar progress-bar-striped active", role: "progressbar", 
 								'aria-valuenow': percents, 'aria-valuemin': "0", 'aria-valuemax': "100", style: styleperc}), 
@@ -846,23 +925,23 @@ var Results = React.createClass({displayName: 'Results',
 	},
 
 	render: function() {
-		if (this.props.results.length + this.props.requests.length === 0) {
+		var collhits = this.props.collhits;
+		if (!collhits.results) {
 			return false;
 		}
-		var hits = this.props.results.filter(function(corpusHit) { return corpusHit.kwics.length > 0; }).length;
-		var showprogress = this.props.requests.length > 0;
+		var showprogress = collhits.inProgress > 0;
 		return 	React.createElement("div", null, 
 					React.createElement(ReactCSSTransitionGroup, {transitionName: "fade"}, 
-						 showprogress ? this.renderProgressMessage(hits) : React.createElement("div", {style: {height:20}}), 
+						 showprogress ? this.renderProgressMessage() : React.createElement("div", {style: {height:20}}), 
 						React.createElement("div", {style: {marginBottom:2}}, 
 							 showprogress ? false : 
-								React.createElement("div", {className: "float-left"}, " ", hits + " matching collections found", " "), 
+								React.createElement("div", {className: "float-left"}, " ", collhits.hits + " matching collections found", " "), 
 							
-							 hits === 0 ? false : 
+							 collhits.hits === 0 ? false : 
 								React.createElement("div", {className: "float-right"}, 
 									React.createElement("div", null, 
 										 this.renderDisplayKWIC(), 
-										 this.props.requests.length === 0 ? 
+										 collhits.inProgress === 0 ? 
 											React.createElement("div", {className: "inline"}, " ", this.renderDownloadLinks(), " ")
 											:false
 										
@@ -871,7 +950,7 @@ var Results = React.createClass({displayName: 'Results',
 							
 							React.createElement("div", {style: {clear:'both'}})
 						), 
-						this.props.results.map(this.renderResultPanel)
+						collhits.results.map(this.renderResultPanel)
 					)
 				);
 	}

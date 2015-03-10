@@ -512,3 +512,8 @@ code {
 	font-family: Consolas,monaco,courier,monospace; 
 }
 
+.statistics .alert-warning.legacy {
+	color: #000000;
+	background-color: #FFFFFF;
+	border-color: #A00000;
+}

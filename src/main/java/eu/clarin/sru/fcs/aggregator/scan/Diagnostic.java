@@ -22,6 +22,18 @@ public class Diagnostic {
 		this.diagnostic = diagnostic;
 	}
 
+	public String getUri() {
+		return uri;
+	}
+
+	public String getMessage() {
+		return message;
+	}
+
+	public String getDiagnostic() {
+		return diagnostic;
+	}
+
 	@Override
 	public int hashCode() {
 		https://primes.utm.edu/lists/small/1000.txt

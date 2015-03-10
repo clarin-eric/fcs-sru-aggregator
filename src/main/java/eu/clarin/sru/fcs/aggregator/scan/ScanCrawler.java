@@ -224,7 +224,6 @@ public class ScanCrawler {
 		final Corpus parentCorpus;
 		final Corpora corpora;
 		final int depth;
-		String fullRequestUrl;
 
 		ScanTask(final Institution institution, final Endpoint endpoint,
 				final Corpus parentCorpus, final Corpora corpora, final int depth) {
@@ -247,7 +246,6 @@ public class ScanCrawler {
 						+ "=" + normalizeHandle(parentCorpus));
 				scanRequest.setExtraRequestData(SRUCQL.SCAN_RESOURCE_INFO_PARAMETER,
 						SRUCQL.SCAN_RESOURCE_INFO_PARAMETER_DEFAULT_VALUE);
-				fullRequestUrl = scanRequest.getRequestedURI().toString();
 			} catch (Throwable ex) {
 				log.error("Exception creating scan request for {}: {}", endpoint.getUrl(), ex.getMessage());
 				log.error("--> ", ex);
@@ -284,8 +282,8 @@ public class ScanCrawler {
 				if (response != null && response.hasDiagnostics()) {
 					for (SRUDiagnostic d : response.getDiagnostics()) {
 						Diagnostic diag = new Diagnostic(d.getURI(), d.getMessage(), d.getDetails());
-						statistics.addEndpointDiagnostic(institution, endpoint, diag, fullRequestUrl);
-						log.info("Diagnostic: {}: {}", fullRequestUrl, diag.message);
+						statistics.addEndpointDiagnostic(institution, endpoint, diag, response.getRequest().getRequestedURI().toString());
+						log.info("Diagnostic: {}: {}", response.getRequest().getRequestedURI().toString(), diag.message);
 					}
 				}
 
@@ -293,7 +291,7 @@ public class ScanCrawler {
 			} catch (Exception xc) {
 				log.error("{} Exception in scan callback {}#{}", latch.get(), endpoint.getUrl(), normalizeHandle(parentCorpus));
 				log.error("--> ", xc);
-				statistics.addErrorDatapoint(institution, endpoint, xc, fullRequestUrl);
+				statistics.addErrorDatapoint(institution, endpoint, xc, response.getRequest().getRequestedURI().toString());
 			} finally {
 				latch.decrement();
 			}
@@ -304,7 +302,7 @@ public class ScanCrawler {
 			try {
 				log.error("{} Error while scanning {}#{}: {}", latch.get(), endpoint.getUrl(), normalizeHandle(parentCorpus), error.getMessage());
 				statistics.addEndpointDatapoint(institution, endpoint, stats.getQueueTime(), stats.getExecutionTime());
-				statistics.addErrorDatapoint(institution, endpoint, error, fullRequestUrl);
+				statistics.addErrorDatapoint(institution, endpoint, error, request.getRequestedURI().toString());
 				if (Throw.isCausedBy(error, SocketTimeoutException.class)) {
 					return;
 				}

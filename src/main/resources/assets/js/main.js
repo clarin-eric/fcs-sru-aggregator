@@ -2,7 +2,7 @@
 (function() {
 "use strict";
 
-var VERSION = "VERSION 2.0.0.α26";
+var VERSION = "VERSION 2.0.0-beta-27";
 var URLROOT = "/Aggregator-testing";
 
 var PT = React.PropTypes;
@@ -136,7 +136,7 @@ var Main = React.createClass({displayName: 'Main',
 			React.createElement("div", null, 
 				React.createElement("div", {className: "container"}, 
 					React.createElement("div", {className: "beta-tag"}, 
-						React.createElement("span", null, "ALPHA")
+						React.createElement("span", null, "BETA")
 					)
 				), 
 			
@@ -226,8 +226,9 @@ var StatisticsPage = React.createClass({displayName: 'StatisticsPage',
 	},
 
 	renderDiagnostic: function(d) {
+		var classes = "inline alert alert-warning " + (d.diagnostic.uri === 'LEGACY' ? "legacy" : "");
 		return 	React.createElement("div", {key: d.diagnostic.uri}, 
-					React.createElement("div", {className: "inline alert alert-warning"}, 
+					React.createElement("div", {className: classes}, 
 						React.createElement("div", null, 
 							 d.counter <= 1 ? false : 
 								React.createElement("div", {className: "inline", style: {margin:"5px 5px 5px 5px"}}, 

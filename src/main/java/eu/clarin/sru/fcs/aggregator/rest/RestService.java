@@ -1,5 +1,6 @@
 package eu.clarin.sru.fcs.aggregator.rest;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
@@ -10,7 +11,6 @@ import eu.clarin.sru.fcs.aggregator.app.AggregatorConfiguration.Params.WeblichtC
 import eu.clarin.sru.fcs.aggregator.scan.Corpora;
 import eu.clarin.sru.fcs.aggregator.scan.Corpus;
 import eu.clarin.sru.fcs.aggregator.scan.Statistics;
-import eu.clarin.sru.fcs.aggregator.search.Request;
 import eu.clarin.sru.fcs.aggregator.search.Result;
 import eu.clarin.sru.fcs.aggregator.search.Search;
 import eu.clarin.sru.fcs.aggregator.util.LanguagesISO693;
@@ -97,9 +97,9 @@ public class RestService {
 	@Path("search")
 	public Response postSearch(
 			@FormParam("query") String query,
+			@FormParam("firstResultIndex") Integer firstResultIndex,
 			@FormParam("numberOfResults") Integer numberOfResults,
 			@FormParam("language") String language,
-			@FormParam("useLanguageGuesser") boolean useLanguageGuesser,
 			@FormParam("corporaIds[]") List<String> corporaIds) throws Exception {
 		if (query == null || query.isEmpty()) {
 			return Response.status(400).entity("'query' parameter expected").build();
@@ -112,13 +112,23 @@ public class RestService {
 		if (corpora == null || corpora.isEmpty()) {
 			return Response.status(503).entity("No corpora, please wait for the server to finish scanning").build();
 		}
+
+		if (firstResultIndex == null || firstResultIndex < 1) {
+			firstResultIndex = 1;
+		}
+		if (firstResultIndex > 250) {
+			firstResultIndex = 250;
+		}
+
 		if (numberOfResults == null || numberOfResults < 10) {
 			numberOfResults = 10;
 		}
 		if (numberOfResults > 250) {
 			numberOfResults = 250;
 		}
-		Search search = Aggregator.getInstance().startSearch(SRUVersion.VERSION_1_2, corpora, query, language, numberOfResults);
+
+		Search search = Aggregator.getInstance().startSearch(SRUVersion.VERSION_1_2,
+				corpora, query, language, firstResultIndex, numberOfResults);
 		if (search == null) {
 			return Response.status(500).entity("Initiating search failed").build();
 		}
@@ -128,20 +138,13 @@ public class RestService {
 
 	public static class JsonSearch {
 
-		List<Request> requests;
+		@JsonProperty
+		int inProgress = 0;
+		@JsonProperty
 		List<Result> results;
 
-		public JsonSearch(List<Request> requests, List<Result> results) {
-			this.requests = requests;
+		public JsonSearch(List<Result> results) {
 			this.results = results;
-		}
-
-		public List<Request> getRequests() {
-			return requests;
-		}
-
-		public List<Result> getResults() {
-			return results;
 		}
 	}
 
@@ -154,8 +157,41 @@ public class RestService {
 			return Response.status(Response.Status.NOT_FOUND).entity("Search job not found").build();
 		}
 
-		JsonSearch js = new JsonSearch(search.getRequests(), search.getResults(corpusId));
+		JsonSearch js = new JsonSearch(search.getResults(corpusId));
+		for (Result r : js.results) {
+			if (r.getInProgress()) {
+				js.inProgress++;
+			}
+		}
 		return Response.ok(js).build();
+	}
+
+	@POST
+	@Path("search/{id}")
+	public Response postSearchNextResults(@PathParam("id") Long searchId,
+			@FormParam("corpusId") String corpusId,
+			@FormParam("numberOfResults") Integer numberOfResults) throws Exception {
+		log.info("POST /search/{id}, corpusId: " + corpusId);
+		if (corpusId == null || corpusId.isEmpty()) {
+			return Response.status(400).entity("'corpusId' parameter expected").build();
+		}
+		Search search = Aggregator.getInstance().getSearchById(searchId);
+		if (search == null) {
+			return Response.status(Response.Status.NOT_FOUND).entity("Search job not found").build();
+		}
+		if (numberOfResults == null || numberOfResults < 10) {
+			numberOfResults = 10;
+		}
+		if (numberOfResults > 250) {
+			numberOfResults = 250;
+		}
+
+		boolean ret = search.searchForNextResults(corpusId, numberOfResults);
+		if (ret == false) {
+			return Response.status(500).entity("Initiating subSearch failed").build();
+		}
+		URI uri = URI.create("" + search.getId());
+		return Response.created(uri).entity(uri).build();
 	}
 
 	@GET

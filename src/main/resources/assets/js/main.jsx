@@ -2,7 +2,7 @@
 (function() {
 "use strict";
 
-var VERSION = "VERSION 2.0.0.α26";
+var VERSION = "VERSION 2.0.0-beta-27";
 var URLROOT = "/Aggregator-testing";
 
 var PT = React.PropTypes;
@@ -136,7 +136,7 @@ var Main = React.createClass({
 			<div>
 				<div className="container">
 					<div className="beta-tag">
-						<span>ALPHA</span>
+						<span>BETA</span>
 					</div>
 				</div>
 			
@@ -226,8 +226,9 @@ var StatisticsPage = React.createClass({
 	},
 
 	renderDiagnostic: function(d) {
+		var classes = "inline alert alert-warning " + (d.diagnostic.uri === 'LEGACY' ? "legacy" : "");
 		return 	<div key={d.diagnostic.uri}>
-					<div className="inline alert alert-warning"> 
+					<div className={classes} > 
 						<div>
 							{ d.counter <= 1 ? false : 
 								<div className="inline" style={{margin:"5px 5px 5px 5px"}}>

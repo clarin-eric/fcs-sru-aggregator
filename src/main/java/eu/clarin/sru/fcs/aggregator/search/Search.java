@@ -32,49 +32,64 @@ public class Search {
 
 	private static final AtomicLong counter = new AtomicLong(Math.abs(new Random().nextInt()));
 
+	private final ThrottledClient searchClient;
+	private final SRUVersion version;
 	private final Long id;
 	private final String query;
 	private final long createdAt = System.currentTimeMillis();
 	private final String searchLanguage;
-	private final List<Request> requests = Collections.synchronizedList(new ArrayList<Request>());
 	private final List<Result> results = Collections.synchronizedList(new ArrayList<Result>());
 	private final Statistics statistics;
 
 	public Search(ThrottledClient searchClient, SRUVersion version,
 			Statistics statistics, List<Corpus> corpora, String searchString,
-			String searchLanguage, int startRecord, int maxRecords
+			String searchLanguage, int maxRecords
 	) {
+		this.searchClient = searchClient;
+		this.version = version;
 		this.id = counter.getAndIncrement();
 		this.query = searchString;
 		this.searchLanguage = searchLanguage;
 		this.statistics = statistics;
 		for (Corpus corpus : corpora) {
-			executeSearch(searchClient, version, corpus, searchString, startRecord, maxRecords);
+			Result result = new Result(corpus);
+			executeSearch(result, query, 1, maxRecords);
+			results.add(result);
 		}
 	}
 
-	private Request executeSearch(ThrottledClient searchClient, SRUVersion version,
-			final Corpus corpus, String searchString,
+	public boolean searchForNextResults(String corpusId, int maxRecords) {
+		for (Result r : results) {
+			if (r.getCorpus().getId().equals(corpusId)) {
+				executeSearch(r, query, r.getEndpointReturnedRecords() + 1, maxRecords);
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private void executeSearch(final Result result, String searchString,
 			int startRecord, int maxRecords) {
-		final Request request = new Request(corpus, searchString, startRecord, startRecord + maxRecords - 1);
-		log.info("Executing search in '{}' query='{}' maxRecords='{}'", corpus, searchString, maxRecords);
+		final Corpus corpus = result.getCorpus();
+		log.info("Executing search in '{}' query='{}' maxRecords='{}'",
+				corpus, searchString, maxRecords);
 
 		SRUSearchRetrieveRequest searchRequest = new SRUSearchRetrieveRequest(corpus.getEndpoint().getUrl());
 		searchRequest.setVersion(version);
+		searchRequest.setStartRecord(startRecord);
 		searchRequest.setMaximumRecords(maxRecords);
 		boolean legacy = corpus.getEndpoint().getProtocol().equals(FCSProtocolVersion.LEGACY);
 		searchRequest.setRecordSchema(legacy
 				? ClarinFCSRecordData.LEGACY_RECORD_SCHEMA
 				: ClarinFCSRecordData.RECORD_SCHEMA);
 		searchRequest.setQuery(searchString);
-		searchRequest.setStartRecord(startRecord);
 		if (corpus.getHandle() != null) {
 			searchRequest.setExtraRequestData(legacy
 					? SRUCQL.SEARCH_CORPUS_HANDLE_LEGACY_PARAMETER
 					: SRUCQL.SEARCH_CORPUS_HANDLE_PARAMETER,
 					corpus.getHandle());
 		}
-		requests.add(request);
+		result.setInProgress(true);
 
 		try {
 			searchClient.searchRetrieve(searchRequest, new ThrottledClient.SearchCallback() {
@@ -82,9 +97,7 @@ public class Search {
 				public void onSuccess(SRUSearchRetrieveResponse response, ThrottledClient.Stats stats) {
 					try {
 						statistics.addEndpointDatapoint(corpus.getInstitution(), corpus.getEndpoint(), stats.getQueueTime(), stats.getExecutionTime());
-						Result result = new Result(request, response, null);
-						results.add(result);
-						requests.remove(request);
+						result.addResponse(response);
 						List<Diagnostic> diagnostics = result.getDiagnostics();
 						if (diagnostics != null && !diagnostics.isEmpty()) {
 							log.error("diagnostic for url: " + response.getRequest().getRequestedURI().toString());
@@ -95,6 +108,8 @@ public class Search {
 						}
 					} catch (Throwable xc) {
 						log.error("search.onSuccess exception:", xc);
+					} finally {
+						result.setInProgress(false);
 					}
 				}
 
@@ -103,30 +118,22 @@ public class Search {
 					try {
 						statistics.addEndpointDatapoint(corpus.getInstitution(), corpus.getEndpoint(), stats.getQueueTime(), stats.getExecutionTime());
 						statistics.addErrorDatapoint(corpus.getInstitution(), corpus.getEndpoint(), xc, srureq.getRequestedURI().toString());
-						results.add(new Result(request, null, xc));
-						requests.remove(request);
+						result.setException(xc);
 						log.error("search.onError: ", xc);
 					} catch (Throwable xxc) {
 						log.error("search.onError exception:", xxc);
+					} finally {
+						result.setInProgress(false);
 					}
 				}
 			});
 		} catch (Throwable xc) {
 			log.error("SearchRetrieve error for " + corpus.getEndpoint().getUrl(), xc);
 		}
-		return request;
 	}
 
 	public Long getId() {
 		return id;
-	}
-
-	public List<Request> getRequests() {
-		List<Request> copy = new ArrayList<>();
-		synchronized (requests) {
-			copy.addAll(requests);
-		}
-		return copy;
 	}
 
 	public List<Result> getResults(String corpusId) {

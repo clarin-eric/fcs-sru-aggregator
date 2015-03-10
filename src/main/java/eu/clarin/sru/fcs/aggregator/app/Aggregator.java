@@ -106,7 +106,8 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 
 	private static final org.slf4j.Logger log = LoggerFactory.getLogger(Aggregator.class);
 
-	public static final String DE_TOK_MODEL = "tokenizer/de-tuebadz-8.0-token.bin";
+	final int SEARCHES_SIZE_GC_THRESHOLD = 1000;
+	final int SEARCHES_AGE_GC_THRESHOLD = 60;
 
 	private static final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 	private static Aggregator instance;
@@ -260,7 +261,8 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 
 	// this function should be thread-safe
 	public Search startSearch(SRUVersion version, List<Corpus> corpora,
-			String searchString, String searchLang, int maxRecords) throws Exception {
+			String searchString, String searchLang,
+			int firstRecord, int maxRecords) throws Exception {
 		if (corpora.isEmpty()) {
 			// No corpora
 			return null;
@@ -269,12 +271,14 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 			return null;
 		} else {
 			Search sr = new Search(sruSearchClient, version, searchStatsAtom.get(),
-					corpora, searchString, searchLang, 1, maxRecords);
-			if ((activeSearches.size() % 100) == 0) {
+					corpora, searchString, searchLang, maxRecords);
+			if (activeSearches.size() > SEARCHES_SIZE_GC_THRESHOLD) {
 				List<Long> toBeRemoved = new ArrayList<Long>();
 				long t0 = System.currentTimeMillis();
 				for (Map.Entry<Long, Search> e : activeSearches.entrySet()) {
-					if (t0 - e.getValue().getCreatedAt() > 1800 * 1000) {
+					long dtmin = (t0 - e.getValue().getCreatedAt()) / 1000 / 60;
+					if (dtmin > SEARCHES_AGE_GC_THRESHOLD) {
+						log.info("removing search " + e.getKey() + ": " + dtmin + " minutes old");
 						toBeRemoved.add(e.getKey());
 					}
 				}

@@ -1,6 +1,5 @@
 package eu.clarin.sru.fcs.aggregator.search;
 
-import eu.clarin.sru.client.SRUClientException;
 import eu.clarin.sru.client.SRUDiagnostic;
 import eu.clarin.sru.client.SRURecord;
 import eu.clarin.sru.client.SRUSearchRetrieveRequest;
@@ -18,6 +17,9 @@ import eu.clarin.sru.fcs.aggregator.scan.JsonException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import org.w3c.dom.Node;
 import org.slf4j.LoggerFactory;
 
@@ -33,51 +35,56 @@ public final class Result {
 
 	private static final org.slf4j.Logger log = LoggerFactory.getLogger(Result.class);
 
-	private Request request;
-	private List<Kwic> kwics = new ArrayList<Kwic>();
-	private JsonException exception;
-	private List<Diagnostic> diagnostics = new ArrayList<Diagnostic>();
+	private final Corpus corpus;
+	private AtomicBoolean inProgress = new AtomicBoolean(true);
+	private AtomicInteger endpointReturnedRecords = new AtomicInteger();
+	private AtomicReference<JsonException> exception = new AtomicReference<JsonException>();
+	private List<Diagnostic> diagnostics = Collections.synchronizedList(new ArrayList<Diagnostic>());
+	private List<Kwic> kwics = Collections.synchronizedList(new ArrayList<Kwic>());
 
 	public List<Kwic> getKwics() {
 		return kwics;
 	}
 
-	public Result(Request request, SRUSearchRetrieveResponse response,
-			SRUClientException xc) {
-		this.request = request;
-		if (xc != null) {
-			exception = new JsonException(xc);
-		}
-		if (response != null && response.hasRecords()) {
-			setResponse(response);
-		}
-		if (response != null && response.hasDiagnostics()) {
-			setDiagnostics(response);
-		}
+	public Result(Corpus corpus) {
+		this.corpus = corpus;
 	}
 
-	void setResponse(SRUSearchRetrieveResponse response) {
-		for (SRURecord record : response.getRecords()) {
-			if (record.isRecordSchema(ClarinFCSRecordData.RECORD_SCHEMA)) {
-				ClarinFCSRecordData rd = (ClarinFCSRecordData) record.getRecordData();
-				Resource resource = rd.getResource();
-				setClarinRecord(resource);
-				log.debug("Resource ref={0}, pid={1}, dataViews={2}",
-						new Object[]{resource.getRef(), resource.getPid(), resource.hasDataViews()});
-			} else if (record.isRecordSchema(SRUSurrogateRecordData.RECORD_SCHEMA)) {
-				SRUSurrogateRecordData r = (SRUSurrogateRecordData) record.getRecordData();
-				log.info("Surrogate diagnostic: uri={0}, message={1}, detail={2}",
-						new Object[]{r.getURI(), r.getMessage(), r.getDetails()});
-			} else {
-				log.info("Unsupported schema: {0}", record.getRecordSchema());
+	public void setInProgress(boolean inProgress) {
+		this.inProgress.set(inProgress);
+	}
+
+	public boolean getInProgress() {
+		return inProgress.get();
+	}
+
+	public void addResponse(SRUSearchRetrieveResponse response) {
+		if (response != null && response.hasRecords()) {
+			for (SRURecord record : response.getRecords()) {
+				addRecord(record);
+			}
+		}
+		if (response != null && response.hasDiagnostics()) {
+			for (SRUDiagnostic d : response.getDiagnostics()) {
+				diagnostics.add(new Diagnostic(d.getURI(), d.getMessage(), d.getDetails()));
 			}
 		}
 	}
 
-	void setDiagnostics(SRUSearchRetrieveResponse response) {
-		for (SRUDiagnostic d : response.getDiagnostics()) {
-			SRUSearchRetrieveRequest srurequest = response.getRequest();
-			diagnostics.add(new Diagnostic(d.getURI(), d.getMessage(), d.getDetails()));
+	void addRecord(SRURecord record) {
+		endpointReturnedRecords.getAndIncrement();
+		if (record.isRecordSchema(ClarinFCSRecordData.RECORD_SCHEMA)) {
+			ClarinFCSRecordData rd = (ClarinFCSRecordData) record.getRecordData();
+			Resource resource = rd.getResource();
+			setClarinRecord(resource);
+			log.debug("Resource ref={0}, pid={1}, dataViews={2}",
+					new Object[]{resource.getRef(), resource.getPid(), resource.hasDataViews()});
+		} else if (record.isRecordSchema(SRUSurrogateRecordData.RECORD_SCHEMA)) {
+			SRUSurrogateRecordData r = (SRUSurrogateRecordData) record.getRecordData();
+			log.info("Surrogate diagnostic: uri={0}, message={1}, detail={2}",
+					new Object[]{r.getURI(), r.getMessage(), r.getDetails()});
+		} else {
+			log.info("Unsupported schema: {0}", record.getRecordSchema());
 		}
 	}
 
@@ -129,22 +136,18 @@ public final class Result {
 	}
 
 	public JsonException getException() {
-		return exception;
+		return exception.get();
 	}
 
-	public int getStartRecord() {
-		return request.getStartRecord();
+	public void setException(Exception xc) {
+		exception.set(new JsonException(xc));
 	}
 
-	public int getEndRecord() {
-		return request.getEndRecord();
+	public int getEndpointReturnedRecords() {
+		return endpointReturnedRecords.get();
 	}
 
 	public Corpus getCorpus() {
-		return request.getCorpus();
-	}
-
-	public String getSearchString() {
-		return request.getSearchString();
+		return corpus;
 	}
 }
