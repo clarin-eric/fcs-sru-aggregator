@@ -61,7 +61,7 @@ public class ScanCrawlTask implements Runnable {
 			}
 			if (additionalCQLEndpoints != null && !additionalCQLEndpoints.isEmpty()) {
 				institutions.add(0,
-						new Institution("ZZZ", null) {
+						new Institution("Unknown Institution", null) {
 							{
 								for (URL u : additionalCQLEndpoints) {
 									addEndpoint(u.toExternalForm());

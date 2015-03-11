@@ -2,7 +2,7 @@
 (function() {
 "use strict";
 
-var VERSION = "VERSION 2.0.0-beta-27";
+var VERSION = "VERSION 2.0.0-beta-28";
 var URLROOT = "/Aggregator-testing";
 
 var PT = React.PropTypes;

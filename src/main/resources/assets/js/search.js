@@ -23,23 +23,25 @@ var multipleLanguageCode = "mul"; // see ISO-693-3
 
 var layers = [
 	{
-		id: "sampa",
-		name: "Phonetic Transcriptions",
-		searchPlaceholder: "stA:z",
-		searchLabel: "SAMPA query",
-		searchLabelBkColor: "#eef",
-	},
-	{
 		id: "text",
 		name: "Text Resources",
 		searchPlaceholder: "Elephant",
 		searchLabel: "Search text",
 		searchLabelBkColor: "#fed",
+		className: '',
+	},
+	{
+		id: "sampa",
+		name: "Phonetic Transcriptions",
+		searchPlaceholder: "stA:z",
+		searchLabel: "SAMPA query",
+		searchLabelBkColor: "#eef",
+		disabled: true,
 	},
 ];
 var layerMap = {
-	sampa: layers[0], 
-	text: layers[1],
+	text: layers[0],
+	sampa: layers[1], 
 };
 
 function Corpora(corpora, updateFn) {
@@ -465,8 +467,10 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({dis
 								React.createElement("div", {className: "input-group-btn"}, 
 									React.createElement("ul", {ref: "layerDropdownMenu", className: "dropdown-menu"}, 
 										 	layers.map(function(l) { 
-												return React.createElement("li", {key: l.id}, " ", React.createElement("a", {tabIndex: "-1", href: "#", 
-													onClick: this.setLayer.bind(this, l.id)}, " ", l.name, " "));
+												var cls = l.disabled ? 'disabled':'';
+												var handler = function() { if (!l.disabled) this.setLayer(l.id); };
+												return React.createElement("li", {key: l.id, className: cls}, " ", React.createElement("a", {tabIndex: "-1", href: "#", 
+													onClick: handler}, " ", l.name, " "));
 											}.bind(this))
 										
 									), 								

@@ -87,6 +87,10 @@ import org.slf4j.LoggerFactory;
  *
  * TODO: add the modes described above (except live)
  *
+ * TODO: update comments everywhere
+ *
+ * TODO: add some basic docs
+ *
  * TODO: Export search results to personal workspace using oauth
  *
  * TODO: websockets
