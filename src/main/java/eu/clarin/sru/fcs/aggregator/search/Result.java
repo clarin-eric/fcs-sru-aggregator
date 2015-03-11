@@ -72,6 +72,7 @@ public final class Result {
 	}
 
 	void addRecord(SRURecord record) {
+//		TODO(edima): use response.getNextRecordPosition()
 		endpointReturnedRecords.getAndIncrement();
 		if (record.isRecordSchema(ClarinFCSRecordData.RECORD_SCHEMA)) {
 			ClarinFCSRecordData rd = (ClarinFCSRecordData) record.getRecordData();

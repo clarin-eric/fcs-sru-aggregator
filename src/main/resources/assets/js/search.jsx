@@ -296,22 +296,25 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({
 		});
 	},
 
-	getExportParams: function(corpusId, format) {
+	getExportParams: function(corpusId, format, filterLanguage) {
 		var params = corpusId ? {corpusId:corpusId}:{};
 		if (format) params.format = format;
-		if (this.state.languageFilter === 'byGuess' || this.state.languageFilter === 'byMetaAndGuess') {
+		if (filterLanguage) {
+			params.filterLanguage = filterLanguage;
+		} else if (this.state.languageFilter === 'byGuess' || this.state.languageFilter === 'byMetaAndGuess') {
 			params.filterLanguage = this.state.language[0];
 		}
 		return encodeQueryData(params);
 	},
 
 	getDownloadLink: function(corpusId, format) {
-		return 'rest/search/'+this.state.searchId+'/download?' + this.getExportParams(corpusId, format);
+		return 'rest/search/'+this.state.searchId+'/download?' + 
+			this.getExportParams(corpusId, format);
 	},
 
-	getToWeblichtLink: function(corpusId) {
-		var params = corpusId ? {corpusId:corpusId}:{};
-		return 'rest/search/'+this.state.searchId+'/toWeblicht?' + this.getExportParams(corpusId);
+	getToWeblichtLink: function(corpusId, forceLanguage) {
+		return 'rest/search/'+this.state.searchId+'/toWeblicht?' + 
+			this.getExportParams(corpusId, null, forceLanguage);
 	},
 
 	setLanguageAndFilter: function(languageObj, languageFilter) {
@@ -468,7 +471,7 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({
 									<ul ref="layerDropdownMenu" className="dropdown-menu">
 										{ 	layers.map(function(l) { 
 												var cls = l.disabled ? 'disabled':'';
-												var handler = function() { if (!l.disabled) this.setLayer(l.id); };
+												var handler = function() { if (!l.disabled) this.setLayer(l.id); }.bind(this);
 												return <li key={l.id} className={cls}> <a tabIndex="-1" href="#" 
 													onClick={handler}> {l.name} </a></li>;
 											}.bind(this))
@@ -752,7 +755,7 @@ var ResultMixin = window.MyReact.ResultMixin = {
 		);
 	},
 
-	renderToWeblichtLinks: function(corpusId, error) {
+	renderToWeblichtLinks: function(corpusId, forceLanguage, error) {
 		return (
 			<div className="dropdown">
 				<button className="btn btn-flat" aria-expanded="false" data-toggle="dropdown">
@@ -764,7 +767,7 @@ var ResultMixin = window.MyReact.ResultMixin = {
 					<li> 
 						{error ? 
 							<div className="alert alert-danger" style={{margin:10, width:200}}>{error}</div> :
-							<a href={this.props.getToWeblichtLink(corpusId)} target="_blank">{" "} 
+							<a href={this.props.getToWeblichtLink(corpusId, forceLanguage)} target="_blank">{" "} 
 								Send to Weblicht</a>
 						}
 					</li>
@@ -833,9 +836,25 @@ var ZoomedResult = React.createClass({
 		if (!corpusHit) {
 			return false;
 		}
-		var wlerror = null;
+
+		var forceLanguage = null, wlerror = null;
 		if (this.props.weblichtLanguages.indexOf(this.props.searchedLanguage[0]) < 0) {
-			wlerror = "Cannot use WebLicht: unsupported language";
+			// the search language is either AnyLanguage or unsupported 
+			if (this.props.searchedLanguage[0] === multipleLanguageCode) {
+				if (corpusHit.corpus.languages && corpusHit.corpus.languages.length === 1) {
+					forceLanguage = corpusHit.corpus.languages[0];
+				} else {
+					var langs = corpusHit.kwics.map(function(kwic) {return kwic.language;});
+					langs = _.uniq(langs.filter(function(l){ return l !== null; }));
+					console.log("languages:", langs);
+					if (langs.length === 1) {
+						forceLanguage = langs[0];
+					}
+				}
+			} 
+			if (!forceLanguage) {
+				wlerror = "Cannot use WebLicht: unsupported language ("+this.props.searchedLanguage[1]+")";
+			}
 		}
 		var corpus = corpusHit.corpus;
 		return 	<div> 
@@ -851,7 +870,7 @@ var ZoomedResult = React.createClass({
 								<div>
 									{ this.renderDisplayKWIC() }
 									<div className="inline"> {this.renderDownloadLinks(corpusHit.corpus.id)} </div>
-									<div className="inline"> {this.renderToWeblichtLinks(corpus.id, wlerror)} </div>
+									<div className="inline"> {this.renderToWeblichtLinks(corpus.id, forceLanguage, wlerror)} </div>
 								</div>
 							</div>
 							<div style={{clear:'both'}}/>
@@ -989,6 +1008,16 @@ var _ = window._ = window._ || {
 			}
 		}
 		return ret;
+	},
+
+	uniq: function(a) {
+		var r = [];
+		for (var i = 0; i < a.length; i++) {
+			if (r.indexOf(a[i]) < 0) {
+				r.push(a[i]);
+			}
+		}
+		return r;
 	},
 };
 
