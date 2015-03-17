@@ -2,8 +2,8 @@
 (function() {
 "use strict";
 
-var VERSION = "VERSION 2.0.0-beta-28";
-var URLROOT = "/Aggregator-testing";
+var VERSION = window.MyAggregator.VERSION = "VERSION 2.0.0-beta-30";
+var URLROOT = window.MyAggregator.URLROOT = "/Aggregator-testing";
 
 var PT = React.PropTypes;
 
@@ -70,7 +70,7 @@ var Main = React.createClass({displayName: 'Main',
 	},
 
 	renderAggregator: function() {
-		return React.createElement(AggregatorPage, {ajax: this.ajax, corpora: this.state.corpora, languageMap: this.state.languageMap});
+		return React.createElement(AggregatorPage, {ajax: this.ajax});
 	},
 
 	renderHelp: function() {
@@ -85,12 +85,17 @@ var Main = React.createClass({displayName: 'Main',
 		return React.createElement(StatisticsPage, {ajax: this.ajax});
 	},
 
+	renderEmbedded: function() {
+		return React.createElement(AggregatorPage, {ajax: this.ajax, embedded: true});
+	},
+
 	getPageFns: function() { 
 		return {
 			'': this.renderAggregator,
 			'help': this.renderHelp,
 			'about': this.renderAbout,
 			'stats': this.renderStatistics,
+			'embed': this.renderEmbedded,
 		};
 	},
 
@@ -109,6 +114,7 @@ var Main = React.createClass({displayName: 'Main',
 	toHelp: function(doPushHistory) { this.gotoPage(doPushHistory, 'help'); },
 	toAbout: function(doPushHistory) { this.gotoPage(doPushHistory, 'about'); },
 	toStatistics: function(doPushHistory) { this.gotoPage(doPushHistory, 'stats'); },
+	toEmbedded: function(doPushHistory) { this.gotoPage(doPushHistory, 'embed'); },
 
 	renderCollapsible: function() {
 		var classname = "navbar-collapse collapse " + (this.state.navbarCollapse?"in":"");
@@ -131,7 +137,10 @@ var Main = React.createClass({displayName: 'Main',
 		);
 	},
 
-	render: function() {
+	renderTop: function() {
+		if (this.state.navbarPageFn === this.renderEmbedded) {
+			return false;
+		}
 		return	(
 			React.createElement("div", null, 
 				React.createElement("div", {className: "container"}, 
@@ -155,7 +164,15 @@ var Main = React.createClass({displayName: 'Main',
 					)
 				), 
 
-				React.createElement(ErrorPane, {errorMessages: this.state.errorMessages}), 
+				React.createElement(ErrorPane, {errorMessages: this.state.errorMessages})
+			)
+		);
+	},
+
+	render: function() {
+		return	(
+			React.createElement("div", null, 
+				React.createElement("div", null, " ",  this.renderTop(), " "), 
 
 				React.createElement("div", {id: "push"}, 
 					React.createElement("div", {className: "container"}, 
@@ -480,6 +497,10 @@ var Footer = React.createClass({displayName: 'Footer',
 	},
 
 	render: function() {
+		var path = window.location.pathname.split('/');
+		if (path.length === 3 && path[2] === 'embed') {
+			return false;
+		}
 		return	(
 			React.createElement("div", {className: "container"}, 
 				React.createElement("div", {id: "CLARIN_footer_left"}, 
@@ -520,6 +541,8 @@ var routeFromLocation = function() {
 			this.toAbout(false);
 		} else if (p === 'stats') {
 			this.toStatistics(false);
+		} else if (p === 'embed') {
+			this.toEmbedded(false);
 		} else {
 			this.toAggregator(false);
 		}

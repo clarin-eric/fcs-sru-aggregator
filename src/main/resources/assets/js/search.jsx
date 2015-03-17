@@ -174,7 +174,8 @@ function encodeQueryData(data)
 
 var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({
 	propTypes: {
-		ajax: PT.func.isRequired
+		ajax: PT.func.isRequired,
+		embedded: PT.bool,
 	},
 
 	nohits: { 
@@ -222,7 +223,7 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({
 
 	search: function() {
 		var query = this.state.query;
-		if (!query) {
+		if (!query || this.props.embedded) {
 			this.setState({ hits: this.nohits, searchId: null });
 			return;			
 		}
@@ -428,6 +429,23 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({
 				</h3>;
 	},
 
+	renderSearchButtonOrLink: function() {
+		if (this.props.embedded) {
+			var query = this.state.query;
+			var newurl = query ? (window.MyAggregator.URLROOT + "?search=" + query) : "#";
+			return (
+				<a className="btn btn-default input-lg" type="button" target="_blank" href={newurl}>
+					<i className="glyphicon glyphicon-search"></i>
+				</a>
+			);
+		}
+		return (
+			<button className="btn btn-default input-lg" type="button" onClick={this.search}>
+				<i className="glyphicon glyphicon-search"></i>
+			</button> 
+		);
+	},
+
 	render: function() {
 		var layer = layerMap[this.state.searchLayerId];
 		return	(
@@ -443,9 +461,7 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({
 								value={this.state.query} placeholder={this.props.placeholder}
 								tabIndex="1" onChange={this.onQuery} onKeyDown={this.handleKey} />
 							<div className="input-group-btn">
-								<button className="btn btn-default input-lg" type="button" onClick={this.search}>
-									<i className="glyphicon glyphicon-search"></i>
-								</button>
+								{this.renderSearchButtonOrLink()}
 							</div>
 						</div>
 					</div>
@@ -485,13 +501,15 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({
 
 							</div>
 
+							{ this.props.embedded ? false : 
 							<div className="input-group">
 								<span className="input-group-addon nobkg">in</span>
 								<button type="button" className="btn btn-default" onClick={this.toggleCorpusSelection}>
 									{this.state.corpora.getSelectedMessage()} <span className="caret"/>
 								</button>
-							</div>							
+							</div> }
 
+							{ this.props.embedded ? false : 
 							<div className="input-group">
 								<span className="input-group-addon nobkg">and show up to</span>
 								<div className="input-group-btn">
@@ -501,7 +519,7 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({
 										onKeyPress={this.stop}/>
 								</div>
 								<span className="input-group-addon nobkg">hits</span>
-							</div>
+							</div> }
 						</form>
 					</div>
 				</div>

@@ -174,7 +174,8 @@ function encodeQueryData(data)
 
 var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({displayName: 'AggregatorPage',
 	propTypes: {
-		ajax: PT.func.isRequired
+		ajax: PT.func.isRequired,
+		embedded: PT.bool,
 	},
 
 	nohits: { 
@@ -222,7 +223,7 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({dis
 
 	search: function() {
 		var query = this.state.query;
-		if (!query) {
+		if (!query || this.props.embedded) {
 			this.setState({ hits: this.nohits, searchId: null });
 			return;			
 		}
@@ -428,6 +429,23 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({dis
 				);
 	},
 
+	renderSearchButtonOrLink: function() {
+		if (this.props.embedded) {
+			var query = this.state.query;
+			var newurl = query ? (window.MyAggregator.URLROOT + "?search=" + query) : "#";
+			return (
+				React.createElement("a", {className: "btn btn-default input-lg", type: "button", target: "_blank", href: newurl}, 
+					React.createElement("i", {className: "glyphicon glyphicon-search"})
+				)
+			);
+		}
+		return (
+			React.createElement("button", {className: "btn btn-default input-lg", type: "button", onClick: this.search}, 
+				React.createElement("i", {className: "glyphicon glyphicon-search"})
+			) 
+		);
+	},
+
 	render: function() {
 		var layer = layerMap[this.state.searchLayerId];
 		return	(
@@ -443,9 +461,7 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({dis
 								value: this.state.query, placeholder: this.props.placeholder, 
 								tabIndex: "1", onChange: this.onQuery, onKeyDown: this.handleKey}), 
 							React.createElement("div", {className: "input-group-btn"}, 
-								React.createElement("button", {className: "btn btn-default input-lg", type: "button", onClick: this.search}, 
-									React.createElement("i", {className: "glyphicon glyphicon-search"})
-								)
+								this.renderSearchButtonOrLink()
 							)
 						)
 					)
@@ -485,13 +501,15 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({dis
 
 							), 
 
+							 this.props.embedded ? false : 
 							React.createElement("div", {className: "input-group"}, 
 								React.createElement("span", {className: "input-group-addon nobkg"}, "in"), 
 								React.createElement("button", {type: "button", className: "btn btn-default", onClick: this.toggleCorpusSelection}, 
 									this.state.corpora.getSelectedMessage(), " ", React.createElement("span", {className: "caret"})
 								)
-							), 							
+							), 
 
+							 this.props.embedded ? false : 
 							React.createElement("div", {className: "input-group"}, 
 								React.createElement("span", {className: "input-group-addon nobkg"}, "and show up to"), 
 								React.createElement("div", {className: "input-group-btn"}, 
