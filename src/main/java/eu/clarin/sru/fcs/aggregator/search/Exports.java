@@ -167,15 +167,13 @@ public class Exports {
 		if (text == null || text.isEmpty()) {
 			return null;
 		} else {
-			WLData data;
-			MetaData md = new MetaData();
 			String lang = LanguagesISO693.getInstance().code_1ForCode_3(searchLanguage);
 			if (filterLanguage != null) {
 				lang = LanguagesISO693.getInstance().code_1ForCode_3(filterLanguage);
 			}
 			TextCorpusStored tc = new TextCorpusStored(lang);
 			tc.createTextLayer().addText(text);
-			data = new WLData(md, tc);
+			WLData data = new WLData(new MetaData(), tc);
 			ByteArrayOutputStream os = new ByteArrayOutputStream();
 			try {
 				WLDObjector.write(data, os);

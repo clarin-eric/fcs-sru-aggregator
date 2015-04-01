@@ -33,6 +33,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
+import org.eclipse.jetty.server.session.SessionHandler;
 import org.slf4j.LoggerFactory;
 
 /**
@@ -47,45 +48,23 @@ import org.slf4j.LoggerFactory;
  *
  * If invoked with 'x-aggregation-context' and 'query' parameter, the aggregator
  * will pre-select provided resources and fill in the query field. This
- * mechanism is currently used by VLO. Example: POST
- * http://weblicht.sfs.uni-tuebingen.de/Aggregator HTTP/1.1 operation =
- * searchRetrieve & version = 1.2 & query = bellen & x-aggregation-context =
+ * mechanism is currently used by VLO.
+ *
+ * Example: POST
+ * http://weblicht.sfs.uni-tuebingen.de/Aggregator HTTP/1.1
+ * query = bellen & x-aggregation-context =
  * {"http://fedora.clarin-d.uni-saarland.de/sru/":["hdl:11858/00-246C-0000-0008-5F2A-0"]}
  *
- *
- * Additionally, if run with the a URL query string parameter 'mode', the
- * special behavior of the aggregator is triggered:
- *
- * /?mode=testing corresponds to the mode where the CQL endpoints are taken not
- * from Clarin center repository, but from a hard-coded endpoints list; this
- * functionality is useful for testing the development instances of endpoints,
- * before they are moved to production. Was done to meet the request from MPI.
- *
- * /?mode=search corresponds to the mode where the aggregator page is requested
- * with the already known query and (optionally) resources to search in, and if
- * the immediate search is desired. In this case the aggregator search results
- * page is displayed and search results of the provided query start to fill it
- * in immediately (i.e. users don't need to click 'search' in the aggregator
- * page). Was done to meet the request from CLARIN ERIC (Martin Wynne contacted
- * us).
- *
- * /?mode=live corresponds to the mode where the information about corpora are
- * taken not from the scan cache (crawled in advance), but loaded live, starting
- * from the request to center registry and then performing scan operation
- * requests on each CQL endpoint listed there. It takes time to get the
- * corresponding responses from the endpoints, therefore the Aggregator page
- * loads very slow in this mode. But this mode is useful for testing of the
- * newly added or changed corpora without waiting for the next crawl.
- *
- *
- * Adds Application initialization and clean up: only one SRU threaded client is
- * used in the application, it has to be shut down when the application stops.
- * One Languages object instance is used within the application.
+ * If the Aggregator web page has the URL query string parameter 'mode'
+ * set to the string 'search', and the 'query' parameter is set,
+ * then the aggregator search results for this query are immediately displayed
+ * (i.e. users don't need to click 'search' in the aggregator page).
+ * This feature has been requested initially by Martin Wynne from CLARIN ERIC
  *
  * @author Yana Panchenko
  * @author edima
  *
- * TODO: add the modes described above (except live)
+ * TODO: improve help page text
  *
  * TODO: update comments everywhere
  *
@@ -102,8 +81,6 @@ import org.slf4j.LoggerFactory;
  * TODO: test it in IE, other browsers
  *
  * TODO: tri-state for parent collections; search + message implications
- *
- * TODO: improve help page text
  *
  */
 public class Aggregator extends Application<AggregatorConfiguration> {
@@ -160,7 +137,8 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 		} catch (IOException xc) {
 		}
 
-		environment.getApplicationContext().setErrorHandler(new ErrorPageHandler());
+		environment.getApplicationContext().setSessionHandler(new SessionHandler());
+		environment.getApplicationContext().setErrorHandler(new ErrorHandler());
 		environment.jersey().setUrlPattern("/rest/*");
 		environment.jersey().register(new RestService());
 

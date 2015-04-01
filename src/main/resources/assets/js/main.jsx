@@ -2,7 +2,7 @@
 (function() {
 "use strict";
 
-var VERSION = window.MyAggregator.VERSION = "VERSION 2.0.0-beta-30";
+var VERSION = window.MyAggregator.VERSION = "VERSION 2.0.0-beta-31";
 var URLROOT = window.MyAggregator.URLROOT = "/Aggregator-testing";
 
 var PT = React.PropTypes;
@@ -12,7 +12,7 @@ var AggregatorPage = window.MyAggregator.AggregatorPage;
 
 var Main = React.createClass({
 	componentWillMount: function() {
-		routeFromLocation.bind(this);
+		routeFromLocation.bind(this)();
 	},
 
 	getInitialState: function () {
@@ -556,13 +556,4 @@ React.render(<Footer />, document.getElementById('footer') );
 
 window.onpopstate = routeFromLocation.bind(main);
 
-routeFromLocation.bind(main)();
-
 })();
-
-
-
-
-
-
-

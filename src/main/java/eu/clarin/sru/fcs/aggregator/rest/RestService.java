@@ -80,11 +80,21 @@ public class RestService {
 
 	@GET
 	@Path("init")
-	public Response getInit() throws IOException {
+	public Response getInit(@Context HttpServletRequest request) throws IOException {
 		log.info("get initial data");
 		final Corpora corpora = Aggregator.getInstance().getCorpora();
+		final Object contextString = request.getSession().getAttribute("x-aggregation-context");
+		final Object query = request.getSession().getAttribute("query");
+		final Object mode = request.getSession().getAttribute("mode");
 		Object j = new HashMap<String, Object>() {
 			{
+				if (query != null) {
+					put("query", query);
+				}
+				if (contextString instanceof String) {
+					Object context = new ObjectMapper().readValue((String) contextString, Object.class);
+					put("x-aggregation-context", context); // preselected corpora
+				}
 				put("corpora", corpora.getCorpora());
 				put("languages", LanguagesISO693.getInstance().getLanguageMap(corpora.getLanguages()));
 				put("weblichtLanguages", Aggregator.getInstance().getParams().getWeblichtConfig().getAcceptedTcfLanguages());

@@ -44,6 +44,18 @@ var layerMap = {
 	sampa: layers[1], 
 };
 
+function getQueryVariable(variable) {
+    var query = window.location.search.substring(1);
+    var vars = query.split('&');
+    for (var i = 0; i < vars.length; i++) {
+        var pair = vars[i].split('=');
+        if (decodeURIComponent(pair[0]) == variable) {
+            return decodeURIComponent(pair[1]);
+        }
+    }
+    return null;
+}
+
 function Corpora(corpora, updateFn) {
 	var that = this;
 	this.corpora = corpora;
@@ -138,6 +150,32 @@ Corpora.prototype.setVisibility = function(layerId, languageCode) {
 	}.bind(this));
 };
 
+Corpora.prototype.setAggregationContext = function(endpoints2handles) {
+	console.log('setAggregationContext', endpoints2handles, this.corpora);
+
+	var recurseSelect = function(select, corpus) {
+		corpus.selected = false;
+		this.recurseCorpora(corpus.subCorpora, function(c) { c.selected = corpus.selected; });
+	};
+
+	this.corpora.forEach(recurseSelect.bind(this, false));
+
+	var corporaToSelect = [];
+	_.pairs(endpoints2handles).forEach(function(endp){
+		var endpoint = endp[0];
+		var handles = endp[1];
+		handles.forEach(function(handle){
+			this.recurse(function(corpus){
+				if (corpus.handle === handle) {
+					corporaToSelect.push(corpus);
+				}
+			}.bind(this));
+		}.bind(this));
+	}.bind(this));
+
+	corporaToSelect.forEach(recurseSelect.bind(this, true));
+};
+
 Corpora.prototype.getSelectedIds = function() {
 	var ids = [];
 	this.recurse(function(corpus) {
@@ -188,7 +226,7 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({dis
 			corpora: new Corpora([], this.updateCorpora),
 			languageMap: {},
 			weblichtLanguages: [],
-			query: "",
+			query: getQueryVariable('query') || '',
 			language: this.anyLanguage,
 			languageFilter: 'byMeta',
 			searchLayerId: "text",
@@ -207,11 +245,24 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({dis
 			url: 'rest/init',
 			success: function(json, textStatus, jqXHR) {
 				if (this.isMounted()) {
+					var corpora = new Corpora(json.corpora, this.updateCorpora);
 					this.setState({
-						corpora : new Corpora(json.corpora, this.updateCorpora),
+						corpora : corpora,
 						languageMap: json.languages,
 						weblichtLanguages: json.weblichtLanguages,
+						query: this.state.query || json.query || '',
 					});
+
+					if (json['x-aggregation-context']) {
+						console.log("x-aggregation-context: ", json["x-aggregation-context"]);
+						corpora.setAggregationContext(json["x-aggregation-context"]);
+						corpora.update();
+					}
+
+					if (getQueryVariable('mode') === 'search' ||
+						json.mode === 'search') {
+							this.search();
+					}
 				}
 			}.bind(this),
 		});
@@ -432,7 +483,8 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({dis
 	renderSearchButtonOrLink: function() {
 		if (this.props.embedded) {
 			var query = this.state.query;
-			var newurl = query ? (window.MyAggregator.URLROOT + "?search=" + query) : "#";
+			var newurl = !query ? "#" :
+				(window.MyAggregator.URLROOT + "?" + encodeQueryData({query:query, mode:'search'}));
 			return (
 				React.createElement("a", {className: "btn btn-default input-lg", type: "button", target: "_blank", href: newurl}, 
 					React.createElement("i", {className: "glyphicon glyphicon-search"})

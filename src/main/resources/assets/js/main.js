@@ -2,7 +2,7 @@
 (function() {
 "use strict";
 
-var VERSION = window.MyAggregator.VERSION = "VERSION 2.0.0-beta-30";
+var VERSION = window.MyAggregator.VERSION = "VERSION 2.0.0-beta-31";
 var URLROOT = window.MyAggregator.URLROOT = "/Aggregator-testing";
 
 var PT = React.PropTypes;
@@ -12,7 +12,7 @@ var AggregatorPage = window.MyAggregator.AggregatorPage;
 
 var Main = React.createClass({displayName: 'Main',
 	componentWillMount: function() {
-		routeFromLocation.bind(this);
+		routeFromLocation.bind(this)();
 	},
 
 	getInitialState: function () {
@@ -110,7 +110,7 @@ var Main = React.createClass({displayName: 'Main',
 		}
 	},
 
-	toAggregator: function(doPushHistory) { this.gotoPage(doPushHistory, ''); },
+	toAggregator: function(doPushHistory, query) { this.gotoPage(doPushHistory, ''); },
 	toHelp: function(doPushHistory) { this.gotoPage(doPushHistory, 'help'); },
 	toAbout: function(doPushHistory) { this.gotoPage(doPushHistory, 'about'); },
 	toStatistics: function(doPushHistory) { this.gotoPage(doPushHistory, 'stats'); },
@@ -556,13 +556,6 @@ React.render(React.createElement(Footer, null), document.getElementById('footer'
 
 window.onpopstate = routeFromLocation.bind(main);
 
-routeFromLocation.bind(main)();
+// routeFromLocation.bind(main)();
 
 })();
-
-
-
-
-
-
-
