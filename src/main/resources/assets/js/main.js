@@ -2,7 +2,7 @@
 (function() {
 "use strict";
 
-var VERSION = window.MyAggregator.VERSION = "VERSION 2.0.0-beta-31";
+var VERSION = window.MyAggregator.VERSION = "VERSION 2.0.0-beta-32";
 var URLROOT = window.MyAggregator.URLROOT = "/Aggregator-testing";
 
 var PT = React.PropTypes;
@@ -110,7 +110,7 @@ var Main = React.createClass({displayName: 'Main',
 		}
 	},
 
-	toAggregator: function(doPushHistory, query) { this.gotoPage(doPushHistory, ''); },
+	toAggregator: function(doPushHistory) { this.gotoPage(doPushHistory, ''); },
 	toHelp: function(doPushHistory) { this.gotoPage(doPushHistory, 'help'); },
 	toAbout: function(doPushHistory) { this.gotoPage(doPushHistory, 'about'); },
 	toStatistics: function(doPushHistory) { this.gotoPage(doPushHistory, 'stats'); },
@@ -390,20 +390,24 @@ var HelpPage = React.createClass({displayName: 'HelpPage',
 					"and their corpora, go to the search field at the top of the page," + ' ' + 
 					"enter your query, and click 'search' button or press the 'Enter' key."), 
 					
-					React.createElement("h3", null, "Search Options - adjusting search criteria"), 
-					React.createElement("p", null, "To select specific corpora based on their name or language and to specify" + ' ' + 
-					"number of search results (hits) per corpus per page, click on the 'Search options'" + ' ' +
-					"link. Here, you can filter resources based on the language, select specific resources," + ' ' + 
-					"set the maximum number of hits."), 
+					React.createElement("p", null, "When the search starts, the page will start filling in with the corpora responses." + ' ' + 
+					"After the entire search process has ended you have the option to download the results" + ' ' +
+					"in various formats."
+					), 
 
-					React.createElement("h3", null, "Search Results - inspecting search results"), 
-					React.createElement("p", null, "When the search starts, the 'Search results' page is displayed" + ' ' + 
-					"and its content starts to get filled with the corpora responses." + ' ' + 
-					"To save or process the displayed search result, in the 'Search results' page," + ' ' + 
-					"go to the menu and select either 'Export to Personal Workspace'," + ' ' + 
-					"'Download' or 'Use WebLicht' menu item. This menu appears only after" + ' ' + 
-					"all the results on the page have been loaded. To get the next hits from each corpus," + ' ' + 
-					"click the 'next' arrow at the bottom of 'Search results' page."), 
+					React.createElement("p", null, "If you are particularly interested in the results returned by a corpus, you have" + ' ' +
+					"the option to focus only on the results of that corpus, by clicking on the 'Watch' button." + ' ' +
+					"In this view mode you can also download the results of use the WebLicht processing services" + ' ' +
+					"to further analyse the results."), 
+
+
+					React.createElement("h3", null, "Adjusting search criteria"), 
+					React.createElement("p", null, "The FCS Aggregator makes possible to select specific corpora based on their name" + ' ' + 
+					"or language and to specify the number of search results (hits) per corpus per page." + ' ' +
+					"The user interface controls that allows to change these options are located" + ' ' + 
+					"right below the search fiels on the main page. The current options are" + ' ' + 
+					"to filter resources based on their language, to select specific resources, and" + ' ' + 
+					"to set the maximum number of hits."), 
 
 
 					React.createElement("h3", null, "More help"), 
@@ -555,7 +559,5 @@ var main = React.render(React.createElement(Main, null),  document.getElementByI
 React.render(React.createElement(Footer, null), document.getElementById('footer') );
 
 window.onpopstate = routeFromLocation.bind(main);
-
-// routeFromLocation.bind(main)();
 
 })();

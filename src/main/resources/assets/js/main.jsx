@@ -2,7 +2,7 @@
 (function() {
 "use strict";
 
-var VERSION = window.MyAggregator.VERSION = "VERSION 2.0.0-beta-31";
+var VERSION = window.MyAggregator.VERSION = "VERSION 2.0.0-beta-32";
 var URLROOT = window.MyAggregator.URLROOT = "/Aggregator-testing";
 
 var PT = React.PropTypes;
@@ -390,20 +390,24 @@ var HelpPage = React.createClass({
 					and their corpora, go to the search field at the top of the page, 
 					enter your query, and click 'search' button or press the 'Enter' key.</p>
 					
-					<h3>Search Options - adjusting search criteria</h3>
-					<p>To select specific corpora based on their name or language and to specify 
-					number of search results (hits) per corpus per page, click on the 'Search options'
-					link. Here, you can filter resources based on the language, select specific resources, 
-					set the maximum number of hits.</p>
+					<p>When the search starts, the page will start filling in with the corpora responses. 
+					After the entire search process has ended you have the option to download the results
+					in various formats.
+					</p>
 
-					<h3>Search Results - inspecting search results</h3>
-					<p>When the search starts, the 'Search results' page is displayed 
-					and its content starts to get filled with the corpora responses. 
-					To save or process the displayed search result, in the 'Search results' page, 
-					go to the menu and select either 'Export to Personal Workspace', 
-					'Download' or 'Use WebLicht' menu item. This menu appears only after 
-					all the results on the page have been loaded. To get the next hits from each corpus, 
-					click the 'next' arrow at the bottom of 'Search results' page.</p>
+					<p>If you are particularly interested in the results returned by a corpus, you have
+					the option to focus only on the results of that corpus, by clicking on the 'Watch' button.
+					In this view mode you can also download the results of use the WebLicht processing services
+					to further analyse the results.</p>
+
+
+					<h3>Adjusting search criteria</h3>
+					<p>The FCS Aggregator makes possible to select specific corpora based on their name 
+					or language and to specify the number of search results (hits) per corpus per page.
+					The user interface controls that allows to change these options are located 
+					right below the search fiels on the main page. The current options are 
+					to filter resources based on their language, to select specific resources, and 
+					to set the maximum number of hits.</p>
 
 
 					<h3>More help</h3>
