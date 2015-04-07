@@ -213,6 +213,7 @@ function encodeQueryData(data)
 var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({displayName: 'AggregatorPage',
 	propTypes: {
 		ajax: PT.func.isRequired,
+		error: PT.func.isRequired,
 		embedded: PT.bool,
 	},
 
@@ -256,6 +257,10 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({dis
 					if (json['x-aggregation-context']) {
 						console.log("x-aggregation-context: ", json["x-aggregation-context"]);
 						corpora.setAggregationContext(json["x-aggregation-context"]);
+						if (!corpora.getSelectedIds().length) {
+							this.props.error("Cannot find the required collection, will search all collections instead");
+							corpora.recurse(function(corpus) { corpus.selected = true; });
+						}
 						corpora.update();
 					}
 
@@ -279,6 +284,11 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({dis
 			return;			
 		}
 		var selectedIds = this.state.corpora.getSelectedIds();
+		if (!selectedIds.length) {
+			this.props.error("Please select a collection to search into");
+			return;
+		}
+
 		// console.log("searching in the following corpora:", selectedIds);
 		this.props.ajax({
 			url: 'rest/search',

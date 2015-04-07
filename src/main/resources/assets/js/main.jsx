@@ -2,7 +2,7 @@
 (function() {
 "use strict";
 
-var VERSION = window.MyAggregator.VERSION = "VERSION 2.0.0-beta-32";
+var VERSION = window.MyAggregator.VERSION = "VERSION 2.0.0-beta-33";
 var URLROOT = window.MyAggregator.URLROOT = 
 	window.location.pathname.substring(0, window.location.pathname.indexOf("/",2)) || 
 	"/Aggregator";
@@ -72,7 +72,7 @@ var Main = React.createClass({
 	},
 
 	renderAggregator: function() {
-		return <AggregatorPage ajax={this.ajax} />;
+		return <AggregatorPage ajax={this.ajax} error={this.error} />;
 	},
 
 	renderHelp: function() {
@@ -290,14 +290,20 @@ var StatisticsPage = React.createClass({
 								<span style={{color:'#a94442'}}>legacy <i className="glyphicon glyphicon-thumbs-down"></i> </span> 
 								: <span style={{color:'#3c763d'}}><i className="glyphicon glyphicon-thumbs-up"></i> </span> 
 							}
-							{ " "+endpoint[0] }: 
-						</li>
-						<li>
-							<span>{stat.numberOfRequests}</span> request(s),
-							average:{this.renderWaitTimeSecs(stat.avgExecutionTime)}, 
-							max: {this.renderWaitTimeSecs(stat.maxExecutionTime)}
+							{ " "+endpoint[0] }
 						</li>
 					</ul>
+					<div style={{marginLeft:40}}>
+					{ isScan ? 
+						<div>Max concurrent scan requests:{" "} {stat.maxConcurrentRequests} </div> :
+						<div>Max concurrent search requests:{" "} {stat.maxConcurrentRequests} </div>
+					}
+					</div>
+					<div style={{marginLeft:40}}>
+						<span>{stat.numberOfRequests}</span> request(s),
+						average:{this.renderWaitTimeSecs(stat.avgExecutionTime)}, 
+						max: {this.renderWaitTimeSecs(stat.maxExecutionTime)}
+					</div>
 					{ isScan ? this.renderCollections(stat.rootCollections) : false }
 					{	(errors && errors.length) ? 
 						<div className='inline' style={{marginLeft:40}}>
@@ -323,15 +329,6 @@ var StatisticsPage = React.createClass({
 		return 	<div className="container statistics" style={{marginTop:20}}>
 					<div>
 						<div>Start date: {new Date(stats.date).toLocaleString()}</div>
-						{ stats.isScan ? 
-							<div>Max concurrent scan requests per endpoint:{" "}
-								<kbd>{stats.maxConcurrentScanRequestsPerEndpoint}</kbd>
-							</div> 
-							: 
-							<div>Max concurrent search requests per endpoint:{" "}
-								<kbd>{stats.maxConcurrentSearchRequestsPerEndpoint}</kbd>
-							</div>
-						}
 						<div>Timeout: {" "}<kbd>{stats.timeout} seconds</kbd></div>
 					</div>
 					<div> { _.pairs(stats.institutions).map(this.renderInstitution.bind(this, stats.isScan)) } </div>

@@ -7,12 +7,14 @@ import com.optimaize.langdetect.ngram.NgramExtractors;
 import com.optimaize.langdetect.profiles.LanguageProfile;
 import com.optimaize.langdetect.profiles.LanguageProfileReader;
 import com.optimaize.langdetect.text.*;
+import eu.clarin.sru.client.SRUThreadedClient;
 import eu.clarin.sru.fcs.aggregator.search.Search;
 import eu.clarin.sru.fcs.aggregator.scan.ScanCrawlTask;
 import eu.clarin.sru.fcs.aggregator.scan.Corpora;
 import eu.clarin.sru.client.SRUVersion;
 import eu.clarin.sru.client.fcs.ClarinFCSClientBuilder;
 import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescriptionParser;
+import eu.clarin.sru.fcs.aggregator.client.MaxConcurrentRequestsCallback;
 import eu.clarin.sru.fcs.aggregator.client.ThrottledClient;
 import eu.clarin.sru.fcs.aggregator.scan.Corpus;
 import eu.clarin.sru.fcs.aggregator.rest.RestService;
@@ -24,6 +26,7 @@ import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -64,8 +67,6 @@ import org.slf4j.LoggerFactory;
  * @author Yana Panchenko
  * @author edima
  *
- * TODO: improve help page text
- *
  * TODO: update comments everywhere
  *
  * TODO: add some basic docs
@@ -101,8 +102,9 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 	private LanguageDetector languageDetector;
 	private TextObjectFactory textObjectFactory;
 
-	private ThrottledClient sruScanClient = null;
-	private ThrottledClient sruSearchClient = null;
+	private ThrottledClient sruClient = null;
+	public MaxConcurrentRequestsCallback maxScanConcurrentRequestsCallback;
+	public MaxConcurrentRequestsCallback maxSearchConcurrentRequestsCallback;
 	private Map<Long, Search> activeSearches = Collections.synchronizedMap(new HashMap<Long, Search>());
 
 	public static void main(String[] args) throws Exception {
@@ -172,25 +174,46 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 
 	public void init() throws IOException {
 		log.info("Aggregator initialization started.");
-		sruScanClient = new ThrottledClient(
-				new ClarinFCSClientBuilder()
+
+		SRUThreadedClient sruScanClient
+				= new ClarinFCSClientBuilder()
 				.setConnectTimeout(params.ENDPOINTS_SCAN_TIMEOUT_MS)
 				.setSocketTimeout(params.ENDPOINTS_SCAN_TIMEOUT_MS)
 				.addDefaultDataViewParsers()
 				.registerExtraResponseDataParser(
 						new ClarinFCSEndpointDescriptionParser())
 				.enableLegacySupport()
-				.buildThreadedClient(),
-				params.SCAN_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT
-		);
-		sruSearchClient = new ThrottledClient(
-				new ClarinFCSClientBuilder()
+				.buildThreadedClient();
+
+		SRUThreadedClient sruSearchClient
+				= new ClarinFCSClientBuilder()
 				.setConnectTimeout(params.ENDPOINTS_SEARCH_TIMEOUT_MS)
 				.setSocketTimeout(params.ENDPOINTS_SEARCH_TIMEOUT_MS)
 				.addDefaultDataViewParsers()
+				.registerExtraResponseDataParser(
+						new ClarinFCSEndpointDescriptionParser())
 				.enableLegacySupport()
-				.buildThreadedClient(),
-				params.SEARCH_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT
+				.buildThreadedClient();
+
+		maxScanConcurrentRequestsCallback = new MaxConcurrentRequestsCallback() {
+			@Override
+			public int getMaxConcurrentRequest(URI baseURI) {
+				return params.SCAN_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT;
+			}
+		};
+
+		maxSearchConcurrentRequestsCallback = new MaxConcurrentRequestsCallback() {
+			@Override
+			public int getMaxConcurrentRequest(URI baseURI) {
+				return params.slowEndpoints.contains(baseURI)
+						? params.SEARCH_MAX_CONCURRENT_REQUESTS_PER_SLOW_ENDPOINT
+						: params.SEARCH_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT;
+			}
+		};
+
+		sruClient = new ThrottledClient(
+				sruScanClient, maxScanConcurrentRequestsCallback,
+				sruSearchClient, maxSearchConcurrentRequestsCallback
 		);
 
 		File corporaCacheFile = new File(params.AGGREGATOR_FILE_PATH);
@@ -220,7 +243,7 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 		LanguagesISO693.getInstance(); // force init
 		initLanguageDetector();
 
-		ScanCrawlTask task = new ScanCrawlTask(sruScanClient,
+		ScanCrawlTask task = new ScanCrawlTask(sruClient,
 				params.CENTER_REGISTRY_URL, params.SCAN_MAX_DEPTH,
 				params.additionalCQLEndpoints,
 				null, scanCacheAtom, corporaCacheFile, corporaOldCacheFile,
@@ -236,8 +259,7 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 		for (Search search : activeSearches.values()) {
 			search.shutdown();
 		}
-		shutdownAndAwaitTermination(config.aggregatorParams, sruScanClient, scheduler);
-		shutdownAndAwaitTermination(config.aggregatorParams, sruSearchClient, scheduler);
+		shutdownAndAwaitTermination(config.aggregatorParams, sruClient, scheduler);
 		log.info("Aggregator shutdown complete.");
 	}
 
@@ -252,7 +274,8 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 			// No query
 			return null;
 		} else {
-			Search sr = new Search(sruSearchClient, version, searchStatsAtom.get(),
+			Search sr = new Search(sruClient,
+					version, searchStatsAtom.get(),
 					corpora, searchString, searchLang, maxRecords);
 			if (activeSearches.size() > SEARCHES_SIZE_GC_THRESHOLD) {
 				List<Long> toBeRemoved = new ArrayList<Long>();

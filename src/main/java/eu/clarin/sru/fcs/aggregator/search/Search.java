@@ -41,7 +41,8 @@ public class Search {
 	private final List<Result> results = Collections.synchronizedList(new ArrayList<Result>());
 	private final Statistics statistics;
 
-	public Search(ThrottledClient searchClient, SRUVersion version,
+	public Search(ThrottledClient searchClient,
+			SRUVersion version,
 			Statistics statistics, List<Corpus> corpora, String searchString,
 			String searchLanguage, int maxRecords
 	) {
@@ -89,6 +90,9 @@ public class Search {
 					: SRUCQL.SEARCH_CORPUS_HANDLE_PARAMETER,
 					corpus.getHandle());
 		}
+
+		statistics.initEndpoint(corpus.getInstitution(), corpus.getEndpoint(),
+				searchClient.getMaxConcurrentRequests(true, corpus.getEndpoint().getUrl()));
 		result.setInProgress(true);
 
 		try {

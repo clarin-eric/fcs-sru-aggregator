@@ -1,13 +1,15 @@
 package eu.clarin.sru.fcs.aggregator.app;
 
+import eu.clarin.sru.client.SRUThreadedClient;
 import eu.clarin.sru.client.fcs.ClarinFCSClientBuilder;
+import eu.clarin.sru.fcs.aggregator.client.MaxConcurrentRequestsCallback;
 import eu.clarin.sru.fcs.aggregator.scan.Corpora;
 import eu.clarin.sru.fcs.aggregator.scan.EndpointUrlFilterAllow;
 import eu.clarin.sru.fcs.aggregator.scan.ScanCrawler;
 import eu.clarin.sru.fcs.aggregator.client.ThrottledClient;
-import eu.clarin.sru.fcs.aggregator.scan.CenterRegistry;
 import eu.clarin.sru.fcs.aggregator.scan.CenterRegistryLive;
 import eu.clarin.sru.fcs.aggregator.scan.Corpus;
+import java.net.URI;
 import java.util.HashSet;
 import java.util.Set;
 import javax.naming.InitialContext;
@@ -25,11 +27,19 @@ public class ScanCrawlerTest {
 
 	@Test
 	public void testCrawlForMpiAndTue() throws NamingException {
-
-		ThrottledClient sruClient = new ThrottledClient(
-				new ClarinFCSClientBuilder()
+		SRUThreadedClient sruThreadedClient = new ClarinFCSClientBuilder()
 				.addDefaultDataViewParsers()
-				.buildThreadedClient(), 2);
+				.buildThreadedClient();
+		MaxConcurrentRequestsCallback callback = new MaxConcurrentRequestsCallback() {
+			@Override
+			public int getMaxConcurrentRequest(URI baseURI) {
+				return 2;
+			}
+		};
+		ThrottledClient sruClient = new ThrottledClient(
+				sruThreadedClient, callback,
+				sruThreadedClient, callback
+		);
 
 		try {
 			EndpointUrlFilterAllow filter = new EndpointUrlFilterAllow("uni-tuebingen.de"); //, "leipzig", ".mpi.nl", "dspin.dwds.de", "lindat."

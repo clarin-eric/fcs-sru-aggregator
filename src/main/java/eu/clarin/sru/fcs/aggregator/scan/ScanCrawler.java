@@ -9,7 +9,6 @@ import eu.clarin.sru.client.SRUExtraResponseData;
 import eu.clarin.sru.client.SRUScanRequest;
 import eu.clarin.sru.client.SRUScanResponse;
 import eu.clarin.sru.client.SRUTerm;
-import eu.clarin.sru.client.SRUVersion;
 import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescription;
 import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescription.ResourceInfo;
 import eu.clarin.sru.fcs.aggregator.client.ThrottledClient;
@@ -94,6 +93,7 @@ public class ScanCrawler {
 		void start() {
 			SRUExplainRequest explainRequest = null;
 			try {
+				statistics.initEndpoint(institution, endpoint, sruClient.getMaxConcurrentRequests(false, endpoint.getUrl()));
 				explainRequest = new SRUExplainRequest(endpoint.getUrl());
 				explainRequest.setExtraRequestData(SRUCQL.EXPLAIN_ASK_FOR_RESOURCES_PARAM, "true");
 				explainRequest.setParseRecordDataEnabled(true);

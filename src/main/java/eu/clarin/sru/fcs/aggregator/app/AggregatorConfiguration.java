@@ -3,6 +3,7 @@ package eu.clarin.sru.fcs.aggregator.app;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.dropwizard.Configuration;
+import java.net.URI;
 import java.net.URL;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -18,6 +19,9 @@ public class AggregatorConfiguration extends Configuration {
 
 		@JsonProperty
 		List<URL> additionalCQLEndpoints;
+
+		@JsonProperty
+		List<URI> slowEndpoints;
 
 		@NotEmpty
 		@JsonProperty
@@ -50,6 +54,10 @@ public class AggregatorConfiguration extends Configuration {
 		@JsonProperty
 		@Range
 		int SEARCH_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT;
+
+		@JsonProperty
+		@Range
+		int SEARCH_MAX_CONCURRENT_REQUESTS_PER_SLOW_ENDPOINT;
 
 		@JsonProperty
 		@Range
@@ -108,6 +116,11 @@ public class AggregatorConfiguration extends Configuration {
 		@JsonIgnore
 		public int getSEARCH_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT() {
 			return SEARCH_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT;
+		}
+
+		@JsonIgnore
+		public int getSEARCH_MAX_CONCURRENT_REQUESTS_PER_SLOW_ENDPOINT() {
+			return SEARCH_MAX_CONCURRENT_REQUESTS_PER_SLOW_ENDPOINT;
 		}
 
 		@JsonIgnore

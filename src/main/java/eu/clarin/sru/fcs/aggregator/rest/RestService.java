@@ -8,6 +8,9 @@ import eu.clarin.sru.client.SRUVersion;
 import eu.clarin.sru.fcs.aggregator.app.Aggregator;
 import eu.clarin.sru.fcs.aggregator.app.AggregatorConfiguration;
 import eu.clarin.sru.fcs.aggregator.app.AggregatorConfiguration.Params.WeblichtConfig;
+import static eu.clarin.sru.fcs.aggregator.app.ErrorHandler.PARAM_AGGREGATION_CONTEXT;
+import static eu.clarin.sru.fcs.aggregator.app.ErrorHandler.PARAM_MODE;
+import static eu.clarin.sru.fcs.aggregator.app.ErrorHandler.PARAM_QUERY;
 import eu.clarin.sru.fcs.aggregator.scan.Corpora;
 import eu.clarin.sru.fcs.aggregator.scan.Corpus;
 import eu.clarin.sru.fcs.aggregator.scan.Statistics;
@@ -80,20 +83,26 @@ public class RestService {
 
 	@GET
 	@Path("init")
-	public Response getInit(@Context HttpServletRequest request) throws IOException {
+	public Response getInit(@Context final HttpServletRequest request) throws IOException {
 		log.info("get initial data");
 		final Corpora corpora = Aggregator.getInstance().getCorpora();
-		final Object contextString = request.getSession().getAttribute("x-aggregation-context");
-		final Object query = request.getSession().getAttribute("query");
-		final Object mode = request.getSession().getAttribute("mode");
+		final Object query = request.getSession().getAttribute(PARAM_QUERY);
+		final Object mode = request.getSession().getAttribute(PARAM_MODE);
+		final Object contextString = request.getSession().getAttribute(PARAM_AGGREGATION_CONTEXT);
 		Object j = new HashMap<String, Object>() {
 			{
 				if (query != null) {
-					put("query", query);
+					put(PARAM_QUERY, query);
+					request.getSession().setAttribute(PARAM_QUERY, null);
+				}
+				if (mode != null) {
+					put(PARAM_MODE, mode);
+					request.getSession().setAttribute(PARAM_MODE, null);
 				}
 				if (contextString instanceof String) {
 					Object context = new ObjectMapper().readValue((String) contextString, Object.class);
-					put("x-aggregation-context", context); // preselected corpora
+					put(PARAM_AGGREGATION_CONTEXT, context); // preselected corpora
+					request.getSession().setAttribute(PARAM_AGGREGATION_CONTEXT, null);
 				}
 				put("corpora", corpora.getCorpora());
 				put("languages", LanguagesISO693.getInstance().getLanguageMap(corpora.getLanguages()));
@@ -287,8 +296,6 @@ public class RestService {
 			{
 				put("Last Scan", new HashMap<String, Object>() {
 					{
-						put("maxConcurrentScanRequestsPerEndpoint",
-								Aggregator.getInstance().getParams().getSCAN_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT());
 						put("timeout", params.getENDPOINTS_SCAN_TIMEOUT_MS() / 1000.);
 						put("isScan", true);
 						put("institutions", scan.getInstitutions());
@@ -297,8 +304,6 @@ public class RestService {
 				});
 				put("Recent Searches", new HashMap<String, Object>() {
 					{
-						put("maxConcurrentSearchRequestsPerEndpoint",
-								Aggregator.getInstance().getParams().getSEARCH_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT());
 						put("timeout", params.getENDPOINTS_SEARCH_TIMEOUT_MS() / 1000.);
 						put("isScan", false);
 						put("institutions", search.getInstitutions());

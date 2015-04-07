@@ -1,6 +1,5 @@
 package eu.clarin.sru.fcs.aggregator.app;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
@@ -18,7 +17,12 @@ public class ErrorHandler extends org.eclipse.jetty.server.handler.ErrorHandler 
 
 	private static final org.slf4j.Logger log = LoggerFactory.getLogger(Aggregator.class);
 
-	private final String redirectRoute = "/index.html";
+	public static final String PARAM_QUERY = "query";
+	public static final String PARAM_MODE = "mode";
+	public static final String PARAM_AGGREGATION_CONTEXT = "x-aggregation-context";
+
+	public static final String redirectRoute = "/index.html";
+
 
 	@Override
 	public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException {
@@ -26,18 +30,27 @@ public class ErrorHandler extends org.eclipse.jetty.server.handler.ErrorHandler 
 		if (response.getStatus() == HttpServletResponse.SC_NOT_FOUND) {
 			forward(redirectRoute, baseRequest, response);
 		} else if (request.getMethod().equals("POST")
-				&& response.getStatus() == HttpServletResponse.SC_METHOD_NOT_ALLOWED
-				&& request.getParameterValues("x-aggregation-context") != null) {
-
-			// this request must come from VLO
-			String[] queryValues = request.getParameterValues("query");
-			if (queryValues != null && queryValues.length > 0) {
-				baseRequest.getSession().setAttribute("query", queryValues[0]);
+				&& response.getStatus() == HttpServletResponse.SC_METHOD_NOT_ALLOWED) {
+			// an external search request, coming from clarin.eu or VLO
+			{
+				String[] queryValues = request.getParameterValues(PARAM_QUERY);
+				if (queryValues != null && queryValues.length > 0) {
+					baseRequest.getSession().setAttribute(PARAM_QUERY, queryValues[0]);
+				}
 			}
 
-			String[] contextValues = request.getParameterValues("x-aggregation-context");
-			if (contextValues != null && contextValues.length > 0) {
-				baseRequest.getSession().setAttribute("x-aggregation-context", contextValues[0]);
+			{
+				String[] modeValues = request.getParameterValues(PARAM_MODE);
+				if (modeValues != null && modeValues.length > 0) {
+					baseRequest.getSession().setAttribute(PARAM_MODE, modeValues[0]);
+				}
+			}
+
+			{
+				String[] contextValues = request.getParameterValues(PARAM_AGGREGATION_CONTEXT);
+				if (contextValues != null && contextValues.length > 0) {
+					baseRequest.getSession().setAttribute(PARAM_AGGREGATION_CONTEXT, contextValues[0]);
+				}
 			}
 
 			baseRequest.setMethod(HttpMethod.GET, HttpMethod.GET.asString());

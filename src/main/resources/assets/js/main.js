@@ -2,7 +2,7 @@
 (function() {
 "use strict";
 
-var VERSION = window.MyAggregator.VERSION = "VERSION 2.0.0-beta-32";
+var VERSION = window.MyAggregator.VERSION = "VERSION 2.0.0-beta-33";
 var URLROOT = window.MyAggregator.URLROOT = 
 	window.location.pathname.substring(0, window.location.pathname.indexOf("/",2)) || 
 	"/Aggregator";
@@ -72,7 +72,7 @@ var Main = React.createClass({displayName: 'Main',
 	},
 
 	renderAggregator: function() {
-		return React.createElement(AggregatorPage, {ajax: this.ajax});
+		return React.createElement(AggregatorPage, {ajax: this.ajax, error: this.error});
 	},
 
 	renderHelp: function() {
@@ -290,13 +290,19 @@ var StatisticsPage = React.createClass({displayName: 'StatisticsPage',
 								React.createElement("span", {style: {color:'#a94442'}}, "legacy ", React.createElement("i", {className: "glyphicon glyphicon-thumbs-down"}), " ") 
 								: React.createElement("span", {style: {color:'#3c763d'}}, React.createElement("i", {className: "glyphicon glyphicon-thumbs-up"}), " "), 
 							
-							 " "+endpoint[0], ":" 
-						), 
-						React.createElement("li", null, 
-							React.createElement("span", null, stat.numberOfRequests), " request(s)," + ' ' +
-							"average:", this.renderWaitTimeSecs(stat.avgExecutionTime), "," + ' ' + 
-							"max: ", this.renderWaitTimeSecs(stat.maxExecutionTime)
+							 " "+endpoint[0]
 						)
+					), 
+					React.createElement("div", {style: {marginLeft:40}}, 
+					 isScan ? 
+						React.createElement("div", null, "Max concurrent scan requests:", " ", " ", stat.maxConcurrentRequests, " ") :
+						React.createElement("div", null, "Max concurrent search requests:", " ", " ", stat.maxConcurrentRequests, " ")
+					
+					), 
+					React.createElement("div", {style: {marginLeft:40}}, 
+						React.createElement("span", null, stat.numberOfRequests), " request(s)," + ' ' +
+						"average:", this.renderWaitTimeSecs(stat.avgExecutionTime), "," + ' ' + 
+						"max: ", this.renderWaitTimeSecs(stat.maxExecutionTime)
 					), 
 					 isScan ? this.renderCollections(stat.rootCollections) : false, 
 						(errors && errors.length) ? 
@@ -323,15 +329,6 @@ var StatisticsPage = React.createClass({displayName: 'StatisticsPage',
 		return 	React.createElement("div", {className: "container statistics", style: {marginTop:20}}, 
 					React.createElement("div", null, 
 						React.createElement("div", null, "Start date: ", new Date(stats.date).toLocaleString()), 
-						 stats.isScan ? 
-							React.createElement("div", null, "Max concurrent scan requests per endpoint:", " ", 
-								React.createElement("kbd", null, stats.maxConcurrentScanRequestsPerEndpoint)
-							) 
-							: 
-							React.createElement("div", null, "Max concurrent search requests per endpoint:", " ", 
-								React.createElement("kbd", null, stats.maxConcurrentSearchRequestsPerEndpoint)
-							), 
-						
 						React.createElement("div", null, "Timeout: ", " ", React.createElement("kbd", null, stats.timeout, " seconds"))
 					), 
 					React.createElement("div", null, " ",  _.pairs(stats.institutions).map(this.renderInstitution.bind(this, stats.isScan)), " ")

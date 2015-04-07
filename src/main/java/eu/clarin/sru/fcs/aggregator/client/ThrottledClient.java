@@ -8,11 +8,17 @@ import eu.clarin.sru.client.SRUScanResponse;
 import eu.clarin.sru.client.SRUSearchRetrieveRequest;
 import eu.clarin.sru.client.SRUSearchRetrieveResponse;
 import eu.clarin.sru.client.SRUThreadedClient;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author edima
  */
 public class ThrottledClient {
+	private static final org.slf4j.Logger log = LoggerFactory.getLogger(GenericClient.class);
 
 	public interface Stats {
 
@@ -42,29 +48,47 @@ public class ThrottledClient {
 		void onError(SRUSearchRetrieveRequest request, SRUClientException error, Stats stats);
 	}
 
-	GenericClient client;
+	GenericClient scanClient;
+	GenericClient searchClient;
 
-	public ThrottledClient(SRUThreadedClient sruClient, int maxConcurrentRequests) {
-		this.client = new GenericClient(sruClient, maxConcurrentRequests);
+	public ThrottledClient(
+			SRUThreadedClient sruScanClient, MaxConcurrentRequestsCallback scanConcurrentCallback,
+			SRUThreadedClient sruSearchClient, MaxConcurrentRequestsCallback searchConcurrentCallback) {
+		this.scanClient = new GenericClient(sruScanClient, scanConcurrentCallback);
+		this.searchClient = new GenericClient(sruSearchClient, searchConcurrentCallback);
 	}
 
 	public void explain(SRUExplainRequest request, ExplainCallback callback) {
-		client.execute(request.getBaseURI(), new ExplainOperation(request, callback));
+		scanClient.execute(request.getBaseURI(), new ExplainOperation(request, callback));
 	}
 
 	public void scan(SRUScanRequest request, ScanCallback callback) {
-		client.execute(request.getBaseURI(), new ScanOperation(request, callback));
+		scanClient.execute(request.getBaseURI(), new ScanOperation(request, callback));
 	}
 
 	public void searchRetrieve(SRUSearchRetrieveRequest request, SearchCallback callback) {
-		client.execute(request.getBaseURI(), new SearchOperation(request, callback));
+		searchClient.execute(request.getBaseURI(), new SearchOperation(request, callback));
 	}
 
 	public void shutdown() {
-		client.shutdown();
+		scanClient.shutdown();
+		searchClient.shutdown();
 	}
 
 	public void shutdownNow() {
-		client.shutdownNow();
+		scanClient.shutdownNow();
+		searchClient.shutdownNow();
 	}
+
+	public int getMaxConcurrentRequests(boolean isSearch, String url) {
+		try {
+			URI uri = new URI(url);
+			return isSearch
+					? searchClient.maxConcurrentRequestsCallback.getMaxConcurrentRequest(uri)
+					: scanClient.maxConcurrentRequestsCallback.getMaxConcurrentRequest(uri);
+		} catch (URISyntaxException ex) {
+			return -1;
+		}
+	}
+
 }

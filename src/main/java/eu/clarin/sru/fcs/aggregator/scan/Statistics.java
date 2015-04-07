@@ -27,6 +27,9 @@ public class Statistics {
 		List<Long> queueTimes = Collections.synchronizedList(new ArrayList<Long>());
 		List<Long> executionTimes = Collections.synchronizedList(new ArrayList<Long>());
 
+		@JsonProperty
+		int maxConcurrentRequests;
+
 		public static class DiagPair {
 
 			public DiagPair(Diagnostic diagnostic, String context, int counter) {
@@ -121,6 +124,13 @@ public class Statistics {
 
 	public Map<String, Map<String, EndpointStats>> getInstitutions() {
 		return institutions;
+	}
+
+	public void initEndpoint(Institution institution, Endpoint endpoint, int maxConcurrentRequests) {
+		EndpointStats stats = getEndpointStats(institution, endpoint);
+		synchronized (stats.lock) {
+			stats.maxConcurrentRequests = maxConcurrentRequests;
+		}
 	}
 
 	public void addEndpointDatapoint(Institution institution, Endpoint endpoint, long enqueuedTime, long executionTime) {
