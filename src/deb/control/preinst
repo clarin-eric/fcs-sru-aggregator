@@ -1,0 +1,21 @@
+#!/bin/bash
+
+action=$1
+version=$2
+
+# add group and the user if they do not exit
+if ! getent group aggregator >/dev/null; then
+    addgroup --quiet \
+             --system aggregator
+fi
+
+if ! getent passwd aggregator >/dev/null; then
+    adduser --quiet \
+            --system \
+            --ingroup aggregator \
+            --no-create-home \
+            --home /var/lib/aggregator \
+            --shell /usr/sbin/nologin aggregator
+fi
+
+exit 0

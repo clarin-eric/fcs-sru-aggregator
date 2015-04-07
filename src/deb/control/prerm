@@ -1,0 +1,10 @@
+#!/bin/bash
+
+action=$1
+version=$2
+
+if [ "$action" != "upgrade" ]; then
+    invoke-rc.d aggregator stop || true
+fi
+
+exit 0

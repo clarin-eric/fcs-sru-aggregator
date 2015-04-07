@@ -1,0 +1,16 @@
+#!/bin/bash
+
+action=$1
+version=$2
+
+update-rc.d aggregator defaults
+
+# Restart the service if this is not the first installation.
+if [ -n "$version" -o  "$action" == "upgrade" ]; then
+    invoke-rc.d aggregator restart || true
+else # or try to start it
+    invoke-rc.d aggregator start || true
+fi
+
+
+exit 0

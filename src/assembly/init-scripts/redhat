@@ -1,0 +1,87 @@
+#!/bin/bash
+#
+# WebLicht init script for redhat derivatives (mainly for Scientific Linux)
+#
+# start late, stop early
+# chkconfig: 2345 95 05
+# description: WebLicht
+#
+
+
+PATH=/usr/java/jdk1.7.0_67/bin:/sbin:/bin:/usr/bin:/usr/sbin
+export PATH
+START_SCRIPT=/usr/bin/aggregator
+
+test -x $START_SCRIPT || exit 0
+set -e
+. /lib/lsb/init-functions
+
+SERVICE_NAME=$(basename $0|sed 's/^S[0-9]*//')
+
+test -r /etc/default/$SERVICE_NAME && . /etc/default/$SERVICE_NAME
+
+APPUSER=${FCSUSER:-aggregator}
+APPGROUP=${FCSGROUP:-aggregator}
+
+PIDFILE=/var/run/${SERVICE_NAME}.pid
+
+# Redhat/SL does not provice start-stop-deamon
+# these are the replacemnt functions
+app_start() {
+    local pids=$(pgrep -f "java.*${JARFILE}.*${CONFFILE}")
+    if [ -n "$pids" ]; then
+        echo "$SERVICE_NAME (pid $pids) is already running"
+        return 0
+    fi
+    printf "%-50s%s" "Starting $SERVICE_NAME: " ''
+    /sbin/runuser -g $APPGROUP $APPUSER \
+                  -c "$START_SCRIPT $OPTIONS" \
+                  >/dev/null 2>&1 &
+    pid=$!
+    sleep 2
+    
+    if ps -p $pid >/dev/null 2>&1; then
+        echo $pid > $PIDFILE
+        echo '[  OK  ]'
+    else
+        echo '[FAILED]'
+    fi
+}
+
+app_stop() {
+    local pid=$(cat $PIDFILE)
+
+    if [ -z "$pid" ] || ! ps -p $pid >/dev/null 2>&1; then
+        echo "$SERVICE_NAME not running"
+        return 0
+    fi
+    printf "%-50s%s" "Stopping $SERVICE_NAME: " ''
+    kill $pid
+    sleep 2
+    if ps -p $pid >/dev/null 2>&1; then
+        echo '[FAILED]'
+    else
+        rm -f $PIDFILE
+        echo '[  OK  ]'
+    fi
+}
+
+
+case "$1" in
+    start)
+        app_start
+        ;;
+    stop)
+        app_stop
+        ;;
+    restart)
+        app_stop
+        sleep 2
+        app_start
+	;;
+    *)
+        echo "Usage: $NAME {start|stop|restart}" >&2
+        exit 1
+        ;;
+esac
+exit 0

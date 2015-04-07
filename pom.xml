@@ -6,13 +6,15 @@
 	</prerequisites>
 
 	<groupId>eu.clarin.sru.fcs</groupId>
-	<artifactId>Aggregator2</artifactId>
+	<artifactId>aggregator</artifactId>
 	<version>2.0.0-beta-32</version>
 	<name>FCS Aggregator</name>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <serviceUser>aggregator</serviceUser>
+        <serviceGroup>aggregator</serviceGroup>
 	</properties>
 
 	<repositories>
@@ -189,6 +191,164 @@
 					</execution>
 				</executions>
 			</plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>rpm-maven-plugin</artifactId>
+                <version>2.1-alpha-4</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <group>Applications/System</group>
+                    <name>${project.artifactId}</name>
+                    <release>${buildNumber}</release>
+                    <mappings>
+                        <mapping>
+                            <directory>/usr/share/${project.artifactId}/</directory>
+                            <sources>
+                                <source>
+                                    <location>${project.build.directory}/${project.artifactId}-${project.version}.jar</location>
+                                    <destination>${project.artifactId}.jar</destination>
+                                </source>
+                            </sources>
+                        </mapping>
+                        <mapping>
+                            <directory>/var/lib/${project.artifactId}/</directory>
+                            <filemode>700</filemode>
+                            <username>${serviceUser}</username>
+                            <groupname>${serviceGroup}</groupname>
+                        </mapping>
+                        <mapping>
+                            <directory>/var/log/${project.artifactId}/</directory>
+                            <filemode>700</filemode>
+                            <username>${serviceUser}</username>
+                            <groupname>${serviceGroup}</groupname>
+                        </mapping>
+                        <mapping>
+                            <directory>/usr/bin</directory>
+                            <directoryIncluded>false</directoryIncluded>
+                            <filemode>755</filemode>
+                            <sources>
+                                <source>
+                                    <location>src/assembly/bin/service.sh</location>
+                                    <destination>${project.artifactId}</destination>
+                                </source>
+                            </sources>
+                        </mapping>
+                        <mapping>
+                            <directory>/etc/init.d</directory>
+                            <directoryIncluded>false</directoryIncluded>
+                            <filemode>755</filemode>
+                            <sources>
+                                <source>
+                                    <location>src/assembly/init-scripts/redhat</location>
+                                    <destination>${project.artifactId}</destination>
+                                </source>
+                            </sources>
+                        </mapping>
+                        <mapping>
+                            <directory>/etc/default</directory>
+                            <directoryIncluded>false</directoryIncluded>
+                            <configuration>true</configuration>
+                            <sources>
+                                <source>
+                                    <location>src/assembly/conf/etc.default</location>
+                                    <destination>${project.artifactId}</destination>
+                                </source>
+                            </sources>
+                        </mapping>
+                        <mapping>
+                            <directory>/etc/clarind</directory>
+                            <directoryIncluded>false</directoryIncluded>
+                            <configuration>true</configuration>
+                            <sources>
+                                <source>
+                                    <location>src/assembly/conf/${project.artifactId}.yaml</location>
+                                    <destination>${project.artifactId}.yaml</destination>
+                                </source>
+                            </sources>
+                        </mapping>
+                    </mappings>
+                    <preinstallScriptlet>
+                        <script>
+                            /usr/bin/getent group ${serviceGroup} &gt; /dev/null || /usr/sbin/groupadd ${project.artifactId}
+                            /usr/bin/getent passwd ${serviceUser} &gt; /dev/null || /usr/sbin/useradd -r -d /var/lib/${project.artifactId} -m -g ${serviceGroup} ${serviceUser}
+                        </script>
+                    </preinstallScriptlet>
+                    <postinstallScriptlet>
+                        <script>
+                            chkconfig --add ${project.artifactId};
+                            chkconfig ${project.artifactId} on;
+                            if [ $1 -eq 0 ]; then
+                                /sbin/service ${project.artifactId} start
+                            elif [ $1 -ge 1 ]; then
+                                /sbin/service ${project.artifactId} restart
+                            fi
+                        </script>
+                    </postinstallScriptlet>
+                    <preremoveScriptlet>
+                        <script>
+                            if [ $1 -eq 0 ] ; then
+                            /sbin/service ${project.artifactId} stop;chkconfig --del ${project.artifactId}
+                            fi
+                        </script>
+                    </preremoveScriptlet>
+                </configuration>
+            </plugin>
+            <plugin>
+                <artifactId>jdeb</artifactId>
+                <groupId>org.vafer</groupId>
+                <version>1.3</version>
+                    <configuration>
+                        <dataSet>
+                            <data>
+                              <src>${project.build.directory}/${project.artifactId}-${project.version}.jar</src>
+                              <type>file</type>
+                              <dst>/usr/share/${project.artifactId}/${project.artifactId}.jar</dst>
+                            </data>
+                            <data>
+                                <src>${project.basedir}/src/assembly/bin/service.sh</src>
+                              <dst>/usr/bin/${project.artifactId}</dst>
+                              <type>file</type>
+                              <mapper>
+                                    <type>perm</type>
+                                    <filemode>755</filemode>
+                              </mapper>
+                            </data>
+                            <data>
+                              <src>${project.basedir}/src/assembly/init-scripts/ubuntu</src>
+                              <dst>/etc/init.d/${project.artifactId}</dst>
+                              <type>file</type>
+                              <mapper>
+                                    <type>perm</type>
+                                    <filemode>755</filemode>
+                              </mapper>
+                            </data>
+                            <data>
+                                <src>${project.basedir}/src/assembly/conf/${project.artifactId}.yaml</src>
+                              <dst>/etc/clarind/${project.artifactId}.yaml</dst>
+                              <type>file</type>
+                              <conffile>true</conffile>
+                            </data>
+                            <data>
+                              <src>${project.basedir}/src/assembly/conf/etc.default</src>
+                              <dst>/etc/default/${project.artifactId}</dst>
+                              <type>file</type>
+                              <conffile>true</conffile>
+                            </data>
+                            <data>
+                                <type>template</type>
+                                <paths>
+                                    <path>var/lib/${project.artifactId}</path>
+                                    <path>var/log/${project.artifactId}</path>
+                                </paths>
+                                <mapper>
+                                    <type>perm</type>
+                                    <user>${project.artifactId}</user>
+                                    <group>${project.artifactId}</group>
+                                </mapper>
+                            </data>
+                        </dataSet>
+                    </configuration>
+            </plugin>
 		</plugins>
 	</build>
 </project>

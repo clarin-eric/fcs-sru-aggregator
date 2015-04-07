@@ -1,0 +1,8 @@
+Package: [[artifactId]]
+Version: [[version]]
+Section: misc
+Priority: optional
+Architecture: all
+Depends: java-runtime
+Maintainer: Cagri Coltekin <ccoltekin@sfs.uni-tuebingen.de>
+Description:  Aggregator - FCS aggregator service
