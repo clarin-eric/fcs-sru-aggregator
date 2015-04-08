@@ -2,7 +2,7 @@
 (function() {
 "use strict";
 
-var VERSION = window.MyAggregator.VERSION = "VERSION 2.0.0-beta-33";
+var VERSION = window.MyAggregator.VERSION = "VERSION 2.0.0-beta-34";
 var URLROOT = window.MyAggregator.URLROOT = 
 	window.location.pathname.substring(0, window.location.pathname.indexOf("/",2)) || 
 	"/Aggregator";
@@ -118,6 +118,13 @@ var Main = React.createClass({
 	toStatistics: function(doPushHistory) { this.gotoPage(doPushHistory, 'stats'); },
 	toEmbedded: function(doPushHistory) { this.gotoPage(doPushHistory, 'embed'); },
 
+	renderLogin: function() {
+		return false;
+		// return  <li className="unauthenticated">
+		// 			<a href="login" tabIndex="-1"><span className="glyphicon glyphicon-log-in"></span> LOGIN</a>
+		// 		</li>;
+	},
+
 	renderCollapsible: function() {
 		var classname = "navbar-collapse collapse " + (this.state.navbarCollapse?"in":"");
 		return (
@@ -131,9 +138,7 @@ var Main = React.createClass({
 					</li>
 				</ul>
 				<ul id="CLARIN_header_right" className="nav navbar-nav navbar-right">
-					<li className="unauthenticated">
-						<a href="login" tabIndex="-1"><span className="glyphicon glyphicon-log-in"></span> LOGIN</a>
-					</li>
+				{this.renderLogin()}
 				</ul>
 			</div>
 		);

@@ -151,8 +151,7 @@ Corpora.prototype.setVisibility = function(layerId, languageCode) {
 };
 
 Corpora.prototype.setAggregationContext = function(endpoints2handles) {
-	console.log('setAggregationContext', endpoints2handles, this.corpora);
-
+	// console.log('setAggregationContext', endpoints2handles, this.corpora);
 	var recurseSelect = function(select, corpus) {
 		corpus.selected = false;
 		this.recurseCorpora(corpus.subCorpora, function(c) { c.selected = corpus.selected; });
@@ -926,7 +925,6 @@ var ZoomedResult = React.createClass({
 				} else {
 					var langs = corpusHit.kwics.map(function(kwic) {return kwic.language;});
 					langs = _.uniq(langs.filter(function(l){ return l !== null; }));
-					console.log("languages:", langs);
 					if (langs.length === 1) {
 						forceLanguage = langs[0];
 					}

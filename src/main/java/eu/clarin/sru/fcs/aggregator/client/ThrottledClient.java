@@ -10,16 +10,11 @@ import eu.clarin.sru.client.SRUSearchRetrieveResponse;
 import eu.clarin.sru.client.SRUThreadedClient;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * @author edima
  */
 public class ThrottledClient {
-	private static final org.slf4j.Logger log = LoggerFactory.getLogger(GenericClient.class);
-
 	public interface Stats {
 
 		long getQueueTime();
@@ -90,5 +85,4 @@ public class ThrottledClient {
 			return -1;
 		}
 	}
-
 }

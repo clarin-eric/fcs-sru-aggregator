@@ -41,7 +41,7 @@ class GenericClient {
 				eq = new ExecQueue();
 				try {
 					eq.maxConcurrentRequests = maxConcurrentRequestsCallback.getMaxConcurrentRequest(endpoint);
-					log.info("CONCURRENCY LEVEL " + eq.maxConcurrentRequests
+					log.debug("CONCURRENCY LEVEL " + eq.maxConcurrentRequests
 							+ " for operation: " + op.getClass().getSimpleName()
 							+ " for endpoint: " + endpoint);
 				} catch (Exception xc) {

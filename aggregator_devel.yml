@@ -3,11 +3,11 @@ aggregatorParams:
   # additionalCQLEndpoints:
     # - https://clarin.ids-mannheim.de/digibibsru-new
 
-  AGGREGATOR_FILE_PATH: /var/lib/aggregator/fcsAggregatorCorpora.json
-  AGGREGATOR_FILE_PATH_BACKUP: /var/lib/aggregator/fcsAggregatorCorpora.backup.json
+  AGGREGATOR_FILE_PATH: /Users/edima/fcsAggregatorCorpora.json
+  AGGREGATOR_FILE_PATH_BACKUP: /Users/edima/fcsAggregatorCorpora.backup.json
 
-  SCAN_MAX_DEPTH: 3 # recommended 3
-  SCAN_TASK_INITIAL_DELAY: 0
+  SCAN_MAX_DEPTH: 1 # recommended 3
+  SCAN_TASK_INITIAL_DELAY: 2
   SCAN_TASK_INTERVAL: 12
   SCAN_TASK_TIME_UNIT: HOURS
   SCAN_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT: 4  # @depth2: 1=361s; 2=225s; 4=207s
@@ -50,7 +50,4 @@ logging:
     eu.clarin.sru.client: WARN
 
   appenders:
-    - type: file
-      currentLogFilename: /var/log/aggregator/access.log
-      archivedLogFilenamePattern: /var/log/aggregator/access-%d.log.gz
-      archivedFileCount: 5
+    - type: console
