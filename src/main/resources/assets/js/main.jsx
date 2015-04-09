@@ -390,7 +390,7 @@ var HelpPage = React.createClass({
 				<div className="top-gap">
 					<h1>Help</h1>
 					<h3>Performing search in FCS corpora</h3>
-					<p>To perform simple keyword search in all CLARIN-D Federated Content Search centers 
+					<p>To perform simple keyword search in all CLARIN-D Federated Content Search centres 
 					and their corpora, go to the search field at the top of the page, 
 					enter your query, and click 'search' button or press the 'Enter' key.</p>
 					
