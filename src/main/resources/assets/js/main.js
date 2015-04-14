@@ -2,9 +2,10 @@
 (function() {
 "use strict";
 
-var VERSION = window.MyAggregator.VERSION = "VERSION 2.0.0-beta-34";
-var URLROOT = window.MyAggregator.URLROOT = 
-	window.location.pathname.substring(0, window.location.pathname.indexOf("/",2)) || 
+var VERSION = window.MyAggregator.VERSION = "VERSION 2.0.0-beta-35";
+
+var URLROOT = window.MyAggregator.URLROOT =
+	window.location.pathname.substring(0, window.location.pathname.indexOf("/",2)) ||
 	"/Aggregator";
 
 var PT = React.PropTypes;
@@ -48,7 +49,7 @@ var Main = React.createClass({displayName: 'Main',
 			that.setState({errorMessages: errs});
 		}, 10000);
 	},
-	
+
 	ajax: function(ajaxObject) {
 		var that = this;
 		if (!ajaxObject.error) {
@@ -91,7 +92,7 @@ var Main = React.createClass({displayName: 'Main',
 		return React.createElement(AggregatorPage, {ajax: this.ajax, embedded: true});
 	},
 
-	getPageFns: function() { 
+	getPageFns: function() {
 		return {
 			'': this.renderAggregator,
 			'help': this.renderHelp,
@@ -138,7 +139,10 @@ var Main = React.createClass({displayName: 'Main',
 					)
 				), 
 				React.createElement("ul", {id: "CLARIN_header_right", className: "nav navbar-nav navbar-right"}, 
-				this.renderLogin()
+					React.createElement("li", null, 
+						React.createElement("div", {id: "clarinservices", style: {padding:10}})
+					), 
+					this.renderLogin()
 				)
 			)
 		);
@@ -155,7 +159,7 @@ var Main = React.createClass({displayName: 'Main',
 						React.createElement("span", null, "BETA")
 					)
 				), 
-			
+
 				React.createElement("div", {className: "navbar navbar-default navbar-static-top", role: "navigation"}, 
 					React.createElement("div", {className: "container"}, 
 						React.createElement("div", {className: "navbar-header"}, 
@@ -202,8 +206,8 @@ var StatisticsPage = React.createClass({displayName: 'StatisticsPage',
 		return {
 			stats: {},
 			activeTab: 0,
-			// searchStats: {}, 
-			// lastScanStats: {}, 
+			// searchStats: {},
+			// lastScanStats: {},
 		};
 	},
 
@@ -236,9 +240,9 @@ var StatisticsPage = React.createClass({displayName: 'StatisticsPage',
 
 	renderCollections: function(colls) {
 		return	React.createElement("div", {style: {marginLeft:40}}, 
-					 colls.length === 0 ? 
+					 colls.length === 0 ?
 						React.createElement("div", {style: {color:"#a94442"}}, "NO collections found")
-						: 
+						:
 						React.createElement("div", null, 
 							colls.length, " root collection(s):", 
 							React.createElement("ul", {className: "list-unstyled", style: {marginLeft:40}}, 
@@ -254,7 +258,7 @@ var StatisticsPage = React.createClass({displayName: 'StatisticsPage',
 		return 	React.createElement("div", {key: d.diagnostic.uri}, 
 					React.createElement("div", {className: classes}, 
 						React.createElement("div", null, 
-							 d.counter <= 1 ? false : 
+							 d.counter <= 1 ? false :
 								React.createElement("div", {className: "inline", style: {margin:"5px 5px 5px 5px"}}, 
 									React.createElement("span", {className: "badge", style: {backgroundColor:'#ae7241'}}, "x ", d.counter)
 								), 
@@ -263,7 +267,7 @@ var StatisticsPage = React.createClass({displayName: 'StatisticsPage',
 						), 
 						React.createElement("div", null, "Context: ", React.createElement("a", {href: d.context}, d.context))
 					)
-				); 
+				);
 	},
 
 	renderError: function(e) {
@@ -271,7 +275,7 @@ var StatisticsPage = React.createClass({displayName: 'StatisticsPage',
 		return 	React.createElement("div", {key: xc.message}, 
 					React.createElement("div", {className: "inline alert alert-danger", role: "alert"}, 
 						React.createElement("div", null, 
-							 e.counter <= 1 ? false : 
+							 e.counter <= 1 ? false :
 								React.createElement("div", {className: "inline", style: {margin:"5px 5px 5px 5px"}}, 
 									React.createElement("span", {className: "badge", style: {backgroundColor:'#c94442'}}, "x ", e.counter, " ")
 								), 
@@ -281,7 +285,7 @@ var StatisticsPage = React.createClass({displayName: 'StatisticsPage',
 						React.createElement("div", null, "Context: ", React.createElement("a", {href: e.context}, e.context)), 
 						 xc.cause ? React.createElement("div", null, "Caused by: ", xc.cause) : false
 					)
-				); 
+				);
 	},
 
 	renderEndpoint: function(isScan, endpoint) {
@@ -291,31 +295,31 @@ var StatisticsPage = React.createClass({displayName: 'StatisticsPage',
 		return React.createElement("div", {style: {marginTop:10}, key: endpoint[0]}, 
 					React.createElement("ul", {className: "list-inline list-unstyled", style: {marginBottom:0}}, 
 						React.createElement("li", null, 
-							 stat.version == "LEGACY" ? 
-								React.createElement("span", {style: {color:'#a94442'}}, "legacy ", React.createElement("i", {className: "glyphicon glyphicon-thumbs-down"}), " ") 
+							 stat.version == "LEGACY" ?
+								React.createElement("span", {style: {color:'#a94442'}}, "legacy ", React.createElement("i", {className: "glyphicon glyphicon-thumbs-down"}), " ")
 								: React.createElement("span", {style: {color:'#3c763d'}}, React.createElement("i", {className: "glyphicon glyphicon-thumbs-up"}), " "), 
 							
 							 " "+endpoint[0]
 						)
 					), 
 					React.createElement("div", {style: {marginLeft:40}}, 
-					 isScan ? 
+					 isScan ?
 						React.createElement("div", null, "Max concurrent scan requests:", " ", " ", stat.maxConcurrentRequests, " ") :
 						React.createElement("div", null, "Max concurrent search requests:", " ", " ", stat.maxConcurrentRequests, " ")
 					
 					), 
 					React.createElement("div", {style: {marginLeft:40}}, 
 						React.createElement("span", null, stat.numberOfRequests), " request(s)," + ' ' +
-						"average:", this.renderWaitTimeSecs(stat.avgExecutionTime), "," + ' ' + 
+						"average:", this.renderWaitTimeSecs(stat.avgExecutionTime), "," + ' ' +
 						"max: ", this.renderWaitTimeSecs(stat.maxExecutionTime)
 					), 
 					 isScan ? this.renderCollections(stat.rootCollections) : false, 
-						(errors && errors.length) ? 
+						(errors && errors.length) ?
 						React.createElement("div", {className: "inline", style: {marginLeft:40}}, 
 							 errors.map(this.renderError) 
 						) : false, 
 					
-						(diagnostics && diagnostics.length) ? 
+						(diagnostics && diagnostics.length) ?
 						React.createElement("div", {className: "inline", style: {marginLeft:40}}, 
 							 diagnostics.map(this.renderDiagnostic) 
 						) : false
@@ -380,7 +384,7 @@ var StatisticsPage = React.createClass({displayName: 'StatisticsPage',
 
 var HelpPage = React.createClass({displayName: 'HelpPage',
 	openHelpDesk: function() {
-		window.open('http://support.clarin-d.de/mail/form.php?queue=Aggregator&lang=en', 
+		window.open('http://support.clarin-d.de/mail/form.php?queue=Aggregator&lang=en',
 			'_blank', 'height=560,width=370');
 	},
 
@@ -390,11 +394,11 @@ var HelpPage = React.createClass({displayName: 'HelpPage',
 				React.createElement("div", {className: "top-gap"}, 
 					React.createElement("h1", null, "Help"), 
 					React.createElement("h3", null, "Performing search in FCS corpora"), 
-					React.createElement("p", null, "To perform simple keyword search in all CLARIN-D Federated Content Search centers" + ' ' + 
-					"and their corpora, go to the search field at the top of the page," + ' ' + 
+					React.createElement("p", null, "To perform simple keyword search in all CLARIN-D Federated Content Search centres" + ' ' +
+					"and their corpora, go to the search field at the top of the page," + ' ' +
 					"enter your query, and click 'search' button or press the 'Enter' key."), 
-					
-					React.createElement("p", null, "When the search starts, the page will start filling in with the corpora responses." + ' ' + 
+
+					React.createElement("p", null, "When the search starts, the page will start filling in with the corpora responses." + ' ' +
 					"After the entire search process has ended you have the option to download the results" + ' ' +
 					"in various formats."
 					), 
@@ -406,22 +410,25 @@ var HelpPage = React.createClass({displayName: 'HelpPage',
 
 
 					React.createElement("h3", null, "Adjusting search criteria"), 
-					React.createElement("p", null, "The FCS Aggregator makes possible to select specific corpora based on their name" + ' ' + 
+					React.createElement("p", null, "The FCS Aggregator makes possible to select specific corpora based on their name" + ' ' +
 					"or language and to specify the number of search results (hits) per corpus per page." + ' ' +
-					"The user interface controls that allows to change these options are located" + ' ' + 
-					"right below the search fiels on the main page. The current options are" + ' ' + 
-					"to filter resources based on their language, to select specific resources, and" + ' ' + 
+					"The user interface controls that allows to change these options are located" + ' ' +
+					"right below the search fiels on the main page. The current options are" + ' ' +
+					"to filter resources based on their language, to select specific resources, and" + ' ' +
 					"to set the maximum number of hits."), 
 
 
 					React.createElement("h3", null, "More help"), 
-					React.createElement("p", null, "More detailed information on using FCS Aggregator is available" + ' ' + 
-					"at the Aggegator wiki page. If you still cannot find an answer to your question," + ' ' + 
+					React.createElement("p", null, "More detailed information on using FCS Aggregator is available at the", 
+					React.createElement("a", {href: "http://weblicht.sfs.uni-tuebingen.de/weblichtwiki/index.php/FCS_Aggregator"}, 
+						"Aggregator wiki page"
+					), "." + ' ' +
+					"If you still cannot find an answer to your question," + ' ' +
 					"or if want to send a feedback, you can write to Clarin-D helpdesk: "), 
 					React.createElement("button", {type: "button", className: "btn btn-default btn-lg", onClick: this.openHelpDesk}, 
 						React.createElement("span", {className: "glyphicon glyphicon-question-sign", 'aria-hidden': "true"}), 
 						" HelpDesk"
-					)					
+					)
 				)
 			)
 		);

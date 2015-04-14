@@ -2,9 +2,10 @@
 (function() {
 "use strict";
 
-var VERSION = window.MyAggregator.VERSION = "VERSION 2.0.0-beta-34";
-var URLROOT = window.MyAggregator.URLROOT = 
-	window.location.pathname.substring(0, window.location.pathname.indexOf("/",2)) || 
+var VERSION = window.MyAggregator.VERSION = "VERSION 2.0.0-beta-35";
+
+var URLROOT = window.MyAggregator.URLROOT =
+	window.location.pathname.substring(0, window.location.pathname.indexOf("/",2)) ||
 	"/Aggregator";
 
 var PT = React.PropTypes;
@@ -48,7 +49,7 @@ var Main = React.createClass({
 			that.setState({errorMessages: errs});
 		}, 10000);
 	},
-	
+
 	ajax: function(ajaxObject) {
 		var that = this;
 		if (!ajaxObject.error) {
@@ -91,7 +92,7 @@ var Main = React.createClass({
 		return <AggregatorPage ajax={this.ajax} embedded={true}/>;
 	},
 
-	getPageFns: function() { 
+	getPageFns: function() {
 		return {
 			'': this.renderAggregator,
 			'help': this.renderHelp,
@@ -138,7 +139,10 @@ var Main = React.createClass({
 					</li>
 				</ul>
 				<ul id="CLARIN_header_right" className="nav navbar-nav navbar-right">
-				{this.renderLogin()}
+					<li>
+						<div id="clarinservices" style={{padding:10}}/>
+					</li>
+					{this.renderLogin()}
 				</ul>
 			</div>
 		);
@@ -155,7 +159,7 @@ var Main = React.createClass({
 						<span>BETA</span>
 					</div>
 				</div>
-			
+
 				<div className="navbar navbar-default navbar-static-top" role="navigation">
 					<div className="container">
 						<div className="navbar-header">
@@ -202,8 +206,8 @@ var StatisticsPage = React.createClass({
 		return {
 			stats: {},
 			activeTab: 0,
-			// searchStats: {}, 
-			// lastScanStats: {}, 
+			// searchStats: {},
+			// lastScanStats: {},
 		};
 	},
 
@@ -236,9 +240,9 @@ var StatisticsPage = React.createClass({
 
 	renderCollections: function(colls) {
 		return	<div style={{marginLeft:40}}>
-					{ colls.length === 0 ? 
+					{ colls.length === 0 ?
 						<div style={{color:"#a94442"}}>NO collections found</div>
-						: 
+						:
 						<div>
 							{colls.length} root collection(s):
 							<ul className='list-unstyled' style={{marginLeft:40}}>
@@ -252,9 +256,9 @@ var StatisticsPage = React.createClass({
 	renderDiagnostic: function(d) {
 		var classes = "inline alert alert-warning " + (d.diagnostic.uri === 'LEGACY' ? "legacy" : "");
 		return 	<div key={d.diagnostic.uri}>
-					<div className={classes} > 
+					<div className={classes} >
 						<div>
-							{ d.counter <= 1 ? false : 
+							{ d.counter <= 1 ? false :
 								<div className="inline" style={{margin:"5px 5px 5px 5px"}}>
 									<span className="badge" style={{backgroundColor:'#ae7241'}}>x {d.counter}</span>
 								</div>
@@ -263,7 +267,7 @@ var StatisticsPage = React.createClass({
 						</div>
 						<div>Context: <a href={d.context}>{d.context}</a></div>
 					</div>
-				</div>; 
+				</div>;
 	},
 
 	renderError: function(e) {
@@ -271,7 +275,7 @@ var StatisticsPage = React.createClass({
 		return 	<div key={xc.message}>
 					<div className="inline alert alert-danger" role="alert">
 						<div>
-							{ e.counter <= 1 ? false : 
+							{ e.counter <= 1 ? false :
 								<div className="inline" style={{margin:"5px 5px 5px 5px"}}>
 									<span className="badge" style={{backgroundColor:'#c94442'}}>x {e.counter} </span>
 								</div>
@@ -281,7 +285,7 @@ var StatisticsPage = React.createClass({
 						<div>Context: <a href={e.context}>{e.context}</a></div>
 						{ xc.cause ? <div>Caused by: {xc.cause}</div> : false}
 					</div>
-				</div>; 
+				</div>;
 	},
 
 	renderEndpoint: function(isScan, endpoint) {
@@ -291,31 +295,31 @@ var StatisticsPage = React.createClass({
 		return <div style={{marginTop:10}} key={endpoint[0]}>
 					<ul className='list-inline list-unstyled' style={{marginBottom:0}}>
 						<li>
-							{ stat.version == "LEGACY" ? 
-								<span style={{color:'#a94442'}}>legacy <i className="glyphicon glyphicon-thumbs-down"></i> </span> 
-								: <span style={{color:'#3c763d'}}><i className="glyphicon glyphicon-thumbs-up"></i> </span> 
+							{ stat.version == "LEGACY" ?
+								<span style={{color:'#a94442'}}>legacy <i className="glyphicon glyphicon-thumbs-down"></i> </span>
+								: <span style={{color:'#3c763d'}}><i className="glyphicon glyphicon-thumbs-up"></i> </span>
 							}
 							{ " "+endpoint[0] }
 						</li>
 					</ul>
 					<div style={{marginLeft:40}}>
-					{ isScan ? 
+					{ isScan ?
 						<div>Max concurrent scan requests:{" "} {stat.maxConcurrentRequests} </div> :
 						<div>Max concurrent search requests:{" "} {stat.maxConcurrentRequests} </div>
 					}
 					</div>
 					<div style={{marginLeft:40}}>
 						<span>{stat.numberOfRequests}</span> request(s),
-						average:{this.renderWaitTimeSecs(stat.avgExecutionTime)}, 
+						average:{this.renderWaitTimeSecs(stat.avgExecutionTime)},
 						max: {this.renderWaitTimeSecs(stat.maxExecutionTime)}
 					</div>
 					{ isScan ? this.renderCollections(stat.rootCollections) : false }
-					{	(errors && errors.length) ? 
+					{	(errors && errors.length) ?
 						<div className='inline' style={{marginLeft:40}}>
 							{ errors.map(this.renderError) }
 						</div> : false
 					}
-					{	(diagnostics && diagnostics.length) ? 
+					{	(diagnostics && diagnostics.length) ?
 						<div className='inline' style={{marginLeft:40}}>
 							{ diagnostics.map(this.renderDiagnostic) }
 						</div> : false
@@ -380,7 +384,7 @@ var StatisticsPage = React.createClass({
 
 var HelpPage = React.createClass({
 	openHelpDesk: function() {
-		window.open('http://support.clarin-d.de/mail/form.php?queue=Aggregator&lang=en', 
+		window.open('http://support.clarin-d.de/mail/form.php?queue=Aggregator&lang=en',
 			'_blank', 'height=560,width=370');
 	},
 
@@ -390,11 +394,11 @@ var HelpPage = React.createClass({
 				<div className="top-gap">
 					<h1>Help</h1>
 					<h3>Performing search in FCS corpora</h3>
-					<p>To perform simple keyword search in all CLARIN-D Federated Content Search centres 
-					and their corpora, go to the search field at the top of the page, 
+					<p>To perform simple keyword search in all CLARIN-D Federated Content Search centres
+					and their corpora, go to the search field at the top of the page,
 					enter your query, and click 'search' button or press the 'Enter' key.</p>
-					
-					<p>When the search starts, the page will start filling in with the corpora responses. 
+
+					<p>When the search starts, the page will start filling in with the corpora responses.
 					After the entire search process has ended you have the option to download the results
 					in various formats.
 					</p>
@@ -406,22 +410,25 @@ var HelpPage = React.createClass({
 
 
 					<h3>Adjusting search criteria</h3>
-					<p>The FCS Aggregator makes possible to select specific corpora based on their name 
+					<p>The FCS Aggregator makes possible to select specific corpora based on their name
 					or language and to specify the number of search results (hits) per corpus per page.
-					The user interface controls that allows to change these options are located 
-					right below the search fiels on the main page. The current options are 
-					to filter resources based on their language, to select specific resources, and 
+					The user interface controls that allows to change these options are located
+					right below the search fiels on the main page. The current options are
+					to filter resources based on their language, to select specific resources, and
 					to set the maximum number of hits.</p>
 
 
 					<h3>More help</h3>
-					<p>More detailed information on using FCS Aggregator is available 
-					at the Aggegator wiki page. If you still cannot find an answer to your question, 
+					<p>More detailed information on using FCS Aggregator is available at the
+					<a href="http://weblicht.sfs.uni-tuebingen.de/weblichtwiki/index.php/FCS_Aggregator">
+						Aggregator wiki page
+					</a>.
+					If you still cannot find an answer to your question,
 					or if want to send a feedback, you can write to Clarin-D helpdesk: </p>
 					<button type="button" className="btn btn-default btn-lg" onClick={this.openHelpDesk} >
 						<span className="glyphicon glyphicon-question-sign" aria-hidden="true"></span>
 						&nbsp;HelpDesk
-					</button>					
+					</button>
 				</div>
 			</div>
 		);
@@ -489,7 +496,7 @@ var AboutPage = React.createClass({
 
 						<h3>Statistics</h3>
 						<button type="button" className="btn btn-default btn-lg" onClick={function() {main.toStatistics(true);}} >
-							<span className="glyphicon glyphicon-cog" aria-hidden="true"> </span> 
+							<span className="glyphicon glyphicon-cog" aria-hidden="true"> </span>
 							View server log
 						</button>
 					</div>
@@ -512,7 +519,7 @@ var Footer = React.createClass({
 		return	(
 			<div className="container">
 				<div id="CLARIN_footer_left">
-						<a title="about" href="about" onClick={this.toAbout}> 
+						<a title="about" href="about" onClick={this.toAbout}>
 						<span className="glyphicon glyphicon-info-sign"></span>
 						<span>{VERSION}</span>
 					</a>
