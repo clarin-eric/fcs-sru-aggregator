@@ -81,7 +81,7 @@ import org.slf4j.LoggerFactory;
  *
  * TODO: test it in IE, other browsers
  *
- * TODO: tri-state for parent collections; search + message implications
+ * TODO: expand parents of x-aggregator-context selected corpus
  *
  */
 public class Aggregator extends Application<AggregatorConfiguration> {

@@ -2,7 +2,7 @@
 (function() {
 "use strict";
 
-var VERSION = window.MyAggregator.VERSION = "VERSION 2.0.0-beta-35";
+var VERSION = window.MyAggregator.VERSION = "VERSION 2.0.0-beta-36";
 
 var URLROOT = window.MyAggregator.URLROOT =
 	window.location.pathname.substring(0, window.location.pathname.indexOf("/",2)) ||
@@ -140,7 +140,7 @@ var Main = React.createClass({
 				</ul>
 				<ul id="CLARIN_header_right" className="nav navbar-nav navbar-right">
 					<li>
-						<div id="clarinservices" style={{padding:10}}/>
+						<div id="clarinservices" style={{padding:5}}/>
 					</li>
 					{this.renderLogin()}
 				</ul>
@@ -419,7 +419,7 @@ var HelpPage = React.createClass({
 
 
 					<h3>More help</h3>
-					<p>More detailed information on using FCS Aggregator is available at the
+					<p>More detailed information on using FCS Aggregator is available at the &nbsp;
 					<a href="http://weblicht.sfs.uni-tuebingen.de/weblichtwiki/index.php/FCS_Aggregator">
 						Aggregator wiki page
 					</a>.
@@ -570,5 +570,6 @@ var main = React.render(<Main />,  document.getElementById('body'));
 React.render(<Footer />, document.getElementById('footer') );
 
 window.onpopstate = routeFromLocation.bind(main);
+window.MyAggregator.main = main;
 
 })();

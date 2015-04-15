@@ -41,7 +41,7 @@ var layers = [
 ];
 var layerMap = {
 	text: layers[0],
-	sampa: layers[1], 
+	sampa: layers[1],
 };
 
 function getQueryVariable(variable) {
@@ -59,16 +59,16 @@ function getQueryVariable(variable) {
 function Corpora(corpora, updateFn) {
 	var that = this;
 	this.corpora = corpora;
-	this.update = function() { 
-		updateFn(that); 
+	this.update = function() {
+		updateFn(that);
 	};
-	
+
 	var sortFn = function(x, y) {
 		var r = x.institution.name.localeCompare(y.institution.name);
 		if (r !== 0) {
 			return r;
 		}
-		return x.title.toLowerCase().localeCompare(y.title.toLowerCase()); 
+		return x.title.toLowerCase().localeCompare(y.title.toLowerCase());
 	};
 
 	this.recurse(function(corpus) { corpus.subCorpora.sort(sortFn); });
@@ -78,13 +78,13 @@ function Corpora(corpora, updateFn) {
 		corpus.visible = true; // visible in the corpus view
 		corpus.selected = true; // selected in the corpus view
 		corpus.expanded = false; // not expanded in the corpus view
-		corpus.priority = 1; // used for ordering search results in corpus view 
+		corpus.priority = 1; // used for ordering search results in corpus view
 		corpus.index = index; // original order, used for stable sort
 	});
 }
 
 Corpora.prototype.recurseCorpus = function(corpus, fn) {
-	if (false === fn(corpus)) {		
+	if (false === fn(corpus)) {
 		// no recursion
 	} else {
 		this.recurseCorpora(corpus.subCorpora, fn);
@@ -128,7 +128,7 @@ Corpora.prototype.isCorpusVisible = function(corpus, layerId, languageCode) {
 	// yes if the corpus is in only that language
 	if (corpus.languages && corpus.languages.length === 1 && corpus.languages[0] === languageCode) {
 		return true;
-	}	
+	}
 
 	// ? yes if the corpus also contains that language
 	if (corpus.languages && corpus.languages.indexOf(languageCode) >=0) {
@@ -151,13 +151,12 @@ Corpora.prototype.setVisibility = function(layerId, languageCode) {
 };
 
 Corpora.prototype.setAggregationContext = function(endpoints2handles) {
-	// console.log('setAggregationContext', endpoints2handles, this.corpora);
-	var recurseSelect = function(select, corpus) {
+	var selectSubTree = function(select, corpus) {
 		corpus.selected = false;
 		this.recurseCorpora(corpus.subCorpora, function(c) { c.selected = corpus.selected; });
 	};
 
-	this.corpora.forEach(recurseSelect.bind(this, false));
+	this.corpora.forEach(selectSubTree.bind(this, false));
 
 	var corporaToSelect = [];
 	_.pairs(endpoints2handles).forEach(function(endp){
@@ -172,7 +171,7 @@ Corpora.prototype.setAggregationContext = function(endpoints2handles) {
 		}.bind(this));
 	}.bind(this));
 
-	corporaToSelect.forEach(recurseSelect.bind(this, true));
+	corporaToSelect.forEach(selectSubTree.bind(this, true));
 };
 
 Corpora.prototype.getSelectedIds = function() {
@@ -216,7 +215,7 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({dis
 		embedded: PT.bool,
 	},
 
-	nohits: { 
+	nohits: {
 		results: null,
 	},
 	anyLanguage: [multipleLanguageCode, "Any Language"],
@@ -246,6 +245,7 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({dis
 			success: function(json, textStatus, jqXHR) {
 				if (this.isMounted()) {
 					var corpora = new Corpora(json.corpora, this.updateCorpora);
+					window.MyAggregator.corpora = json.corpora;
 					this.setState({
 						corpora : corpora,
 						languageMap: json.languages,
@@ -254,7 +254,7 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({dis
 					});
 
 					if (json['x-aggregation-context']) {
-						console.log("x-aggregation-context: ", json["x-aggregation-context"]);
+						window.MyAggregator.xAggregationContext = json["x-aggregation-context"];
 						corpora.setAggregationContext(json["x-aggregation-context"]);
 						if (!corpora.getSelectedIds().length) {
 							this.props.error("Cannot find the required collection, will search all collections instead");
@@ -265,6 +265,7 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({dis
 
 					if (getQueryVariable('mode') === 'search' ||
 						json.mode === 'search') {
+							window.MyAggregator.mode = 'search';
 							this.search();
 					}
 				}
@@ -280,7 +281,7 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({dis
 		var query = this.state.query;
 		if (!query || this.props.embedded) {
 			this.setState({ hits: this.nohits, searchId: null });
-			return;			
+			return;
 		}
 		var selectedIds = this.state.corpora.getSelectedIds();
 		if (!selectedIds.length) {
@@ -369,21 +370,21 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({dis
 	},
 
 	getDownloadLink: function(corpusId, format) {
-		return 'rest/search/'+this.state.searchId+'/download?' + 
+		return 'rest/search/'+this.state.searchId+'/download?' +
 			this.getExportParams(corpusId, format);
 	},
 
 	getToWeblichtLink: function(corpusId, forceLanguage) {
-		return 'rest/search/'+this.state.searchId+'/toWeblicht?' + 
+		return 'rest/search/'+this.state.searchId+'/toWeblicht?' +
 			this.getExportParams(corpusId, null, forceLanguage);
 	},
 
 	setLanguageAndFilter: function(languageObj, languageFilter) {
-		this.state.corpora.setVisibility(this.state.searchLayerId, 
+		this.state.corpora.setVisibility(this.state.searchLayerId,
 			languageFilter === 'byGuess' ? multipleLanguageCode : languageObj[0]);
 		this.setState({
-			language: languageObj, 
-			languageFilter: languageFilter, 
+			language: languageObj,
+			languageFilter: languageFilter,
 			corpora: this.state.corpora, // === this.state.corpora.update();
 		});
 	},
@@ -391,8 +392,8 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({dis
 	setLayer: function(layerId) {
 		this.state.corpora.setVisibility(layerId, this.state.language[0]);
 		this.setState({
-			searchLayerId: layerId, 
-			hits: this.nohits, 
+			searchLayerId: layerId,
+			hits: this.nohits,
 			searchId: null,
 			corpora: this.state.corpora, // === this.state.corpora.update();
 		});
@@ -416,7 +417,7 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({dis
 		var langCode = this.state.language[0];
 		var results = null, inProgress = 0, hits = 0;
 		if (this.state.hits.results) {
-			results = this.state.hits.results.map(function(corpusHit) { 
+			results = this.state.hits.results.map(function(corpusHit) {
 				return {
 					corpus: corpusHit.corpus,
 					inProgress: corpusHit.inProgress,
@@ -424,9 +425,9 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({dis
 					diagnostics: corpusHit.diagnostics,
 					kwics: noLangFiltering ? corpusHit.kwics :
 						corpusHit.kwics.filter(function(kwic) {
-							return kwic.language === langCode || 
-							       langCode === multipleLanguageCode || 
-							       langCode === null; 
+							return kwic.language === langCode ||
+							       langCode === multipleLanguageCode ||
+							       langCode === null;
 						}),
 				};
 			});
@@ -481,7 +482,7 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({dis
 		var corpus = corpusHit.corpus;
 		return React.createElement("h3", {style: {fontSize:'1em'}}, 
 					corpus.title, 
-					 corpus.landingPage ? 
+					 corpus.landingPage ?
 						React.createElement("a", {href: corpus.landingPage, onClick: this.stop, style: {fontSize:12}}, 
 							React.createElement("span", null, " – Homepage "), 
 							React.createElement("i", {className: "glyphicon glyphicon-home"})
@@ -503,7 +504,7 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({dis
 		return (
 			React.createElement("button", {className: "btn btn-default input-lg", type: "button", onClick: this.search}, 
 				React.createElement("i", {className: "glyphicon glyphicon-search"})
-			) 
+			)
 		);
 	},
 
@@ -533,9 +534,9 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({dis
 						React.createElement("form", {className: "form-inline", role: "form"}, 
 
 							React.createElement("div", {className: "input-group"}, 
-								
+
 								React.createElement("span", {className: "input-group-addon nobkg"}, "Search for"), 
-								
+
 								React.createElement("div", {className: "input-group-btn"}, 
 									React.createElement("button", {className: "form-control btn btn-default", 
 											onClick: this.toggleLanguageSelection}, 
@@ -546,14 +547,14 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({dis
 
 								React.createElement("div", {className: "input-group-btn"}, 
 									React.createElement("ul", {ref: "layerDropdownMenu", className: "dropdown-menu"}, 
-										 	layers.map(function(l) { 
+										 	layers.map(function(l) {
 												var cls = l.disabled ? 'disabled':'';
 												var handler = function() { if (!l.disabled) this.setLayer(l.id); }.bind(this);
 												return React.createElement("li", {key: l.id, className: cls}, " ", React.createElement("a", {tabIndex: "-1", href: "#", 
 													onClick: handler}, " ", l.name, " "));
 											}.bind(this))
 										
-									), 								
+									), 
 									React.createElement("button", {className: "form-control btn btn-default", 
 											'aria-expanded': "false", 'data-toggle': "dropdown"}, 
 										layer.name, " ", React.createElement("span", {className: "caret"})
@@ -562,7 +563,7 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({dis
 
 							), 
 
-							 this.props.embedded ? false : 
+							 this.props.embedded ? false :
 							React.createElement("div", {className: "input-group"}, 
 								React.createElement("span", {className: "input-group-addon nobkg"}, "in"), 
 								React.createElement("button", {type: "button", className: "btn btn-default", onClick: this.toggleCorpusSelection}, 
@@ -570,7 +571,7 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({dis
 								)
 							), 
 
-							 this.props.embedded ? false : 
+							 this.props.embedded ? false :
 							React.createElement("div", {className: "input-group"}, 
 								React.createElement("span", {className: "input-group-addon nobkg"}, "and show up to"), 
 								React.createElement("div", {className: "input-group-btn"}, 
@@ -653,7 +654,7 @@ var LanguageSelector = React.createClass({displayName: 'LanguageSelector',
 	},
 
 	renderRadio: function(option) {
-		return	this.props.languageFilter === option ? 
+		return	this.props.languageFilter === option ?
 				React.createElement("input", {type: "radio", name: "filterOpts", value: option, checked: true, onChange: this.setFilter.bind(this, option)})
 				: React.createElement("input", {type: "radio", name: "filterOpts", value: option, onChange: this.setFilter.bind(this, option)});
 	},
@@ -680,13 +681,13 @@ var LanguageSelector = React.createClass({displayName: 'LanguageSelector',
 							React.createElement("div", null, 
 							React.createElement("label", {style: {color:'black'}}, 
 								 this.renderRadio('byMeta'), " ", 
-								"Use the collections", "'", " specified language to filter results" 
+								"Use the collections", "'", " specified language to filter results"
 							)
 							), 
 							React.createElement("div", null, 
 							React.createElement("label", {style: {color:'black'}}, 
 								 this.renderRadio('byGuess'), " ", 
-								"Filter results by using a language detector" 
+								"Filter results by using a language detector"
 							)
 							), 
 							React.createElement("div", null, 
@@ -707,9 +708,9 @@ var ResultMixin = window.MyReact.ResultMixin = {
 	// getDefaultProps: function(){
 	// 	return {hasPopover: true};
 	// },
- 
+
 	getInitialState: function () {
-		return { 
+		return {
 			displayKwic: false,
 		};
 	},
@@ -757,7 +758,7 @@ var ResultMixin = window.MyReact.ResultMixin = {
 		}
 		return 	React.createElement("div", {className: "alert alert-warning", key: key}, 
 					React.createElement("div", null, "Diagnostic: ", d.message)
-				); 
+				);
 	},
 
 	renderDiagnostics: function(corpusHit) {
@@ -802,7 +803,7 @@ var ResultMixin = window.MyReact.ResultMixin = {
 	renderDisplayKWIC: function() {
 		return 	React.createElement("div", {className: "inline btn-group", style: {display:"inline-block"}}, 
 					React.createElement("label", {forHtml: "inputKwic", className: "btn btn-flat"}, 
-						 this.state.displayKwic ? 
+						 this.state.displayKwic ?
 							React.createElement("input", {id: "inputKwic", type: "checkbox", value: "kwic", checked: true, onChange: this.toggleKwic}) :
 							React.createElement("input", {id: "inputKwic", type: "checkbox", value: "kwic", onChange: this.toggleKwic}), 
 						
@@ -844,7 +845,7 @@ var ResultMixin = window.MyReact.ResultMixin = {
 				), 
 				React.createElement("ul", {className: "dropdown-menu"}, 
 					React.createElement("li", null, 
-						error ? 
+						error ?
 							React.createElement("div", {className: "alert alert-danger", style: {margin:10, width:200}}, error) :
 							React.createElement("a", {href: this.props.getToWeblichtLink(corpusId, forceLanguage), target: "_blank"}, " ", 
 								"Send to Weblicht")
@@ -892,7 +893,7 @@ var ZoomedResult = React.createClass({displayName: 'ZoomedResult',
 	},
 
 	renderMoreResults:function(){
-		if (this.state.inProgress || this.props.corpusHit.inProgress) 
+		if (this.state.inProgress || this.props.corpusHit.inProgress)
 			return React.createElement("span", {style: {fontStyle:'italic'}}, "Retrieving results, please wait...");
 
 		var moreResults = true;
@@ -918,7 +919,7 @@ var ZoomedResult = React.createClass({displayName: 'ZoomedResult',
 
 		var forceLanguage = null, wlerror = null;
 		if (this.props.weblichtLanguages.indexOf(this.props.searchedLanguage[0]) < 0) {
-			// the search language is either AnyLanguage or unsupported 
+			// the search language is either AnyLanguage or unsupported
 			if (this.props.searchedLanguage[0] === multipleLanguageCode) {
 				if (corpusHit.corpus.languages && corpusHit.corpus.languages.length === 1) {
 					forceLanguage = corpusHit.corpus.languages[0];
@@ -929,7 +930,7 @@ var ZoomedResult = React.createClass({displayName: 'ZoomedResult',
 						forceLanguage = langs[0];
 					}
 				}
-			} 
+			}
 			if (!forceLanguage) {
 				wlerror = "Cannot use WebLicht: unsupported language ("+this.props.searchedLanguage[1]+")";
 			}
@@ -939,7 +940,7 @@ var ZoomedResult = React.createClass({displayName: 'ZoomedResult',
 					React.createElement(ReactCSSTransitionGroup, {transitionName: "fade"}, 
 						React.createElement("div", {className: "corpusDescription"}, 
 							React.createElement("p", null, React.createElement("i", {className: "fa fa-institution"}), " ", corpus.institution.name), 
-							corpus.description ? 
+							corpus.description ?
 								React.createElement("p", null, React.createElement("i", {className: "glyphicon glyphicon-info-sign"}), " ", corpus.description): false, 
 							React.createElement("p", null, React.createElement("i", {className: "fa fa-language"}), " ", this.renderLanguages(corpus.languages))
 						), 
@@ -991,7 +992,7 @@ var Results = React.createClass({displayName: 'Results',
 	},
 
 	renderResultPanel: function(corpusHit) {
-		if (corpusHit.kwics.length === 0 && 
+		if (corpusHit.kwics.length === 0 &&
 			!corpusHit.exception &&
 			corpusHit.diagnostics.length === 0) {
 				return false;
@@ -1011,7 +1012,7 @@ var Results = React.createClass({displayName: 'Results',
 		var styleperc = {width: percents+"%"};
 		return 	React.createElement("div", {style: {marginTop:10}}, 
 					React.createElement("div", null, msg), 
-					collhits.inProgress > 0 ? 
+					collhits.inProgress > 0 ?
 						React.createElement("div", {className: "progress", style: {marginBottom:10}}, 
 							React.createElement("div", {className: "progress-bar progress-bar-striped active", role: "progressbar", 
 								'aria-valuenow': percents, 'aria-valuemin': "0", 'aria-valuemax': "100", style: styleperc}), 
@@ -1020,7 +1021,7 @@ var Results = React.createClass({displayName: 'Results',
 									'aria-valuenow': "100", 'aria-valuemin': "0", 'aria-valuemax': "100", 
 									style: {width: '100%', backgroundColor:'#888'}})
 							
-						) : 
+						) :
 						false
 				);
 	},
@@ -1035,14 +1036,14 @@ var Results = React.createClass({displayName: 'Results',
 					React.createElement(ReactCSSTransitionGroup, {transitionName: "fade"}, 
 						 showprogress ? this.renderProgressMessage() : React.createElement("div", {style: {height:20}}), 
 						React.createElement("div", {style: {marginBottom:2}}, 
-							 showprogress ? false : 
+							 showprogress ? false :
 								React.createElement("div", {className: "float-left"}, " ", collhits.hits + " matching collections found", " "), 
 							
-							 collhits.hits === 0 ? false : 
+							 collhits.hits === 0 ? false :
 								React.createElement("div", {className: "float-right"}, 
 									React.createElement("div", null, 
 										 this.renderDisplayKWIC(), 
-										 collhits.inProgress === 0 ? 
+										 collhits.inProgress === 0 ?
 											React.createElement("div", {className: "inline"}, " ", this.renderDownloadLinks(), " ")
 											:false
 										

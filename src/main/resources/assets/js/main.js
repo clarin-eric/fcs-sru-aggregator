@@ -2,7 +2,7 @@
 (function() {
 "use strict";
 
-var VERSION = window.MyAggregator.VERSION = "VERSION 2.0.0-beta-35";
+var VERSION = window.MyAggregator.VERSION = "VERSION 2.0.0-beta-36";
 
 var URLROOT = window.MyAggregator.URLROOT =
 	window.location.pathname.substring(0, window.location.pathname.indexOf("/",2)) ||
@@ -419,7 +419,7 @@ var HelpPage = React.createClass({displayName: 'HelpPage',
 
 
 					React.createElement("h3", null, "More help"), 
-					React.createElement("p", null, "More detailed information on using FCS Aggregator is available at the", 
+					React.createElement("p", null, "More detailed information on using FCS Aggregator is available at the  ", 
 					React.createElement("a", {href: "http://weblicht.sfs.uni-tuebingen.de/weblichtwiki/index.php/FCS_Aggregator"}, 
 						"Aggregator wiki page"
 					), "." + ' ' +
@@ -570,5 +570,6 @@ var main = React.render(React.createElement(Main, null),  document.getElementByI
 React.render(React.createElement(Footer, null), document.getElementById('footer') );
 
 window.onpopstate = routeFromLocation.bind(main);
+window.MyAggregator.main = main;
 
 })();

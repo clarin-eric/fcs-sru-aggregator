@@ -9,7 +9,8 @@ body {
   /*font-family: "Courier New";*/
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  color: #222;
+  color: black;
+  /*color: #222;*/
   /*font-size: 12px;*/
   /*word-wrap: break-word;*/
 }
