@@ -85,13 +85,12 @@ function renderCell(service) {
 	var title = escapeHtml(service.title);
 	var description = escapeHtml(service.description);
 
-	var p_image	=	"<p><img src='" + image + "'></p>";
-	var p_title	=	"<p>"+ title + "</p>";
-	var p_desc 	=	"<p>" + description + "</p>";
+	var p_image	=	"<img src='" + image + "'>";
+	var p_title	=	"<div>" + title + "</div>";
 
-	return "<td><li role='presentation'><div><a href='" + href + "'>" +
+	return "<td><a href='" + href + "'><div>" +
 				p_image + p_title + /* p_description + */
-			"</a></div></li></td>";
+			"</div></a></td>";
 }
 
 function renderRow(services) {
@@ -104,7 +103,8 @@ function renderDropdown(service_table) {
 	return '<div class="dropdown">' +
 		'<button class="btn dropdown-toggle" type="button"'+
 				' id="dropdown-clarinservices" data-toggle="dropdown" aria-expanded="true">'+
-			'<span class="glyphicon glyphicon-th"></span>'+
+			// '<span class="glyphicon glyphicon-th"></span>'+
+			'<img src="img/moreapp60.png"></img>'+
 		'</button>'+
 		'<ul class="dropdown-menu" role="menu" aria-labelledby="dropdown-clarinservices">'+
 			tablediv +
