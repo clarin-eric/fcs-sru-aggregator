@@ -2,7 +2,6 @@ package eu.clarin.sru.fcs.aggregator.search;
 
 import eu.clarin.sru.client.SRUDiagnostic;
 import eu.clarin.sru.client.SRURecord;
-import eu.clarin.sru.client.SRUSearchRetrieveRequest;
 import eu.clarin.sru.fcs.aggregator.scan.Corpus;
 import eu.clarin.sru.client.SRUSearchRetrieveResponse;
 import eu.clarin.sru.client.SRUSurrogateRecordData;
@@ -36,7 +35,7 @@ public final class Result {
 
 	private final Corpus corpus;
 	private AtomicBoolean inProgress = new AtomicBoolean(true);
-	private AtomicInteger endpointReturnedRecords = new AtomicInteger();
+	private AtomicInteger nextRecordPosition = new AtomicInteger(1);
 	private AtomicReference<JsonException> exception = new AtomicReference<JsonException>();
 	private List<Diagnostic> diagnostics = Collections.synchronizedList(new ArrayList<Diagnostic>());
 	private List<Kwic> kwics = Collections.synchronizedList(new ArrayList<Kwic>());
@@ -68,11 +67,13 @@ public final class Result {
 				diagnostics.add(new Diagnostic(d.getURI(), d.getMessage(), d.getDetails()));
 			}
 		}
+		if (response.getNextRecordPosition() > 0) {
+			nextRecordPosition.set(response.getNextRecordPosition());
+		}
 	}
 
 	void addRecord(SRURecord record) {
-//		TODO(edima): use response.getNextRecordPosition()
-		endpointReturnedRecords.getAndIncrement();
+		nextRecordPosition.incrementAndGet();
 		if (record.isRecordSchema(ClarinFCSRecordData.RECORD_SCHEMA)) {
 			ClarinFCSRecordData rd = (ClarinFCSRecordData) record.getRecordData();
 			Resource resource = rd.getResource();
@@ -143,8 +144,8 @@ public final class Result {
 		exception.set(new JsonException(xc));
 	}
 
-	public int getEndpointReturnedRecords() {
-		return endpointReturnedRecords.get();
+	public int getNextRecordPosition() {
+		return nextRecordPosition.get();
 	}
 
 	public Corpus getCorpus() {

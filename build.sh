@@ -79,15 +79,15 @@ fi
 if [ $RUN_JAR ]
 then
 	echo; echo "---- run devel"
-	JAR=`find target -iname 'Aggregator2-*.jar'`
-	echo java -cp src/main/resources:$JAR eu.clarin.sru.fcs.aggregator.app.Aggregator server aggregator_development.yml
-	java -cp src/main/resources:$JAR eu.clarin.sru.fcs.aggregator.app.Aggregator server aggregator_development.yml
+	JAR=`find target -iname 'aggregator-*.jar'`
+	echo java -cp src/main/resources:$JAR eu.clarin.sru.fcs.aggregator.app.Aggregator server aggregator_devel.yml
+	java -cp src/main/resources:$JAR eu.clarin.sru.fcs.aggregator.app.Aggregator server aggregator_devel.yml
 fi
 
 if [ $RUN_JAR_PRODUCTION ]
 then
 	echo; echo "---- run production"
-	JAR=`find target -iname 'Aggregator2-*.jar'`
+	JAR=`find target -iname 'aggregator-*.jar'`
 	echo java -jar $JAR server aggregator.yml
 	java -jar $JAR server aggregator.yml
 fi

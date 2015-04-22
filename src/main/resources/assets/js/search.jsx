@@ -762,7 +762,7 @@ var ResultMixin = window.MyReact.ResultMixin = {
 			return false;
 		}
 		return 	<div className="alert alert-warning" key={key}>
-					<div>Diagnostic: {d.message}</div>
+					<div>{d.message}</div>
 				</div>;
 	},
 
@@ -877,16 +877,13 @@ var ZoomedResult = React.createClass({
 
 	getInitialState: function() {
 		return {
-			inProgress: false,
+			forceUpdate: 1, // hack to force an update, used when searching for next results
 		};
 	},
 
-	componentWillReceiveProps: function() {
-		this.setState({inProgress: false});
-	},
-
 	nextResults: function(e) {
-		this.setState({inProgress: true});
+		this.props.corpusHit.inProgress = true;
+		this.setState({forceUpdate: this.state.forceUpdate+1});
 		this.props.nextResults(this.props.corpusHit.corpus.id);
 	},
 
@@ -898,7 +895,7 @@ var ZoomedResult = React.createClass({
 	},
 
 	renderMoreResults:function(){
-		if (this.state.inProgress || this.props.corpusHit.inProgress)
+		if (this.props.corpusHit.inProgress)
 			return <span style={{fontStyle:'italic'}}>Retrieving results, please wait...</span>;
 
 		var moreResults = true;

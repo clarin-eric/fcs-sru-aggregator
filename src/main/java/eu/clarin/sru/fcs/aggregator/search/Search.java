@@ -62,7 +62,7 @@ public class Search {
 	public boolean searchForNextResults(String corpusId, int maxRecords) {
 		for (Result r : results) {
 			if (r.getCorpus().getId().equals(corpusId)) {
-				executeSearch(r, query, r.getEndpointReturnedRecords() + 1, maxRecords);
+				executeSearch(r, query, r.getNextRecordPosition(), maxRecords);
 				return true;
 			}
 		}
