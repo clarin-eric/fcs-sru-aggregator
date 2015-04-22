@@ -8,7 +8,7 @@ JSDIR=$ASSETDIR/js
 RUN_BOWER=
 BUILD_JSX=1
 BUILD_JAR=
-BUILD_GO=
+BUILD_RPM=
 RUN_JAR=
 RUN_JAR_PRODUCTION=
 
@@ -25,6 +25,10 @@ case $key in
     ;;
     --jar)
     BUILD_JAR=1
+    ;;
+    --rpm)
+    BUILD_RPM=1
+    BUILD_JAR=
     ;;
     --run)
     RUN_JAR=1
@@ -74,6 +78,12 @@ if [ $BUILD_JAR ]
 then
 	echo; echo "---- mvn clean package"
 	mvn -q clean package
+fi
+
+if [ $BUILD_RPM ]
+then
+	echo; echo "---- mvn clean package jdeb:jdeb rpm:rpm"
+	mvn clean package jdeb:jdeb rpm:rpm
 fi
 
 if [ $RUN_JAR ]

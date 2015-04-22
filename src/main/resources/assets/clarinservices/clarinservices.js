@@ -85,11 +85,13 @@ function renderCell(service) {
 	var title = escapeHtml(service.title);
 	var description = escapeHtml(service.description);
 
-	var p_image	=	"<p><a href='" + href + "'><img src='" + image + "'></a></p>";
-	var p_title	=	"<p><a href='" + href + "'>" + title + "</a></p>";
+	var p_image	=	"<p><img src='" + image + "'></p>";
+	var p_title	=	"<p>"+ title + "</p>";
 	var p_desc 	=	"<p>" + description + "</p>";
 
-	return "<td><li role='presentation'>" + p_image + p_title + /* p_description + */ "</li></td>";
+	return "<td><li role='presentation'><div><a href='" + href + "'>" +
+				p_image + p_title + /* p_description + */
+			"</a></div></li></td>";
 }
 
 function renderRow(services) {
