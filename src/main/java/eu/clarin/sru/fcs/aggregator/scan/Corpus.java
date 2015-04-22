@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Represents information about corpus resource, such as corpus handle (id),
- * institution, title, description, language(s), etc. Does not store the
+ * institution, title, description, language(s), etc. Also store the
  * information about corpus sub-corpora.
  *
  * @author Yana Panchenko

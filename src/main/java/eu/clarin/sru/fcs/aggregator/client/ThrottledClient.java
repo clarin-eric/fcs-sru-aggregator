@@ -13,6 +13,10 @@ import java.net.URISyntaxException;
 
 /**
  * @author edima
+ *
+ * This is a SRUThreadedClient wrapper that only allows a limited number of
+ * requests per endpoint, depending on the requests type. To determine the
+ * number of requests for each endpoint the user must provide a callback.
  */
 public class ThrottledClient {
 	public interface Stats {

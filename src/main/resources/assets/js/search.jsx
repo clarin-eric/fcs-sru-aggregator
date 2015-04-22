@@ -152,7 +152,7 @@ Corpora.prototype.setVisibility = function(layerId, languageCode) {
 
 Corpora.prototype.setAggregationContext = function(endpoints2handles) {
 	var selectSubTree = function(select, corpus) {
-		corpus.selected = false;
+		corpus.selected = select;
 		this.recurseCorpora(corpus.subCorpora, function(c) { c.selected = corpus.selected; });
 	};
 
@@ -252,6 +252,11 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({
 						weblichtLanguages: json.weblichtLanguages,
 						query: this.state.query || json.query || '',
 					});
+
+					// // for testing aggregation context
+					// json['x-aggregation-context'] = {
+					// 	'EKUT': ["http://hdl.handle.net/11858/00-1778-0000-0001-DDAF-D"]
+					// };
 
 					if (json['x-aggregation-context']) {
 						window.MyAggregator.xAggregationContext = json["x-aggregation-context"];

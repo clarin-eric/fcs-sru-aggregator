@@ -67,8 +67,6 @@ import org.slf4j.LoggerFactory;
  * @author Yana Panchenko
  * @author edima
  *
- * TODO: update comments everywhere
- *
  * TODO: add some basic docs
  *
  * TODO: Export search results to personal workspace using oauth

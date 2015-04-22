@@ -5,11 +5,9 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Allow takes precedence over deny; default is to include
- * everything.
- * Filters for the cache of scan data (endpoint/resources
- * descriptions) based on
- * endpoint url.
+ * Allow takes precedence over deny; default is to include everything.
+ * Filters for the cache of scan data (endpoint/resources descriptions)
+ * based on endpoint url.
  *
  * @author yanapanchenko
  */

@@ -3,8 +3,10 @@ package eu.clarin.sru.fcs.aggregator.util;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- *
  * @author edima
+ *
+ * Similar to a java CountDownLatch, but can also count up.
+ *
  */
 public class CounterLatch {
 	private final AtomicInteger counter = new AtomicInteger();

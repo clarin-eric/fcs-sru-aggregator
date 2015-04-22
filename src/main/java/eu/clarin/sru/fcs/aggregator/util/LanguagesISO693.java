@@ -13,7 +13,7 @@ import java.util.Set;
 import org.slf4j.LoggerFactory;
 
 /**
- * Represents collection of languages.
+ * Utility class to convert between various language codes.
  *
  * @author Yana Panchenko
  */
@@ -27,7 +27,7 @@ public class LanguagesISO693 {
 
 	public static class Language {
 
-		// code is ISO-639-3 (3 letters) while code_2 is ISO-639-1 (2 letters)
+		// code is ISO-639-3 (3 letters) while code_1 is ISO-639-1 (2 letters)
 		private String code_3, code_1, name;
 
 		public Language(String code_3, String code_1, String name) {

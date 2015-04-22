@@ -19,7 +19,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.slf4j.LoggerFactory;
 
 /**
- * Class representing a search operation
+ * A search operation done on a list of corpora.
  *
  * @author Yana Panchenko
  * @author edima

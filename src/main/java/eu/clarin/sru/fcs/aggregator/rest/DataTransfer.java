@@ -13,6 +13,9 @@ import java.util.Random;
 /**
  * @author Yana Panchenko
  * @author edima
+ *
+ * A utility class that allows moving data from the Aggregator server to some
+ * public location (currently the drop-off service).
  */
 public class DataTransfer {
 

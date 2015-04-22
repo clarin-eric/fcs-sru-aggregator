@@ -2,7 +2,7 @@
 (function() {
 "use strict";
 
-var VERSION = window.MyAggregator.VERSION = "VERSION 2.0.0-beta-36";
+var VERSION = window.MyAggregator.VERSION = "VERSION 2.0.0-beta-39";
 
 var URLROOT = window.MyAggregator.URLROOT =
 	window.location.pathname.substring(0, window.location.pathname.indexOf("/",2)) ||

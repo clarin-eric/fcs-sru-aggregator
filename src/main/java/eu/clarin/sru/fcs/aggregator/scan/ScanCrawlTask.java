@@ -13,6 +13,8 @@ import org.slf4j.LoggerFactory;
 /**
  * @author yanapanchenko
  * @author edima
+ *
+ * This task is run by an executor every now and then to scan for new endpoints
  */
 public class ScanCrawlTask implements Runnable {
 

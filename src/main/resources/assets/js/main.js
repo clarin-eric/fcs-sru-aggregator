@@ -2,7 +2,7 @@
 (function() {
 "use strict";
 
-var VERSION = window.MyAggregator.VERSION = "VERSION 2.0.0-beta-36";
+var VERSION = window.MyAggregator.VERSION = "VERSION 2.0.0-beta-38";
 
 var URLROOT = window.MyAggregator.URLROOT =
 	window.location.pathname.substring(0, window.location.pathname.indexOf("/",2)) ||
@@ -140,7 +140,7 @@ var Main = React.createClass({displayName: 'Main',
 				), 
 				React.createElement("ul", {id: "CLARIN_header_right", className: "nav navbar-nav navbar-right"}, 
 					React.createElement("li", null, 
-						React.createElement("div", {id: "clarinservices", style: {padding:10}})
+						React.createElement("div", {id: "clarinservices", style: {padding:5}})
 					), 
 					this.renderLogin()
 				)

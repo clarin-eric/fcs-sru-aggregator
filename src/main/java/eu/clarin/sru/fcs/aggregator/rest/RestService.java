@@ -42,6 +42,8 @@ import org.slf4j.LoggerFactory;
 /**
  *
  * @author edima
+ * The REST API of the Aggregator (actually, it's a HTTP API, not very restful).
+ *
  */
 @Produces(MediaType.APPLICATION_JSON)
 @Path("/")

@@ -5,6 +5,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 /**
  *
  * @author edima
+ *
+ * A Json representation of an exception in the scan/search process, to be sent
+ * to the JS client
  */
 public class JsonException {
 

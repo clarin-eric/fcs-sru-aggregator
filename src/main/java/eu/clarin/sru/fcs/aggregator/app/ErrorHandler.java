@@ -10,12 +10,21 @@ import org.eclipse.jetty.server.Request;
 import org.slf4j.LoggerFactory;
 
 /**
- *
  * @author edima
+ *
+ * The Aggregator is a single web page application, and most of the URLs are
+ * routed and handled by the javascript client, not in the server.
+ * Therefore, whenever a 404 pops up in the server, it probably means that the
+ * URL should be handled by javascript, and to do that we must return the normal
+ * index.html HTML code.
+ *
+ * Sometimes the server gets POST calls from external apps (VLO, for example).
+ * We must keep the special parameters which are sent to the Aggregator and
+ * pass them to the js client, and, again, serve the normal index.html file.
  */
 public class ErrorHandler extends org.eclipse.jetty.server.handler.ErrorHandler {
 
-	private static final org.slf4j.Logger log = LoggerFactory.getLogger(Aggregator.class);
+	private static final org.slf4j.Logger log = LoggerFactory.getLogger(ErrorHandler.class);
 
 	public static final String PARAM_QUERY = "query";
 	public static final String PARAM_MODE = "mode";

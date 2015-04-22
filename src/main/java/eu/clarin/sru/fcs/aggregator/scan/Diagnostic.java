@@ -2,7 +2,7 @@ package eu.clarin.sru.fcs.aggregator.scan;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-/*
+/**
  * @author edima
  */
 public class Diagnostic {

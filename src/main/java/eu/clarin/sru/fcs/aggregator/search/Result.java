@@ -24,9 +24,8 @@ import org.w3c.dom.Node;
 import org.slf4j.LoggerFactory;
 
 /**
- * Represents the results of a SRU search-retrieve operation request. It
- * contains the endpoint/corpus (if specified in the request) to which a request
- * was sent, and the corresponding SRU search-retrieve response.
+ * The results of a SRU search-retrieve operation for a particular corpus.
+ * Its content is json-serialized and sent to the JS client for display.
  *
  * @author Yana Panchenko
  * @author edima

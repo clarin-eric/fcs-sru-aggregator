@@ -11,6 +11,9 @@ import java.util.Map;
 /**
  *
  * @author edima
+ *
+ * Stores statistics information about scans or searches. The info is then sent
+ * to the JS client and displayed in the /Aggregator/stats page.
  */
 public class Statistics {
 

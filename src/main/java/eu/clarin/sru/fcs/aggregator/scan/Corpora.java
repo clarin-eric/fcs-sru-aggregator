@@ -10,7 +10,8 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Implementation of the cached scan data (endpoints descriptions) that stores
- * the cache in memory in maps.
+ * the cache in memory in maps. Must be thread safe, updates in the maps are
+ * asynchronous.
  *
  * @author yanapanchenko
  * @author edima

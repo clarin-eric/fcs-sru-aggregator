@@ -11,6 +11,10 @@ import org.slf4j.LoggerFactory;
 /**
  *
  * @author edima
+ *
+ * This is a SRUThreadedClient wrapper that only allows a limited number of
+ * requests per endpoint, no matter what SRU operation the requests make.
+ * This class is an internal utility class, used by the ThrottledClient class.
  */
 class GenericClient {
 
