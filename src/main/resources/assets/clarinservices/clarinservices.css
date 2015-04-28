@@ -1,6 +1,6 @@
 #clarinservices button.dropdown-toggle {
 	background-color: transparent;
-	padding: 4px 8px;
+	padding: 4px 4px;
 }
 
 #clarinservices button.dropdown-toggle img{
@@ -11,6 +11,14 @@
 	border-radius: 50px 50px;
 	border-top-right-radius: 0 0;
 	padding: 20px;
+}
+
+#clarinservices ul .flex {
+  display: -webkit-box;      /* OLD - iOS 6-, Safari 3.1-6 */
+  display: -moz-box;         /* OLD - Firefox 19- (buggy but mostly works) */
+  display: -ms-flexbox;      /* TWEENER - IE 10 */
+  display: -webkit-flex;     /* NEW - Chrome */
+  display: flex;
 }
 
 #clarinservices table {
@@ -25,7 +33,7 @@
 	height: 150px;
 	background-color: #fff;
 	padding: 30px 25px;
-	transition: background-color .2s, border-color .2s;
+	transition: all .2s;
 	border-radius: 50% 50%;
 	border: 2px solid #fff;
 }

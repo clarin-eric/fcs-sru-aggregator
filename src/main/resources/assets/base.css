@@ -1,10 +1,37 @@
 /* clarin blue: rgb(0,64,111) #00406F; */
 /* clarin gold: rgb(128,107,82) #806A52; */
 
+.navbar-header a img{
+	float:left;
+	margin: 12px 10px 0 2px;
+	padding: 3px 3px;
+	border-radius: 50% 50%;
+	border: 1px solid #003f6e;
+	box-shadow: inset 0 0 3px #003f6e;
+}
+
+
+#clarinmore{
+	padding:4px 4px;
+	height:32px;
+	width:32px;
+}
+
+#clarinmore div {
+	width:6px;
+	height:6px;
+	float:left;
+	margin: 1px 1px;
+	padding: 1px 1px;
+	background-color: #003f6e;
+	border-radius: 50% 50%;
+	/*border: 1px solid #003f6e;*/
+	box-shadow: inset 0 0 1px white;
+}
+
 .aligncenter {
 	text-align: center;
 }
-
 
 .muted {
 	font-weight:300;
@@ -70,7 +97,7 @@
 	text-align: center;
 }
 
-.errorRow { 
+.errorRow {
 	position: absolute;
 	width: 100%;
 	text-align: center;
@@ -81,7 +108,7 @@
 .errorRow div * {
 	color: #fff;
 	border-radius: 4px;
-	background-color: #a20;	
+	background-color: #a20;
 	text-align: center;
 	margin: 0 auto;
 }
@@ -129,9 +156,9 @@ input[type="text"].search {
 }
 
 /* large spinner */
-input[type=number]::-webkit-inner-spin-button, 
-input[type=number]::-webkit-outer-spin-button { 
-	margin-left: 2px; 
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+	margin-left: 2px;
 	font-size:24px;
 }
 
@@ -310,7 +337,7 @@ div.panel-title span.institutionName{
 .panel-body span {
 	color: #222;
 }
- 
+
 .panel-body span.keyword {
 	font-weight: bold;
 	font-size: 12px;
@@ -325,13 +352,13 @@ div.panel-title span.institutionName{
 	border-radius: .2em;
 	/*display: inline;*/
 }
- 
+
 .panel-body td.keyword {
 	color: #00406F;
 	font-weight: bold;
 	font-weight: bold;
 }
- 
+
 .bs-callout {
 	padding: 0 20px;
 	margin: 0 0 20px 0;
@@ -351,7 +378,7 @@ div.panel-title span.institutionName{
 	/*color: #222;*/
 }
 .panel-body {
-	border-top: 1px solid #ddd;	
+	border-top: 1px solid #ddd;
 }
 
 .collapse.in {
@@ -461,10 +488,10 @@ div.progress {
 /*** BETA ***/
 
 .beta-tag {
-	position:absolute; 
+	position:absolute;
 	/*color:rgba(17, 65, 111, 0.1); */
 	color:rgba(128, 107, 82, 0.2);
-	margin: 64px 0 0 0; 
+	margin: 64px 0 0 0;
 	font-size:36px;
 	font-weight:bold;
 	-webkit-transform: rotate(-30deg);
@@ -509,7 +536,7 @@ code {
 /*** statistics ***/
 .statistics li, .statistics div
 {
-	font-family: Consolas,monaco,courier,monospace; 
+	font-family: Consolas,monaco,courier,monospace;
 }
 
 .statistics .alert-warning.legacy {

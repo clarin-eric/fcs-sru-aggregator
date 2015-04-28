@@ -2,7 +2,7 @@
 (function() {
 "use strict";
 
-var VERSION = window.MyAggregator.VERSION = "VERSION 2.0.0-beta-42";
+var VERSION = window.MyAggregator.VERSION = "v.2.0.0-beta-43";
 
 var URLROOT = window.MyAggregator.URLROOT =
 	window.location.pathname.substring(0, window.location.pathname.indexOf("/",2)) ||
@@ -138,10 +138,12 @@ var Main = React.createClass({
 						<a className="link" tabIndex="-1" onClick={this.toHelp.bind(this, true)}>Help</a>
 					</li>
 				</ul>
-				<ul id="CLARIN_header_right" className="nav navbar-nav navbar-right">
+				<ul className="nav navbar-nav navbar-right">
 					<li>
-						<div id="clarinservices" style={{padding:5}}/>
+						<div id="clarinservices" style={{padding:4}}/>
 					</li>
+				</ul>
+				<ul id="CLARIN_header_right" className="nav navbar-nav navbar-right">
 					{this.renderLogin()}
 				</ul>
 			</div>
@@ -154,12 +156,6 @@ var Main = React.createClass({
 		}
 		return	(
 			<div>
-				<div className="container">
-					<div className="beta-tag">
-						<span>BETA</span>
-					</div>
-				</div>
-
 				<div className="navbar navbar-default navbar-static-top" role="navigation">
 					<div className="container">
 						<div className="navbar-header">
@@ -169,13 +165,19 @@ var Main = React.createClass({
 								<span className="icon-bar"></span>
 								<span className="icon-bar"></span>
 							</button>
-							<a className="navbar-brand" href={URLROOT} tabIndex="-1"><header>Federated Content Search</header></a>
+							<a href={URLROOT} tabIndex="-1">
+								<img src="img/magglass1.png"/>
+							</a>
+							<a className="navbar-brand" href={URLROOT} tabIndex="-1">
+								<header className="inline"> Content Search </header>
+							</a>
 						</div>
 						{this.renderCollapsible()}
 					</div>
 				</div>
 
 				<ErrorPane errorMessages={this.state.errorMessages} />
+
 			</div>
 		);
 	},
@@ -439,7 +441,9 @@ var AboutPage = React.createClass({
 	render: function() {
 		return	<div>
 					<div className="top-gap">
-						<h1>About</h1>
+						<h1 style={{padding:15}}>About</h1>
+
+						<div className="col-md-6">
 						<h3>Technology</h3>
 
 						<p>The Aggregator uses the following software components:</p>
@@ -494,11 +498,22 @@ var AboutPage = React.createClass({
 							</li>
 						</ul>
 
+						<p>The content search icon is made by
+							<a href="http://www.freepik.com" title="Freepik"> Freepik </a>
+							from
+							<a href="http://www.flaticon.com" title="Flaticon"> www.flaticon.com </a>
+							and licensed under
+							<a href="http://creativecommons.org/licenses/by/3.0/" title="Creative Commons BY 3.0"> CC BY 3.0 </a>
+						</p>
+						</div>
+
+						<div className="col-md-6">
 						<h3>Statistics</h3>
 						<button type="button" className="btn btn-default btn-lg" onClick={function() {main.toStatistics(true);}} >
 							<span className="glyphicon glyphicon-cog" aria-hidden="true"> </span>
 							View server log
 						</button>
+						</div>
 					</div>
 				</div>;
 	}
@@ -532,7 +547,7 @@ var Footer = React.createClass({
 				<div id="CLARIN_footer_right">
 					<a title="contact" href="mailto:fcs@clarin.eu">
 						<span className="glyphicon glyphicon-envelope"></span>
-						<span> CONTACT</span>
+						<span> Contact</span>
 					</a>
 				</div>
 			</div>

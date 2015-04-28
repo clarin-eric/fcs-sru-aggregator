@@ -2,7 +2,7 @@
 (function() {
 "use strict";
 
-var VERSION = window.MyAggregator.VERSION = "VERSION 2.0.0-beta-41";
+var VERSION = window.MyAggregator.VERSION = "v.2.0.0-beta-43";
 
 var URLROOT = window.MyAggregator.URLROOT =
 	window.location.pathname.substring(0, window.location.pathname.indexOf("/",2)) ||
@@ -138,10 +138,12 @@ var Main = React.createClass({displayName: 'Main',
 						React.createElement("a", {className: "link", tabIndex: "-1", onClick: this.toHelp.bind(this, true)}, "Help")
 					)
 				), 
-				React.createElement("ul", {id: "CLARIN_header_right", className: "nav navbar-nav navbar-right"}, 
+				React.createElement("ul", {className: "nav navbar-nav navbar-right"}, 
 					React.createElement("li", null, 
-						React.createElement("div", {id: "clarinservices", style: {padding:5}})
-					), 
+						React.createElement("div", {id: "clarinservices", style: {padding:4}})
+					)
+				), 
+				React.createElement("ul", {id: "CLARIN_header_right", className: "nav navbar-nav navbar-right"}, 
 					this.renderLogin()
 				)
 			)
@@ -154,12 +156,6 @@ var Main = React.createClass({displayName: 'Main',
 		}
 		return	(
 			React.createElement("div", null, 
-				React.createElement("div", {className: "container"}, 
-					React.createElement("div", {className: "beta-tag"}, 
-						React.createElement("span", null, "BETA")
-					)
-				), 
-
 				React.createElement("div", {className: "navbar navbar-default navbar-static-top", role: "navigation"}, 
 					React.createElement("div", {className: "container"}, 
 						React.createElement("div", {className: "navbar-header"}, 
@@ -169,13 +165,19 @@ var Main = React.createClass({displayName: 'Main',
 								React.createElement("span", {className: "icon-bar"}), 
 								React.createElement("span", {className: "icon-bar"})
 							), 
-							React.createElement("a", {className: "navbar-brand", href: URLROOT, tabIndex: "-1"}, React.createElement("header", null, "Federated Content Search"))
+							React.createElement("a", {href: URLROOT, tabIndex: "-1"}, 
+								React.createElement("img", {src: "img/magglass1.png"})
+							), 
+							React.createElement("a", {className: "navbar-brand", href: URLROOT, tabIndex: "-1"}, 
+								React.createElement("header", {className: "inline"}, " Content Search ")
+							)
 						), 
 						this.renderCollapsible()
 					)
 				), 
 
 				React.createElement(ErrorPane, {errorMessages: this.state.errorMessages})
+
 			)
 		);
 	},
@@ -439,7 +441,9 @@ var AboutPage = React.createClass({displayName: 'AboutPage',
 	render: function() {
 		return	React.createElement("div", null, 
 					React.createElement("div", {className: "top-gap"}, 
-						React.createElement("h1", null, "About"), 
+						React.createElement("h1", {style: {padding:15}}, "About"), 
+
+						React.createElement("div", {className: "col-md-6"}, 
 						React.createElement("h3", null, "Technology"), 
 
 						React.createElement("p", null, "The Aggregator uses the following software components:"), 
@@ -494,10 +498,21 @@ var AboutPage = React.createClass({displayName: 'AboutPage',
 							)
 						), 
 
+						React.createElement("p", null, "The content search icon is made by", 
+							React.createElement("a", {href: "http://www.freepik.com", title: "Freepik"}, " Freepik "), 
+							"from", 
+							React.createElement("a", {href: "http://www.flaticon.com", title: "Flaticon"}, " www.flaticon.com "), 
+							"and licensed under", 
+							React.createElement("a", {href: "http://creativecommons.org/licenses/by/3.0/", title: "Creative Commons BY 3.0"}, " CC BY 3.0 ")
+						)
+						), 
+
+						React.createElement("div", {className: "col-md-6"}, 
 						React.createElement("h3", null, "Statistics"), 
 						React.createElement("button", {type: "button", className: "btn btn-default btn-lg", onClick: function() {main.toStatistics(true);}}, 
 							React.createElement("span", {className: "glyphicon glyphicon-cog", 'aria-hidden': "true"}, " "), 
 							"View server log"
+						)
 						)
 					)
 				);
@@ -532,7 +547,7 @@ var Footer = React.createClass({displayName: 'Footer',
 				React.createElement("div", {id: "CLARIN_footer_right"}, 
 					React.createElement("a", {title: "contact", href: "mailto:fcs@clarin.eu"}, 
 						React.createElement("span", {className: "glyphicon glyphicon-envelope"}), 
-						React.createElement("span", null, " CONTACT")
+						React.createElement("span", null, " Contact")
 					)
 				)
 			)

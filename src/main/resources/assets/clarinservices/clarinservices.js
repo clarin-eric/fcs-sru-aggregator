@@ -100,11 +100,16 @@ function renderRow(services) {
 function renderDropdown(service_table) {
 	var rows = service_list.map(renderRow).join('');
 	var tablediv = "<div><table><tbody>" + rows + "</tbody></table></div>";
+			// '<span class="glyphicon glyphicon-th"></span>'+
+			// '<img src="img/moreapp60.png"></img>'+
 	return '<div class="dropdown">' +
 		'<button class="btn dropdown-toggle" type="button"'+
 				' id="dropdown-clarinservices" data-toggle="dropdown" aria-expanded="true">'+
-			// '<span class="glyphicon glyphicon-th"></span>'+
-			'<img src="img/moreapp60.png"></img>'+
+					'<div id="clarinmore"> '+
+						'<div></div> <div></div> <div></div> '+
+						'<div></div> <div></div> <div></div> '+
+						'<div></div> <div></div> <div></div> '+
+					 '</div>'+
 		'</button>'+
 		'<ul class="dropdown-menu" role="menu" aria-labelledby="dropdown-clarinservices">'+
 			tablediv +

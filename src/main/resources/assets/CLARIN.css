@@ -16,8 +16,9 @@ body {
 }
 
 a {
-  color: #806a52;
-  text-decoration: dotted !important;
+  /*color: #806a52;*/
+  color: #B27000;
+  /*text-decoration: dotted !important;*/
 }
 a:hover, a:focus {
   text-decoration: none !important;
@@ -318,14 +319,13 @@ div#footer div.container div#CLARIN_footer_right {
 
 ul#CLARIN_header_right, div#CLARIN_footer_left, div#CLARIN_footer_right {
   margin: 0px 4px 0 p x 4px;
-  color: #806a52;
+  color: #653D00;
 }
 ul#CLARIN_header_right :not(.glyphicon), div#CLARIN_footer_left :not(.glyphicon), div#CLARIN_footer_right :not(.glyphicon) {
   font-size: 12px;
-  font-variant: small-caps;
 }
 ul#CLARIN_header_right a, div#CLARIN_footer_left a, div#CLARIN_footer_right a {
-  color: #806a52;
+  color: #653D00;
   text-decoration: none;
 }
 ul#CLARIN_header_right a:hover, ul#CLARIN_header_right a:focus, div#CLARIN_footer_left a:hover, div#CLARIN_footer_left a:focus, div#CLARIN_footer_right a:hover, div#CLARIN_footer_right a:focus {
