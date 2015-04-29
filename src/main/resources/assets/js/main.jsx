@@ -165,7 +165,7 @@ var Main = React.createClass({
 						<div id="clarinservices" style={{padding:4}}/>
 					</li>
 				</ul>
-				<ul id="CLARIN_header_right" className="nav navbar-nav navbar-right">
+				<ul className="nav navbar-nav navbar-right">
 					{this.renderLogin()}
 				</ul>
 			</div>
@@ -555,7 +555,7 @@ var Footer = React.createClass({
 					<a title="CLARIN ERIC" href="https://www.clarin.eu/">
 						<img src="img/clarindLogo.png" alt="CLARIN ERIC logo" style={{height:60}}/>
 					</a>
-					<div className="float-right" style={{position:'relative', float:'right'}}>
+					<div style={{position:'relative', float:'right'}}>
 						<div style={{margin:4, fontSize:12, textAlign:'right',
 							 	 	position:'absolute', right:'0', width:100}}>
 							<div>

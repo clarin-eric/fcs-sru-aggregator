@@ -165,7 +165,7 @@ var Main = React.createClass({displayName: 'Main',
 						React.createElement("div", {id: "clarinservices", style: {padding:4}})
 					)
 				), 
-				React.createElement("ul", {id: "CLARIN_header_right", className: "nav navbar-nav navbar-right"}, 
+				React.createElement("ul", {className: "nav navbar-nav navbar-right"}, 
 					this.renderLogin()
 				)
 			)
@@ -555,9 +555,9 @@ var Footer = React.createClass({displayName: 'Footer',
 					React.createElement("a", {title: "CLARIN ERIC", href: "https://www.clarin.eu/"}, 
 						React.createElement("img", {src: "img/clarindLogo.png", alt: "CLARIN ERIC logo", style: {height:60}})
 					), 
-					React.createElement("div", {className: "float-right", style: {position:'relative', float:'right'}}, 
+					React.createElement("div", {style: {position:'relativ', float:'righ', display:'inline'}}, 
 						React.createElement("div", {style: {margin:4, fontSize:12, textAlign:'right',
-							 	 	position:'absolute', right:'0', width:100}}, 
+							 	 	position:'absolut', right:'0', width:100}}, 
 							React.createElement("div", null, 
 								React.createElement("a", {title: "about", href: "about", onClick: this.toAbout}, "About")
 							), 
