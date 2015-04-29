@@ -117,6 +117,11 @@ function renderDropdown(service_table) {
 	'</div>';
 }
 
-document.getElementById('clarinservices').innerHTML = renderDropdown(service_list);
+var csdiv = document.getElementById('clarinservices');
+if (csdiv) {
+	csdiv.innerHTML = renderDropdown(service_list);
+} else if (console && console.warn) {
+	console.warn("To use the clarinservices module, please define a #clarinservices element");
+}
 
 })();

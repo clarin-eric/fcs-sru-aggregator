@@ -1,13 +1,10 @@
-/* clarin blue: rgb(0,64,111) #00406F; */
-/* clarin gold: rgb(128,107,82) #806A52; */
-
 .navbar-header a img{
 	float:left;
 	margin: 12px 10px 0 2px;
 	padding: 3px 3px;
 	border-radius: 50% 50%;
-	border: 1px solid #003f6e;
-	box-shadow: inset 0 0 3px #003f6e;
+	border: 1px solid #036;
+	box-shadow: inset 0 0 3px #036;
 }
 
 
@@ -23,7 +20,7 @@
 	float:left;
 	margin: 1px 1px;
 	padding: 1px 1px;
-	background-color: #003f6e;
+	background-color: #036;
 	border-radius: 50% 50%;
 	/*border: 1px solid #003f6e;*/
 	box-shadow: inset 0 0 1px white;
@@ -172,10 +169,7 @@ input, select, textarea {
 	border: 1px solid #ccc;
 }
 input:focus, select:focus, textarea:focus, button:focus, a:focus {
-  /*box-shadow: 0 0 5px #00406F !important;*/
-  /*border: 1px solid #00406F !important;*/
   box-shadow: 0 0 10px rgb(179,216,253) !important;
-  /*border: 1px solid rgb(179,216,253) !important;*/
   outline: none !important;
 }
 
@@ -257,7 +251,7 @@ div.corpus button {
 
 div.corpus .glyphicon {
 	font-size: 12px;
-	color: rgb(128,107,82); /*gold*/
+	color: #B27000;
 
 	-ms-touch-action: manipulation;
 	touch-action: manipulation;
@@ -270,11 +264,11 @@ div.corpus .glyphicon {
 
 div.corpus button .glyphicon.glyphicon-check {
 	font-size: 20px;
-	color: rgb(128,107,82); /*gold*/
+	color: #B27000;
 }
 div.corpus button .glyphicon.glyphicon-unchecked {
 	font-size: 20px;
-	color: rgb(0,64,111); /*blue*/
+	color: #036;
 }
 
 div.corpus .fa.fa-institution {
@@ -318,7 +312,7 @@ div.panel-title {
 }
 div.panel:hover .zoomResultButton {
 	color: white;
-	background-color: #00406F;
+	background-color: #036;
 	border: 1px solid black;
 }
 
@@ -354,7 +348,7 @@ div.panel-title span.institutionName{
 }
 
 .panel-body td.keyword {
-	color: #00406F;
+	color: #036;
 	font-weight: bold;
 	font-weight: bold;
 }
@@ -363,8 +357,6 @@ div.panel-title span.institutionName{
 	padding: 0 20px;
 	margin: 0 0 20px 0;
 	border: 1px solid #ddd;
-	/*border-left: 5px solid #806a52; /*brown*/
-	/*border-left: 5px solid rgb(191, 133, 64); /*other gold*/
 	border-left: 5px solid #00406F; /*blue*/
 	border-radius: 4px;
 }
@@ -374,8 +366,7 @@ div.panel-title span.institutionName{
 	padding: 10px 15px 4px;
 }
 .bs-callout .panel-title {
-	color: #806a52;
-	/*color: #222;*/
+	color: #B27000;
 }
 .panel-body {
 	border-top: 1px solid #ddd;
@@ -424,7 +415,7 @@ div.popover {
 .modal-body .corpusResults {
 	padding: 15px;
 	border: 1px solid #ddd;
-	border-left: 5px solid #00406F; /*blue*/
+	border-left: 5px solid #036;
 	border-radius: 4px;
 }
 

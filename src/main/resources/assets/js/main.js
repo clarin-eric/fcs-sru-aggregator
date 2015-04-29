@@ -2,7 +2,7 @@
 (function() {
 "use strict";
 
-var VERSION = window.MyAggregator.VERSION = "v.2.0.0-beta-43";
+var VERSION = window.MyAggregator.VERSION = "v.2.0.0-beta-44";
 
 var URLROOT = window.MyAggregator.URLROOT =
 	window.location.pathname.substring(0, window.location.pathname.indexOf("/",2)) ||
@@ -12,6 +12,28 @@ var PT = React.PropTypes;
 
 var ErrorPane = window.MyReact.ErrorPane;
 var AggregatorPage = window.MyAggregator.AggregatorPage;
+
+/**
+The FCS Aggregator UI is based on reactjs.
+- index.html: describes the general page structure, with a push-down footer;
+  on that structure the Main and Footer components are plugged.
+- main.jsx: defines the simple top components (Main, HelpPage, AboutPage, StatisticsPage)
+- search.jsx: defines
+	- the Corpora store of collections
+	- the AggregatorPage component which deals with search and displays the search results
+- corpora.jsx: defines the CorpusView, rendered when the user views the available collections
+- components.jsx: various general usage React components
+
+The top-most component, Main, tracks of the window's location URL and, depending on the value,
+  renders various components inside its frame:
+	- AggregatorPage is the view corresponding to the normal search UI (search bar and all)
+	  This is the most complex component.
+	- HelpPage renders the help page
+	- About renders the about page
+	- Statistics renders the stats page
+	- another URL, /Aggregator/embed, determines Main and AggregatorPage to render just the search bar.
+	  The embedded view is supposed to work like a YouTube embedded clip.
+*/
 
 var Main = React.createClass({displayName: 'Main',
 	componentWillMount: function() {
@@ -166,7 +188,7 @@ var Main = React.createClass({displayName: 'Main',
 								React.createElement("span", {className: "icon-bar"})
 							), 
 							React.createElement("a", {href: URLROOT, tabIndex: "-1"}, 
-								React.createElement("img", {src: "img/magglass1.png"})
+								React.createElement("img", {width: "28px", height: "28px", src: "img/magglass1.png"})
 							), 
 							React.createElement("a", {className: "navbar-brand", href: URLROOT, tabIndex: "-1"}, 
 								React.createElement("header", {className: "inline"}, " Content Search ")
@@ -527,33 +549,34 @@ var Footer = React.createClass({displayName: 'Footer',
 	},
 
 	render: function() {
-		var path = window.location.pathname.split('/');
-		if (path.length === 3 && path[2] === 'embed') {
-			return false;
-		}
-		return	(
-			React.createElement("div", {className: "container"}, 
-				React.createElement("div", {id: "CLARIN_footer_left"}, 
-						React.createElement("a", {title: "about", href: "about", onClick: this.toAbout}, 
-						React.createElement("span", {className: "glyphicon glyphicon-info-sign"}), 
-						React.createElement("span", null, VERSION)
-					)
-				), 
-				React.createElement("div", {id: "CLARIN_footer_middle"}, 
+		return (
+			React.createElement("div", {className: "container", style: {textAlign:'center'}}, 
+				React.createElement("div", {className: "row"}, 
 					React.createElement("a", {title: "CLARIN ERIC", href: "https://www.clarin.eu/"}, 
-					React.createElement("img", {src: "img/clarindLogo.png", alt: "CLARIN ERIC logo", style: {height:80}})
-					)
-				), 
-				React.createElement("div", {id: "CLARIN_footer_right"}, 
-					React.createElement("a", {title: "contact", href: "mailto:fcs@clarin.eu"}, 
-						React.createElement("span", {className: "glyphicon glyphicon-envelope"}), 
-						React.createElement("span", null, " Contact")
+						React.createElement("img", {src: "img/clarindLogo.png", alt: "CLARIN ERIC logo", style: {height:60}})
+					), 
+					React.createElement("div", {className: "float-right", style: {position:'relative', float:'right'}}, 
+						React.createElement("div", {style: {margin:4, fontSize:12, textAlign:'right',
+							 	 	position:'absolute', right:'0', width:100}}, 
+							React.createElement("div", null, 
+								React.createElement("a", {title: "about", href: "about", onClick: this.toAbout}, "About")
+							), 
+							React.createElement("div", null, 
+								React.createElement("a", {title: "contact", href: "mailto:fcs@clarin.eu"}, "Contact")
+							), 
+							React.createElement("div", {style: {color:'#777'}}, VERSION)
+						)
 					)
 				)
 			)
 		);
 	}
 });
+
+function isEmbeddedView() {
+	var path = window.location.pathname.split('/');
+	return (path.length >= 3 && path[2] === 'embed');
+}
 
 function endsWith(str, suffix) {
     return str.indexOf(suffix, str.length - suffix.length) !== -1;
@@ -582,7 +605,11 @@ var routeFromLocation = function() {
 };
 
 var main = React.render(React.createElement(Main, null),  document.getElementById('body'));
-React.render(React.createElement(Footer, null), document.getElementById('footer') );
+if (!isEmbeddedView()) {
+	React.render(React.createElement(Footer, null), document.getElementById('footer') );
+} else if (jQuery) {
+	jQuery("#footer").remove();
+}
 
 window.onpopstate = routeFromLocation.bind(main);
 window.MyAggregator.main = main;
