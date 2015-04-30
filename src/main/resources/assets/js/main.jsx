@@ -187,10 +187,8 @@ var Main = React.createClass({
 								<span className="icon-bar"></span>
 								<span className="icon-bar"></span>
 							</button>
-							<a href={URLROOT} tabIndex="-1">
-								<img width="28px" height="28px" src="img/magglass1.png"/>
-							</a>
 							<a className="navbar-brand" href={URLROOT} tabIndex="-1">
+								<img width="28px" height="28px" src="img/magglass1.png"/>
 								<header className="inline"> Content Search </header>
 							</a>
 						</div>
@@ -552,19 +550,20 @@ var Footer = React.createClass({
 		return (
 			<div className="container" style={{textAlign:'center'}}>
 				<div className="row">
+					<div style={{position:'relative', float:'left'}}>
+						<div className="leftist" style={{position:'absolute'}}>
+							<div>
+								<a title="about" href="about" onClick={this.toAbout}>About</a>
+							</div>
+							<div style={{color:'#777'}}>{VERSION}</div>
+						</div>
+					</div>
 					<a title="CLARIN ERIC" href="https://www.clarin.eu/">
 						<img src="img/clarindLogo.png" alt="CLARIN ERIC logo" style={{height:60}}/>
 					</a>
 					<div style={{position:'relative', float:'right'}}>
-						<div style={{margin:4, fontSize:12, textAlign:'right',
-							 	 	position:'absolute', right:'0', width:100}}>
-							<div>
-								<a title="about" href="about" onClick={this.toAbout}>About</a>
-							</div>
-							<div>
-								<a title="contact" href="mailto:fcs@clarin.eu">Contact</a>
-							</div>
-							<div style={{color:'#777'}}>{VERSION}</div>
+						<div className="rightist" style={{position:'absolute', right:'0'}}>
+							<a title="contact" href="mailto:fcs@clarin.eu">Contact</a>
 						</div>
 					</div>
 				</div>

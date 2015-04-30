@@ -24,17 +24,10 @@ div.navbar-header {
   overflow: hidden;
 }
 
-.navbar a.navbar-brand {
+.navbar a.navbar-brand, #footer a {
   color: #036;
 }
-.navbar a.navbar-brand:hover {
-  color: #259;
-}
-
-#footer a {
-  color: #036;
-}
-#footer a:hover {
+.navbar a.navbar-brand:hover, #footer a:hover {
   color: #259;
 }
 
@@ -174,4 +167,19 @@ html body ul#nav ul ul {
 #footer {
   border-top: 1px solid #e7e7e7;
   background-color: #f8f8f8;
+  font-size: 14px;
+}
+
+#footer .leftist, #footer .rightist {
+  margin: 21px 0;
+  padding: 0 4px;
+  width: 120px;
+}
+
+#footer .leftist {
+  text-align: left;
+}
+
+#footer .rightist {
+  text-align: right;
 }

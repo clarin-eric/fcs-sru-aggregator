@@ -2,7 +2,7 @@
 (function() {
 "use strict";
 
-var VERSION = window.MyAggregator.VERSION = "v.2.0.0-beta-44";
+var VERSION = window.MyAggregator.VERSION = "v.2.0.0-beta-45";
 
 var URLROOT = window.MyAggregator.URLROOT =
 	window.location.pathname.substring(0, window.location.pathname.indexOf("/",2)) ||
@@ -187,10 +187,8 @@ var Main = React.createClass({displayName: 'Main',
 								React.createElement("span", {className: "icon-bar"}), 
 								React.createElement("span", {className: "icon-bar"})
 							), 
-							React.createElement("a", {href: URLROOT, tabIndex: "-1"}, 
-								React.createElement("img", {width: "28px", height: "28px", src: "img/magglass1.png"})
-							), 
 							React.createElement("a", {className: "navbar-brand", href: URLROOT, tabIndex: "-1"}, 
+								React.createElement("img", {width: "28px", height: "28px", src: "img/magglass1.png"}), 
 								React.createElement("header", {className: "inline"}, " Content Search ")
 							)
 						), 
@@ -552,19 +550,20 @@ var Footer = React.createClass({displayName: 'Footer',
 		return (
 			React.createElement("div", {className: "container", style: {textAlign:'center'}}, 
 				React.createElement("div", {className: "row"}, 
-					React.createElement("a", {title: "CLARIN ERIC", href: "https://www.clarin.eu/"}, 
-						React.createElement("img", {src: "img/clarindLogo.png", alt: "CLARIN ERIC logo", style: {height:60}})
-					), 
-					React.createElement("div", {style: {position:'relativ', float:'righ', display:'inline'}}, 
-						React.createElement("div", {style: {margin:4, fontSize:12, textAlign:'right',
-							 	 	position:'absolut', right:'0', width:100}}, 
+					React.createElement("div", {style: {position:'relative', float:'left'}}, 
+						React.createElement("div", {className: "leftist", style: {position:'absolute'}}, 
 							React.createElement("div", null, 
 								React.createElement("a", {title: "about", href: "about", onClick: this.toAbout}, "About")
 							), 
-							React.createElement("div", null, 
-								React.createElement("a", {title: "contact", href: "mailto:fcs@clarin.eu"}, "Contact")
-							), 
 							React.createElement("div", {style: {color:'#777'}}, VERSION)
+						)
+					), 
+					React.createElement("a", {title: "CLARIN ERIC", href: "https://www.clarin.eu/"}, 
+						React.createElement("img", {src: "img/clarindLogo.png", alt: "CLARIN ERIC logo", style: {height:60}})
+					), 
+					React.createElement("div", {style: {position:'relative', float:'right'}}, 
+						React.createElement("div", {className: "rightist", style: {position:'absolute', right:'0'}}, 
+							React.createElement("a", {title: "contact", href: "mailto:fcs@clarin.eu"}, "Contact")
 						)
 					)
 				)
