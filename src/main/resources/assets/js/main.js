@@ -161,11 +161,7 @@ var Main = React.createClass({displayName: 'Main',
 					)
 				), 
 				React.createElement("ul", {className: "nav navbar-nav navbar-right"}, 
-					React.createElement("li", null, 
-						React.createElement("div", {id: "clarinservices", style: {padding:4}})
-					)
-				), 
-				React.createElement("ul", {className: "nav navbar-nav navbar-right"}, 
+					React.createElement("li", null, " ", React.createElement("div", {id: "clarinservices", style: {padding:4}}), " "), 
 					this.renderLogin()
 				)
 			)

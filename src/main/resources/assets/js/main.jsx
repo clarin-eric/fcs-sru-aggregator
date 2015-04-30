@@ -161,11 +161,7 @@ var Main = React.createClass({
 					</li>
 				</ul>
 				<ul className="nav navbar-nav navbar-right">
-					<li>
-						<div id="clarinservices" style={{padding:4}}/>
-					</li>
-				</ul>
-				<ul className="nav navbar-nav navbar-right">
+					<li> <div id="clarinservices" style={{padding:4}}/> </li>
 					{this.renderLogin()}
 				</ul>
 			</div>

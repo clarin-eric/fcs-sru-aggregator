@@ -8,7 +8,7 @@
  * 3. inline bootstrap dropdown plugin, trimmed
  * 4. calling `main`
  */
-
+var more_img = "img/more-clarin-services.png";
 var service_list = [
 	[
 		{
@@ -110,16 +110,10 @@ function renderRow(services) {
 function renderDropdown(service_table) {
 	var rows = service_list.map(renderRow).join('');
 	var tablediv = "<div><table><tbody>" + rows + "</tbody></table></div>";
-			// '<span class="glyphicon glyphicon-th"></span>'+
-			// '<img src="img/moreapp60.png"></img>'+
 	return '<div class="dropdown">' +
 		'<button class="btn dropdown-toggle" type="button"'+
 				' id="dropdown-clarinservices" data-toggle="dropdown" aria-expanded="true">'+
-					'<div id="clarinmore"> '+
-						'<div></div> <div></div> <div></div> '+
-						'<div></div> <div></div> <div></div> '+
-						'<div></div> <div></div> <div></div> '+
-					 '</div>'+
+			'<div id="clarinmore"><img src="'+more_img+'"></div> '+
 		'</button>'+
 		'<ul class="dropdown-menu" role="menu" aria-labelledby="dropdown-clarinservices">'+
 			tablediv +
