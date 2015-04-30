@@ -39,48 +39,69 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.eclipse.jetty.server.session.SessionHandler;
 import org.slf4j.LoggerFactory;
 
-/**
- * Main component of the Aggregator application intended to provide users access
- * to CLARIN-FCS resources.
+/**  ---- FCS AGGREGATOR OVERVIEW ----
  *
- * The webapp base URL corresponds to the default behavior of displaying the
+ * The Aggregator is intended to provide users access to CLARIN-FCS resources.
+ * The app has two components, the server (this Java code) and the client (HTML, JS)
+ *
+ * The server is built on Java with Dropwizard and has the following functions:
+ * - it gets requests from the user-agent (browser) for html, css, js files
+ *   and serves them. This is done automatically by Dropwizard.
+ * - it gets REST requests from the client (the JS code in browser)
+ *   and serves them. See the RestService class
+ * - using an executor service, it scans periodically for FCS endpoints and
+ *   gathers informations about the corpora stored at each one. See the scan
+ *   package and ScanCrawl class
+ * - when prompted by the user, through a REST call, it searches the corpora
+ *   by sending requests to all the appropriate endpoints. See the search package
+ *   and especially the Search class.
+ *   Note: because sending too many concurrent requests to the FCS endpoints is
+ *         considered poor manners, the communication with the endpoints
+ *         is done by the ThrottledClient class, which queues the requests
+ *         if necessary.
+ *
+ * The client is a javascript React + bootstrap application running in the browser.
+ * It displays the user interface and communicates with the server passing the
+ * appropriate requests from the user as REST calls. The data format is JSON.
+ *
+ * The base URL corresponds to the default behavior of displaying the
  * main aggregator page, where the user can enter query, select the resources of
  * CQL endpoints (as specified in the Clarin center registry), and search in
  * these resources. The endpoints/resources selection is optional, by default
  * all the endpoints root resources are selected.
  *
- * If invoked with 'x-aggregation-context' and 'query' parameter, the aggregator
- * will pre-select provided resources and fill in the query field. This
- * mechanism is currently used by VLO.
+ * If invoked by a POST request with 'x-aggregation-context' and
+ * 'query' parameters, the aggregator will pre-select provided resources and
+ * fill in the query field. This mechanism is currently used by VLO.
  *
  * Example: POST
  * http://weblicht.sfs.uni-tuebingen.de/Aggregator HTTP/1.1
  * query = bellen & x-aggregation-context =
  * {"http://fedora.clarin-d.uni-saarland.de/sru/":["hdl:11858/00-246C-0000-0008-5F2A-0"]}
  *
- * If the Aggregator web page has the URL query string parameter 'mode'
- * set to the string 'search', and the 'query' parameter is set,
- * then the aggregator search results for this query are immediately displayed
- * (i.e. users don't need to click 'search' in the aggregator page).
- * This feature has been requested initially by Martin Wynne from CLARIN ERIC
+ * If the URL query string parameter 'mode' is set to the string 'search',
+ * and if the 'query' parameter is set, then the aggregator search results for
+ * this query are immediately displayed (i.e. users don't need to click
+ * 'search' in the aggregator page). This feature has been requested initially
+ * by Martin Wynne from CLARIN ERIC
+ *
+ * ---- Things Still To Be Done or To Be Considered ----
+ *
+ *     - Phonetic search
+ *     - Export search results to personal workspace using oauth
+ *     - Websockets instead of clients polling the server
+ *     - When having multiple hits in the same result,
+ *       show the hit in multiple rows, linked visually
+ *     - Optimise page load
+ *     - Expand parents of x-aggregator-context selected corpus
+ */
+
+/**
+ * This is the main class of the Aggregator, caring about initialization
+ * and global access to common data.
  *
  * @author Yana Panchenko
  * @author edima
- *
- * TODO: add some basic docs
- *
- * TODO: Export search results to personal workspace using oauth
- *
- * TODO: websockets
- *
- * TODO: show multiple hits on the same result in multiple rows, linked visually
- *
- * TODO: optimise page load
- *
- * TODO: test it in IE, other browsers
- *
- * TODO: expand parents of x-aggregator-context selected corpus
- *
  */
 public class Aggregator extends Application<AggregatorConfiguration> {
 
