@@ -2,7 +2,7 @@
 (function() {
 "use strict";
 
-var VERSION = window.MyAggregator.VERSION = "v.2.0.0-beta-47";
+var VERSION = window.MyAggregator.VERSION = "v.2.0.0-beta-48";
 
 var URLROOT = window.MyAggregator.URLROOT =
 	window.location.pathname.substring(0, window.location.pathname.indexOf("/",2)) ||
@@ -460,6 +460,23 @@ var AboutPage = React.createClass({displayName: 'AboutPage',
 						React.createElement("h1", {style: {padding:15}}, "About"), 
 
 						React.createElement("div", {className: "col-md-6"}, 
+						React.createElement("h3", null, "People"), 
+
+						React.createElement("ul", null, 
+							React.createElement("li", null, "Emanuel Dima"), 
+							React.createElement("li", null, "Yana Panchenko"), 
+							React.createElement("li", null, "Oliver Schonefeld"), 
+							React.createElement("li", null, "Dieter Van Uytvanck")
+						), 
+
+						React.createElement("h3", null, "Statistics"), 
+						React.createElement("button", {type: "button", className: "btn btn-default btn-lg", onClick: function() {main.toStatistics(true);}}, 
+							React.createElement("span", {className: "glyphicon glyphicon-cog", 'aria-hidden': "true"}, " "), 
+							"View server log"
+						)
+						), 
+
+						React.createElement("div", {className: "col-md-6"}, 
 						React.createElement("h3", null, "Technology"), 
 
 						React.createElement("p", null, "The Aggregator uses the following software components:"), 
@@ -521,15 +538,8 @@ var AboutPage = React.createClass({displayName: 'AboutPage',
 							"and licensed under", 
 							React.createElement("a", {href: "http://creativecommons.org/licenses/by/3.0/", title: "Creative Commons BY 3.0"}, " CC BY 3.0 ")
 						)
-						), 
+						)
 
-						React.createElement("div", {className: "col-md-6"}, 
-						React.createElement("h3", null, "Statistics"), 
-						React.createElement("button", {type: "button", className: "btn btn-default btn-lg", onClick: function() {main.toStatistics(true);}}, 
-							React.createElement("span", {className: "glyphicon glyphicon-cog", 'aria-hidden': "true"}, " "), 
-							"View server log"
-						)
-						)
 					)
 				);
 	}

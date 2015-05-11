@@ -2,7 +2,7 @@
 (function() {
 "use strict";
 
-var VERSION = window.MyAggregator.VERSION = "v.2.0.0-beta-47";
+var VERSION = window.MyAggregator.VERSION = "v.2.0.0-beta-48";
 
 var URLROOT = window.MyAggregator.URLROOT =
 	window.location.pathname.substring(0, window.location.pathname.indexOf("/",2)) ||
@@ -460,6 +460,23 @@ var AboutPage = React.createClass({
 						<h1 style={{padding:15}}>About</h1>
 
 						<div className="col-md-6">
+						<h3>People</h3>
+
+						<ul>
+							<li>Emanuel Dima</li>
+							<li>Yana Panchenko</li>
+							<li>Oliver Schonefeld</li>
+							<li>Dieter Van Uytvanck</li>
+						</ul>
+
+						<h3>Statistics</h3>
+						<button type="button" className="btn btn-default btn-lg" onClick={function() {main.toStatistics(true);}} >
+							<span className="glyphicon glyphicon-cog" aria-hidden="true"> </span>
+							View server log
+						</button>
+						</div>
+
+						<div className="col-md-6">
 						<h3>Technology</h3>
 
 						<p>The Aggregator uses the following software components:</p>
@@ -523,13 +540,6 @@ var AboutPage = React.createClass({
 						</p>
 						</div>
 
-						<div className="col-md-6">
-						<h3>Statistics</h3>
-						<button type="button" className="btn btn-default btn-lg" onClick={function() {main.toStatistics(true);}} >
-							<span className="glyphicon glyphicon-cog" aria-hidden="true"> </span>
-							View server log
-						</button>
-						</div>
 					</div>
 				</div>;
 	}
