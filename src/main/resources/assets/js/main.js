@@ -130,7 +130,7 @@ var Main = React.createClass({displayName: 'Main',
 				window.history.pushState({page:pageFnName}, '', URLROOT+"/"+pageFnName);
 			}
 			this.setState({navbarPageFn: pageFn});
-			console.log("new page: " + document.location + ", name: " + pageFnName);
+			// console.log("new page: " + document.location + ", name: " + pageFnName);
 		}
 	},
 
