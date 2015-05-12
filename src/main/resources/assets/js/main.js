@@ -44,7 +44,6 @@ var Main = React.createClass({displayName: 'Main',
 		return {
 			navbarCollapse: false,
 			navbarPageFn: this.renderAggregator,
-			// navbarPageFn: this.renderStatistics,
 			errorMessages: [],
 		};
 	},
@@ -111,7 +110,7 @@ var Main = React.createClass({displayName: 'Main',
 	},
 
 	renderEmbedded: function() {
-		return React.createElement(AggregatorPage, {ajax: this.ajax, embedded: true});
+		return React.createElement(AggregatorPage, {ajax: this.ajax, error: this.error, embedded: true});
 	},
 
 	getPageFns: function() {
@@ -131,7 +130,7 @@ var Main = React.createClass({displayName: 'Main',
 				window.history.pushState({page:pageFnName}, '', URLROOT+"/"+pageFnName);
 			}
 			this.setState({navbarPageFn: pageFn});
-			// console.log("new page: " + document.location + ", name: " + pageFnName);
+			console.log("new page: " + document.location + ", name: " + pageFnName);
 		}
 	},
 

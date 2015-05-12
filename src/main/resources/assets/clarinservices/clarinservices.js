@@ -130,8 +130,8 @@ function main() {
  * We need to make sure $ is not changed after the execution of this code.
  ******************************************************************************/
 
-if (typeof $ != 'undefined') {
-	var old$ = $;
+if (typeof window.$ != 'undefined') {
+	var old$ = window.$;
 }
 
 /* Zepto v1.1.6 - zepto event ajax form ie - zeptojs.com/license */

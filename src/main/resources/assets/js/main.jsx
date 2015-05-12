@@ -44,7 +44,6 @@ var Main = React.createClass({
 		return {
 			navbarCollapse: false,
 			navbarPageFn: this.renderAggregator,
-			// navbarPageFn: this.renderStatistics,
 			errorMessages: [],
 		};
 	},
@@ -111,7 +110,7 @@ var Main = React.createClass({
 	},
 
 	renderEmbedded: function() {
-		return <AggregatorPage ajax={this.ajax} embedded={true}/>;
+		return <AggregatorPage ajax={this.ajax} error={this.error} embedded={true}/>;
 	},
 
 	getPageFns: function() {
