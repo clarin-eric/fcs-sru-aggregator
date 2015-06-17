@@ -501,7 +501,8 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({dis
 			var newurl = !query ? "#" :
 				(window.MyAggregator.URLROOT + "?" + encodeQueryData({query:query, mode:'search'}));
 			return (
-				React.createElement("a", {className: "btn btn-default input-lg", type: "button", target: "_blank", href: newurl}, 
+				React.createElement("a", {className: "btn btn-default input-lg", style: {paddingTop:13}, 
+					type: "button", target: "_blank", href: newurl}, 
 					React.createElement("i", {className: "glyphicon glyphicon-search"})
 				)
 			);
@@ -550,7 +551,7 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({dis
 									React.createElement("span", null)
 								), 
 
-								React.createElement("div", {className: "input-group-btn"}, 
+								React.createElement("div", {className: "input-group-btn hidden-xxs"}, 
 									React.createElement("ul", {ref: "layerDropdownMenu", className: "dropdown-menu"}, 
 										 	layers.map(function(l) {
 												var cls = l.disabled ? 'disabled':'';
@@ -568,16 +569,14 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({dis
 
 							), 
 
-							 this.props.embedded ? false :
-							React.createElement("div", {className: "input-group"}, 
+							React.createElement("div", {className: "input-group hidden-xs"}, 
 								React.createElement("span", {className: "input-group-addon nobkg"}, "in"), 
 								React.createElement("button", {type: "button", className: "btn btn-default", onClick: this.toggleCorpusSelection}, 
 									this.state.corpora.getSelectedMessage(), " ", React.createElement("span", {className: "caret"})
 								)
 							), 
 
-							 this.props.embedded ? false :
-							React.createElement("div", {className: "input-group"}, 
+							React.createElement("div", {className: "input-group hidden-xs hidden-sm"}, 
 								React.createElement("span", {className: "input-group-addon nobkg"}, "and show up to"), 
 								React.createElement("div", {className: "input-group-btn"}, 
 									React.createElement("input", {type: "number", className: "form-control input", min: "10", max: "250", 

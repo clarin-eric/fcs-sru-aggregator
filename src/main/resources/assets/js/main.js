@@ -2,7 +2,7 @@
 (function() {
 "use strict";
 
-var VERSION = window.MyAggregator.VERSION = "v.2.0.0-beta-50";
+var VERSION = window.MyAggregator.VERSION = "v.2.0.0-beta-51";
 
 var URLROOT = window.MyAggregator.URLROOT =
 	window.location.pathname.substring(0, window.location.pathname.indexOf("/",2)) ||
@@ -577,6 +577,25 @@ var Footer = React.createClass({displayName: 'Footer',
 	}
 });
 
+var EmbeddedFooter = React.createClass({displayName: 'EmbeddedFooter',
+	render: function() {
+		return (
+			React.createElement("div", {className: "container", style: {textAlign:'center'}}, 
+				React.createElement("div", {className: "row"}, 
+					React.createElement("div", {style: {position:'relative', float:'right'}}, 
+						React.createElement("div", {className: "rightist", style: {position:'absolute', right:0, width:150}}, 
+							React.createElement("a", {href: URLROOT, target: "_blank", tabIndex: "-1"}, 
+								React.createElement("img", {width: "28px", height: "28px", src: "img/magglass1.png"}), 
+								React.createElement("header", {className: "inline float-left"}, " Content Search ")
+							)
+						)
+					)
+				)
+			)
+		);
+	}
+});
+
 function isEmbeddedView() {
 	var path = window.location.pathname.split('/');
 	return (path.length >= 3 && path[2] === 'embed');
@@ -611,8 +630,9 @@ var routeFromLocation = function() {
 var main = React.render(React.createElement(Main, null),  document.getElementById('body'));
 if (!isEmbeddedView()) {
 	React.render(React.createElement(Footer, null), document.getElementById('footer') );
-} else if (jQuery) {
-	jQuery("#footer").remove();
+} else {
+	React.render(React.createElement(EmbeddedFooter, null), document.getElementById('footer') );
+	if (jQuery) { jQuery('body, #footer').addClass('embedded'); }
 }
 
 window.onpopstate = routeFromLocation.bind(main);

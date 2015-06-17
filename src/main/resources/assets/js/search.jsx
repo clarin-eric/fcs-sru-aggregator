@@ -501,7 +501,8 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({
 			var newurl = !query ? "#" :
 				(window.MyAggregator.URLROOT + "?" + encodeQueryData({query:query, mode:'search'}));
 			return (
-				<a className="btn btn-default input-lg" type="button" target="_blank" href={newurl}>
+				<a className="btn btn-default input-lg" style={{paddingTop:13}}
+					type="button" target="_blank" href={newurl}>
 					<i className="glyphicon glyphicon-search"></i>
 				</a>
 			);
@@ -550,7 +551,7 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({
 									<span/>
 								</div>
 
-								<div className="input-group-btn">
+								<div className="input-group-btn hidden-xxs">
 									<ul ref="layerDropdownMenu" className="dropdown-menu">
 										{ 	layers.map(function(l) {
 												var cls = l.disabled ? 'disabled':'';
@@ -568,16 +569,14 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({
 
 							</div>
 
-							{ this.props.embedded ? false :
-							<div className="input-group">
+							<div className="input-group hidden-xs">
 								<span className="input-group-addon nobkg">in</span>
 								<button type="button" className="btn btn-default" onClick={this.toggleCorpusSelection}>
 									{this.state.corpora.getSelectedMessage()} <span className="caret"/>
 								</button>
-							</div> }
+							</div>
 
-							{ this.props.embedded ? false :
-							<div className="input-group">
+							<div className="input-group hidden-xs hidden-sm">
 								<span className="input-group-addon nobkg">and show up to</span>
 								<div className="input-group-btn">
 									<input type="number" className="form-control input" min="10" max="250"
@@ -586,7 +585,7 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({
 										onKeyPress={this.stop}/>
 								</div>
 								<span className="input-group-addon nobkg">hits</span>
-							</div> }
+							</div>
 						</form>
 					</div>
 				</div>

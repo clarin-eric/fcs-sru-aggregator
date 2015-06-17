@@ -2,7 +2,7 @@
 (function() {
 "use strict";
 
-var VERSION = window.MyAggregator.VERSION = "v.2.0.0-beta-50";
+var VERSION = window.MyAggregator.VERSION = "v.2.0.0-beta-51";
 
 var URLROOT = window.MyAggregator.URLROOT =
 	window.location.pathname.substring(0, window.location.pathname.indexOf("/",2)) ||
@@ -577,6 +577,25 @@ var Footer = React.createClass({
 	}
 });
 
+var EmbeddedFooter = React.createClass({
+	render: function() {
+		return (
+			<div className="container" style={{textAlign:'center'}}>
+				<div className="row">
+					<div style={{position:'relative', float:'right'}}>
+						<div className="rightist" style={{position:'absolute', right:0, width:150}}>
+							<a href={URLROOT} target="_blank" tabIndex="-1">
+								<img width="28px" height="28px" src="img/magglass1.png"/>
+								<header className="inline float-left"> Content Search </header>
+							</a>
+						</div>
+					</div>
+				</div>
+			</div>
+		);
+	}
+});
+
 function isEmbeddedView() {
 	var path = window.location.pathname.split('/');
 	return (path.length >= 3 && path[2] === 'embed');
@@ -611,8 +630,9 @@ var routeFromLocation = function() {
 var main = React.render(<Main />,  document.getElementById('body'));
 if (!isEmbeddedView()) {
 	React.render(<Footer />, document.getElementById('footer') );
-} else if (jQuery) {
-	jQuery("#footer").remove();
+} else {
+	React.render(<EmbeddedFooter />, document.getElementById('footer') );
+	if (jQuery) { jQuery('body, #footer').addClass('embedded'); }
 }
 
 window.onpopstate = routeFromLocation.bind(main);

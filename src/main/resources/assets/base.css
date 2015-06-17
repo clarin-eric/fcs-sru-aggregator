@@ -1,4 +1,10 @@
-.navbar-header a img{
+@media (max-width:360px){.hidden-xxs{display:none!important}}
+
+body.embedded #footer {
+	background-color: #f5f5f5;
+}
+
+.navbar-header a img, #footer.embedded a img {
 	float:left;
 	margin: -3px 5px 0 2px;
 	padding: 3px 3px;
