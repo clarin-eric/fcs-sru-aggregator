@@ -12,7 +12,7 @@ var Panel = window.MyReact.Panel;
 
 /////////////////////////////////
 
-var CorpusView = window.MyAggregator.CorpusView = React.createClass({displayName: 'CorpusView',
+var CorpusView = window.MyAggregator.CorpusView = React.createClass({displayName: "CorpusView",
 	propTypes: {
 		corpora: PT.object.isRequired,
 		languageMap: PT.object.isRequired,
@@ -122,8 +122,8 @@ var CorpusView = window.MyAggregator.CorpusView = React.createClass({displayName
 	renderCheckbox: function(corpus) {
 		return	React.createElement("button", {className: "btn btn-default"}, 
 					 corpus.selected ?
-						React.createElement("span", {className: "glyphicon glyphicon-check", 'aria-hidden': "true"}) :
-						React.createElement("span", {className: "glyphicon glyphicon-unchecked", 'aria-hidden': "true"})
+						React.createElement("span", {className: "glyphicon glyphicon-check", "aria-hidden": "true"}) :
+						React.createElement("span", {className: "glyphicon glyphicon-unchecked", "aria-hidden": "true"})
 					
 				);
 	},
@@ -135,8 +135,8 @@ var CorpusView = window.MyAggregator.CorpusView = React.createClass({displayName
 		return 	React.createElement("div", {className: "expansion-handle", style: {}}, 
 					React.createElement("a", null, 
 						corpus.expanded ?
-							React.createElement("span", {className: "glyphicon glyphicon-minus", 'aria-hidden': "true"}):
-							React.createElement("span", {className: "glyphicon glyphicon-plus", 'aria-hidden': "true"}), 
+							React.createElement("span", {className: "glyphicon glyphicon-minus", "aria-hidden": "true"}):
+							React.createElement("span", {className: "glyphicon glyphicon-plus", "aria-hidden": "true"}), 
 						
 						corpus.expanded ? " Collapse ":" Expand ", " (", corpus.subCorpora.length, " subcollections)"
 					)
@@ -244,7 +244,7 @@ var CorpusView = window.MyAggregator.CorpusView = React.createClass({displayName
 	}
 });
 
-var SearchCorpusBox = React.createClass({displayName: 'SearchCorpusBox',
+var SearchCorpusBox = React.createClass({displayName: "SearchCorpusBox",
 	propTypes: {
 		search: PT.func.isRequired,
 	},

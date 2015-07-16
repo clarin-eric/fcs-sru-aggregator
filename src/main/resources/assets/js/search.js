@@ -208,7 +208,7 @@ function encodeQueryData(data)
 }
 
 
-var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({displayName: 'AggregatorPage',
+var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({displayName: "AggregatorPage",
 	propTypes: {
 		ajax: PT.func.isRequired,
 		error: PT.func.isRequired,
@@ -562,7 +562,7 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({dis
 										
 									), 
 									React.createElement("button", {className: "form-control btn btn-default", 
-											'aria-expanded': "false", 'data-toggle': "dropdown"}, 
+											"aria-expanded": "false", "data-toggle": "dropdown"}, 
 										layer.name, " ", React.createElement("span", {className: "caret"})
 									)
 								)
@@ -628,7 +628,7 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({dis
 
 /////////////////////////////////
 
-var LanguageSelector = React.createClass({displayName: 'LanguageSelector',
+var LanguageSelector = React.createClass({displayName: "LanguageSelector",
 	propTypes: {
 		anyLanguage: PT.array.isRequired,
 		languageMap: PT.object.isRequired,
@@ -820,8 +820,8 @@ var ResultMixin = window.MyReact.ResultMixin = {
 	renderDownloadLinks: function(corpusId) {
 		return (
 			React.createElement("div", {className: "dropdown"}, 
-				React.createElement("button", {className: "btn btn-flat", 'aria-expanded': "false", 'data-toggle': "dropdown"}, 
-					React.createElement("span", {className: "glyphicon glyphicon-download-alt", 'aria-hidden': "true"}), 
+				React.createElement("button", {className: "btn btn-flat", "aria-expanded": "false", "data-toggle": "dropdown"}, 
+					React.createElement("span", {className: "glyphicon glyphicon-download-alt", "aria-hidden": "true"}), 
 					" ", " Download ", " ", 
 					React.createElement("span", {className: "caret"})
 				), 
@@ -842,8 +842,8 @@ var ResultMixin = window.MyReact.ResultMixin = {
 	renderToWeblichtLinks: function(corpusId, forceLanguage, error) {
 		return (
 			React.createElement("div", {className: "dropdown"}, 
-				React.createElement("button", {className: "btn btn-flat", 'aria-expanded': "false", 'data-toggle': "dropdown"}, 
-					React.createElement("span", {className: "glyphicon glyphicon-export", 'aria-hidden': "true"}), 
+				React.createElement("button", {className: "btn btn-flat", "aria-expanded": "false", "data-toggle": "dropdown"}, 
+					React.createElement("span", {className: "glyphicon glyphicon-export", "aria-hidden": "true"}), 
 					" ", " Use Weblicht ", " ", 
 					React.createElement("span", {className: "caret"})
 				), 
@@ -862,7 +862,7 @@ var ResultMixin = window.MyReact.ResultMixin = {
 
 };
 
-var ZoomedResult = React.createClass({displayName: 'ZoomedResult',
+var ZoomedResult = React.createClass({displayName: "ZoomedResult",
 	propTypes: {
 		corpusHit: PT.object,
 		nextResults: PT.func.isRequired,
@@ -908,7 +908,7 @@ var ZoomedResult = React.createClass({displayName: 'ZoomedResult',
 		if (!moreResults)
 			return React.createElement("span", {style: {fontStyle:'italic'}}, "No other results available for this query");
 		return	React.createElement("button", {className: "btn btn-default", onClick: this.nextResults}, 
-					React.createElement("span", {className: "glyphicon glyphicon-option-horizontal", 'aria-hidden': "true"}), " More Results"
+					React.createElement("span", {className: "glyphicon glyphicon-option-horizontal", "aria-hidden": "true"}), " More Results"
 				);
 	},
 
@@ -968,7 +968,7 @@ var ZoomedResult = React.createClass({displayName: 'ZoomedResult',
 	},
 });
 
-var Results = React.createClass({displayName: 'Results',
+var Results = React.createClass({displayName: "Results",
 	propTypes: {
 		collhits: PT.object.isRequired,
 		searchedLanguage: PT.array.isRequired,
@@ -1016,10 +1016,10 @@ var Results = React.createClass({displayName: 'Results',
 					collhits.inProgress > 0 ?
 						React.createElement("div", {className: "progress", style: {marginBottom:10}}, 
 							React.createElement("div", {className: "progress-bar progress-bar-striped active", role: "progressbar", 
-								'aria-valuenow': percents, 'aria-valuemin': "0", 'aria-valuemax': "100", style: styleperc}), 
+								"aria-valuenow": percents, "aria-valuemin": "0", "aria-valuemax": "100", style: styleperc}), 
 							percents > 2 ? false :
 								React.createElement("div", {className: "progress-bar progress-bar-striped active", role: "progressbar", 
-									'aria-valuenow': "100", 'aria-valuemin': "0", 'aria-valuemax': "100", 
+									"aria-valuenow": "100", "aria-valuemin": "0", "aria-valuemax": "100", 
 									style: {width: '100%', backgroundColor:'#888'}})
 							
 						) :

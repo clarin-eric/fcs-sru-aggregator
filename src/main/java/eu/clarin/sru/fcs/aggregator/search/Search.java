@@ -16,6 +16,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.slf4j.LoggerFactory;
 
 /**
@@ -23,6 +25,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Yana Panchenko
  * @author edima
+ * @author ljo
  */
 public class Search {
 
@@ -40,6 +43,7 @@ public class Search {
 	private final String searchLanguage;
 	private final List<Result> results = Collections.synchronizedList(new ArrayList<Result>());
 	private final Statistics statistics;
+        private final Pattern wsPattern = Pattern.compile("\\s");
 
 	public Search(ThrottledClient searchClient,
 			SRUVersion version,
@@ -49,7 +53,7 @@ public class Search {
 		this.searchClient = searchClient;
 		this.version = version;
 		this.id = counter.getAndIncrement();
-		this.query = searchString;
+		this.query = quoteIfMultiWordExpression(searchString);
 		this.searchLanguage = searchLanguage;
 		this.statistics = statistics;
 		for (Corpus corpus : corpora) {
@@ -170,6 +174,15 @@ public class Search {
 
 	public String getQuery() {
 		return query;
+	}
+
+        private String quoteIfMultiWordExpression(String queryString) {
+	    Matcher matcher = wsPattern.matcher(queryString.trim());
+	    boolean wsFound = matcher.find();
+	    if (wsFound && !"\"".equals(queryString.charAt(0))) {
+		return "\"" + queryString + "\"";
+	    }
+	    return queryString;
 	}
 
 	public String getSearchLanguage() {
