@@ -8,7 +8,7 @@ var ReactTransitionGroup = React.addons.TransitionGroup;
 
 window.MyReact = {};
 
-var JQuerySlide = React.createClass({displayName: "JQuerySlide",
+var JQuerySlide = React.createClass({displayName: 'JQuerySlide',
 	componentWillEnter: function(callback){
 		var el = jQuery(this.getDOMNode());
 		el.css("display", "none");
@@ -29,7 +29,7 @@ var JQuerySlide = React.createClass({displayName: "JQuerySlide",
 });
 window.MyReact.JQuerySlide = JQuerySlide;
  
-var JQueryFade = React.createClass({displayName: "JQueryFade",
+var JQueryFade = React.createClass({displayName: 'JQueryFade',
 	componentWillEnter: function(callback){
 		var el = jQuery(this.getDOMNode());
 		el.css("display", "none");
@@ -44,7 +44,7 @@ var JQueryFade = React.createClass({displayName: "JQueryFade",
 });
 window.MyReact.JQueryFade = JQueryFade;
 
-window.MyReact.ErrorPane = React.createClass({displayName: "ErrorPane",
+window.MyReact.ErrorPane = React.createClass({displayName: 'ErrorPane',
 	propTypes: {
 		errorMessages: PT.array.isRequired,
 	},
@@ -81,12 +81,12 @@ window.MyReact.ModalMixin = {
 	},
 	renderModal: function(title, content) {
 		return (
-			React.createElement("div", {onClick: this.handleClick, className: "modal fade", role: "dialog", "aria-hidden": "true"}, 
+			React.createElement("div", {onClick: this.handleClick, className: "modal fade", role: "dialog", 'aria-hidden': "true"}, 
 				React.createElement("div", {className: "modal-dialog"}, 
 					React.createElement("div", {className: "modal-content"}, 
 						React.createElement("div", {className: "modal-header"}, 
-							React.createElement("button", {type: "button", className: "close", "data-dismiss": "modal"}, 
-								React.createElement("span", {"aria-hidden": "true"}, "×"), 
+							React.createElement("button", {type: "button", className: "close", 'data-dismiss': "modal"}, 
+								React.createElement("span", {'aria-hidden': "true"}, "×"), 
 								React.createElement("span", {className: "sr-only"}, "Close")
 							), 
 							React.createElement("h2", {className: "modal-title"}, title)
@@ -95,7 +95,7 @@ window.MyReact.ModalMixin = {
 							content
 						), 
 						React.createElement("div", {className: "modal-footer"}, 
-							React.createElement("button", {type: "button", className: "btn btn-default", "data-dismiss": "modal"}, "Close")
+							React.createElement("button", {type: "button", className: "btn btn-default", 'data-dismiss': "modal"}, "Close")
 						)
 					)
 				)
@@ -105,7 +105,7 @@ window.MyReact.ModalMixin = {
 };
 
 
-window.MyReact.Modal = React.createClass({displayName: "Modal",
+window.MyReact.Modal = React.createClass({displayName: 'Modal',
 	propTypes: {
 		title: PT.object.isRequired,
 	},
@@ -120,12 +120,12 @@ window.MyReact.Modal = React.createClass({displayName: "Modal",
 	},
 	render: function() {
 		return (
-			React.createElement("div", {onClick: this.handleClick, className: "modal fade", role: "dialog", "aria-hidden": "true"}, 
+			React.createElement("div", {onClick: this.handleClick, className: "modal fade", role: "dialog", 'aria-hidden': "true"}, 
 				React.createElement("div", {className: "modal-dialog"}, 
 					React.createElement("div", {className: "modal-content"}, 
 						React.createElement("div", {className: "modal-header"}, 
-							React.createElement("button", {type: "button", className: "close", "data-dismiss": "modal"}, 
-								React.createElement("span", {"aria-hidden": "true"}, "×"), 
+							React.createElement("button", {type: "button", className: "close", 'data-dismiss': "modal"}, 
+								React.createElement("span", {'aria-hidden': "true"}, "×"), 
 								React.createElement("span", {className: "sr-only"}, "Close")
 							), 
 							React.createElement("h2", {className: "modal-title"}, this.props.title)
@@ -134,7 +134,7 @@ window.MyReact.Modal = React.createClass({displayName: "Modal",
 							this.props.children
 						), 
 						React.createElement("div", {className: "modal-footer"}, 
-							React.createElement("button", {type: "button", className: "btn btn-default", "data-dismiss": "modal"}, "Close")
+							React.createElement("button", {type: "button", className: "btn btn-default", 'data-dismiss': "modal"}, "Close")
 						)
 					)
 				)
@@ -181,7 +181,7 @@ var PopoverMixin = window.MyReact.PopoverMixin = {
 	},	
 };
 
-window.MyReact.Popover = React.createClass({displayName: "Popover",
+window.MyReact.Popover = React.createClass({displayName: 'Popover',
 	propTypes: {
 		placement: PT.string,
 		title: PT.string,
@@ -201,7 +201,7 @@ window.MyReact.Popover = React.createClass({displayName: "Popover",
 	}
 });
 
-window.MyReact.InfoPopover = React.createClass({displayName: "InfoPopover",
+window.MyReact.InfoPopover = React.createClass({displayName: 'InfoPopover',
 	propTypes: {
 		title: PT.string.isRequired,
 	},
@@ -220,7 +220,7 @@ window.MyReact.InfoPopover = React.createClass({displayName: "InfoPopover",
 });
 
 
-window.MyReact.Panel = React.createClass({displayName: "Panel",
+window.MyReact.Panel = React.createClass({displayName: 'Panel',
 	propTypes: {
 		title:PT.object.isRequired,
 		info:PT.object.isRequired,
@@ -257,7 +257,7 @@ window.MyReact.Panel = React.createClass({displayName: "Panel",
 	}
 });
 
-window.MyReact.PanelGroup = React.createClass({displayName: "PanelGroup",
+window.MyReact.PanelGroup = React.createClass({displayName: 'PanelGroup',
 	render: function() {
 		return	React.createElement("div", {className: "panel-group"}, " ", this.props.children, " ");
 	},

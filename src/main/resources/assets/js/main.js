@@ -2,7 +2,7 @@
 (function() {
 "use strict";
 
-var VERSION = window.MyAggregator.VERSION = "v.2.0.0-beta-52";
+var VERSION = window.MyAggregator.VERSION = "v.2.0.0-beta-53";
 
 var URLROOT = window.MyAggregator.URLROOT =
 	window.location.pathname.substring(0, window.location.pathname.indexOf("/",2)) ||
@@ -35,7 +35,7 @@ The top-most component, Main, tracks of the window's location URL and, depending
 	  The embedded view is supposed to work like a YouTube embedded clip.
 */
 
-var Main = React.createClass({displayName: "Main",
+var Main = React.createClass({displayName: 'Main',
 	componentWillMount: function() {
 		routeFromLocation.bind(this)();
 	},
@@ -214,7 +214,7 @@ var Main = React.createClass({displayName: "Main",
 });
 
 
-var StatisticsPage = React.createClass({displayName: "StatisticsPage",
+var StatisticsPage = React.createClass({displayName: 'StatisticsPage',
 	propTypes: {
 		ajax: PT.func.isRequired,
 	},
@@ -399,7 +399,7 @@ var StatisticsPage = React.createClass({displayName: "StatisticsPage",
 	},
 });
 
-var HelpPage = React.createClass({displayName: "HelpPage",
+var HelpPage = React.createClass({displayName: 'HelpPage',
 	openHelpDesk: function() {
 		window.open('http://support.clarin-d.de/mail/form.php?queue=Aggregator&lang=en',
 			'_blank', 'height=560,width=370');
@@ -443,7 +443,7 @@ var HelpPage = React.createClass({displayName: "HelpPage",
 					"If you still cannot find an answer to your question," + ' ' +
 					"or if want to send a feedback, you can write to Clarin-D helpdesk: "), 
 					React.createElement("button", {type: "button", className: "btn btn-default btn-lg", onClick: this.openHelpDesk}, 
-						React.createElement("span", {className: "glyphicon glyphicon-question-sign", "aria-hidden": "true"}), 
+						React.createElement("span", {className: "glyphicon glyphicon-question-sign", 'aria-hidden': "true"}), 
 						" HelpDesk"
 					)
 				)
@@ -452,7 +452,7 @@ var HelpPage = React.createClass({displayName: "HelpPage",
 	}
 });
 
-var AboutPage = React.createClass({displayName: "AboutPage",
+var AboutPage = React.createClass({displayName: 'AboutPage',
 	render: function() {
 		return	React.createElement("div", null, 
 					React.createElement("div", {className: "top-gap"}, 
@@ -470,7 +470,7 @@ var AboutPage = React.createClass({displayName: "AboutPage",
 
 						React.createElement("h3", null, "Statistics"), 
 						React.createElement("button", {type: "button", className: "btn btn-default btn-lg", onClick: function() {main.toStatistics(true);}}, 
-							React.createElement("span", {className: "glyphicon glyphicon-cog", "aria-hidden": "true"}, " "), 
+							React.createElement("span", {className: "glyphicon glyphicon-cog", 'aria-hidden': "true"}, " "), 
 							"View server log"
 						)
 						), 
@@ -544,7 +544,7 @@ var AboutPage = React.createClass({displayName: "AboutPage",
 	}
 });
 
-var Footer = React.createClass({displayName: "Footer",
+var Footer = React.createClass({displayName: 'Footer',
 	toAbout: function(e) {
 		main.toAbout(true);
 		e.preventDefault();
@@ -577,7 +577,7 @@ var Footer = React.createClass({displayName: "Footer",
 	}
 });
 
-var EmbeddedFooter = React.createClass({displayName: "EmbeddedFooter",
+var EmbeddedFooter = React.createClass({displayName: 'EmbeddedFooter',
 	render: function() {
 		return (
 			React.createElement("div", {className: "container", style: {textAlign:'center'}}, 

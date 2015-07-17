@@ -76,17 +76,17 @@ public class ScanCrawlTask implements Runnable {
 			log.info("ScanCrawlTask: Starting crawl");
 			Corpora corpora = scanCrawler.crawl();
 
-			corporaAtom.set(corpora);
-			scanStatisticsAtom.set(scanCrawler.getStatistics());
-			searchStatisticsAtom.set(new Statistics()); // reset search stats
 			long time = System.currentTimeMillis() - time0;
-
 			log.info("ScanCrawlTask: crawl done in {}s, number of root corpora: {}",
 					time / 1000., corpora.getCorpora().size());
 
 			if (corpora.getCorpora().isEmpty()) {
-				log.warn("ScanCrawlTask: Skipped writing to disk (no corpora). Finished.");
+				log.warn("ScanCrawlTask: No corpora: skipped updating stats; skipped writing to disk.");
 			} else {
+				corporaAtom.set(corpora);
+				scanStatisticsAtom.set(scanCrawler.getStatistics());
+				searchStatisticsAtom.set(new Statistics()); // reset search stats
+
 				dump(corpora, cachedCorpora, oldCachedCorpora);
 				log.info("ScanCrawlTask: wrote to disk, finished");
 			}

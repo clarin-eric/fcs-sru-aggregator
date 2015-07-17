@@ -1,6 +1,6 @@
 package eu.clarin.sru.fcs.aggregator.scan;
 
-import eu.clarin.sru.fcs.aggregator.scan.EndpointFilter;
+import com.sun.jersey.api.client.Client;
 import eu.clarin.weblicht.bindings.cmd.StringBinding;
 import eu.clarin.weblicht.bindings.cmd.cp.CenterExtendedInformation;
 import eu.clarin.weblicht.bindings.cmd.cp.CenterProfile;
@@ -23,15 +23,21 @@ import java.util.logging.Logger;
 public class CenterRegistryLive implements CenterRegistry {
 
 	private static final Logger LOGGER = Logger.getLogger(CenterRegistryLive.class.getName());
+
+    private static final Integer CONNECT_TIMEOUT = 3000;
+    private static final Integer READ_TIMEOUT = 10000;
+
 	private String centerRegistryUrl;
 	private boolean hasInstitutionsLoaded = false;
 	private List<Institution> centers = new ArrayList<Institution>();
 	private final EndpointFilter filter;
+    private final Client client;
 
 	public CenterRegistryLive(String centerRegistryUrl, EndpointFilter filter) {
 		super();
 		this.centerRegistryUrl = centerRegistryUrl;
 		this.filter = filter;
+        this.client = ClientFactory.create(CONNECT_TIMEOUT, READ_TIMEOUT);
 	}
 
 	@Override
@@ -41,13 +47,12 @@ public class CenterRegistryLive implements CenterRegistry {
 
 	@Override
 	public void loadCQLInstitutions() {
-
 		if (hasInstitutionsLoaded) {
 			return;
 		}
 		hasInstitutionsLoaded = true;
 		URI url = URI.create(centerRegistryUrl);
-		try (CenterRegistryConnector connector = new CenterRegistryConnector(url, 30000)) {
+		try (CenterRegistryConnector connector = new CenterRegistryConnector(client, url)) {
 			List<Center> regCenters = connector.retrieveCenters();
 			for (Center regCenter : regCenters) {
 				String institutionUrl = regCenter.getId();
