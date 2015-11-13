@@ -43,7 +43,7 @@ public class Search {
 	private final String searchLanguage;
 	private final List<Result> results = Collections.synchronizedList(new ArrayList<Result>());
 	private final Statistics statistics;
-        private final Pattern wsPattern = Pattern.compile("\\s");
+        private static final Pattern quotePattern = Pattern.compile("[\\s<>=/\\(\\)]");
 
 	public Search(ThrottledClient searchClient,
 			SRUVersion version,
@@ -53,7 +53,7 @@ public class Search {
 		this.searchClient = searchClient;
 		this.version = version;
 		this.id = counter.getAndIncrement();
-		this.query = quoteIfMultiWordExpression(searchString);
+		this.query = quoteIfQuotableExpression(searchString);
 		this.searchLanguage = searchLanguage;
 		this.statistics = statistics;
 		for (Corpus corpus : corpora) {
@@ -176,10 +176,10 @@ public class Search {
 		return query;
 	}
 
-        private String quoteIfMultiWordExpression(String queryString) {
-	    Matcher matcher = wsPattern.matcher(queryString.trim());
-	    boolean wsFound = matcher.find();
-	    if (wsFound && !"\"".equals(queryString.charAt(0))) {
+        protected static String quoteIfQuotableExpression(final String queryString) {
+	    Matcher matcher = quotePattern.matcher(queryString.trim());
+	    boolean quotableFound = matcher.find();
+	    if (quotableFound && !"\"".equals(queryString.charAt(0))) {
 		return "\"" + queryString + "\"";
 	    }
 	    return queryString;
