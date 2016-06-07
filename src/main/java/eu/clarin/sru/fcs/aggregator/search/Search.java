@@ -1,10 +1,11 @@
 package eu.clarin.sru.fcs.aggregator.search;
 
-import eu.clarin.sru.client.SRUVersion;
 import java.util.List;
+import eu.clarin.sru.client.SRUClientConstants;
 import eu.clarin.sru.client.SRUClientException;
 import eu.clarin.sru.client.SRUSearchRetrieveRequest;
 import eu.clarin.sru.client.SRUSearchRetrieveResponse;
+import eu.clarin.sru.client.SRUVersion;
 import eu.clarin.sru.client.fcs.ClarinFCSRecordData;
 import eu.clarin.sru.fcs.aggregator.client.ThrottledClient;
 import eu.clarin.sru.fcs.aggregator.scan.Corpus;
@@ -87,7 +88,7 @@ public class Search {
 		searchRequest.setRecordSchema(legacy
 				? ClarinFCSRecordData.LEGACY_RECORD_SCHEMA
 				: ClarinFCSRecordData.RECORD_SCHEMA);
-		searchRequest.setQuery(searchString);
+		searchRequest.setQuery((legacy || version != SRUVersion.VERSION_2_0) ? SRUClientConstants.QUERY_TYPE_CQL : "fcs", searchString);
 		if (corpus.getHandle() != null) {
 			searchRequest.setExtraRequestData(legacy
 					? SRUCQL.SEARCH_CORPUS_HANDLE_LEGACY_PARAMETER

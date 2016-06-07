@@ -2,7 +2,7 @@
 (function() {
 "use strict";
 
-var VERSION = window.MyAggregator.VERSION = "v.2.0.0-beta-53";
+var VERSION = window.MyAggregator.VERSION = "v.2.0.0-beta-54";
 
 var URLROOT = window.MyAggregator.URLROOT =
 	window.location.pathname.substring(0, window.location.pathname.indexOf("/",2)) ||
@@ -463,6 +463,7 @@ var AboutPage = React.createClass({
 
 						<ul>
 							<li>Emanuel Dima</li>
+							<li>Leif-Jöran Olsson</li> 
 							<li>Yana Panchenko</li>
 							<li>Oliver Schonefeld</li>
 							<li>Dieter Van Uytvanck</li>
