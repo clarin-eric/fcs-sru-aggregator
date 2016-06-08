@@ -224,7 +224,7 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 		maxSearchConcurrentRequestsCallback = new MaxConcurrentRequestsCallback() {
 			@Override
 			public int getMaxConcurrentRequest(URI baseURI) {
-				return params.slowEndpoints.contains(baseURI)
+				return (params.slowEndpoints != null && params.slowEndpoints.contains(baseURI))
 						? params.SEARCH_MAX_CONCURRENT_REQUESTS_PER_SLOW_ENDPOINT
 						: params.SEARCH_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT;
 			}

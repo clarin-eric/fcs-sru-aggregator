@@ -1,5 +1,5 @@
 aggregatorParams:
-  CENTER_REGISTRY_URL: http://centres.clarin.eu/restxml/
+  CENTER_REGISTRY_URL: https://centres.clarin.eu/restxml/
 #  additionalCQLEndpoints:
 #    # - https://clarin.ids-mannheim.de/digibibsru-new
 #    # - https://lux17.mpi.nl/ds/cqlsearch
@@ -13,22 +13,24 @@ aggregatorParams:
 
   AGGREGATOR_FILE_PATH: /var/lib/aggregator/fcsAggregatorCorpora.json
   AGGREGATOR_FILE_PATH_BACKUP: /var/lib/aggregator/fcsAggregatorCorpora.backup.json
-  # AGGREGATOR_FILE_PATH: /Users/edima/fcsAggregatorCorpora.json
-  # AGGREGATOR_FILE_PATH_BACKUP: /Users/edima/fcsAggregatorCorpora.backup.json
+
   SCAN_MAX_DEPTH: 3 # recommended 3
-  SCAN_TASK_INITIAL_DELAY: 0
-  SCAN_TASK_INTERVAL: 12
+  SCAN_TASK_INITIAL_DELAY: 10
+  SCAN_TASK_INTERVAL: 24
   SCAN_TASK_TIME_UNIT: HOURS
-
   SCAN_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT: 4  # @depth2: 1=361s; 2=225s; 4=207s
-  SEARCH_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT: 4
 
-  ENDPOINTS_SCAN_TIMEOUT_MS: 60000
+  SEARCH_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT: 4
+  SEARCH_MAX_CONCURRENT_REQUESTS_PER_SLOW_ENDPOINT: 1
+  slowEndpoints:
+    - http://cqlservlet.mpi.nl/
+
+  ENDPOINTS_SCAN_TIMEOUT_MS: 600000 # 10 minutes, needed for slow BAS server
   ENDPOINTS_SEARCH_TIMEOUT_MS: 30000
   EXECUTOR_SHUTDOWN_TIMEOUT_MS: 1000
 
   weblichtConfig:
-    url: https://weblicht.sfs.uni-tuebingen.de/webLicht/?input=
+    url: https://weblicht.sfs.uni-tuebingen.de/weblicht/?input=
     acceptedTcfLanguages:
       - en
       - de
