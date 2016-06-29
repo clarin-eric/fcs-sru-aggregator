@@ -84,11 +84,7 @@ public class Search {
 				corpus, version, queryType, searchString, maxRecords);
 
 		SRUSearchRetrieveRequest searchRequest = new SRUSearchRetrieveRequest(corpus.getEndpoint().getUrl());
-		if ("fcs".equals(queryType)) {
-		    searchRequest.setVersion(SRUVersion.VERSION_2_0);
-		} else {
-		    searchRequest.setVersion(version);
-		}
+		searchRequest.setVersion(version);
 		searchRequest.setStartRecord(startRecord);
 		searchRequest.setMaximumRecords(maxRecords);
 		boolean legacy = corpus.getEndpoint().getProtocol().equals(FCSProtocolVersion.LEGACY);
