@@ -11,6 +11,7 @@ import java.util.Map;
 /**
  *
  * @author edima
+ * @author ljo
  *
  * Stores statistics information about scans or searches. The info is then sent
  * to the JS client and displayed in the /Aggregator/stats page.
@@ -170,7 +171,7 @@ public class Statistics {
 	public void upgradeProtocolVersion(Institution institution, Endpoint endpoint) {
 		EndpointStats stats = getEndpointStats(institution, endpoint);
 		synchronized (stats.lock) {
-			stats.version = FCSProtocolVersion.VERSION_1;
+		    stats.version = endpoint.getProtocol() == FCSProtocolVersion.VERSION_2 ? FCSProtocolVersion.VERSION_2 : FCSProtocolVersion.VERSION_1;
 		}
 	}
 

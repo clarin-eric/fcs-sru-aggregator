@@ -42,6 +42,7 @@ import org.slf4j.LoggerFactory;
 /**
  *
  * @author edima
+ * @author ljo
  * The REST API of the Aggregator (actually, it's a HTTP API, not very restful).
  *
  */
@@ -118,6 +119,7 @@ public class RestService {
 	@Path("search")
 	public Response postSearch(
 			@FormParam("query") String query,
+			@FormParam("queryType") String queryType,
 			@FormParam("firstResultIndex") Integer firstResultIndex,
 			@FormParam("numberOfResults") Integer numberOfResults,
 			@FormParam("language") String language,
@@ -147,9 +149,8 @@ public class RestService {
 		if (numberOfResults > 250) {
 			numberOfResults = 250;
 		}
-
-		Search search = Aggregator.getInstance().startSearch(SRUVersion.VERSION_1_2,
-				corpora, query, language, firstResultIndex, numberOfResults);
+		Search search = Aggregator.getInstance().startSearch(queryType == "fcs" ? SRUVersion.VERSION_2_0 : SRUVersion.VERSION_1_2,
+				corpora, queryType, query, language, firstResultIndex, numberOfResults);
 		if (search == null) {
 			return Response.status(500).entity("Initiating search failed").build();
 		}

@@ -1,10 +1,13 @@
 aggregatorParams:
   CENTER_REGISTRY_URL: https://centres.clarin.eu/restxml/
-  # additionalCQLEndpoints:
+  additionalCQLEndpoints:
     # - https://clarin.ids-mannheim.de/digibibsru-new
+    - http://localhost:8080/korp-endpoint/sru
 
-  AGGREGATOR_FILE_PATH: /Users/edima/fcsAggregatorCorpora.json
-  AGGREGATOR_FILE_PATH_BACKUP: /Users/edima/fcsAggregatorCorpora.backup.json
+  #AGGREGATOR_FILE_PATH: /Users/edima/fcsAggregatorCorpora.json
+  #AGGREGATOR_FILE_PATH_BACKUP: /Users/edima/fcsAggregatorCorpora.backup.json
+  AGGREGATOR_FILE_PATH: /home/ljo/arbete/clarin-svn/SRUAggregator/trunk/fcsAggregatorCorpora.json
+  AGGREGATOR_FILE_PATH_BACKUP: /home/ljo/arbete/clarin-svn/SRUAggregator/trunk/fcsAggregatorCorpora.backup.json
 
   SCAN_MAX_DEPTH: 1 # recommended 3
   SCAN_TASK_INITIAL_DELAY: 0

@@ -31,6 +31,7 @@ import org.w3c.dom.NodeList;
  *
  * @author yanapanchenko
  * @author edima
+ * @author ljo
  */
 public class ScanCrawler {
 
@@ -119,9 +120,15 @@ public class ScanCrawler {
 				if (response != null && response.hasExtraResponseData()) {
 					for (SRUExtraResponseData data : response.getExtraResponseData()) {
 						if (data instanceof ClarinFCSEndpointDescription) {
-							endpoint.setProtocol(FCSProtocolVersion.VERSION_1);
-							statistics.upgradeProtocolVersion(institution, endpoint);
+
 							ClarinFCSEndpointDescription desc = (ClarinFCSEndpointDescription) data;
+							if (desc.getVersion() == 2) {
+							    endpoint.setProtocol(FCSProtocolVersion.VERSION_2);	
+							} else {
+							    endpoint.setProtocol(FCSProtocolVersion.VERSION_1);
+							}
+							statistics.upgradeProtocolVersion(institution, endpoint);
+
 							addCorpora(corpora, institution, endpoint, rootCollections, desc.getResources(), null);
 						}
 					}

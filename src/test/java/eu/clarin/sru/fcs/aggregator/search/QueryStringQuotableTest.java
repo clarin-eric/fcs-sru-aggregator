@@ -20,14 +20,14 @@ public class QueryStringQuotableTest {
     @Test
 	public void testWSQuotable() {
 	final String qWS = "grüne Autos";
-	final String queryString = Search.quoteIfQuotableExpression(qWS);
+	final String queryString = Search.quoteIfQuotableExpression(qWS, "cql");
 	Assert.assertEquals('"', queryString.charAt(0));
     }
 
     @Test
 	public void testAnglesQuotable() {
 	final String qAngles = "<häs>hesitationintended";
-	final String queryString = Search.quoteIfQuotableExpression(qAngles);
+	final String queryString = Search.quoteIfQuotableExpression(qAngles, "cql");
 	Assert.assertEquals('"', queryString.charAt(0));
 	Assert.assertTrue(queryString.length() == 25);
     }
@@ -35,7 +35,7 @@ public class QueryStringQuotableTest {
     @Test
 	public void testParensQuotable() {
 	final String qParens = "((pausintended";
-	final String queryString = Search.quoteIfQuotableExpression(qParens);
+	final String queryString = Search.quoteIfQuotableExpression(qParens, "cql");
 	Assert.assertEquals('"', queryString.charAt(0));
 	Assert.assertTrue(queryString.length() == 16);
     }
@@ -43,7 +43,7 @@ public class QueryStringQuotableTest {
     @Test
 	public void testEqualsQuotable() {
 	final String qEq = "grüne=Autos";
-	final String queryString = Search.quoteIfQuotableExpression(qEq);
+	final String queryString = Search.quoteIfQuotableExpression(qEq, "cql");
 	Assert.assertEquals('"', queryString.charAt(0));
 	Assert.assertTrue(queryString.length() == 13);
     }
@@ -51,7 +51,7 @@ public class QueryStringQuotableTest {
     @Test
 	public void testSlashQuotable() {
 	final String qEq = "Echt//";
-	final String queryString = Search.quoteIfQuotableExpression(qEq);
+	final String queryString = Search.quoteIfQuotableExpression(qEq, "cql");
 	Assert.assertEquals('"', queryString.charAt(0));
 	Assert.assertTrue(queryString.length() == 8);
     }
@@ -59,9 +59,17 @@ public class QueryStringQuotableTest {
     @Test
 	public void testNotQuotable() {
 	final String qNonQ = "Atomisch";
-	final String queryString = Search.quoteIfQuotableExpression(qNonQ);
+	final String queryString = Search.quoteIfQuotableExpression(qNonQ, "cql");
 	Assert.assertEquals('A', queryString.charAt(0));
 	Assert.assertTrue(queryString.length() == 8);
+    }
+
+    @Test
+	public void testNotQuotableFCS() {
+	final String qNonQ = "[word = 'Atomisch']";
+	final String queryString = Search.quoteIfQuotableExpression(qNonQ, "fcs");
+	Assert.assertEquals('[', queryString.charAt(0));
+	Assert.assertTrue(queryString.length() == 19);
     }
 
 }

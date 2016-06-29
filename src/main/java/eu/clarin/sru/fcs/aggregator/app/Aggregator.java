@@ -284,7 +284,7 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 
 	// this function should be thread-safe
 	public Search startSearch(SRUVersion version, List<Corpus> corpora,
-			String searchString, String searchLang,
+			String queryType, String searchString, String searchLang,
 			int firstRecord, int maxRecords) throws Exception {
 		if (corpora.isEmpty()) {
 			// No corpora
@@ -295,7 +295,7 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 		} else {
 			Search sr = new Search(sruClient,
 					version, searchStatsAtom.get(),
-					corpora, searchString, searchLang, maxRecords);
+					corpora, queryType, searchString, searchLang, maxRecords);
 			if (activeSearches.size() > SEARCHES_SIZE_GC_THRESHOLD) {
 				List<Long> toBeRemoved = new ArrayList<Long>();
 				long t0 = System.currentTimeMillis();

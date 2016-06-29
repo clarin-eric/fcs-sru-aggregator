@@ -21,28 +21,88 @@ var Modal = window.MyReact.Modal;
 
 var multipleLanguageCode = "mul"; // see ISO-693-3
 
+//var queryTypes = [
 var layers = [
 	{
-		id: "text",
-		name: "Text Resources",
+		id: "cql",
+		name: "Text layer Contextual Query Language (CQL)",
 		searchPlaceholder: "Elephant",
-		searchLabel: "Search text",
+		searchLabel: "Text layer CQL query",
 		searchLabelBkColor: "#fed",
 		className: '',
 	},
 	{
-		id: "sampa",
-		name: "Phonetic Transcriptions",
-		searchPlaceholder: "stA:z",
-		searchLabel: "SAMPA query",
-		searchLabelBkColor: "#eef",
-		disabled: true,
+		id: "fcs",
+		name: "Multi-layer Federated Content Search Query Language (FCS-QL)",
+		searchPlaceholder: "[word = 'annotation'][word = 'focused']",
+		searchLabel: "Multi-layer FCS query",
+		searchLabelBkColor: "#efd",
+		disabled: false,
 	},
 ];
+
 var layerMap = {
-	text: layers[0],
-	sampa: layers[1],
+     	cql: layers[0],
+     	fcs: layers[1],
 };
+// var layers = [
+// 	{
+// 		id: "text",
+// 		name: "Text Resources",
+// 		searchPlaceholder: "Elephant",
+// 		searchLabel: "Search text",
+// 		searchLabelBkColor: "#fed",
+// 		className: '',
+// 	},
+// 	{
+// 		id: "sampa",
+// 		name: "Phonetic Transcriptions",
+// 		searchPlaceholder: "stA:z",
+// 		searchLabel: "SAMPA query",
+// 		searchLabelBkColor: "#eef",
+// 		disabled: true,
+// 	},
+// 	{
+// 		id: "lemma",
+// 		name: "Lemma",
+// 		searchPlaceholder: "|person|",
+// 		searchLabel: "Lemma query",
+// 		searchLabelBkColor: "#eff",
+// 		disabled: false,
+// 	},
+// 	{
+// 		id: "pos",
+// 		name: "Part-of-Speech",
+// 		searchPlaceholder: "PROPN",
+// 		searchLabel: "PoS query",
+// 		searchLabelBkColor: "#efe",
+// 		disabled: false,
+// 	},
+// 	{
+// 		id: "orth",
+// 		name: "Orthographic Transcriptions",
+// 		searchPlaceholder: "stA:z",
+// 		searchLabel: "Orthographic query",
+// 		searchLabelBkColor: "#eef",
+// 		disabled: true,
+// 	},
+// 	{
+// 		id: "norm",
+// 		name: "Normalized Orthographic Transcriptions",
+// 		searchPlaceholder: "stA:z",
+// 		searchLabel: "Normalized Orthographic query",
+// 		searchLabelBkColor: "#eef",
+// 		disabled: true,
+// 	},
+// ];
+// var layerMap = {
+// 	text: layers[0],
+// 	sampa: layers[1],
+// 	lemma: layers[2],
+// 	pos: layers[3],
+// 	orth: layers[4],
+// 	norm: layers[5],
+// };
 
 function getQueryVariable(variable) {
     var query = window.location.search.substring(1);
@@ -118,9 +178,9 @@ Corpora.prototype.getLanguageCodes = function() {
 };
 
 Corpora.prototype.isCorpusVisible = function(corpus, layerId, languageCode) {
-	if (layerId !== "text") {
-		return false;
-	}
+	//if (layerId !== "text") {
+	//	return false;
+	//}
 	// yes for any language
 	if (languageCode === multipleLanguageCode) {
 		return true;
@@ -225,10 +285,12 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({
 			corpora: new Corpora([], this.updateCorpora),
 			languageMap: {},
 			weblichtLanguages: [],
+			queryType: getQueryVariable('queryType') ||'cql',
 			query: getQueryVariable('query') || '',
 			language: this.anyLanguage,
 			languageFilter: 'byMeta',
-			searchLayerId: "text",
+			//fixme!
+			searchLayerId: getQueryVariable('queryType') ||'cql',
 			numberOfResults: 10,
 
 			searchId: null,
@@ -284,6 +346,7 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({
 
 	search: function() {
 		var query = this.state.query;
+		var queryType = this.state.queryType;
 		if (!query || this.props.embedded) {
 			this.setState({ hits: this.nohits, searchId: null });
 			return;
@@ -295,12 +358,14 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({
 		}
 
 		// console.log("searching in the following corpora:", selectedIds);
+		// console.log("searching with queryType:", queryType);
 		this.props.ajax({
 			url: 'rest/search',
 			type: "POST",
 			data: {
 				layer: this.state.searchLayerId,
 				language: this.state.language[0],
+				queryType: queryType,
 				query: query,
 				numberOfResults: this.state.numberOfResults,
 				corporaIds: selectedIds,
@@ -398,6 +463,7 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({
 		this.state.corpora.setVisibility(layerId, this.state.language[0]);
 		this.setState({
 			searchLayerId: layerId,
+			queryType: layerId,
 			hits: this.nohits,
 			searchId: null,
 			corpora: this.state.corpora, // === this.state.corpora.update();
@@ -498,8 +564,9 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({
 	renderSearchButtonOrLink: function() {
 		if (this.props.embedded) {
 			var query = this.state.query;
+			var queryType = this.state.queryType;
 			var newurl = !query ? "#" :
-				(window.MyAggregator.URLROOT + "?" + encodeQueryData({query:query, mode:'search'}));
+				(window.MyAggregator.URLROOT + "?" + encodeQueryData({queryType:queryType, query:query, mode:'search'}));
 			return (
 				<a className="btn btn-default input-lg" style={{paddingTop:13}}
 					type="button" target="_blank" href={newurl}>
@@ -550,7 +617,6 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({
 									</button>
 									<span/>
 								</div>
-
 								<div className="input-group-btn hidden-xxs">
 									<ul ref="layerDropdownMenu" className="dropdown-menu">
 										{ 	layers.map(function(l) {
@@ -584,8 +650,9 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({
 										onChange={this.setNumberOfResults} value={this.state.numberOfResults}
 										onKeyPress={this.stop}/>
 								</div>
-								<span className="input-group-addon nobkg">hits</span>
+								<span className="input-group-addon nobkg">hits per endpoint</span>
 							</div>
+
 						</form>
 					</div>
 				</div>
@@ -756,6 +823,18 @@ var ResultMixin = window.MyReact.ResultMixin = {
 				</tr>;
 	},
 
+	renderRowsAsAdv: function(hit,i) {
+		var sleft={textAlign:"left", verticalAlign:"top", width:"50%"};
+		var scenter={textAlign:"center", verticalAlign:"top", maxWidth:"50%"};
+		var sright={textAlign:"right", verticalAlign:"top", maxWidth:"50%"};
+		return	<tr key={i} className="hitrow">
+					<td>{this.renderRowLanguage(hit)}</td>
+					<td style={sright}>{hit.left}</td>
+					<td style={scenter} className="keyword">{hit.keyword}</td>
+					<td style={sleft}>{hit.right}</td>
+				</tr>;
+	},
+
 	renderDiagnostic: function(d, key) {
 		if (d.uri === NO_MORE_RECORDS_DIAGNOSTIC_URI) {
 			return false;
@@ -813,6 +892,19 @@ var ResultMixin = window.MyReact.ResultMixin = {
 						}
 						&nbsp;
 						Display as Key Word In Context
+					</label>
+				</div>;
+	},
+
+	renderDisplayADV: function() {
+		return 	<div className="inline btn-group" style={{display:"inline-block"}}>
+					<label forHtml="inputKwic" className="btn btn-flat">
+						{ this.state.displayKwic ?
+							<input id="inputKwic" type="checkbox" value="kwic" checked onChange={this.toggleKwic} /> :
+							<input id="inputKwic" type="checkbox" value="kwic" onChange={this.toggleKwic} />
+						}
+						&nbsp;
+						Display as AdvancedDataView
 					</label>
 				</div>;
 	},

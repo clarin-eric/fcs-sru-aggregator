@@ -39,6 +39,7 @@ public class Search {
 	private final ThrottledClient searchClient;
 	private final SRUVersion version;
 	private final Long id;
+	private final String queryType;
 	private final String query;
 	private final long createdAt = System.currentTimeMillis();
 	private final String searchLanguage;
@@ -48,18 +49,20 @@ public class Search {
 
 	public Search(ThrottledClient searchClient,
 			SRUVersion version,
-			Statistics statistics, List<Corpus> corpora, String searchString,
+			Statistics statistics, List<Corpus> corpora, 
+		        String queryType, String searchString,
 			String searchLanguage, int maxRecords
 	) {
 		this.searchClient = searchClient;
 		this.version = version;
 		this.id = counter.getAndIncrement();
-		this.query = quoteIfQuotableExpression(searchString);
+		this.queryType = queryType;
+		this.query = quoteIfQuotableExpression(searchString, queryType);
 		this.searchLanguage = searchLanguage;
 		this.statistics = statistics;
 		for (Corpus corpus : corpora) {
 			Result result = new Result(corpus);
-			executeSearch(result, query, 1, maxRecords);
+			executeSearch(result, version, queryType, query, 1, maxRecords);
 			results.add(result);
 		}
 	}
@@ -67,21 +70,25 @@ public class Search {
 	public boolean searchForNextResults(String corpusId, int maxRecords) {
 		for (Result r : results) {
 			if (r.getCorpus().getId().equals(corpusId)) {
-				executeSearch(r, query, r.getNextRecordPosition(), maxRecords);
+				executeSearch(r, version, queryType, query, r.getNextRecordPosition(), maxRecords);
 				return true;
 			}
 		}
 		return false;
 	}
 
-	private void executeSearch(final Result result, String searchString,
+	private void executeSearch(final Result result, SRUVersion version, String queryType, String searchString,
 			int startRecord, int maxRecords) {
 		final Corpus corpus = result.getCorpus();
-		log.info("Executing search in '{}' query='{}' maxRecords='{}'",
-				corpus, searchString, maxRecords);
+		log.info("Executing search in '{}' version='{}' queryType ='{}' query='{}' maxRecords='{}'",
+				corpus, version, queryType, searchString, maxRecords);
 
 		SRUSearchRetrieveRequest searchRequest = new SRUSearchRetrieveRequest(corpus.getEndpoint().getUrl());
-		searchRequest.setVersion(version);
+		if ("fcs".equals(queryType)) {
+		    searchRequest.setVersion(SRUVersion.VERSION_2_0);
+		} else {
+		    searchRequest.setVersion(version);
+		}
 		searchRequest.setStartRecord(startRecord);
 		searchRequest.setMaximumRecords(maxRecords);
 		boolean legacy = corpus.getEndpoint().getProtocol().equals(FCSProtocolVersion.LEGACY);
@@ -173,14 +180,18 @@ public class Search {
 		return createdAt;
 	}
 
+	public String getQueryType() {
+		return queryType;
+	}
+
 	public String getQuery() {
 		return query;
 	}
 
-        protected static String quoteIfQuotableExpression(final String queryString) {
+        protected static String quoteIfQuotableExpression(final String queryString, final String queryType) {
 	    Matcher matcher = quotePattern.matcher(queryString.trim());
 	    boolean quotableFound = matcher.find();
-	    if (quotableFound && !"\"".equals(queryString.charAt(0))) {
+	    if ("cql".equals(queryType) && quotableFound && !"\"".equals(queryString.charAt(0))) {
 		return "\"" + queryString + "\"";
 	    }
 	    return queryString;
