@@ -7,6 +7,7 @@ import eu.clarin.sru.client.SRUSearchRetrieveResponse;
 import eu.clarin.sru.client.SRUSurrogateRecordData;
 import eu.clarin.sru.client.fcs.ClarinFCSRecordData;
 import eu.clarin.sru.client.fcs.DataView;
+import eu.clarin.sru.client.fcs.DataViewAdvanced;
 import eu.clarin.sru.client.fcs.DataViewGenericDOM;
 import eu.clarin.sru.client.fcs.DataViewGenericString;
 import eu.clarin.sru.client.fcs.DataViewHits;
@@ -28,6 +29,8 @@ import org.slf4j.LoggerFactory;
  *
  * @author Yana Panchenko
  * @author edima
+ * @author ljo
+ *
  */
 public final class Result {
 
@@ -128,6 +131,10 @@ public final class Result {
 				Kwic kwic = new Kwic(hits, pid, reference);
 				kwics.add(kwic);
 				log.debug("DataViewHits: {}", kwic.getFragments());
+			} else if (dataview instanceof DataViewAdvanced) {
+				final DataViewAdvanced adv = (DataViewAdvanced) dataview;
+				adv.getLayers();
+				log.debug("DataViewAdvanced: {}", adv.getLayers().get(0).getId());
 			}
 		}
 	}
