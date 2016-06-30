@@ -22,6 +22,7 @@ import org.apache.poi.xssf.streaming.SXSSFWorkbook;
  * Utility for representing SearchResult data in different formats.
  *
  * @author Yana Panchenko
+ * @author ljo
  */
 public class Exports {
 
@@ -29,50 +30,94 @@ public class Exports {
 
 	public static String getExportCSV(List<Result> resultsProcessed, String filterLanguage, String separator) {
 		boolean noResult = true;
+		boolean firstRow = true;
 		StringBuilder csv = new StringBuilder();
 		if (resultsProcessed != null && !resultsProcessed.isEmpty()) {
-			String[] headers = new String[]{
-				"LEFT CONTEXT", "KEYWORD", "RIGHT CONTEXT", "PID", "REFERENCE"};
-			for (String header : headers) {
+		    for (Result result : resultsProcessed) {
+			if (result.getAdvancedLayers().size() == 0) {
+			    for (Kwic kwic : result.getKwics()) {
+				if (firstRow) {
+				    String[] headers = new String[]{
+					"PID", "REFERENCE", "LEFT CONTEXT", "KEYWORD", "RIGHT CONTEXT"};
+				    for (String header : headers) {
+					csv.append("\"");
+					csv.append(header);
+					csv.append("\"");
+					csv.append(separator);
+				    }
+				    csv.append("\n");
+				    firstRow = false;
+				}
+				if (filterLanguage != null && !filterLanguage.equals(kwic.getLanguage())) {
+				    continue;
+				}
 				csv.append("\"");
-				csv.append(header);
+				if (kwic.getPid() != null) {
+				    csv.append(escapeQuotes(kwic.getPid()));
+				}
 				csv.append("\"");
 				csv.append(separator);
-			}
-			csv.append("\n");
-
-			for (Result result : resultsProcessed) {
-				for (Kwic kwic : result.getKwics()) {
-					if (filterLanguage != null && !filterLanguage.equals(kwic.getLanguage())) {
-						continue;
-					}
-					csv.append("\"");
-					csv.append(escapeQuotes(kwic.getLeft()));
-					csv.append("\"");
-					csv.append(separator);
-					csv.append("\"");
-					csv.append(escapeQuotes(kwic.getKeyword()));
-					csv.append("\"");
-					csv.append(separator);
-					csv.append("\"");
-					csv.append(escapeQuotes(kwic.getRight()));
-					csv.append("\"");
-					csv.append(separator);
-					csv.append("\"");
-					if (kwic.getPid() != null) {
-						csv.append(escapeQuotes(kwic.getPid()));
-					}
-					csv.append("\"");
-					csv.append(separator);
-					csv.append("\"");
-					if (kwic.getReference() != null) {
-						csv.append(escapeQuotes(kwic.getReference()));
-					}
-					csv.append("\"");
-					csv.append("\n");
-					noResult = false;
+				csv.append("\"");
+				if (kwic.getReference() != null) {
+				    csv.append(escapeQuotes(kwic.getReference()));
 				}
+				csv.append("\"");
+				csv.append(separator);
+				csv.append("\"");
+				csv.append(escapeQuotes(kwic.getLeft()));
+				csv.append("\"");
+				csv.append(separator);
+				csv.append("\"");
+				csv.append(escapeQuotes(kwic.getKeyword()));
+				csv.append("\"");
+				csv.append(separator);
+				csv.append("\"");
+				csv.append(escapeQuotes(kwic.getRight()));
+				csv.append("\"");
+				csv.append("\n");
+				noResult = false;
+			    }
 			}
+			firstRow = true;
+			for (AdvancedLayer layer : result.getAdvancedLayers()) {
+			    if (firstRow) {
+				String[] headers = new String[]{
+				    "PID", "REFERENCE", "SPANS"};
+				for (String header : headers) {
+				    csv.append("\"");
+				    csv.append(header);
+				    csv.append("\"");
+				    csv.append(separator);
+				}
+				csv.append("\n");
+				firstRow = false;
+			    }
+			    if (filterLanguage != null && !filterLanguage.equals(layer.getLanguage())) {
+				continue;
+			    }
+			    
+			    csv.append("\"");
+			    if (layer.getPid() != null) {
+				csv.append(escapeQuotes(layer.getPid()));
+			    }
+			    csv.append("\"");
+			    csv.append(separator);
+			    csv.append("\"");
+			    if (layer.getReference() != null) {
+				csv.append(escapeQuotes(layer.getReference()));
+			    }
+			    csv.append("\"");
+			    csv.append(separator);
+			    for (AdvancedLayer.Span span : layer.getSpans()) {
+				csv.append("\"");
+				csv.append(escapeQuotes(span.getText()));
+				csv.append("\"");
+				csv.append(separator);
+			    }
+			    csv.append("\n");
+			    noResult = false;
+			}
+		    }
 		}
 		if (noResult) {
 			return null;
@@ -93,66 +138,110 @@ public class Exports {
 		return sb;
 	}
 
-	public static byte[] getExportExcel(List<Result> resultsProcessed, String filterLanguage) throws ExportException {
-		SXSSFWorkbook workbook = null;
+    public static byte[] getExportExcel(List<Result> resultsProcessed, String filterLanguage) throws ExportException {
+	    SXSSFWorkbook workbook = null;
 		ByteArrayOutputStream excelStream = new ByteArrayOutputStream();
 		int rownum = 0;
+		boolean firstRow = true;
 		if (resultsProcessed != null && !resultsProcessed.isEmpty()) {
-			try {
-				String[] headers = new String[]{
-					"LEFT CONTEXT", "KEYWORD", "RIGHT CONTEXT", "PID", "REFERENCE"};
-
-				workbook = new SXSSFWorkbook();
-				Sheet sheet = workbook.createSheet();
-
-				Font boldFont = workbook.createFont();
-				boldFont.setBoldweight(Font.BOLDWEIGHT_BOLD);
-
-				// Header
-				CellStyle headerStyle = workbook.createCellStyle();
-				headerStyle.setFont(boldFont);
-
-				Row row = sheet.createRow(rownum++);
-
-				for (int j = 0; j < headers.length; ++j) {
-					Cell cell = row.createCell(j, Cell.CELL_TYPE_STRING);
+		    try {
+			workbook = new SXSSFWorkbook();
+			Sheet sheet = workbook.createSheet();
+			
+			Font boldFont = workbook.createFont();
+			boldFont.setBoldweight(Font.BOLDWEIGHT_BOLD);
+			
+			// Header
+			CellStyle headerStyle = workbook.createCellStyle();
+			headerStyle.setFont(boldFont);
+			
+			Row row = sheet.createRow(rownum++);
+			
+			Cell cell;
+			for (Result result : resultsProcessed) {
+			    if (result.getAdvancedLayers().size() == 0) {
+				for (Kwic kwic : result.getKwics()) {
+				    if (firstRow) {
+					String[] headers = new String[]{
+					    "PID", "REFERENCE", "LEFT CONTEXT", "KEYWORD", "RIGHT CONTEXT"};
+					for (int j = 0; j < headers.length; ++j) {
+					    cell = row.createCell(j, Cell.CELL_TYPE_STRING);
+					    cell.setCellValue(headers[j]);
+					    cell.setCellStyle(headerStyle);
+					}
+					firstRow = false;
+				    }
+				    // Body
+				    
+				    if (filterLanguage != null && !filterLanguage.equals(kwic.getLanguage())) {
+					continue;
+				    }
+				    row = sheet.createRow(rownum++);
+				    cell = row.createCell(0, Cell.CELL_TYPE_STRING);
+				    if (kwic.getPid() != null) {
+					cell.setCellValue(kwic.getPid());
+				    }
+				    cell = row.createCell(1, Cell.CELL_TYPE_STRING);
+				    if (kwic.getReference() != null) {
+					cell.setCellValue(kwic.getReference());
+				    }
+				    
+				    cell = row.createCell(2, Cell.CELL_TYPE_STRING);
+				    cell.setCellValue(kwic.getLeft());
+				    cell = row.createCell(3, Cell.CELL_TYPE_STRING);
+				    cell.setCellValue(kwic.getKeyword());
+				    cell.setCellStyle(headerStyle);
+				    cell = row.createCell(4, Cell.CELL_TYPE_STRING);
+				    cell.setCellValue(kwic.getRight());
+				}
+			    }
+			    firstRow = true;
+			    for (AdvancedLayer layer : result.getAdvancedLayers()) {
+				if (firstRow) {
+				    String[] headers = new String[]{
+					"PID", "REFERENCE", "SPANS"};
+				    for (int j = 0; j < headers.length; ++j) {
+					cell = row.createCell(j, Cell.CELL_TYPE_STRING);
 					cell.setCellValue(headers[j]);
 					cell.setCellStyle(headerStyle);
+				    }
+				    firstRow = false;
 				}
-
-				// Body
-				Cell cell;
-				for (Result result : resultsProcessed) {
-					for (Kwic kwic : result.getKwics()) {
-						if (filterLanguage != null && !filterLanguage.equals(kwic.getLanguage())) {
-							continue;
-						}
-						row = sheet.createRow(rownum++);
-						cell = row.createCell(0, Cell.CELL_TYPE_STRING);
-						cell.setCellValue(kwic.getLeft());
-						cell = row.createCell(1, Cell.CELL_TYPE_STRING);
-						cell.setCellValue(kwic.getKeyword());
-						cell = row.createCell(2, Cell.CELL_TYPE_STRING);
-						cell.setCellValue(kwic.getRight());
-						if (kwic.getPid() != null) {
-							cell = row.createCell(3, Cell.CELL_TYPE_STRING);
-							cell.setCellValue(kwic.getPid());
-						}
-						if (kwic.getReference() != null) {
-							cell = row.createCell(3, Cell.CELL_TYPE_STRING);
-							cell.setCellValue(kwic.getReference());
-						}
-					}
+				
+				if (filterLanguage != null && !filterLanguage.equals(layer.getLanguage())) {
+				    continue;
 				}
-				workbook.write(excelStream);
-			} catch (IOException ex) {
-				LOGGER.log(Level.SEVERE, null, ex);
-				throw new ExportException("Exception exporting Excel", ex);
-			} finally {
-				if (workbook != null) {
-					workbook.dispose();
+				row = sheet.createRow(rownum++);
+				int j = 0;
+				cell = row.createCell(j, Cell.CELL_TYPE_STRING);
+				if (layer.getPid() != null) {
+				    cell.setCellValue(layer.getPid());
 				}
+				j++;
+				cell = row.createCell(j, Cell.CELL_TYPE_STRING);
+				if (layer.getReference() != null) {
+				    cell.setCellValue(layer.getReference());
+				}
+				j++;
+				for (AdvancedLayer.Span span : layer.getSpans()) {
+				    cell = row.createCell(j, Cell.CELL_TYPE_STRING);
+				    cell.setCellValue(span.getText());
+				    if (span.isHit()) {
+					cell.setCellStyle(headerStyle);
+				    }
+				    j++;
+				}
+			    }
 			}
+			workbook.write(excelStream);
+		    } catch (IOException ex) {
+			LOGGER.log(Level.SEVERE, null, ex);
+			throw new ExportException("Exception exporting Excel", ex);
+		    } finally {
+			if (workbook != null) {
+			    workbook.dispose();
+			}
+		    }
 		}
 		if (rownum <= 1) {
 			return null;

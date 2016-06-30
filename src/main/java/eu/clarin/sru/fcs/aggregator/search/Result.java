@@ -1,3 +1,8 @@
+/**
+ *
+ * @license http://www.gnu.org/licenses/gpl-3.0.txt
+ *  GNU General Public License v3
+ */
 package eu.clarin.sru.fcs.aggregator.search;
 
 import eu.clarin.sru.client.SRUDiagnostic;
@@ -43,8 +48,14 @@ public final class Result {
 	private List<Diagnostic> diagnostics = Collections.synchronizedList(new ArrayList<Diagnostic>());
 	private List<Kwic> kwics = Collections.synchronizedList(new ArrayList<Kwic>());
 
+	private List<AdvancedLayer> advLayers = Collections.synchronizedList(new ArrayList<AdvancedLayer>());
+
 	public List<Kwic> getKwics() {
 		return kwics;
+	}
+
+	public List<AdvancedLayer> getAdvancedLayers() {
+		return advLayers;
 	}
 
 	public Result(Corpus corpus) {
@@ -133,8 +144,11 @@ public final class Result {
 				log.debug("DataViewHits: {}", kwic.getFragments());
 			} else if (dataview instanceof DataViewAdvanced) {
 				final DataViewAdvanced adv = (DataViewAdvanced) dataview;
-				adv.getLayers();
-				log.debug("DataViewAdvanced: {}", adv.getLayers().get(0).getId());
+				for (DataViewAdvanced.Layer layer : adv.getLayers()) {
+				    log.debug("DataViewAdvanced layer: {}", 				adv.getUnit(), layer.getId());
+				    AdvancedLayer aLayer = new AdvancedLayer(layer, pid, reference);
+				    advLayers.add(aLayer);
+				}
 			}
 		}
 	}
