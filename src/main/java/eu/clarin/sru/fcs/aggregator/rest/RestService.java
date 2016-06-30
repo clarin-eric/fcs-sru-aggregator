@@ -13,6 +13,7 @@ import static eu.clarin.sru.fcs.aggregator.app.ErrorHandler.PARAM_MODE;
 import static eu.clarin.sru.fcs.aggregator.app.ErrorHandler.PARAM_QUERY;
 import eu.clarin.sru.fcs.aggregator.scan.Corpora;
 import eu.clarin.sru.fcs.aggregator.scan.Corpus;
+import eu.clarin.sru.fcs.aggregator.scan.FCSProtocolVersion;
 import eu.clarin.sru.fcs.aggregator.scan.Statistics;
 import eu.clarin.sru.fcs.aggregator.search.Result;
 import eu.clarin.sru.fcs.aggregator.search.Search;
@@ -20,6 +21,7 @@ import eu.clarin.sru.fcs.aggregator.util.LanguagesISO693;
 import eu.clarin.sru.fcs.aggregator.search.Exports;
 import java.io.IOException;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -132,6 +134,15 @@ public class RestService {
 			return Response.status(400).entity("'corporaIds' parameter expected").build();
 		}
 		List<Corpus> corpora = Aggregator.getInstance().getCorpora().getCorporaByIds(new HashSet<String>(corporaIds));
+		if ("fcs".equals(queryType)) {
+		    List<Corpus> tmp = new ArrayList<Corpus>();
+		    for (Corpus corpus : corpora) {
+			if (corpus.getEndpoint().getProtocol().equals(FCSProtocolVersion.VERSION_2)) {
+			    tmp.add(corpus);
+			}
+		    }
+		    corpora = tmp;
+		}
 		if (corpora == null || corpora.isEmpty()) {
 			return Response.status(503).entity("No corpora, please wait for the server to finish scanning").build();
 		}
