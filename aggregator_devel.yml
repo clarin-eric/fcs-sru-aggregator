@@ -2,7 +2,8 @@ aggregatorParams:
   CENTER_REGISTRY_URL: https://centres.clarin.eu/restxml/
   additionalCQLEndpoints:
     # - https://clarin.ids-mannheim.de/digibibsru-new
-    - http://localhost:8080/korp-endpoint/sru
+    #- http://localhost:8080/korp-endpoint/sru
+    - https://spraakbanken.gu.se/ws/fcs/2.0/endpoint/korp/sru
 
   #AGGREGATOR_FILE_PATH: /Users/edima/fcsAggregatorCorpora.json
   #AGGREGATOR_FILE_PATH_BACKUP: /Users/edima/fcsAggregatorCorpora.backup.json
