@@ -285,12 +285,12 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({dis
 			corpora: new Corpora([], this.updateCorpora),
 			languageMap: {},
 			weblichtLanguages: [],
-			queryType: getQueryVariable('queryType') ||'cql',
+			queryType: getQueryVariable('queryType') || 'cql',
 			query: getQueryVariable('query') || '',
 			language: this.anyLanguage,
 			languageFilter: 'byMeta',
 			//fixme!
-			searchLayerId: getQueryVariable('queryType') ||'cql',
+			searchLayerId: getQueryVariable('queryType') || 'cql',
 			numberOfResults: 10,
 
 			searchId: null,
@@ -346,7 +346,7 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({dis
 
 	search: function() {
 		var query = this.state.query;
-		var queryType = this.state.queryType;
+		var queryType = this.state.searchLayerId;
 		if (!query || this.props.embedded) {
 			this.setState({ hits: this.nohits, searchId: null });
 			return;
@@ -358,7 +358,7 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({dis
 		}
 
 		// console.log("searching in the following corpora:", selectedIds);
-		console.log("searching with queryType:", queryType);
+		// console.log("searching with queryType:", queryType);
 		this.props.ajax({
 			url: 'rest/search',
 			type: "POST",
