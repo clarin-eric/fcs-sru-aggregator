@@ -52,7 +52,7 @@ import org.slf4j.LoggerFactory;
 @Path("/")
 public class RestService {
 
-	private static final String EXPORT_FILENAME_PREFIX = "ClarinDFederatedContentSearch-";
+	private static final String EXPORT_FILENAME_PREFIX = "ClarinFederatedContentSearch-";
 	private static final String TCF_MEDIA_TYPE = "text/tcf+xml";
 	private static final String EXCEL_MEDIA_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 	private static final String SEARCH_RESULTS_ENCODING = "UTF-8";

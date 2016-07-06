@@ -466,6 +466,7 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({
 			queryType: layerId,
 			hits: this.nohits,
 			searchId: null,
+		        displayADV: layerId == "fcs" ? true : false,
 			corpora: this.state.corpora, // === this.state.corpora.update();
 		});
 	},
@@ -500,6 +501,12 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({
 							       langCode === multipleLanguageCode ||
 							       langCode === null;
 						}),
+					advancedLayers: noLangFiltering ? corpusHit.advancedLayers :
+					 	corpusHit.advancedLayers.filter(function(layer) {
+					 		return layer.language === langCode ||
+					 		       langCode === multipleLanguageCode ||
+					 		       langCode === null;
+					 	}),
 				};
 			});
 			for (var i = 0; i < results.length; i++) {
@@ -783,11 +790,16 @@ var ResultMixin = window.MyReact.ResultMixin = {
 	getInitialState: function () {
 		return {
 			displayKwic: false,
+			displayADV: false,
 		};
 	},
 
 	toggleKwic: function() {
 		this.setState({displayKwic:!this.state.displayKwic});
+	},
+
+	toggleADV: function() {
+	 	this.setState({displayADV:!this.state.displayADV});
 	},
 
 	renderPanelTitle: function(corpus) {
@@ -823,16 +835,20 @@ var ResultMixin = window.MyReact.ResultMixin = {
 				</tr>;
 	},
 
-	renderRowsAsAdv: function(hit,i) {
-		var sleft={textAlign:"left", verticalAlign:"top", width:"50%"};
-		var scenter={textAlign:"center", verticalAlign:"top", maxWidth:"50%"};
-		var sright={textAlign:"right", verticalAlign:"top", maxWidth:"50%"};
-		return	<tr key={i} className="hitrow">
-					<td>{this.renderRowLanguage(hit)}</td>
-					<td style={sright}>{hit.left}</td>
-					<td style={scenter} className="keyword">{hit.keyword}</td>
-					<td style={sleft}>{hit.right}</td>
-				</tr>;
+	renderRowsAsADV: function(hit,i) {
+	    var sleft={textAlign:"left", verticalAlign:"top", width:"50%"};
+	    var scenter={textAlign:"center", verticalAlign:"top", maxWidth:"50%"};
+	    var sright={textAlign:"right", verticalAlign:"top", maxWidth:"50%"};
+	    
+	    function renderSpans(span, idx) {
+		return <td key={idx} className={span.hit?"keyword":""}>{span.text}</td>;
+	    }
+	    return <tr key={i} className="hitrow">
+	              {this.renderRowLanguage(hit)}
+	              <td style={sleft}>{hit.pid}</td>
+	              <td style={sleft}>{hit.reference}</td>
+	              {hit.spans.map(renderSpans)}
+	           </tr>;
 	},
 
 	renderDiagnostic: function(d, key) {
@@ -865,22 +881,31 @@ var ResultMixin = window.MyReact.ResultMixin = {
 	},
 
 	renderPanelBody: function(corpusHit) {
-		var fulllength = {width:"100%"};
-		if (this.state.displayKwic) {
-			return 	<div>
-						{this.renderErrors(corpusHit)}
-						{this.renderDiagnostics(corpusHit)}
-						<table className="table table-condensed table-hover" style={fulllength}>
-							<tbody>{corpusHit.kwics.map(this.renderRowsAsKwic)}</tbody>
-						</table>
-					</div>;
-		} else {
-			return	<div>
-						{this.renderErrors(corpusHit)}
-						{this.renderDiagnostics(corpusHit)}
-						{corpusHit.kwics.map(this.renderRowsAsHits)}
-					</div>;
-		}
+	    var fulllength = {width:"100%"};
+
+            if (this.state.displayADV) {
+		return 	<div>
+			    {this.renderErrors(corpusHit)}
+			    {this.renderDiagnostics(corpusHit)}
+			    <table className="table table-condensed table-hover" style={fulllength}>
+				<tbody>{corpusHit.advancedLayers.map(this.renderRowsAsADV)}</tbody>
+			    </table>
+		</div>;
+	    } else if (this.state.displayKwic) {
+		return 	<div>
+		    {this.renderErrors(corpusHit)}
+		    {this.renderDiagnostics(corpusHit)}
+		    <table className="table table-condensed table-hover" style={fulllength}>
+			<tbody>{corpusHit.kwics.map(this.renderRowsAsKwic)}</tbody>
+		    </table>
+		</div>;
+	    } else  {
+		return	<div>
+		    {this.renderErrors(corpusHit)}
+		    {this.renderDiagnostics(corpusHit)}
+		    {corpusHit.kwics.map(this.renderRowsAsHits)}
+		</div>;
+	    }
 	},
 
 	renderDisplayKWIC: function() {
@@ -897,16 +922,16 @@ var ResultMixin = window.MyReact.ResultMixin = {
 	},
 
 	renderDisplayADV: function() {
-		return 	<div className="inline btn-group" style={{display:"inline-block"}}>
-					<label forHtml="inputKwic" className="btn btn-flat">
-						{ this.state.displayKwic ?
-							<input id="inputKwic" type="checkbox" value="kwic" checked onChange={this.toggleKwic} /> :
-							<input id="inputKwic" type="checkbox" value="kwic" onChange={this.toggleKwic} />
-						}
-						&nbsp;
-						Display as AdvancedDataView
-					</label>
-				</div>;
+	 	return 	<div className="inline btn-group" style={{display:"inline-block"}}>
+	 				<label forHtml="inputADV" className="btn btn-flat">
+	 					{ this.state.displayADV ?
+	 						<input id="inputADV" type="checkbox" value="adv" checked onChange={this.toggleADV} /> :
+	 						<input id="inputADV" type="checkbox" value="adv" onChange={this.toggleADV} />
+	 					}
+	 					&nbsp;
+	 					Display as AdvancedDataView (ADV)
+	 				</label>
+	 			</div>;
 	},
 
 	renderDownloadLinks: function(corpusId) {
@@ -1040,7 +1065,8 @@ var ZoomedResult = React.createClass({
 						<div style={{marginBottom:2}}>
 							<div className="float-right">
 								<div>
-									{ this.renderDisplayKWIC() }
+									{this.renderDisplayKWIC()}
+									{this.renderDisplayADV()}
 									<div className="inline"> {this.renderDownloadLinks(corpusHit.corpus.id)} </div>
 									<div className="inline"> {this.renderToWeblichtLinks(corpus.id, forceLanguage, wlerror)} </div>
 								</div>
@@ -1135,7 +1161,8 @@ var Results = React.createClass({
 							{ collhits.hits === 0 ? false :
 								<div className="float-right">
 									<div>
-										{ this.renderDisplayKWIC() }
+										{this.renderDisplayKWIC()}
+										{this.renderDisplayADV()}
 										{ collhits.inProgress === 0 ?
 											<div className="inline"> {this.renderDownloadLinks()} </div>
 											:false

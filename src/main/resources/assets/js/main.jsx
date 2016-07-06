@@ -2,7 +2,7 @@
 (function() {
 "use strict";
 
-var VERSION = window.MyAggregator.VERSION = "v.2.0.0-beta-54";
+var VERSION = window.MyAggregator.VERSION = "v.2.9.90-alpha-56";
 
 var URLROOT = window.MyAggregator.URLROOT =
 	window.location.pathname.substring(0, window.location.pathname.indexOf("/",2)) ||
@@ -410,10 +410,11 @@ var HelpPage = React.createClass({
 			<div>
 				<div className="top-gap">
 					<h1>Help</h1>
-					<h3>Performing search in FCS corpora</h3>
-					<p>To perform simple keyword search in all CLARIN-D Federated Content Search centres
+					<h3>Performing search in Federated Content Search corpora</h3>
+					<p>To perform a simple keyword search in all CLARIN Federated Content Search centres
 					and their corpora, go to the search field at the top of the page,
-					enter your query, and click 'search' button or press the 'Enter' key.</p>
+					enter your query, and click the 'search' button or press the 'Enter' key.</p>
+					<p>To perform an advanced search on multiple annotation layers in CLARIN Federated Content Search centres that support this, switch to Multi-layer Federated Content Search (FCS) in the dropdown list, enter a FCS query in the search field at the top of the page, and click the 'search' button or press the 'Enter' key.</p>
 
 					<p>When the search starts, the page will start filling in with the corpora responses.
 					After the entire search process has ended you have the option to download the results
@@ -432,7 +433,7 @@ var HelpPage = React.createClass({
 					The user interface controls that allows to change these options are located
 					right below the search fiels on the main page. The current options are
 					to filter resources based on their language, to select specific resources, and
-					to set the maximum number of hits.</p>
+					to set the maximum number of hits. In the multi-layer FCS search the supported layers filter on the supported features like, e. g. part of speech or lemma in addition to the other filter options.</p>
 
 
 					<h3>More help</h3>
