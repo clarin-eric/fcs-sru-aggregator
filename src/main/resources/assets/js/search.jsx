@@ -1,4 +1,3 @@
-/** @jsx React.DOM */
 (function() {
 "use strict";
 
@@ -527,19 +526,19 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({
 	},
 
 	toggleLanguageSelection: function(e) {
-		$(this.refs.languageModal.getDOMNode()).modal();
+	    $(ReactDOM.findDOMNode(this.refs.languageModal)).modal();
 		e.preventDefault();
 		e.stopPropagation();
 	},
 
 	toggleCorpusSelection: function(e) {
-		$(this.refs.corporaModal.getDOMNode()).modal();
+	    $(ReactDOM.findDOMNode(this.refs.corporaModal)).modal();
 		e.preventDefault();
 		e.stopPropagation();
 	},
 
 	toggleResultModal: function(e, corpusHit) {
-		$(this.refs.resultModal.getDOMNode()).modal();
+	    $(ReactDOM.findDOMNode(this.refs.resultModal)).modal();
 		this.setState({zoomedCorpusHit: corpusHit});
 		e.preventDefault();
 		e.stopPropagation();
@@ -990,7 +989,7 @@ var ZoomedResult = React.createClass({
 		searchedLanguage: PT.array.isRequired,
 		getDownloadLink: PT.func.isRequired,
 		getToWeblichtLink: PT.func.isRequired,
-	        queryType: PT.string.isrequired,
+	        queryType: PT.string.isRequired,
 	},
 	mixins: [ResultMixin],
 

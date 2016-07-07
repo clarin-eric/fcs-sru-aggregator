@@ -1,4 +1,3 @@
-/** @jsx React.DOM */
 (function() {
 "use strict";
 
@@ -10,7 +9,7 @@ window.MyReact = {};
 
 var JQuerySlide = React.createClass({
 	componentWillEnter: function(callback){
-		var el = jQuery(this.getDOMNode());
+		var el = jQuery(ReactDOM.findDOMNode(this));
 		el.css("display", "none");
 		el.slideDown(500, callback);
 		$el.slideDown(function(){
@@ -18,7 +17,7 @@ var JQuerySlide = React.createClass({
 		});
 	},
 	componentWillLeave: function(callback){
-		var $el = jQuery(this.getDOMNode());
+		var $el = jQuery(ReactDOM.findDOMNode(this));
 		$el.slideUp(function(){
 			callback();
 		});
@@ -31,12 +30,12 @@ window.MyReact.JQuerySlide = JQuerySlide;
  
 var JQueryFade = React.createClass({
 	componentWillEnter: function(callback){
-		var el = jQuery(this.getDOMNode());
+		var el = jQuery(ReactDOM.findDOMNode(this));
 		el.css("display", "none");
 		el.fadeIn(500, callback);
 	},
 	componentWillLeave: function(callback){
-		jQuery(this.getDOMNode()).fadeOut(500, callback);
+		jQuery(ReactDOM.findDOMNode(this)).fadeOut(500, callback);
 	},
 	render: function() {
 		return this.props.children;
@@ -71,10 +70,10 @@ window.MyReact.ErrorPane = React.createClass({
 
 window.MyReact.ModalMixin = {
 	componentDidMount: function() {
-		$(this.getDOMNode()).modal({background: true, keyboard: true, show: false});
+		$(ReactDOM.findDOMNode(this)).modal({background: true, keyboard: true, show: false});
 	},
 	componentWillUnmount: function() {
-		$(this.getDOMNode()).off('hidden');
+		$(ReactDOM.findDOMNode(this)).off('hidden');
 	},
 	handleClick: function(e) {
 		e.stopPropagation();
@@ -110,10 +109,10 @@ window.MyReact.Modal = React.createClass({
 		title: PT.object.isRequired,
 	},
 	componentDidMount: function() {
-		$(this.getDOMNode()).modal({background: true, keyboard: true, show: false});
+		$(ReactDOM.findDOMNode(this)).modal({background: true, keyboard: true, show: false});
 	},
 	componentWillUnmount: function() {
-		$(this.getDOMNode()).off('hidden');
+		$(ReactDOM.findDOMNode(this)).off('hidden');
 	},
 	handleClick: function(e) {
 		e.stopPropagation();
@@ -157,7 +156,7 @@ var PopoverMixin = window.MyReact.PopoverMixin = {
 	},
 
 	refresh: function() {
-		$(this.getDOMNode()).popover('destroy');
+		$(ReactDOM.findDOMNode(this)).popover('destroy');
 
 		var content;
 		if (Array.isArray(this.props.children))
@@ -166,7 +165,7 @@ var PopoverMixin = window.MyReact.PopoverMixin = {
 			content = React.renderToString(this.props.children);
 		// console.log("children: ", this.props.children);
 		// console.log("content: ", content);
-		$(this.getDOMNode()).popover({
+		$(ReactDOM.findDOMNode(this)).popover({
 			content: content,
 			animation: this.props.animation,
 			placement: this.props.placement,
@@ -177,7 +176,7 @@ var PopoverMixin = window.MyReact.PopoverMixin = {
 	},
 
 	componentWillUnmount: function() {
-		$(this.getDOMNode()).popover('destroy');
+		$(ReactDOM.findDOMNode(this)).popover('destroy');
 	},	
 };
 

@@ -1,4 +1,3 @@
-/** @jsx React.DOM */
 (function() {
 "use strict";
 
@@ -629,9 +628,9 @@ var routeFromLocation = function() {
 	}
 };
 
-var main = React.render(<Main />,  document.getElementById('body'));
+var main = ReactDOM.render(<Main />,  document.getElementById('body'));
 if (!isEmbeddedView()) {
-	React.render(<Footer />, document.getElementById('footer') );
+	ReactDOM.render(<Footer />, document.getElementById('footer') );
 } else {
 	React.render(<EmbeddedFooter />, document.getElementById('footer') );
 	if (jQuery) { jQuery('body, #footer').addClass('embedded'); }

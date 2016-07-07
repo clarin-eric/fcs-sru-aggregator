@@ -50,8 +50,8 @@ then
 	mkdir -p $FONTDIR
 	mkdir -p $JSDIR
 
-	npm install bower react-tools
-	node_modules/bower/bin/bower install jquery bootstrap react react-addons font-awesome
+	npm install bower browserify babelify babel-cli babel-preset-es2015 babel-preset-react
+	node_modules/bower/bin/bower install jquery bootstrap react font-awesome
 
 	cp bower_components/bootstrap/dist/css/bootstrap.min.css $LIBDIR/
 	cp bower_components/bootstrap/dist/js/bootstrap.min.js $LIBDIR/
@@ -59,8 +59,9 @@ then
 	cp bower_components/jquery/dist/jquery.min.map $LIBDIR/
 	cp bower_components/react/react-with-addons.js $LIBDIR/
 	cp bower_components/react/react-with-addons.min.js $LIBDIR/
+	cp bower_components/react/react-dom.js $LIBDIR/
+	cp bower_components/react/react-dom.min.js $LIBDIR/
 	cp bower_components/font-awesome/css/font-awesome.min.css $LIBDIR/
-
 	cp bower_components/bootstrap/fonts/*  $FONTDIR/
 	cp bower_components/font-awesome/fonts/* $FONTDIR/
 fi
@@ -69,9 +70,10 @@ if [ $BUILD_JSX ]
 then
 	echo; echo "---- jsx"
 	for f in $JSDIR/*.jsx; do
-		cp -v $f $JSDIR/`basename $f .jsx`.js;
+	    echo $f;
+	    node_modules/.bin/browserify -t [ babelify --presets [ es2015 react ] ] ${f} -o ${f%.jsx}.js;
 	done
-	node_modules/react-tools/bin/jsx --no-cache-dir $JSDIR $JSDIR
+
 fi
 
 if [ $BUILD_JAR ]

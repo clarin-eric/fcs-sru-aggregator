@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<title>Aggregator - Federated Content Search</title>
+	<title>Aggregator – Federated Content Search</title>
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -50,6 +50,7 @@
 
 	<script src="lib/jquery.min.js"></script>
 	<script src="lib/react-with-addons.js"></script>
+	<script src="lib/react-dom.js"></script>
 	<script src="lib/bootstrap.min.js"></script>
 	<script src="js/components.js"></script>
 	<script src="js/corpora.js"></script>
@@ -64,15 +65,20 @@
 		var _paq = _paq || [];
 		_paq.push(['trackPageView']);
 		_paq.push(['enableLinkTracking']);
+		_paq.push(["setDomains", ["*.spraakbanken.gu.se/ws/fcs/2.0/aggregator"]]);
 		(function() {
 		var u="https://stats.clarin.eu/";
 		_paq.push(['setTrackerUrl', u+'piwik.php']);
-		_paq.push(['setSiteId', 10]);
+		//_paq.push(['setSiteId', 10]);
+		_paq.push(['setSiteId', 20]);
 		var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
 		g.type='text/javascript'; g.async=true; g.defer=true; g.src=u+'piwik.js'; s.parentNode.insertBefore(g,s);
 		})();
 	</script>
-	<noscript><p><img src="https://stats.clarin.eu/piwik.php?idsite=10" style="border:0;" alt="" /></p></noscript>
+	<noscript><p>
+	<!--img src="https://stats.clarin.eu/piwik.php?idsite=10" style="border:0;" alt="" /-->
+	<img src="https://stats.clarin.eu/piwik.php?idsite=20" style="border:0;" alt="" />
+	</p></noscript>
 	<!-- End Piwik Code -->
 </body>
 </html>
