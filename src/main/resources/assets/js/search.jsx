@@ -1057,7 +1057,7 @@ var ZoomedResult = React.createClass({
 		}
 		var corpus = corpusHit.corpus;
 		return 	<div>
-					<ReactCSSTransitionGroup transitionName="fade">
+				    <ReactCSSTransitionGroup transitionName="fade" transitionEnterTimeout={200} transitionLeaveTimeout={200}>
 						<div className='corpusDescription'>
 							<p><i className="fa fa-institution"/> {corpus.institution.name}</p>
 							{corpus.description ?
@@ -1155,7 +1155,7 @@ var Results = React.createClass({
 		}
 		var showprogress = collhits.inProgress > 0;
 		return 	<div>
-					<ReactCSSTransitionGroup transitionName="fade">
+	    <ReactCSSTransitionGroup transitionName="fade" transitionEnterTimeout={200} transitionLeaveTimeout={200}>
 						{ showprogress ? this.renderProgressMessage() : <div style={{height:20}} />}
 						<div style={{marginBottom:2}}>
 							{ showprogress ? false :
