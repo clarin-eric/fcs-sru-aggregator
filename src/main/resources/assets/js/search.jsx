@@ -683,7 +683,8 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({
 								  getToWeblichtLink={this.getToWeblichtLink}
 								  searchedLanguage={this.state.language}
 								  weblichtLanguages={this.state.weblichtLanguages}
-								  languageMap={this.state.languageMap} />
+								  languageMap={this.state.languageMap} 
+						                  queryType={this.state.queryType} />
 				</Modal>
 
 				<div className="top-gap">
@@ -691,7 +692,8 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({
 							 toggleResultModal={this.toggleResultModal}
 							 getDownloadLink={this.getDownloadLink}
 							 getToWeblichtLink={this.getToWeblichtLink}
-							 searchedLanguage={this.state.language}/>
+							 searchedLanguage={this.state.language}
+					                 queryType={this.state.queryType}/>
 				</div>
 			</div>
 			);
@@ -988,6 +990,7 @@ var ZoomedResult = React.createClass({
 		searchedLanguage: PT.array.isRequired,
 		getDownloadLink: PT.func.isRequired,
 		getToWeblichtLink: PT.func.isRequired,
+	        queryType: PT.string.isrequired,
 	},
 	mixins: [ResultMixin],
 
@@ -1066,7 +1069,7 @@ var ZoomedResult = React.createClass({
 							<div className="float-right">
 								<div>
 									{this.renderDisplayKWIC()}
-									{this.renderDisplayADV()}
+								    {this.props.queryType !== "fcs" ? "" : this.renderDisplayADV()}
 									<div className="inline"> {this.renderDownloadLinks(corpusHit.corpus.id)} </div>
 									<div className="inline"> {this.renderToWeblichtLinks(corpus.id, forceLanguage, wlerror)} </div>
 								</div>
@@ -1093,6 +1096,7 @@ var Results = React.createClass({
 		toggleResultModal: PT.func.isRequired,
 		getDownloadLink: PT.func.isRequired,
 		getToWeblichtLink: PT.func.isRequired,
+	        queryType: PT.string.isRequired, 
 	},
 	mixins: [ResultMixin],
 
@@ -1162,7 +1166,7 @@ var Results = React.createClass({
 								<div className="float-right">
 									<div>
 										{this.renderDisplayKWIC()}
-										{this.renderDisplayADV()}
+									    {this.props.queryType !== "fcs" ? "" : this.renderDisplayADV()}
 										{ collhits.inProgress === 0 ?
 											<div className="inline"> {this.renderDownloadLinks()} </div>
 											:false
