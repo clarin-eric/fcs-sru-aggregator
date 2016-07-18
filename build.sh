@@ -70,8 +70,14 @@ if [ $BUILD_JSX ]
 then
 	echo; echo "---- jsx"
 	for f in $JSDIR/*.jsx; do
-	    echo $f;
-	    node_modules/.bin/browserify -t [ babelify --presets [ es2015 react ] ] ${f} -o ${f%.jsx}.js;
+	    jsxtime=`stat -c %Y ${f}`
+	    jstime=`stat -c %Y ${f%.jsx}.js`
+	    if [ ${jsxtime} -gt ${jstime} ]; then
+		echo ${f};
+		node_modules/.bin/browserify -t [ babelify --presets [ es2015 react ] ] ${f} -o ${f%.jsx}.js;
+	    else
+		echo "${f} is already up-to-date."
+	    fi
 	done
 
 fi
