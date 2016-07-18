@@ -948,6 +948,8 @@ var ResultMixin = window.MyReact.ResultMixin = {
 				<ul className="dropdown-menu">
 					<li> <a href={this.props.getDownloadLink(corpusId, "csv")}>
 							{" "} As CSV file</a></li>
+					<li> <a href={this.props.getDownloadLink(corpusId, "ods")}>
+					                {" "} As ODS file</a></li>
 					<li> <a href={this.props.getDownloadLink(corpusId, "excel")}>
 							{" "} As Excel file</a></li>
 					<li> <a href={this.props.getDownloadLink(corpusId, "tcf")}>

@@ -54,6 +54,7 @@ public class RestService {
 
 	private static final String EXPORT_FILENAME_PREFIX = "ClarinFederatedContentSearch-";
 	private static final String TCF_MEDIA_TYPE = "text/tcf+xml";
+	private static final String ODS_MEDIA_TYPE = "application/vnd.oasis.opendocument.spreadsheet";
 	private static final String EXCEL_MEDIA_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 	private static final String SEARCH_RESULTS_ENCODING = "UTF-8";
 
@@ -248,6 +249,9 @@ public class RestService {
 			byte[] bytes = Exports.getExportTCF(
 					search.getResults(corpusId), search.getSearchLanguage(), filterLanguage);
 			return download(bytes, TCF_MEDIA_TYPE, search.getQuery() + ".xml");
+		} else if (format.equals("ods")) {
+			byte[] bytes = Exports.getExportODS(search.getResults(corpusId), filterLanguage);
+			return download(bytes, ODS_MEDIA_TYPE, search.getQuery() + ".ods");
 		} else if (format.equals("excel")) {
 			byte[] bytes = Exports.getExportExcel(search.getResults(corpusId), filterLanguage);
 			return download(bytes, EXCEL_MEDIA_TYPE, search.getQuery() + ".xls");
@@ -257,7 +261,7 @@ public class RestService {
 		}
 
 		return Response.status(Response.Status.BAD_REQUEST)
-				.entity("format parameter must be one of: text, tcf, excel, csv")
+				.entity("format parameter must be one of: text, tcf, ods, excel, csv")
 				.build();
 	}
 
