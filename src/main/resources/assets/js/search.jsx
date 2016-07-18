@@ -371,6 +371,8 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({
 			},
 			success: function(searchId, textStatus, jqXHR) {
 				// console.log("search ["+query+"] ok: ", searchId, jqXHR);
+			        //Piwik.getAsyncTracker().trackSiteSearch(query, queryType);
+			        _paq.push(['trackSiteSearch', query, queryType, false]);
 				var timeout = 250;
 				setTimeout(this.refreshSearchResults, timeout);
 				this.setState({ searchId: searchId, timeout: timeout });
