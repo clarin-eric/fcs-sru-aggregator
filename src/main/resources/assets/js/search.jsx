@@ -20,8 +20,7 @@ var Modal = window.MyReact.Modal;
 
 var multipleLanguageCode = "mul"; // see ISO-693-3
 
-//var queryTypes = [
-var layers = [
+var queryTypes = [
 	{
 		id: "cql",
 		name: "Text layer Contextual Query Language (CQL)",
@@ -40,14 +39,15 @@ var layers = [
 	},
 ];
 
-var layerMap = {
-     	cql: layers[0],
-     	fcs: layers[1],
+var queryTypeMap = {
+     	cql: queryTypes[0],
+     	fcs: queryTypes[1],
 };
+
 // var layers = [
 // 	{
 // 		id: "text",
-// 		name: "Text Resources",
+// 		name: "Text",
 // 		searchPlaceholder: "Elephant",
 // 		searchLabel: "Search text",
 // 		searchLabelBkColor: "#fed",
@@ -176,8 +176,8 @@ Corpora.prototype.getLanguageCodes = function() {
 	return languages;
 };
 
-Corpora.prototype.isCorpusVisible = function(corpus, layerId, languageCode) {
-	//if (layerId !== "text") {
+Corpora.prototype.isCorpusVisible = function(corpus, queryTypeId, languageCode) {
+	//if (queryTypeId !== "text") {
 	//	return false;
 	//}
 	// yes for any language
@@ -201,10 +201,10 @@ Corpora.prototype.isCorpusVisible = function(corpus, layerId, languageCode) {
 	return false;
 };
 
-Corpora.prototype.setVisibility = function(layerId, languageCode) {
+Corpora.prototype.setVisibility = function(queryTypeId, languageCode) {
 	// top level
 	this.corpora.forEach(function(corpus) {
-		corpus.visible = this.isCorpusVisible(corpus, layerId, languageCode);
+		corpus.visible = this.isCorpusVisible(corpus, queryTypeId, languageCode);
 		this.recurseCorpora(corpus.subCorpora, function(c) { c.visible = corpus.visible; });
 	}.bind(this));
 };
@@ -284,12 +284,10 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({
 			corpora: new Corpora([], this.updateCorpora),
 			languageMap: {},
 			weblichtLanguages: [],
-			queryType: getQueryVariable('queryType') || 'cql',
+	                queryTypeId: getQueryVariable('queryType') || 'cql',
 			query: getQueryVariable('query') || '',
 			language: this.anyLanguage,
 			languageFilter: 'byMeta',
-			//fixme!
-			searchLayerId: getQueryVariable('queryType') || 'cql',
 			numberOfResults: 10,
 
 			searchId: null,
@@ -345,7 +343,7 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({
 
 	search: function() {
 		var query = this.state.query;
-		var queryType = this.state.searchLayerId;
+		var queryType = this.state.queryTypeId;
 		if (!query || this.props.embedded) {
 			this.setState({ hits: this.nohits, searchId: null });
 			return;
@@ -362,10 +360,9 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({
 			url: 'rest/search',
 			type: "POST",
 			data: {
-				layer: this.state.searchLayerId,
+			        query: query,
+	                        queryType: queryType,
 				language: this.state.language[0],
-				queryType: queryType,
-				query: query,
 				numberOfResults: this.state.numberOfResults,
 				corporaIds: selectedIds,
 			},
@@ -451,7 +448,7 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({
 	},
 
 	setLanguageAndFilter: function(languageObj, languageFilter) {
-		this.state.corpora.setVisibility(this.state.searchLayerId,
+		this.state.corpora.setVisibility(this.state.queryTypeId,
 			languageFilter === 'byGuess' ? multipleLanguageCode : languageObj[0]);
 		this.setState({
 			language: languageObj,
@@ -460,14 +457,13 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({
 		});
 	},
 
-	setLayer: function(layerId) {
-		this.state.corpora.setVisibility(layerId, this.state.language[0]);
+	setQueryType: function(queryTypeId) {
+		this.state.corpora.setVisibility(queryTypeId, this.state.language[0]);
 		this.setState({
-			searchLayerId: layerId,
-			queryType: layerId,
+			queryTypeId: queryTypeId,
 			hits: this.nohits,
 			searchId: null,
-		        displayADV: layerId == "fcs" ? true : false,
+		        displayADV: queryTypeId == "fcs" ? true : false,
 			corpora: this.state.corpora, // === this.state.corpora.update();
 		});
 	},
@@ -572,7 +568,7 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({
 	renderSearchButtonOrLink: function() {
 		if (this.props.embedded) {
 			var query = this.state.query;
-			var queryType = this.state.queryType;
+			var queryType = this.state.queryTypeId;
 			var newurl = !query ? "#" :
 				(window.MyAggregator.URLROOT + "?" + encodeQueryData({queryType:queryType, query:query, mode:'search'}));
 			return (
@@ -590,14 +586,14 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({
 	},
 
 	render: function() {
-		var layer = layerMap[this.state.searchLayerId];
+		var queryType = queryTypeMap[this.state.queryTypeId];
 		return	(
 			<div className="top-gap">
 				<div className="row">
 					<div className="aligncenter" style={{marginLeft:16, marginRight:16}}>
 						<div className="input-group">
-							<span className="input-group-addon" style={{backgroundColor:layer.searchLabelBkColor}}>
-								{layer.searchLabel}
+							<span className="input-group-addon" style={{backgroundColor:queryType.searchLabelBkColor}}>
+								{queryType.searchLabel}
 							</span>
 
 							<input className="form-control input-lg search" name="query" type="text"
@@ -626,10 +622,10 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({
 									<span/>
 								</div>
 								<div className="input-group-btn hidden-xxs">
-									<ul ref="layerDropdownMenu" className="dropdown-menu">
-										{ 	layers.map(function(l) {
+									<ul ref="queryTypeDropdownMenu" className="dropdown-menu">
+										{ 	queryTypes.map(function(l) {
 												var cls = l.disabled ? 'disabled':'';
-												var handler = function() { if (!l.disabled) this.setLayer(l.id); }.bind(this);
+												var handler = function() { if (!l.disabled) this.setQueryType(l.id); }.bind(this);
 												return <li key={l.id} className={cls}> <a tabIndex="-1" href="#"
 													onClick={handler}> {l.name} </a></li>;
 											}.bind(this))
@@ -637,7 +633,7 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({
 									</ul>
 									<button className="form-control btn btn-default"
 											aria-expanded="false" data-toggle="dropdown" >
-										{layer.name} <span className="caret"/>
+										{queryType.name} <span className="caret"/>
 									</button>
 								</div>
 
@@ -685,7 +681,7 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({
 								  searchedLanguage={this.state.language}
 								  weblichtLanguages={this.state.weblichtLanguages}
 								  languageMap={this.state.languageMap} 
-						                  queryType={this.state.queryType} />
+						                  queryTypeId={this.state.queryTypeId} />
 				</Modal>
 
 				<div className="top-gap">
@@ -694,7 +690,7 @@ var AggregatorPage = window.MyAggregator.AggregatorPage = React.createClass({
 							 getDownloadLink={this.getDownloadLink}
 							 getToWeblichtLink={this.getToWeblichtLink}
 							 searchedLanguage={this.state.language}
-					                 queryType={this.state.queryType}/>
+					                 queryTypeId={this.state.queryTypeId}/>
 				</div>
 			</div>
 			);
@@ -993,7 +989,7 @@ var ZoomedResult = React.createClass({
 		searchedLanguage: PT.array.isRequired,
 		getDownloadLink: PT.func.isRequired,
 		getToWeblichtLink: PT.func.isRequired,
-	        queryType: PT.string.isRequired,
+	        queryTypeId: PT.string.isRequired,
 	},
 	mixins: [ResultMixin],
 
@@ -1072,7 +1068,7 @@ var ZoomedResult = React.createClass({
 							<div className="float-right">
 								<div>
 									{this.renderDisplayKWIC()}
-								    {this.props.queryType !== "fcs" ? "" : this.renderDisplayADV()}
+								    {this.props.queryTypeId !== "fcs" ? "" : this.renderDisplayADV()}
 									<div className="inline"> {this.renderDownloadLinks(corpusHit.corpus.id)} </div>
 									<div className="inline"> {this.renderToWeblichtLinks(corpus.id, forceLanguage, wlerror)} </div>
 								</div>
@@ -1099,7 +1095,7 @@ var Results = React.createClass({
 		toggleResultModal: PT.func.isRequired,
 		getDownloadLink: PT.func.isRequired,
 		getToWeblichtLink: PT.func.isRequired,
-	        queryType: PT.string.isRequired, 
+	        queryTypeId: PT.string.isRequired, 
 	},
 	mixins: [ResultMixin],
 
@@ -1169,7 +1165,7 @@ var Results = React.createClass({
 								<div className="float-right">
 									<div>
 										{this.renderDisplayKWIC()}
-									    {this.props.queryType !== "fcs" ? "" : this.renderDisplayADV()}
+									    {this.props.queryTypeId !== "fcs" ? "" : this.renderDisplayADV()}
 										{ collhits.inProgress === 0 ?
 											<div className="inline"> {this.renderDownloadLinks()} </div>
 											:false
