@@ -1,5 +1,5 @@
 BASEDIR=/var/lib/aggregator
-HEAPSIZE=2048m
+HEAPSIZE=4096m
 CONFFILE=/etc/clarind/aggregator.yaml
 JARFILE=/usr/share/aggregator/aggregator.jar
 export BASEDIR HEAPSIZE CONFFILE JARFILE
