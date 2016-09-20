@@ -7,7 +7,7 @@
 APPNAME=$(basename $0)
 BASEDIR=${BASEDIR:-.}
 CONFFILE=${CONFFILE:-${BASEDIR}/${APPNAME}.yaml}
-HEAPSIZE=${HEAPSIZE:-2048m}
+HEAPSIZE=${HEAPSIZE:-4096m}
 JARFILE=${JARFILE:-${BASEDIR}/${APPNAME}.jar}
 
 while getopts ":c:h:" opt; do
