@@ -4,7 +4,8 @@
 var VERSION = window.MyAggregator.VERSION = "v.2.9.90-alpha-56";
 
 var URLROOT = window.MyAggregator.URLROOT =
-	window.location.pathname.substring(0, window.location.pathname.indexOf("/",2)) ||
+	//window.location.pathname.substring(0, window.location.pathname.indexOf("/",2)) ||
+window.location.pathname ||
 	"/Aggregator";
 
 var PT = React.PropTypes;
@@ -93,7 +94,7 @@ var Main = React.createClass({
 	},
 
 	renderAggregator: function() {
-		return <AggregatorPage ajax={this.ajax} error={this.error} />;
+		return <AggregatorPage ajax={this.ajax} error={this.error} embedded={false}/>;
 	},
 
 	renderHelp: function() {
@@ -505,6 +506,10 @@ var AboutPage = React.createClass({
 							<li>
 								<a href="http://poi.apache.org/">Apache POI</a>{" "}
 								(<a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License 2.0</a>)
+							</li>
+							<li>
+								<a href="http://jopendocument.org/">jOpenDocument</a>{" "}
+								(<a href="http://www.gnu.org/licenses/gpl-3.0.txt">GPL 3.0</a>)
 							</li>
 						</ul>
 
