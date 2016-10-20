@@ -604,7 +604,7 @@ var EmbeddedFooter = React.createClass({
 
 function isEmbeddedView() {
 	var path = window.location.pathname.split('/');
-	return (path.length >= 3 && path[2] === 'embed');
+	return (path.length >= 3 && path[path.length - 1] === 'embed');
 }
 
 function endsWith(str, suffix) {
@@ -615,8 +615,8 @@ var routeFromLocation = function() {
 	// console.log("routeFromLocation: " + document.location);
 	if (!this) throw "routeFromLocation must be bound to main";
 	var path = window.location.pathname.split('/');
-	if (path.length === 3) {
-		var p = path[2];
+	if (path.length >= 3) {
+		var p = path[path.length - 1];
 		if (p === 'help') {
 			this.toHelp(false);
 		} else if (p === 'about') {
