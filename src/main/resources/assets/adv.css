@@ -1,0 +1,251 @@
+.query_token:only-of-type .close_btn {
+	opacity: 0;
+	cursor: default;
+	transition: opacity 200ms ease;
+}
+
+.query_token .close_btn {
+	cursor: pointer;
+	float: right;
+	opacity: 1;
+	transition: opacity 200ms ease;
+	font-size: 15px;
+}
+
+.query_token .close_btn i {
+    top: 3px;
+}
+
+.query_token .token_header {
+	padding-bottom: 3px;
+	cursor: move;
+}
+
+.query_token {
+	background-color: #e1e1e1;
+	display: inline-block;
+	vertical-align: top;
+	*vertical-align: auto;
+	*zoom: 1;
+	*display: inline;
+	padding: 5px;
+	border: 1px solid #999;
+	margin-left: 0;
+	margin-right: 10px;
+	margin-bottom: 5px;
+	box-shadow: 2px 2px 3px grey;
+}
+
+#adv_query_input_group {
+        overflow: auto;
+	white-space: nowrap;
+}
+
+.query_arg {
+    border-radius: 2px;
+    padding: 5px;
+    background-color: #f7fceb;
+    border: solid 1px #999;
+    margin-bottom: 5px;
+    padding-right: 13px;
+}
+
+.query_arg .arg_footer .link {
+    float: left;
+}
+
+.link:hover {
+    color: indianred !important;
+}
+
+.or_arg {
+	margin-bottom: 5px;
+}
+
+.query_token .left_col {
+	display: inline-block;
+	vertical-align: top;
+	*vertical-align: auto;
+	*zoom: 1;
+	*display: inline;
+	min-width: 16px;
+}
+
+.query_arg:only-of-type .or_arg:only-child .remove_arg {
+	cursor: default;
+	opacity: 0;
+	transition: opacity 200ms ease;
+}
+
+.query_token .remove_arg {
+	position: relative;
+	top: 12px;
+	left: -2px;
+	//height: 20px;
+	//width: 20px;
+	opacity: 1;
+	transition: opacity 200ms ease;
+}
+
+.right_col {
+	padding-right: 2px;
+}
+
+.inline_block {
+	display: inline-block;
+	vertical-align: middle;
+	*vertical-align: auto;
+	*zoom: 1;
+	*display: inline;
+}
+
+.query_token .arg_type {
+	display: inline-block;
+/*	vertical-align: middle; */
+	*vertical-align: auto;
+	*zoom: 1;
+	*display: inline;
+	width: 160px;
+}
+
+.query_token .arg_opts {
+	margin-left: 5px;
+}
+
+.query_token input.arg_value {
+  width: 95%;
+}
+
+.query_token .arg_value {
+  max-width: 300px;
+}
+
+button, input, optgroup, select, textarea {
+	color: inherit;
+	font: inherit;
+	margin: 0;
+}
+
+input {
+	line-height: normal;
+}
+
+.query_token .arg_value {
+	max-width: 300px;
+}
+
+.arg_val_container {
+	margin-top: 2px;
+}
+
+.query_token .insert_arg {
+	margin-top: 2px;
+	float: left;
+}
+
+/* .query_token .token_footer button i { */
+/* 	position: relative; */
+/* 	top: 0px; */
+/* 	left: -2px; */
+/* 	font-size: 14px; */
+/* } */
+
+.query_token .token_footer button.insert_arg {
+    float: left;
+}
+
+.query_token .token_footer button {
+//	width: 20px;
+//	height: 20px;
+	float: right;
+}
+
+.query_token .token_footer {
+	font-size: .8em;
+}
+
+/* .btn { */
+/* 	display: inline-block; */
+/* 	margin-bottom: 0; */
+/* 	font-weight: 400; */
+/* 	text-align: center; */
+/* 	vertical-align: middle; */
+/* 	cursor: pointer; */
+/* 	border: 1px solid transparent; */
+/* 	white-space: nowrap; */
+/* 	padding: 6px 12px; */
+/* 	font-size: 14px; */
+/* 	line-height: 1.428571429; */
+/* 	border-radius: 4px; */
+/* 	-webkit-user-select: none; */
+/* 	-moz-user-select: none; */
+/* 	-ms-user-select: none; */
+/* 	user-select: none; */
+/* } */
+
+.query_token select, input {
+    border: 1px dashed #ccc;
+    outline: medium none;
+    float: left;
+}
+
+.query_token .repeat {
+	float: right;
+	margin-right: 25px;
+}
+
+.query_token .repeat input {
+	max-width: 30px;
+}
+
+.query_token .lower_footer {
+	text-align: right;
+	margin-top: 2px;
+}
+
+.insert_token {
+	position: relative;
+	margin-left: 10px;
+}
+
+.image_button:hover {
+	cursor: pointer;
+}
+
+/* .fa, .boxdiv.disabled .checkbox, .tree.disabled > label .checkbox { */
+/* 	display: inline-block; */
+/* 	font: normal normal normal 14px/1 FontAwesome; */
+/* 	font-size: inherit; */
+/* 	text-rendering: auto; */
+/* 	-webkit-font-smoothing: antialiased; */
+/* 	-moz-osx-font-smoothing: grayscale; */
+/* 	transform: translate(0, 0); */
+/* } */
+
+.fa-times-circle-o::before {
+	content: "";
+}
+
+[ng\:cloak], [ng-cloak], [data-ng-cloak], [x-ng-cloak], .ng-cloak, .x-ng-cloak, .ng-hide:not(.ng-hide-animate), .hide-true {
+	display: none !important;
+}
+
+/*** transitions css ***/
+.token-enter {
+  opacity: 0.01;
+  margin-left: -50%;
+}
+.token-enter.token-enter-active {
+  opacity: 1;
+  margin-left: 0;
+  transition: all 250ms linear;
+}
+.token-leave {
+  opacity: 1;
+  margin-left: 0;
+}
+.token-leave.token-leave-active {
+  opacity: 0.01;
+  margin-left: 50%;
+  transition: all 250ms linear;
+}
