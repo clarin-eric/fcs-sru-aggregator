@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<title>Aggregator – Federated Content Search</title>
+	<title>Aggregator – CLARIN Federated Content Search</title>
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -53,9 +53,6 @@
 	<script src="lib/react-with-addons.js"></script>
 	<script src="lib/react-dom.js"></script>
 	<script src="lib/bootstrap.min.js"></script>
-	<script src="js/components.js"></script>
-	<script src="js/corpora.js"></script>
-	<script src="js/search.js"></script>
 	<script src="js/main.js"></script>
 
 	<link href="clarinservices/clarinservices.css" rel="stylesheet">
@@ -63,6 +60,7 @@
 
 	<!-- Piwik -->
 	<script type="text/javascript">
+	  if (location.hostname !== "localhost") {
 		var _paq = _paq || [];
 		_paq.push(['trackPageView']);
 		_paq.push(['enableLinkTracking']);
@@ -75,6 +73,7 @@
 		var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
 		g.type='text/javascript'; g.async=true; g.defer=true; g.src=u+'piwik.js'; s.parentNode.insertBefore(g,s);
 		})();
+	   }
 	</script>
 	<noscript><p>
 	<!--img src="https://stats.clarin.eu/piwik.php?idsite=10" style="border:0;" alt="" /-->

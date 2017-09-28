@@ -26,9 +26,13 @@ case $key in
     --jar)
     BUILD_JAR=1
     ;;
+    --jar-debug)
+    BUILD_JAR_DEBUG=1
+    ;;
     --rpm)
     BUILD_RPM=1
     BUILD_JAR=
+    BUILD_JAR_DEBUG=
     ;;
     --run)
     RUN_JAR=1
@@ -50,10 +54,11 @@ then
 	mkdir -p $FONTDIR
 	mkdir -p $JSDIR
 
-	npm install bower browserify babelify babel-cli babel-preset-es2015 babel-preset-react
+	npm install bower browserify babelify babel-cli babel-preset-es2015 babel-preset-react babel-preset-env prop-types create-react-class react-transition-group react-i18next codemirror 
 	node_modules/bower/bin/bower install jquery bootstrap react font-awesome
 
 	cp bower_components/bootstrap/dist/css/bootstrap.min.css $LIBDIR/
+	cp bower_components/bootstrap/dist/css/bootstrap.min.css.map $LIBDIR/
 	cp bower_components/bootstrap/dist/js/bootstrap.min.js $LIBDIR/
 	cp bower_components/jquery/dist/jquery.min.js $LIBDIR/
 	cp bower_components/jquery/dist/jquery.min.map $LIBDIR/
@@ -71,10 +76,26 @@ then
 	echo; echo "---- jsx"
 	for f in $JSDIR/*.jsx; do
 	    jsxtime=`stat -c %Y ${f}`
-	    jstime=`stat -c %Y ${f%.jsx}.js`
-	    if [ ${jsxtime} -gt ${jstime} ]; then
-		echo ${f};
+	    jstime=""
+	    if [ -e ${f%.jsx}.js ]; then
+		jstime=`stat -c %Y ${f%.jsx}.js`
+	    fi
+	    for subres in $(find $JSDIR/{pages,components}/ -name '*.jsx'); do
+		jsxsubtime=`stat -c %Y ${subres}`
+		if [ ${jsxsubtime} -gt ${jsxtime} ]; then
+		    jsxtime=${jsxsubtime};
+		fi
+	    done
+
+	    if [ "${jstime}" == "" ] || [ ${jsxtime} -gt ${jstime} ]; then
+		echo "${f}";
 		node_modules/.bin/browserify -t [ babelify --presets [ es2015 react ] ] ${f} -o ${f%.jsx}.js;
+		if [ $? -gt 0 ]; then
+		    rm -f ${f%.jsx}.js;
+		    if [ -e ${f%.jsx}.js ]; then 
+			echo "Removed output ${f%.jsx}.js since the return value is greater than 0 ..."
+		    fi
+		fi
 	    else
 		echo "${f} is already up-to-date."
 	    fi
@@ -86,6 +107,12 @@ if [ $BUILD_JAR ]
 then
 	echo; echo "---- mvn clean package"
 	mvn -q clean package
+fi
+
+if [ $BUILD_JAR_DEBUG ]
+then
+	echo; echo "---- mvn clean package debug"
+	mvn -X -q clean package
 fi
 
 if [ $BUILD_RPM ]

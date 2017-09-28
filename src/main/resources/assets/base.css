@@ -435,11 +435,11 @@ div.popover {
 .fade-enter.fade-enter-active {
   opacity: 1;
 }
-.fade-leave {
+.fade-exit {
   opacity: 1;
   transition: all .2s ease-in;
 }
-.fade-leave.fade-leave-active {
+.fade-exit.fade-exit-active {
   opacity: 0.01;
 }
 
@@ -451,11 +451,11 @@ div.popover {
 .error-enter.error-enter-active {
   opacity: 1;
 }
-.error-leave {
+.error-exit {
   opacity: 1;
   transition: all .2s ease-in;
 }
-.error-leave.error-leave-active {
+.error-exit.error-exit-active {
   opacity: 0.01;
 }
 
@@ -467,11 +467,11 @@ div.popover {
 .display-enter.display-enter-active {
   opacity: 1;
 }
-.display-leave {
+.display-exit {
   opacity: 1;
   transition: all 2s ease-in;
 }
-.display-leave.display-leave-active {
+.display-exit.display-exit-active {
   opacity: 0.01;
 }
 
