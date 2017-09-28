@@ -30,9 +30,12 @@ public class ScanCrawlTask implements Runnable {
 	private AtomicReference<Statistics> searchStatisticsAtom;
 	private String centerRegistryUrl;
 	private List<URL> additionalCQLEndpoints;
+	private List<URL> additionalFCSEndpoints;
 
 	public ScanCrawlTask(ThrottledClient sruClient, String centerRegistryUrl,
-			int cacheMaxDepth, List<URL> additionalCQLEndpoints,
+			int cacheMaxDepth,
+			List<URL> additionalCQLEndpoints,
+			List<URL> additionalFCSEndpoints,
 			EndpointFilter filter,
 			AtomicReference<Corpora> corporaAtom,
 			File cachedCorpora, File oldCachedCorpora,
@@ -43,6 +46,7 @@ public class ScanCrawlTask implements Runnable {
 		this.centerRegistryUrl = centerRegistryUrl;
 		this.cacheMaxDepth = cacheMaxDepth;
 		this.additionalCQLEndpoints = additionalCQLEndpoints;
+		this.additionalFCSEndpoints = additionalFCSEndpoints;
 		this.filter = filter;
 		this.corporaAtom = corporaAtom;
 		this.cachedCorpora = cachedCorpora;
@@ -63,10 +67,20 @@ public class ScanCrawlTask implements Runnable {
 			}
 			if (additionalCQLEndpoints != null && !additionalCQLEndpoints.isEmpty()) {
 				institutions.add(0,
-						new Institution("Unknown Institution", null) {
+						new Institution("Unknown Institution, legacy", null) {
 							{
 								for (URL u : additionalCQLEndpoints) {
-									addEndpoint(u.toExternalForm());
+									addEndpoint(u.toExternalForm(), FCSProtocolVersion.LEGACY);
+								}
+							}
+						});
+			}
+			if (additionalFCSEndpoints != null && !additionalFCSEndpoints.isEmpty()) {
+				institutions.add(0,
+						new Institution("Unknown Institution, FCS v2.0", null) {
+							{
+								for (URL u : additionalFCSEndpoints) {
+									addEndpoint(u.toExternalForm(), FCSProtocolVersion.VERSION_2);
 								}
 							}
 						});

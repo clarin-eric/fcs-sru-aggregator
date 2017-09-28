@@ -2,7 +2,10 @@ aggregatorParams:
   CENTER_REGISTRY_URL: https://centres.clarin.eu/restxml/
   # additionalCQLEndpoints:
     # - https://clarin.ids-mannheim.de/digibibsru-new
+  # additionalFCSEndpoints:
 
+  #AGGREGATOR_FILE_PATH: /var/lib/aggregator/fcsAggregatorCorpora.json
+  #AGGREGATOR_FILE_PATH_BACKUP: /var/lib/aggregator/fcsAggregatorCorpora.backup.json
   AGGREGATOR_FILE_PATH: /var/lib/aggregator/fcsAggregatorCorpora.json
   AGGREGATOR_FILE_PATH_BACKUP: /var/lib/aggregator/fcsAggregatorCorpora.backup.json
 
@@ -36,6 +39,7 @@ aggregatorParams:
 server:
   applicationContextPath: /Aggregator
   type: simple
+  #rootPath: '/rest/*'
   connector:
     type: http
     port: 4019
@@ -51,6 +55,10 @@ logging:
 
   appenders:
     - type: file
+      #currentLogFilename: /var/log/aggregator/access.log
       currentLogFilename: /var/log/aggregator/access.log
+      #archivedLogFilenamePattern: /var/log/aggregator/access-%d.log.gz
       archivedLogFilenamePattern: /var/log/aggregator/access-%d.log.gz
       archivedFileCount: 5
+#  appenders:
+#    - type: console

@@ -171,7 +171,7 @@ public class Statistics {
 	public void upgradeProtocolVersion(Institution institution, Endpoint endpoint) {
 		EndpointStats stats = getEndpointStats(institution, endpoint);
 		synchronized (stats.lock) {
-		    stats.version = endpoint.getProtocol() == FCSProtocolVersion.VERSION_2 ? FCSProtocolVersion.VERSION_2 : FCSProtocolVersion.VERSION_1;
+		    stats.version = endpoint.getProtocol().equals(FCSProtocolVersion.VERSION_2) ? FCSProtocolVersion.VERSION_2 : FCSProtocolVersion.VERSION_1;
 		}
 	}
 

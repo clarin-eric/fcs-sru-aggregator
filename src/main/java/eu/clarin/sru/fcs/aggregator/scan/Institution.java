@@ -29,6 +29,19 @@ public class Institution {
 		return endpointUrl;
 	}
 
+	public String addEndpoint(String endpointUrl, FCSProtocolVersion version) {
+	    if (version.equals(FCSProtocolVersion.VERSION_2)) { 
+		endpoints.add(new Endpoint(endpointUrl, FCSProtocolVersion.VERSION_2));
+	    } else if (version.equals(FCSProtocolVersion.VERSION_1)) {
+		endpoints.add(new Endpoint(endpointUrl, FCSProtocolVersion.VERSION_1));
+	    } else if (version.equals(FCSProtocolVersion.LEGACY)) {
+		endpoints.add(new Endpoint(endpointUrl, FCSProtocolVersion.LEGACY));
+            } else {
+		endpoints.add(new Endpoint(endpointUrl, FCSProtocolVersion.LEGACY));
+	    }
+	    return endpointUrl;
+	}
+
 	public String getName() {
 		return name;
 	}
