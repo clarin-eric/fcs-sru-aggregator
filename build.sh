@@ -54,7 +54,7 @@ then
 	mkdir -p $FONTDIR
 	mkdir -p $JSDIR
 
-	npm install bower browserify babelify babel-cli babel-preset-es2015 babel-preset-react babel-preset-env prop-types create-react-class react-transition-group react-i18next codemirror 
+	npm install bower browserify babelify babel-cli babel-preset-es2015 babel-preset-react babel-preset-env prop-types create-react-class react-addons-linked-state-mixin react-transition-group react-i18next codemirror 
 	node_modules/bower/bin/bower install jquery bootstrap react font-awesome
 
 	cp bower_components/bootstrap/dist/css/bootstrap.min.css $LIBDIR/
@@ -62,10 +62,10 @@ then
 	cp bower_components/bootstrap/dist/js/bootstrap.min.js $LIBDIR/
 	cp bower_components/jquery/dist/jquery.min.js $LIBDIR/
 	cp bower_components/jquery/dist/jquery.min.map $LIBDIR/
-	cp bower_components/react/react-with-addons.js $LIBDIR/
-	cp bower_components/react/react-with-addons.min.js $LIBDIR/
-	cp bower_components/react/react-dom.js $LIBDIR/
-	cp bower_components/react/react-dom.min.js $LIBDIR/
+	cp bower_components/react/react.development.js $LIBDIR/
+	cp bower_components/react/react.production.min.js $LIBDIR/
+	cp bower_components/react/react-dom.development.js $LIBDIR/
+	cp bower_components/react/react-dom.production.min.js $LIBDIR/
 	cp bower_components/font-awesome/css/font-awesome.min.css $LIBDIR/
 	cp bower_components/bootstrap/fonts/*  $FONTDIR/
 	cp bower_components/font-awesome/fonts/* $FONTDIR/

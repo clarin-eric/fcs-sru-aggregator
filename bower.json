@@ -26,7 +26,7 @@
   "dependencies": {
     "bootstrap": "^3.3.6",
     "font-awesome": "^4.6.3",
-    "react": "^15.6.1"
+    "react": "^16.0.0"
   },
   "resolutions": {
     "jquery": "2.2.4"
