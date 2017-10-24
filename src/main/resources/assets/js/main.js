@@ -23897,11 +23897,12 @@ var Footer = (0, _createReactClass2.default)({
 
 			//fixme! - class Footer extends React.Component {
 			propTypes: {
-						VERSION: PT.string.isRequired
+						VERSION: PT.string.isRequired,
+						toAbout: PT.func.isRequired
 			},
 
 			toAbout: function toAbout(e) {
-						main.toAbout(true);
+						this.props.toAbout(true);
 						e.preventDefault();
 						e.stopPropagation();
 			},
@@ -25988,7 +25989,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 	var main = ReactDOM.render(React.createElement(Main, null), document.getElementById('body'));
 	if (!isEmbeddedView()) {
-		ReactDOM.render(React.createElement(_footer2.default, { VERSION: VERSION }), document.getElementById('footer'));
+		ReactDOM.render(React.createElement(_footer2.default, { VERSION: VERSION, toAbout: main.toAbout }), document.getElementById('footer'));
 	} else {
 		ReactDOM.render(React.createElement(_embeddedfooter2.default, { URLROOT: URLROOT }), document.getElementById('footer'));
 		if (jQuery) {

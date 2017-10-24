@@ -9,10 +9,11 @@ var Footer = createReactClass({
 //fixme! - class Footer extends React.Component {
     propTypes: {
 	VERSION: PT.string.isRequired,
+	toAbout: PT.func.isRequired,
     },
 
     toAbout: function(e) {
-	main.toAbout(true);
+	this.props.toAbout(true);
 	e.preventDefault();
 	e.stopPropagation();
     },

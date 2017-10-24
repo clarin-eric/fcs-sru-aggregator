@@ -268,7 +268,7 @@ var routeFromLocation = function() {
 
 var main = ReactDOM.render(<Main />,  document.getElementById('body'));
 if (!isEmbeddedView()) {
-	ReactDOM.render(<Footer VERSION={VERSION} />, document.getElementById('footer') );
+	ReactDOM.render(<Footer VERSION={VERSION} toAbout={main.toAbout}/>, document.getElementById('footer') );
 } else {
 	ReactDOM.render(<EmbeddedFooter URLROOT={URLROOT} />, document.getElementById('footer') );
 	if (jQuery) { jQuery('body, #footer').addClass('embedded'); }
