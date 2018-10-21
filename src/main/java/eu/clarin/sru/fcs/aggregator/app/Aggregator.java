@@ -102,6 +102,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Yana Panchenko
  * @author edima
+ * @author ljo
  */
 public class Aggregator extends Application<AggregatorConfiguration> {
 
@@ -132,7 +133,7 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 
 	@Override
 	public String getName() {
-		return "FCS Aggregator";
+		return "CLARIN FCS Aggregator";
 	}
 
 	@Override
@@ -160,6 +161,7 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 
 		environment.getApplicationContext().setSessionHandler(new SessionHandler());
 		environment.getApplicationContext().setErrorHandler(new ErrorHandler());
+		// Moved to configuration section server in later versions
 		environment.jersey().setUrlPattern("/rest/*");
 		environment.jersey().register(new RestService());
 
@@ -265,6 +267,7 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 		ScanCrawlTask task = new ScanCrawlTask(sruClient,
 				params.CENTER_REGISTRY_URL, params.SCAN_MAX_DEPTH,
 				params.additionalCQLEndpoints,
+				params.additionalFCSEndpoints,
 				null, scanCacheAtom, corporaCacheFile, corporaOldCacheFile,
 				scanStatsAtom, searchStatsAtom);
 		scheduler.scheduleAtFixedRate(task, params.SCAN_TASK_INITIAL_DELAY,

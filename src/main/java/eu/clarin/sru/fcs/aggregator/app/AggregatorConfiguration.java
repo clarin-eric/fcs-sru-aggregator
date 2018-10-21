@@ -21,6 +21,9 @@ public class AggregatorConfiguration extends Configuration {
 		List<URL> additionalCQLEndpoints;
 
 		@JsonProperty
+		List<URL> additionalFCSEndpoints;
+
+		@JsonProperty
 		List<URI> slowEndpoints;
 
 		@NotEmpty
