@@ -19,9 +19,9 @@ var HelpPage = createReactClass({
 					<h1>Help</h1>
 					<h3>Performing search in Federated Content Search corpora</h3>
 					<p>To perform a simple keyword search in all CLARIN Federated Content Search centres
-					and their corpora, go to the search field at the top of the page,
+					and their corpora, go to the search field at the top of the page or switch to Text Layer Contextual Query Language (CQL) in the dropdown list,
 					enter your query, and click the 'search' button or press the 'Enter' key.</p>
-					<p>To perform an advanced search on multiple annotation layers in CLARIN Federated Content Search centres that support this, switch to Multi-layer Federated Content Search (FCS) in the dropdown list, enter a FCS query in the search field at the top of the page, and click the 'search' button or press the 'Enter' key.</p>
+					<p>To perform an advanced search on multiple annotation layers in CLARIN Federated Content Search centres that support this, switch to Multi-layer Federated Content Search (FCS-QL) in the dropdown list, create the query in the Graphical Query Builder, and click the 'search' button or press the 'Enter' key. Alternatively in embedded mode enter a FCS-QL query in the search field at the top of the page.</p>
 
 					<p>When the search starts, the page will start filling in with the corpora responses.
 					After the entire search process has ended you have the option to download the results
