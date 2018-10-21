@@ -35115,10 +35115,10 @@ var EmbeddedFooter = (0, _createReactClass2.default)({
 					{ style: { position: 'relative', float: 'right' } },
 					React.createElement(
 						"div",
-						{ className: "rightist", style: { position: 'absolute', right: 0, width: 150 } },
+						{ className: "rightist", style: { position: 'absolute', right: 0, width: 170 } },
 						React.createElement(
 							"a",
-							{ href: this.props.URLROOT, target: "_blank", tabIndex: "-1" },
+							{ href: this.props.URLROOT + "/", target: "_blank", tabIndex: "-1" },
 							React.createElement("img", { width: "28px", height: "28px", src: "img/magglass1.png" }),
 							React.createElement(
 								"header",
@@ -37615,6 +37615,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 	var URLROOT = window.MyAggregator.URLROOT = window.location.pathname.substring(0, window.location.pathname.indexOf("/", 2)) ||
 	//window.location.pathname ||
+	//"/ws/fcs/2.0/aggregator";
 	"/Aggregator";
 
 	var PT = _propTypes2.default;
@@ -37839,12 +37840,12 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 							),
 							React.createElement(
 								"a",
-								{ className: "navbar-brand", href: URLROOT, tabIndex: "-1" },
+								{ className: "navbar-brand", href: URLROOT + "/", tabIndex: "-1" },
 								React.createElement("img", { width: "28px", height: "28px", src: "img/magglass1.png" }),
 								React.createElement(
 									"header",
 									{ className: "inline" },
-									" Content Search "
+									" Federated Content Search "
 								)
 							)
 						),
@@ -38717,7 +38718,7 @@ var AggregatorPage = (0, _createReactClass2.default)({
 				'btn-primary': true,
 				'input-lg': true
 			});
-			var newurl = !query ? "#" : window.MyAggregator.URLROOT + "?" + encodeQueryData({ queryType: queryTypeId, query: query, mode: 'search' });
+			var newurl = !query ? "#" : window.MyAggregator.URLROOT + (this.props.embedded ? "/embed" : "/") + "?" + encodeQueryData({ queryType: queryTypeId, query: query, mode: 'search' });
 			return React.createElement(
 				"a",
 				{ className: btnClass, style: { paddingTop: 13 },
@@ -39304,12 +39305,12 @@ var HelpPage = (0, _createReactClass2.default)({
 				React.createElement(
 					"p",
 					null,
-					"To perform a simple keyword search in all CLARIN Federated Content Search centres and their corpora, go to the search field at the top of the page, enter your query, and click the 'search' button or press the 'Enter' key."
+					"To perform a simple keyword search in all CLARIN Federated Content Search centres and their corpora, go to the search field at the top of the page or switch to Text Layer Contextual Query Language (CQL) in the dropdown list, enter your query, and click the 'search' button or press the 'Enter' key."
 				),
 				React.createElement(
 					"p",
 					null,
-					"To perform an advanced search on multiple annotation layers in CLARIN Federated Content Search centres that support this, switch to Multi-layer Federated Content Search (FCS) in the dropdown list, enter a FCS query in the search field at the top of the page, and click the 'search' button or press the 'Enter' key."
+					"To perform an advanced search on multiple annotation layers in CLARIN Federated Content Search centres that support this, switch to Multi-layer Federated Content Search (FCS-QL) in the dropdown list, create the query in the Graphical Query Builder, and click the 'search' button or press the 'Enter' key. Alternatively in embedded mode enter a FCS-QL query in the search field at the top of the page."
 				),
 				React.createElement(
 					"p",

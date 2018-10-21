@@ -18,7 +18,9 @@ var VERSION = window.MyAggregator.VERSION = "v.3.0.0-64";
 var URLROOT = window.MyAggregator.URLROOT =
 	window.location.pathname.substring(0, window.location.pathname.indexOf("/", 2)) ||
         //window.location.pathname ||
+        //"/ws/fcs/2.0/aggregator";
 	"/Aggregator";
+
 
 var PT = PropTypes;
 
@@ -193,9 +195,9 @@ var Main = createReactClass({
 								<span className="icon-bar"></span>
 								<span className="icon-bar"></span>
 							</button>
-							<a className="navbar-brand" href={URLROOT} tabIndex="-1">
+							<a className="navbar-brand" href={URLROOT + "/"} tabIndex="-1">
 								<img width="28px" height="28px" src="img/magglass1.png"/>
-								<header className="inline"> Content Search </header>
+								<header className="inline"> Federated Content Search </header>
 							</a>
 						</div>
 						{this.renderCollapsible()}
