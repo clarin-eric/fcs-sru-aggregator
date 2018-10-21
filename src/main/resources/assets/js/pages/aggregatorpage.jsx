@@ -386,7 +386,7 @@ var AggregatorPage = createReactClass({
 			    'input-lg': true
 			});
 			var newurl = !query ? "#" :
-				(window.MyAggregator.URLROOT + "?" + encodeQueryData({queryType:queryTypeId, query:query, mode:'search'}));
+				(window.MyAggregator.URLROOT + (this.props.embedded ? "/embed" : "/") + "?" + encodeQueryData({queryType:queryTypeId, query:query, mode:'search'}));
 			return ( <a className={btnClass} style={{paddingTop:13}}
 					type="button" target="_blank" href={newurl}>
 					<i className="glyphicon glyphicon-search"></i>
