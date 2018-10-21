@@ -16,8 +16,8 @@ var EmbeddedFooter = createReactClass({
 			<div className="container" style={{textAlign:'center'}}>
 				<div className="row">
 					<div style={{position:'relative', float:'right'}}>
-						<div className="rightist" style={{position:'absolute', right:0, width:150}}>
-							<a href={this.props.URLROOT} target="_blank" tabIndex="-1">
+						<div className="rightist" style={{position:'absolute', right:0, width:170}}>
+							<a href={this.props.URLROOT + "/"} target="_blank" tabIndex="-1">
 								<img width="28px" height="28px" src="img/magglass1.png"/>
 								<header className="inline float-left"> Federated Content Search </header>
 							</a>
