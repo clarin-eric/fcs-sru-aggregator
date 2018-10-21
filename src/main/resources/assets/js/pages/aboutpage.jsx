@@ -11,6 +11,12 @@ var AboutPage = createReactClass({
 	toStatistics: PT.func.isRequired,
     },
 
+    toStatistics: function(e) {
+	this.props.toStatistics(true);
+	e.preventDefault();
+	e.stopPropagation();
+    },
+
     render: function() {
 	return	(<div>
 	           <div className="top-gap">
@@ -26,7 +32,7 @@ var AboutPage = createReactClass({
 			 </ul>
 
  			 <h3>Statistics</h3>
- 			<button type="button" className="btn btn-default btn-lg" onClick={function(){this.props.toStatistics(true)}.bind(this)} >
+ 			<button type="button" className="btn btn-default btn-lg" onClick={this.toStatistics} >
 	                <span className="glyphicon glyphicon-cog" aria-hidden="true"> </span>View server log</button>
 	         </div>
 
@@ -61,7 +67,7 @@ var AboutPage = createReactClass({
 
 		<ul>
 		   <li><a href="http://facebook.github.io/react/">React</a>{" "}
-								(<a href="https://github.com/facebook/react/blob/master/LICENSE">BSD license</a>)
+								(<a href="https://github.com/facebook/react/blob/master/LICENSE">MIT license</a>)
 		</li>
 		<li><a href="http://getbootstrap.com/">Bootstrap</a>{" "}
 								(<a href="http://opensource.org/licenses/mit-license.html">MIT license</a>)
