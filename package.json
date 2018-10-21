@@ -3,7 +3,7 @@
   "version": "3.0.0",
   "description": "FCS Aggregator for FCS 2.0",
   "main": "index.html",
-  "repository": "https://svn.clarin.eu/SRUAggregator",
+  "repository": "https://github.com/clarin-eric/fcs-sru-aggregator",
   "dependencies": {
     "classnames": "^2.2.5",
     "codemirror": "^5.31.0",
