@@ -13,11 +13,11 @@ import createReactClass from "create-react-class";
 
 window.MyAggregator = window.MyAggregator || {};
 
-var VERSION = window.MyAggregator.VERSION = "v.2.9.91-57";
+var VERSION = window.MyAggregator.VERSION = "v.3.0.0-64";
 
 var URLROOT = window.MyAggregator.URLROOT =
-	//window.location.pathname.substring(0, window.location.pathname.indexOf("/",2)) ||
-window.location.pathname ||
+	window.location.pathname.substring(0, window.location.pathname.indexOf("/", 2)) ||
+        //window.location.pathname ||
 	"/Aggregator";
 
 var PT = PropTypes;
