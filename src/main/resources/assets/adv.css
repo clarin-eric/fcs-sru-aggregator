@@ -20,7 +20,23 @@
 	padding-bottom: 3px;
 	cursor: move;
 }
+.corpusview-corpora {
+    /*
+    max-height: 70%;
+    overflow-y: scroll;
+    */
+}
 
+#ADVtokenMenu {
+    flex: 1;
+}
+
+#ADVtokenMenu > * {
+    float:right;
+}
+#unavailable-corpora-message{
+    font-size: smaller;
+}
 .query_token {
 	background-color: #e1e1e1;
 	display: inline-block;
@@ -36,9 +52,15 @@
 	box-shadow: 2px 2px 3px grey;
 }
 
-#adv_query_input_group {
-        overflow: auto;
-	white-space: nowrap;
+
+#adv-tokens {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+}
+
+#adv-tokens > div:first-child {
+    display:contents; /* the react TransitionGroup creates a div that we dont really want. */
 }
 
 .query_arg {
@@ -143,6 +165,10 @@ input {
 	float: left;
 }
 
+.adv-query-preview {
+    margin-bottom: unset;
+}
+
 /* .query_token .token_footer button i { */
 /* 	position: relative; */
 /* 	top: 0px; */
@@ -150,18 +176,18 @@ input {
 /* 	font-size: 14px; */
 /* } */
 
-.query_token .token_footer button.insert_arg {
+/*.query_token .token_footer button.insert_arg {
     float: left;
 }
-
-.query_token .token_footer button {
-//	width: 20px;
-//	height: 20px;
-	float: right;
+*/
+.query_token .token_footer > button {
+    /*vertical-align: top;*/ /* flex layout overrides */
 }
 
 .query_token .token_footer {
 	font-size: .8em;
+	display: flex;
+    align-items: start;
 }
 
 /* .btn { */
@@ -183,14 +209,13 @@ input {
 /* 	user-select: none; */
 /* } */
 
-.query_token select, input {
+.or-containter select, .or-containter input {
     border: 1px dashed #ccc;
     outline: medium none;
     float: left;
 }
 
 .query_token .repeat {
-	float: right;
 	margin-right: 25px;
 }
 
@@ -233,19 +258,20 @@ input {
 /*** transitions css ***/
 .token-enter {
   opacity: 0.01;
-  margin-left: -50%;
+  /*margin-left: -50%;*/ /*margin makes dom reflow and makes laggy animation*/
+  transform: translateX(-50%);
 }
-.token-enter.token-enter-active {
+.token-enter-active {
   opacity: 1;
-  margin-left: 0;
+  /*margin-left: 0;*/
+  transform: translateX(0);
   transition: all 250ms linear;
 }
-.token-leave {
-  opacity: 1;
-  margin-left: 0;
+.token-exit {
 }
-.token-leave.token-leave-active {
+.token-exit-active {
   opacity: 0.01;
-  margin-left: 50%;
+  /*margin-left: 50%;*/
+  /*transform: translateX(50%);*/
   transition: all 250ms linear;
 }
