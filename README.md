@@ -34,20 +34,20 @@ to explore different corpora.
  a smooth transtion to the new features and capabilities at your own convenience.
 
 # How does it work?
-1. a Client submits a query to an Endpoint 
-1. The Endpoint translates the query from CQL or FCS-QL to the query dialect used by the Search Engine and submits the translated query to the Search Engine
-1. The Search Engine processes the query and generates a result set, i.e. it compiles a set of hits that match the search criteria.
-1. The Endpoint then translates the results from the Search Engine-specific result set format to the CLARIN-FCS result format and sends them to the Client.
+1. a _Client_ submits a query to an _Endpoint_
+1. The _Endpoint_ translates the query from CQL or FCS-QL to the query dialect used by the _Search Engine_ and submits the translated query to the _Search Engine_
+1. The _Search Engine_ processes the query and generates a result set, i.e. it compiles a set of hits that match the search criteria.
+1. The _Endpoint_ then translates the results from the Search Engine-specific result set format to the CLARIN-FCS result format and sends them to the _Client_.
 
 # Endpoint Reference Implementation
-If you have any kind of RESTful API to your Search Engine using the  
- [Endpoint Reference Implementation](https://github.com/clarin-eric/fcs-korp-endpoint/) as a starting point. If you are using Korp it should only be a simple adaptation to corpora and tagsets needed. In any case do not forget to look at the tests.
+If you have any kind of RESTful API to your Search Engine using the
+ [Korp Endpoint Reference Implementation](https://github.com/clarin-eric/fcs-korp-endpoint/) as a starting point. If you are using Korp it should only be a simple adaptation to corpora and tagsets needed. In any case do not forget to look at the tests.
 
 # Endpoint Tester
 To test your Endpoint you can point the [IDS Endpoint Tester](http://clarin.ids-mannheim.de/srutest) to your Endpoint.
 
 # Endpoint developer's tutorial
-There is also an Endpoint developer's tutorial available. 
+There is also an Endpoint developer's tutorial available.
 
 # Building
 To build the FCS Aggregator you need a few simple steps (if you have not changed anything just skip to step 3):
