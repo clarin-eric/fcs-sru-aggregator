@@ -10,7 +10,7 @@ CLARIN Federated Content Search v2.0 Aggregator – Augmenting your Search Engin
 
 
 # The Aggregator
-[The Aggregator v3.0](https://spraakbanken.gu.se/ws/fcs/2.0/aggregator/) is running at [The National Swedish Language Bank](https://spraakbanken.gu.se/eng/).
+[The Aggregator v3.0](https://spraakbanken.gu.se/ws/fcs/2.0/aggregator/) is running at [The National Swedish Language Bank's text division](https://spraakbanken.gu.se/eng/).
 
 # The Specification
 The Specification for Federated Content Search v2.0 can be found as a [PDF document](https://office.clarin.eu/v/CE-2017-1046-FCS-Specification.pdf).
@@ -41,10 +41,10 @@ to explore different corpora.
 
 # Endpoint Reference Implementation
 If you have any kind of RESTful API to your Search Engine using the  
- [Endpoint Reference Implementation](https://github.com/clarin-eric/fcs-korp-endpoint/). Do not forget to look at the tests.
+ [Endpoint Reference Implementation](https://github.com/clarin-eric/fcs-korp-endpoint/) as a starting point. If you are using Korp it should only be a simple adaptation to corpora and tagsets needed. In any case do not forget to look at the tests.
 
 # Endpoint Tester
-To test your Endpoint you can point the [Endpoint Tester]() to your Endpoint.
+To test your Endpoint you can point the [IDS Endpoint Tester](http://clarin.ids-mannheim.de/srutest) to your Endpoint.
 
 # Endpoint developer's tutorial
 There is also an Endpoint developer's tutorial available. 
@@ -52,7 +52,7 @@ There is also an Endpoint developer's tutorial available.
 # Building
 To build the FCS Aggregator you need a few simple steps:
 1. `./build.sh --bower`
-1. `npm init`
+1. `npm install`
 1. `./build.sh --jar`
 
 The frontend (React) and backend (jersey servlet ) are then built using node and maven.
