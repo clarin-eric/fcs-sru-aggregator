@@ -55,4 +55,4 @@ To build the FCS Aggregator you need a few simple steps:
 1. `npm install`
 1. `./build.sh --jar`
 
-The frontend (React) and backend (jersey servlet ) are then built using node and maven.
+The frontend (React) and backend (jersey servlet) are then built using node and maven.
