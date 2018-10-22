@@ -34,10 +34,10 @@ to explore different corpora.
  a smooth transtion to the new features and capabilities at your own convenience.
 
 # How does it work?
-* a Client submits a query to an Endpoint 
-* The Endpoint translates the query from CQL or FCS-QL to the query dialect used by the Search Engine and submits the translated query to the Search Engine
-* The Search Engine processes the query and generates a result set, i.e. it compiles a set of hits that match the search criteria.
-* The Endpoint then translates the results from the Search Engine-specific result set format to the CLARIN-FCS result format and sends them to the Client.
+1. a Client submits a query to an Endpoint 
+1. The Endpoint translates the query from CQL or FCS-QL to the query dialect used by the Search Engine and submits the translated query to the Search Engine
+1. The Search Engine processes the query and generates a result set, i.e. it compiles a set of hits that match the search criteria.
+1. The Endpoint then translates the results from the Search Engine-specific result set format to the CLARIN-FCS result format and sends them to the Client.
 
 # Endpoint Reference Implementation
 If you have any kind of RESTful API to your Search Engine using the  
@@ -50,4 +50,9 @@ To test your Endpoint you can point the [Endpoint Tester]() to your Endpoint.
 There is also an Endpoint developer's tutorial available. 
 
 # Building
+To build the FCS Aggregator you need a few simple steps:
+1. `./build.sh --bower`
+1. `npm init`
+1. `./build.sh --jar`
 
+The frontend (React) and backend (jersey servlet ) are then built using node and maven.
