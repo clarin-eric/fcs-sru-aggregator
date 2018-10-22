@@ -2,3 +2,6 @@
 /node_modules/
 /bower_components/
 dependency-reduced-pom.xml
+fcsAggregatorCorpora.backup.json
+fcsAggregatorCorpora.json
+singleResourceSelectedFromVLO.json
