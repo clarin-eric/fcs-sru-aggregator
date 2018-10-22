@@ -54,7 +54,7 @@ then
 	mkdir -p $FONTDIR
 	mkdir -p $JSDIR
 
-	npm install bower browserify babelify babel-cli babel-preset-es2015 babel-preset-react babel-preset-env prop-types create-react-class react-addons-linked-state-mixin react-transition-group react-i18next codemirror 
+	npm install bower browserify babelify babel-cli babel-preset-es2015 babel-preset-react babel-preset-env prop-types create-react-class react-addons-linked-state-mixin react-addons-pure-render-mixin react-transition-group react-i18next codemirror react-codemirror2 
 	node_modules/bower/bin/bower install jquery bootstrap react font-awesome
 
 	cp bower_components/bootstrap/dist/css/bootstrap.min.css $LIBDIR/
