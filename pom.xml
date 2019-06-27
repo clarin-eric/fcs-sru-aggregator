@@ -96,12 +96,12 @@
 		<dependency>
 			<groupId>io.dropwizard</groupId>
 			<artifactId>dropwizard-assets</artifactId>
-			<version>0.7.1</version>
+			<version>0.9.0</version>
 		</dependency>
 		<dependency>
 		  <groupId>io.dropwizard</groupId>
 		  <artifactId>dropwizard-logging</artifactId>
-		  <version>0.8.0</version>
+		  <version>0.9.0</version>
 		  <exclusions>
 		    <exclusion>
 		      <groupId>org.eclipse.jetty</groupId>
@@ -123,7 +123,7 @@
 		<dependency>
 			<groupId>io.dropwizard</groupId>
 			<artifactId>dropwizard-spdy</artifactId>
-			<version>0.7.1</version>
+			<version>0.9.0</version>
 			<exclusions>
 				<exclusion>
 					<groupId>org.eclipse.jetty.spdy</groupId>
@@ -302,7 +302,7 @@
 						<id>enforce</id>
 						<configuration>
 							<rules>
-								<DependencyConvergence />
+								<DependencyConvergence/>
 							</rules>
 						</configuration>
 						<goals>
@@ -358,7 +358,7 @@
 						</goals>
 						<configuration>
 							<transformers>
-								<transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
+								<transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
 								<transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
 									<mainClass>eu.clarin.sru.fcs.aggregator.app.Aggregator</mainClass>
 								</transformer>
@@ -458,8 +458,8 @@
                     </mappings>
                     <preinstallScriptlet>
                         <script>
-                            /usr/bin/getent group ${serviceGroup} &gt; /dev/null || /usr/sbin/groupadd ${project.artifactId}
-                            /usr/bin/getent passwd ${serviceUser} &gt; /dev/null || /usr/sbin/useradd -r -d /var/lib/${project.artifactId} -m -g ${serviceGroup} ${serviceUser}
+                            /usr/bin/getent group ${serviceGroup} > /dev/null || /usr/sbin/groupadd ${project.artifactId}
+                            /usr/bin/getent passwd ${serviceUser} > /dev/null || /usr/sbin/useradd -r -d /var/lib/${project.artifactId} -m -g ${serviceGroup} ${serviceUser}
                         </script>
                     </preinstallScriptlet>
                     <postinstallScriptlet>
