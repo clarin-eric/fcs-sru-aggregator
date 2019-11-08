@@ -50,9 +50,8 @@ To test your Endpoint you can point the [IDS Endpoint Tester](http://clarin.ids-
 There is also an Endpoint developer's tutorial available.
 
 # Building
-To build the FCS Aggregator you need a few simple steps (if you have not changed anything just skip to step 3):
-1. `./build.sh --bower`
-1. `npm install`
+To build the FCS Aggregator you need a few simple steps (if you have not changed anything just skip to step 2):
+1. `./build.sh --npm`
 1. `./build.sh --jar`
 
 The frontend (React) and backend (jersey servlet) are then built using node and maven.

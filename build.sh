@@ -5,7 +5,7 @@ LIBDIR=$ASSETDIR/lib
 FONTDIR=$ASSETDIR/fonts
 JSDIR=$ASSETDIR/js
 
-RUN_BOWER=
+RUN_NPM=
 BUILD_JSX=1
 BUILD_JAR=
 BUILD_RPM=
@@ -17,8 +17,8 @@ do
 key="$1"
 # echo $# " :" $key
 case $key in
-    --bower)
-    RUN_BOWER=1
+    --npm)
+    RUN_NPM=1
     ;;
     --jsx)
     BUILD_JSX=1
@@ -48,27 +48,29 @@ esac
 shift
 done
 
-if [ $RUN_BOWER ]
+if [ $RUN_NPM ]
 then
 	mkdir -p $LIBDIR
 	mkdir -p $FONTDIR
 	mkdir -p $JSDIR
 
-	npm install bower browserify babelify babel-cli babel-preset-es2015 babel-preset-react babel-preset-env prop-types create-react-class react-addons-linked-state-mixin react-addons-pure-render-mixin react-transition-group react-i18next codemirror react-codemirror2 
-	node_modules/bower/bin/bower install jquery bootstrap react font-awesome
+	#npm install bower browserify babelify babel-cli babel-preset-es2015 babel-preset-react babel-preset-env classnames prop-types create-react-class react react-addons-linked-state-mixin react-addons-pure-render-mixin react-transition-group react-i18next codemirror react-codemirror2 
+	npm install 
+	#node_modules/bower/bin/bower install jquery bootstrap react font-awesome
 
-	cp bower_components/bootstrap/dist/css/bootstrap.min.css $LIBDIR/
-	cp bower_components/bootstrap/dist/css/bootstrap.min.css.map $LIBDIR/
-	cp bower_components/bootstrap/dist/js/bootstrap.min.js $LIBDIR/
-	cp bower_components/jquery/dist/jquery.min.js $LIBDIR/
-	cp bower_components/jquery/dist/jquery.min.map $LIBDIR/
-	cp bower_components/react/react.development.js $LIBDIR/
-	cp bower_components/react/react.production.min.js $LIBDIR/
-	cp bower_components/react/react-dom.development.js $LIBDIR/
-	cp bower_components/react/react-dom.production.min.js $LIBDIR/
-	cp bower_components/font-awesome/css/font-awesome.min.css $LIBDIR/
-	cp bower_components/bootstrap/fonts/*  $FONTDIR/
-	cp bower_components/font-awesome/fonts/* $FONTDIR/
+	cp node_modules/bootstrap/dist/css/bootstrap.min.css $LIBDIR/
+	cp node_modules/bootstrap/dist/css/bootstrap.min.css.map $LIBDIR/
+	cp node_modules/codemirror/lib/codemirror.css $LIBDIR/
+	cp node_modules/bootstrap/dist/js/bootstrap.min.js $LIBDIR/
+	cp node_modules/jquery/dist/jquery.min.js $LIBDIR/
+	cp node_modules/jquery/dist/jquery.min.map $LIBDIR/
+	cp node_modules/react/umd/react.development.js $LIBDIR/
+	cp node_modules/react/umd/react.production.min.js $LIBDIR/
+	cp node_modules/react-dom/umd/react-dom.development.js $LIBDIR/
+	cp node_modules/react-dom/umd/react-dom.production.min.js $LIBDIR/
+	cp node_modules/font-awesome/css/font-awesome.min.css $LIBDIR/
+	cp node_modules/bootstrap/fonts/*  $FONTDIR/
+	cp node_modules/font-awesome/fonts/* $FONTDIR/
 fi
 
 if [ $BUILD_JSX ]

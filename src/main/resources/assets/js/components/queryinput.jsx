@@ -5,7 +5,7 @@ import createReactClass from "create-react-class";
 import PureRenderMixin from 'react-addons-pure-render-mixin';
 import {CSSTransition, TransitionGroup} from "react-transition-group";
 import {Controlled as CodeMirror} from 'react-codemirror2';
-require('codemirror/mode/fcs-ql/fcs-ql');
+require('./codemirror/mode/fcs-ql/fcs-ql');
 require('codemirror/mode/javascript/javascript');
 
 var PT = PropTypes;
