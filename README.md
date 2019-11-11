@@ -63,4 +63,4 @@ Check the `aggregator_devel.yml` configuration file. If you want to sideload you
 
 you might also want to change the path to your cache files in `AGGREGATOR_FILE_PATH` and `AGGREGATOR_FILE_PATH_BACKUP` respectively.
 
-You then can access the locally running Aggregator at [http://localhost:4019/](http://localhost:4019/)
+You then can access the locally running Aggregator at [http://localhost:4019/Aggregator/](http://localhost:4019/Aggregator/)
