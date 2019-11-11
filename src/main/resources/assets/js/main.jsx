@@ -13,7 +13,7 @@ import createReactClass from "create-react-class";
 
 window.MyAggregator = window.MyAggregator || {};
 
-var VERSION = window.MyAggregator.VERSION = "v.3.0.0-64";
+var VERSION = window.MyAggregator.VERSION = "v.3.0.1-65";
 
 var URLROOT = window.MyAggregator.URLROOT =
 	window.location.pathname.substring(0, window.location.pathname.indexOf("/", 2)) ||

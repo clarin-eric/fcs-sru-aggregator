@@ -7,7 +7,7 @@
 
 	<groupId>eu.clarin.sru.fcs</groupId>
 	<artifactId>aggregator</artifactId>
-	<version>3.0.0-64</version>
+	<version>3.0.1-65</version>
 	<name>FCS Aggregator</name>
 
 	<properties>

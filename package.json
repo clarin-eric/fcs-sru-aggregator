@@ -1,6 +1,6 @@
 {
   "name": "fcs-aggregator",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "FCS Aggregator for FCS 2.0",
   "main": "index.html",
   "repository": "https://github.com/clarin-eric/fcs-sru-aggregator",
@@ -14,7 +14,7 @@
     "react-addons-pure-render-mixin": "^15.6.2",
     "react-bootstrap": "^0.31.3",
     "react-codemirror2": "^4.3.0",
-    "react-dom": "^16.1.0",
+    "react-dom": "^16.11.0",
     "react-i18next": "^5.4.1",
     "react-transition-group": "^2.9.0"
   },
@@ -28,7 +28,7 @@
     "bootstrap": "^3.4.1",
     "browserify": "^13.3.0",
     "font-awesome": "^4.7.0",
-    "jquery": "^2.2.4",
+    "jquery": "^3.4.1",
     "reflux": "^0.4.1",
     "reflux-core": "^0.3.0",
     "reflux-promise": "^1.0.4",
