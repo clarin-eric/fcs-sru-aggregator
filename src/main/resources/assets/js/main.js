@@ -52511,13 +52511,13 @@ var HelpPage = (0, _createReactClass2.default)({
 						{ href: "http://weblicht.sfs.uni-tuebingen.de/weblichtwiki/index.php/FCS_Aggregator" },
 						"Aggregator wiki page"
 					),
-					". If you still cannot find an answer to your question, or if want to send a feedback, you can write to Clarin-D helpdesk: "
-				),
-				React.createElement(
-					"button",
-					{ type: "button", className: "btn btn-default btn-lg", onClick: this.openHelpDesk },
-					React.createElement("span", { className: "glyphicon glyphicon-question-sign", "aria-hidden": "true" }),
-					" HelpDesk"
+					". If you still cannot find an answer to your question, or if want to send a feedback, you can write to the ",
+					React.createElement(
+						"a",
+						{ title: "contact", href: "mailto:sb-sysadmin@svenska.gu.se" },
+						"Swe-Clarin helpdesk"
+					),
+					"."
 				)
 			)
 		);

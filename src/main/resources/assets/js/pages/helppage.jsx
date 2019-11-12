@@ -49,11 +49,8 @@ var HelpPage = createReactClass({
 						Aggregator wiki page
 					</a>.
 					If you still cannot find an answer to your question,
-					or if want to send a feedback, you can write to Clarin-D helpdesk: </p>
-					<button type="button" className="btn btn-default btn-lg" onClick={this.openHelpDesk} >
-						<span className="glyphicon glyphicon-question-sign" aria-hidden="true"></span>
-						&nbsp;HelpDesk
-					</button>
+					or if want to send a feedback, you can write to the <a title="contact" href="mailto:sb-sysadmin@svenska.gu.se">Swe-Clarin helpdesk</a>.</p>
+		                        
 				</div>
 			</div>
 		);
