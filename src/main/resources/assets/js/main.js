@@ -11737,7 +11737,7 @@ module.exports = factory(
   ReactNoopUpdateQueue
 );
 
-},{"./factory":5,"react":41}],7:[function(require,module,exports){
+},{"./factory":5,"react":40}],7:[function(require,module,exports){
 "use strict";
 
 /**
@@ -13026,7 +13026,7 @@ module.exports = function(isValidElement, throwOnDirectAccess) {
 };
 
 }).call(this,require('_process'))
-},{"./checkPropTypes":14,"./lib/ReactPropTypesSecret":18,"_process":13,"object-assign":12,"react-is":27}],17:[function(require,module,exports){
+},{"./checkPropTypes":14,"./lib/ReactPropTypesSecret":18,"_process":13,"object-assign":12,"react-is":26}],17:[function(require,module,exports){
 (function (process){
 /**
  * Copyright (c) 2013-present, Facebook, Inc.
@@ -13049,7 +13049,7 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 }).call(this,require('_process'))
-},{"./factoryWithThrowingShims":15,"./factoryWithTypeCheckers":16,"_process":13,"react-is":27}],18:[function(require,module,exports){
+},{"./factoryWithThrowingShims":15,"./factoryWithTypeCheckers":16,"_process":13,"react-is":26}],18:[function(require,module,exports){
 /**
  * Copyright (c) 2013-present, Facebook, Inc.
  *
@@ -13064,164 +13064,6 @@ var ReactPropTypesSecret = 'SECRET_DO_NOT_PASS_THIS_OR_YOU_WILL_BE_FIRED';
 module.exports = ReactPropTypesSecret;
 
 },{}],19:[function(require,module,exports){
-/**
- * Copyright (c) 2013-present, Facebook, Inc.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- */
-
-'use strict';
-
-/**
- * ReactLink encapsulates a common pattern in which a component wants to modify
- * a prop received from its parent. ReactLink allows the parent to pass down a
- * value coupled with a callback that, when invoked, expresses an intent to
- * modify that value. For example:
- *
- * React.createClass({
- *   getInitialState: function() {
- *     return {value: ''};
- *   },
- *   render: function() {
- *     var valueLink = new ReactLink(this.state.value, this._handleValueChange);
- *     return <input valueLink={valueLink} />;
- *   },
- *   _handleValueChange: function(newValue) {
- *     this.setState({value: newValue});
- *   }
- * });
- *
- * We have provided some sugary mixins to make the creation and
- * consumption of ReactLink easier; see LinkedValueUtils and LinkedStateMixin.
- */
-
-/**
- * Deprecated: An an easy way to express two-way binding with React.
- * See https://facebook.github.io/react/docs/two-way-binding-helpers.html
- *
- * @param {*} value current value of the link
- * @param {function} requestChange callback to request a change
- */
-function ReactLink(value, requestChange) {
-  this.value = value;
-  this.requestChange = requestChange;
-}
-
-var ReactStateSetters = {
-  /**
-   * Returns a function that calls the provided function, and uses the result
-   * of that to set the component's state.
-   *
-   * @param {ReactCompositeComponent} component
-   * @param {function} funcReturningState Returned callback uses this to
-   *                                      determine how to update state.
-   * @return {function} callback that when invoked uses funcReturningState to
-   *                    determined the object literal to setState.
-   */
-  createStateSetter: function(component, funcReturningState) {
-    return function(a, b, c, d, e, f) {
-      var partialState = funcReturningState.call(component, a, b, c, d, e, f);
-      if (partialState) {
-        component.setState(partialState);
-      }
-    };
-  },
-
-  /**
-   * Returns a single-argument callback that can be used to update a single
-   * key in the component's state.
-   *
-   * Note: this is memoized function, which makes it inexpensive to call.
-   *
-   * @param {ReactCompositeComponent} component
-   * @param {string} key The key in the state that you should update.
-   * @return {function} callback of 1 argument which calls setState() with
-   *                    the provided keyName and callback argument.
-   */
-  createStateKeySetter: function(component, key) {
-    // Memoize the setters.
-    var cache = component.__keySetters || (component.__keySetters = {});
-    return cache[key] || (cache[key] = createStateKeySetter(component, key));
-  }
-};
-
-function createStateKeySetter(component, key) {
-  // Partial state is allocated outside of the function closure so it can be
-  // reused with every call, avoiding memory allocation when this function
-  // is called.
-  var partialState = {};
-  return function stateKeySetter(value) {
-    partialState[key] = value;
-    component.setState(partialState);
-  };
-}
-
-ReactStateSetters.Mixin = {
-  /**
-   * Returns a function that calls the provided function, and uses the result
-   * of that to set the component's state.
-   *
-   * For example, these statements are equivalent:
-   *
-   *   this.setState({x: 1});
-   *   this.createStateSetter(function(xValue) {
-   *     return {x: xValue};
-   *   })(1);
-   *
-   * @param {function} funcReturningState Returned callback uses this to
-   *                                      determine how to update state.
-   * @return {function} callback that when invoked uses funcReturningState to
-   *                    determined the object literal to setState.
-   */
-  createStateSetter: function(funcReturningState) {
-    return ReactStateSetters.createStateSetter(this, funcReturningState);
-  },
-
-  /**
-   * Returns a single-argument callback that can be used to update a single
-   * key in the component's state.
-   *
-   * For example, these statements are equivalent:
-   *
-   *   this.setState({x: 1});
-   *   this.createStateKeySetter('x')(1);
-   *
-   * Note: this is memoized function, which makes it inexpensive to call.
-   *
-   * @param {string} key The key in the state that you should update.
-   * @return {function} callback of 1 argument which calls setState() with
-   *                    the provided keyName and callback argument.
-   */
-  createStateKeySetter: function(key) {
-    return ReactStateSetters.createStateKeySetter(this, key);
-  }
-};
-
-/**
- * A simple mixin around ReactLink.forState().
- * See https://facebook.github.io/react/docs/two-way-binding-helpers.html
- */
-var LinkedStateMixin = {
-  /**
-   * Create a ReactLink that's linked to part of this component's state. The
-   * ReactLink will have the current value of this.state[key] and will call
-   * setState() when a change is requested.
-   *
-   * @param {string} key state key to update.
-   * @return {ReactLink} ReactLink instance linking to the state.
-   */
-  linkState: function(key) {
-    return new ReactLink(
-      this.state[key],
-      ReactStateSetters.createStateKeySetter(this, key)
-    );
-  }
-};
-
-module.exports = LinkedStateMixin;
-
-},{}],20:[function(require,module,exports){
 /**
  * Copyright (c) 2015-present, Facebook, Inc.
  *
@@ -13243,7 +13085,7 @@ module.exports = {
   }
 };
 
-},{"fbjs/lib/shallowEqual":10}],21:[function(require,module,exports){
+},{"fbjs/lib/shallowEqual":10}],20:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -13878,7 +13720,7 @@ var UnControlled = function(_super) {
 }(React.Component);
 exports.UnControlled = UnControlled;
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"codemirror":3,"react":41}],22:[function(require,module,exports){
+},{"codemirror":3,"react":40}],21:[function(require,module,exports){
 (function (process){
 /** @license React v16.11.0
  * react-dom.development.js
@@ -41609,7 +41451,7 @@ module.exports = reactDom;
 }
 
 }).call(this,require('_process'))
-},{"_process":13,"object-assign":12,"prop-types/checkPropTypes":14,"react":41,"scheduler":46,"scheduler/tracing":47}],23:[function(require,module,exports){
+},{"_process":13,"object-assign":12,"prop-types/checkPropTypes":14,"react":40,"scheduler":45,"scheduler/tracing":46}],22:[function(require,module,exports){
 /** @license React v16.11.0
  * react-dom.production.min.js
  *
@@ -41901,7 +41743,7 @@ xe,ye,Ca.injectEventPluginsByName,fa,Sc,function(a){ya(a,Rc)},cb,db,Pd,Ba,Sj,{cu
 (function(a){var b=a.findFiberByHostInstance;return ok(n({},a,{overrideHookState:null,overrideProps:null,setSuspenseHandler:null,scheduleUpdate:null,currentDispatcherRef:Ea.ReactCurrentDispatcher,findHostInstanceByFiber:function(a){a=ic(a);return null===a?null:a.stateNode},findFiberByHostInstance:function(a){return b?b(a):null},findHostInstancesForRefresh:null,scheduleRefresh:null,scheduleRoot:null,setRefreshHandler:null,getCurrentFiber:null}))})({findFiberByHostInstance:Fc,bundleType:0,version:"16.11.0",
 rendererPackageName:"react-dom"});var Dk={default:Ck},Ek=Dk&&Ck||Dk;module.exports=Ek.default||Ek;
 
-},{"object-assign":12,"react":41,"scheduler":46}],24:[function(require,module,exports){
+},{"object-assign":12,"react":40,"scheduler":45}],23:[function(require,module,exports){
 (function (process){
 'use strict';
 
@@ -41943,7 +41785,7 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 }).call(this,require('_process'))
-},{"./cjs/react-dom.development.js":22,"./cjs/react-dom.production.min.js":23,"_process":13}],25:[function(require,module,exports){
+},{"./cjs/react-dom.development.js":21,"./cjs/react-dom.production.min.js":22,"_process":13}],24:[function(require,module,exports){
 (function (process){
 /** @license React v16.11.0
  * react-is.development.js
@@ -42183,7 +42025,7 @@ exports.isSuspense = isSuspense;
 }
 
 }).call(this,require('_process'))
-},{"_process":13}],26:[function(require,module,exports){
+},{"_process":13}],25:[function(require,module,exports){
 /** @license React v16.11.0
  * react-is.production.min.js
  *
@@ -42200,7 +42042,7 @@ exports.typeOf=y;exports.AsyncMode=l;exports.ConcurrentMode=m;exports.ContextCon
 exports.isValidElementType=function(a){return"string"===typeof a||"function"===typeof a||a===e||a===m||a===g||a===f||a===p||a===q||"object"===typeof a&&null!==a&&(a.$$typeof===t||a.$$typeof===r||a.$$typeof===h||a.$$typeof===k||a.$$typeof===n||a.$$typeof===v||a.$$typeof===w||a.$$typeof===x)};exports.isAsyncMode=function(a){return z(a)||y(a)===l};exports.isConcurrentMode=z;exports.isContextConsumer=function(a){return y(a)===k};exports.isContextProvider=function(a){return y(a)===h};
 exports.isElement=function(a){return"object"===typeof a&&null!==a&&a.$$typeof===c};exports.isForwardRef=function(a){return y(a)===n};exports.isFragment=function(a){return y(a)===e};exports.isLazy=function(a){return y(a)===t};exports.isMemo=function(a){return y(a)===r};exports.isPortal=function(a){return y(a)===d};exports.isProfiler=function(a){return y(a)===g};exports.isStrictMode=function(a){return y(a)===f};exports.isSuspense=function(a){return y(a)===p};
 
-},{}],27:[function(require,module,exports){
+},{}],26:[function(require,module,exports){
 (function (process){
 'use strict';
 
@@ -42211,7 +42053,7 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 }).call(this,require('_process'))
-},{"./cjs/react-is.development.js":25,"./cjs/react-is.production.min.js":26,"_process":13}],28:[function(require,module,exports){
+},{"./cjs/react-is.development.js":24,"./cjs/react-is.production.min.js":25,"_process":13}],27:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', { value: true });
@@ -42375,7 +42217,7 @@ function polyfill(Component) {
 
 exports.polyfill = polyfill;
 
-},{}],29:[function(require,module,exports){
+},{}],28:[function(require,module,exports){
 (function (process){
 "use strict";
 
@@ -42742,7 +42584,7 @@ var _default = CSSTransition;
 exports.default = _default;
 module.exports = exports["default"];
 }).call(this,require('_process'))
-},{"./Transition":31,"./utils/PropTypes":38,"_process":13,"dom-helpers/class/addClass":34,"dom-helpers/class/removeClass":36,"prop-types":17,"react":41}],30:[function(require,module,exports){
+},{"./Transition":30,"./utils/PropTypes":37,"_process":13,"dom-helpers/class/addClass":33,"dom-helpers/class/removeClass":35,"prop-types":17,"react":40}],29:[function(require,module,exports){
 (function (process){
 "use strict";
 
@@ -42895,7 +42737,7 @@ var _default = ReplaceTransition;
 exports.default = _default;
 module.exports = exports["default"];
 }).call(this,require('_process'))
-},{"./TransitionGroup":32,"_process":13,"prop-types":17,"react":41,"react-dom":24}],31:[function(require,module,exports){
+},{"./TransitionGroup":31,"_process":13,"prop-types":17,"react":40,"react-dom":23}],30:[function(require,module,exports){
 (function (process){
 "use strict";
 
@@ -43507,7 +43349,7 @@ var _default = (0, _reactLifecyclesCompat.polyfill)(Transition);
 
 exports.default = _default;
 }).call(this,require('_process'))
-},{"./utils/PropTypes":38,"_process":13,"prop-types":17,"react":41,"react-dom":24,"react-lifecycles-compat":28}],32:[function(require,module,exports){
+},{"./utils/PropTypes":37,"_process":13,"prop-types":17,"react":40,"react-dom":23,"react-lifecycles-compat":27}],31:[function(require,module,exports){
 (function (process){
 "use strict";
 
@@ -43718,7 +43560,7 @@ var _default = (0, _reactLifecyclesCompat.polyfill)(TransitionGroup);
 exports.default = _default;
 module.exports = exports["default"];
 }).call(this,require('_process'))
-},{"./utils/ChildMapping":37,"_process":13,"prop-types":17,"react":41,"react-lifecycles-compat":28}],33:[function(require,module,exports){
+},{"./utils/ChildMapping":36,"_process":13,"prop-types":17,"react":40,"react-lifecycles-compat":27}],32:[function(require,module,exports){
 "use strict";
 
 var _CSSTransition = _interopRequireDefault(require("./CSSTransition"));
@@ -43737,7 +43579,7 @@ module.exports = {
   ReplaceTransition: _ReplaceTransition.default,
   CSSTransition: _CSSTransition.default
 };
-},{"./CSSTransition":29,"./ReplaceTransition":30,"./Transition":31,"./TransitionGroup":32}],34:[function(require,module,exports){
+},{"./CSSTransition":28,"./ReplaceTransition":29,"./Transition":30,"./TransitionGroup":31}],33:[function(require,module,exports){
 "use strict";
 
 var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
@@ -43752,7 +43594,7 @@ function addClass(element, className) {
 }
 
 module.exports = exports["default"];
-},{"./hasClass":35,"@babel/runtime/helpers/interopRequireDefault":1}],35:[function(require,module,exports){
+},{"./hasClass":34,"@babel/runtime/helpers/interopRequireDefault":1}],34:[function(require,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -43763,7 +43605,7 @@ function hasClass(element, className) {
 }
 
 module.exports = exports["default"];
-},{}],36:[function(require,module,exports){
+},{}],35:[function(require,module,exports){
 'use strict';
 
 function replaceClassName(origClass, classToRemove) {
@@ -43773,7 +43615,7 @@ function replaceClassName(origClass, classToRemove) {
 module.exports = function removeClass(element, className) {
   if (element.classList) element.classList.remove(className);else if (typeof element.className === 'string') element.className = replaceClassName(element.className, className);else element.setAttribute('class', replaceClassName(element.className && element.className.baseVal || '', className));
 };
-},{}],37:[function(require,module,exports){
+},{}],36:[function(require,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -43924,7 +43766,7 @@ function getNextChildMapping(nextProps, prevChildMapping, onExited) {
   });
   return children;
 }
-},{"react":41}],38:[function(require,module,exports){
+},{"react":40}],37:[function(require,module,exports){
 (function (process){
 "use strict";
 
@@ -43955,7 +43797,7 @@ var classNamesShape = process.env.NODE_ENV !== 'production' ? _propTypes.default
 })]) : null;
 exports.classNamesShape = classNamesShape;
 }).call(this,require('_process'))
-},{"_process":13,"prop-types":17}],39:[function(require,module,exports){
+},{"_process":13,"prop-types":17}],38:[function(require,module,exports){
 (function (process){
 /** @license React v16.11.0
  * react.development.js
@@ -46277,7 +46119,7 @@ module.exports = react;
 }
 
 }).call(this,require('_process'))
-},{"_process":13,"object-assign":12,"prop-types/checkPropTypes":14}],40:[function(require,module,exports){
+},{"_process":13,"object-assign":12,"prop-types/checkPropTypes":14}],39:[function(require,module,exports){
 /** @license React v16.11.0
  * react.production.min.js
  *
@@ -46304,7 +46146,7 @@ b,c){return W().useImperativeHandle(a,b,c)},useDebugValue:function(){},useLayout
 if(null!=b){void 0!==b.ref&&(g=b.ref,l=J.current);void 0!==b.key&&(d=""+b.key);if(a.type&&a.type.defaultProps)var f=a.type.defaultProps;for(k in b)K.call(b,k)&&!L.hasOwnProperty(k)&&(e[k]=void 0===b[k]&&void 0!==f?f[k]:b[k])}var k=arguments.length-2;if(1===k)e.children=c;else if(1<k){f=Array(k);for(var m=0;m<k;m++)f[m]=arguments[m+2];e.children=f}return{$$typeof:p,type:a.type,key:d,ref:g,props:e,_owner:l}},createFactory:function(a){var b=M.bind(null,a);b.type=a;return b},isValidElement:N,version:"16.11.0",
 __SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED:{ReactCurrentDispatcher:I,ReactCurrentBatchConfig:{suspense:null},ReactCurrentOwner:J,IsSomeRendererActing:{current:!1},assign:h}},Y={default:X},Z=Y&&X||Y;module.exports=Z.default||Z;
 
-},{"object-assign":12}],41:[function(require,module,exports){
+},{"object-assign":12}],40:[function(require,module,exports){
 (function (process){
 'use strict';
 
@@ -46315,7 +46157,7 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 }).call(this,require('_process'))
-},{"./cjs/react.development.js":39,"./cjs/react.production.min.js":40,"_process":13}],42:[function(require,module,exports){
+},{"./cjs/react.development.js":38,"./cjs/react.production.min.js":39,"_process":13}],41:[function(require,module,exports){
 (function (process){
 /** @license React v0.17.0
  * scheduler-tracing.development.js
@@ -46740,7 +46582,7 @@ exports.unstable_unsubscribe = unstable_unsubscribe;
 }
 
 }).call(this,require('_process'))
-},{"_process":13}],43:[function(require,module,exports){
+},{"_process":13}],42:[function(require,module,exports){
 /** @license React v0.17.0
  * scheduler-tracing.production.min.js
  *
@@ -46752,7 +46594,7 @@ exports.unstable_unsubscribe = unstable_unsubscribe;
 
 'use strict';Object.defineProperty(exports,"__esModule",{value:!0});var b=0;exports.__interactionsRef=null;exports.__subscriberRef=null;exports.unstable_clear=function(a){return a()};exports.unstable_getCurrent=function(){return null};exports.unstable_getThreadID=function(){return++b};exports.unstable_trace=function(a,d,c){return c()};exports.unstable_wrap=function(a){return a};exports.unstable_subscribe=function(){};exports.unstable_unsubscribe=function(){};
 
-},{}],44:[function(require,module,exports){
+},{}],43:[function(require,module,exports){
 (function (process){
 /** @license React v0.17.0
  * scheduler.development.js
@@ -47781,7 +47623,7 @@ exports.unstable_Profiling = unstable_Profiling;
 }
 
 }).call(this,require('_process'))
-},{"_process":13}],45:[function(require,module,exports){
+},{"_process":13}],44:[function(require,module,exports){
 /** @license React v0.17.0
  * scheduler.production.min.js
  *
@@ -47805,7 +47647,7 @@ exports.unstable_scheduleCallback=function(a,b,c){var d=exports.unstable_now();i
 exports.unstable_wrapCallback=function(a){var b=S;return function(){var c=S;S=b;try{return a.apply(this,arguments)}finally{S=c}}};exports.unstable_getCurrentPriorityLevel=function(){return S};exports.unstable_shouldYield=function(){var a=exports.unstable_now();W(a);var b=M(O);return b!==R&&null!==R&&null!==b&&null!==b.callback&&b.startTime<=a&&b.expirationTime<R.expirationTime||k()};exports.unstable_requestPaint=aa;exports.unstable_continueExecution=function(){U||T||(U=!0,f(Y))};
 exports.unstable_pauseExecution=function(){};exports.unstable_getFirstCallbackNode=function(){return M(O)};exports.unstable_Profiling=null;
 
-},{}],46:[function(require,module,exports){
+},{}],45:[function(require,module,exports){
 (function (process){
 'use strict';
 
@@ -47816,7 +47658,7 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 }).call(this,require('_process'))
-},{"./cjs/scheduler.development.js":44,"./cjs/scheduler.production.min.js":45,"_process":13}],47:[function(require,module,exports){
+},{"./cjs/scheduler.development.js":43,"./cjs/scheduler.production.min.js":44,"_process":13}],46:[function(require,module,exports){
 (function (process){
 'use strict';
 
@@ -47827,9 +47669,9 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 }).call(this,require('_process'))
-},{"./cjs/scheduler-tracing.development.js":42,"./cjs/scheduler-tracing.production.min.js":43,"_process":13}],48:[function(require,module,exports){
+},{"./cjs/scheduler-tracing.development.js":41,"./cjs/scheduler-tracing.production.min.js":42,"_process":13}],47:[function(require,module,exports){
 
-},{}],49:[function(require,module,exports){
+},{}],48:[function(require,module,exports){
 "use strict";
 
 var _classnames = require("classnames");
@@ -48241,7 +48083,7 @@ var CorpusView = (0, _createReactClass2.default)({
 
 module.exports = CorpusView;
 
-},{"./searchcorpusbox.jsx":60,"classnames":2,"create-react-class":6,"prop-types":17}],50:[function(require,module,exports){
+},{"./searchcorpusbox.jsx":59,"classnames":2,"create-react-class":6,"prop-types":17}],49:[function(require,module,exports){
 "use strict";
 
 var _classnames = require("classnames");
@@ -48300,7 +48142,7 @@ var EmbeddedFooter = (0, _createReactClass2.default)({
 
 module.exports = EmbeddedFooter;
 
-},{"classnames":2,"create-react-class":6,"prop-types":17}],51:[function(require,module,exports){
+},{"classnames":2,"create-react-class":6,"prop-types":17}],50:[function(require,module,exports){
 "use strict";
 
 var _classnames = require("classnames");
@@ -48364,7 +48206,7 @@ var ErrorPane = (0, _createReactClass2.default)({
 
 module.exports = ErrorPane;
 
-},{"./jqueryfade.jsx":53,"classnames":2,"create-react-class":6,"prop-types":17,"react-transition-group":33}],52:[function(require,module,exports){
+},{"./jqueryfade.jsx":52,"classnames":2,"create-react-class":6,"prop-types":17,"react-transition-group":32}],51:[function(require,module,exports){
 "use strict";
 
 var _classnames = require("classnames");
@@ -48452,7 +48294,7 @@ var Footer = (0, _createReactClass2.default)({
 
 module.exports = Footer;
 
-},{"classnames":2,"create-react-class":6,"prop-types":17}],53:[function(require,module,exports){
+},{"classnames":2,"create-react-class":6,"prop-types":17}],52:[function(require,module,exports){
 "use strict";
 
 var _classnames = require("classnames");
@@ -48490,7 +48332,7 @@ var JQueryFade = (0, _createReactClass2.default)({
 
 module.exports = JQueryFade;
 
-},{"classnames":2,"create-react-class":6,"prop-types":17}],54:[function(require,module,exports){
+},{"classnames":2,"create-react-class":6,"prop-types":17}],53:[function(require,module,exports){
 "use strict";
 
 var _classnames = require("classnames");
@@ -48504,10 +48346,6 @@ var _propTypes2 = _interopRequireDefault(_propTypes);
 var _createReactClass = require("create-react-class");
 
 var _createReactClass2 = _interopRequireDefault(_createReactClass);
-
-var _reactAddonsLinkedStateMixin = require("react-addons-linked-state-mixin");
-
-var _reactAddonsLinkedStateMixin2 = _interopRequireDefault(_reactAddonsLinkedStateMixin);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -48523,8 +48361,7 @@ var LanguageSelector = (0, _createReactClass2.default)({
 		languageFilter: PT.string.isRequired,
 		languageChangeHandler: PT.func.isRequired
 	},
-	mixins: [_reactAddonsLinkedStateMixin2.default],
-	//fixme! - react-addons-linked-state-mixin - Explicitly set the value and onChange handler instead.
+
 	selectLang: function selectLang(language) {
 		this.props.languageChangeHandler(language, this.props.languageFilter);
 	},
@@ -48639,7 +48476,7 @@ var LanguageSelector = (0, _createReactClass2.default)({
 
 module.exports = LanguageSelector;
 
-},{"classnames":2,"create-react-class":6,"prop-types":17,"react-addons-linked-state-mixin":19}],55:[function(require,module,exports){
+},{"classnames":2,"create-react-class":6,"prop-types":17}],54:[function(require,module,exports){
 "use strict";
 
 var _classnames = require("classnames");
@@ -48729,7 +48566,7 @@ var Modal = (0, _createReactClass2.default)({
 
 module.exports = Modal;
 
-},{"classnames":2,"create-react-class":6,"prop-types":17}],56:[function(require,module,exports){
+},{"classnames":2,"create-react-class":6,"prop-types":17}],55:[function(require,module,exports){
 "use strict";
 
 var _classnames = require("classnames");
@@ -48803,7 +48640,7 @@ var Panel = (0, _createReactClass2.default)({
 
 module.exports = Panel;
 
-},{"classnames":2,"create-react-class":6,"prop-types":17}],57:[function(require,module,exports){
+},{"classnames":2,"create-react-class":6,"prop-types":17}],56:[function(require,module,exports){
 "use strict";
 
 var _classnames = require("classnames");
@@ -49898,7 +49735,7 @@ var layerCategories = [{ cat: 'word', label: 'Word', layers: ['word'] }, { cat: 
 
 module.exports = QueryInput;
 
-},{"./codemirror/mode/fcs-ql/fcs-ql":48,"classnames":2,"codemirror/mode/javascript/javascript":4,"create-react-class":6,"prop-types":17,"react-addons-pure-render-mixin":20,"react-codemirror2":21,"react-transition-group":33}],58:[function(require,module,exports){
+},{"./codemirror/mode/fcs-ql/fcs-ql":47,"classnames":2,"codemirror/mode/javascript/javascript":4,"create-react-class":6,"prop-types":17,"react-addons-pure-render-mixin":19,"react-codemirror2":20,"react-transition-group":32}],57:[function(require,module,exports){
 "use strict";
 
 var _classnames = require("classnames");
@@ -50265,7 +50102,7 @@ var ResultMixin = {
 
 module.exports = ResultMixin;
 
-},{"classnames":2,"prop-types":17}],59:[function(require,module,exports){
+},{"classnames":2,"prop-types":17}],58:[function(require,module,exports){
 "use strict";
 
 var _classnames = require("classnames");
@@ -50466,7 +50303,7 @@ var _ = window._ = window._ || {
 
 module.exports = Results;
 
-},{"./panel.jsx":56,"./resultmixin.jsx":58,"classnames":2,"create-react-class":6,"prop-types":17,"react-transition-group":33}],60:[function(require,module,exports){
+},{"./panel.jsx":55,"./resultmixin.jsx":57,"classnames":2,"create-react-class":6,"prop-types":17,"react-transition-group":32}],59:[function(require,module,exports){
 "use strict";
 
 var _classnames = require("classnames");
@@ -50528,7 +50365,7 @@ var SearchCorpusBox = (0, _createReactClass2.default)({
 
 module.exports = SearchCorpusBox;
 
-},{"classnames":2,"create-react-class":6,"prop-types":17}],61:[function(require,module,exports){
+},{"classnames":2,"create-react-class":6,"prop-types":17}],60:[function(require,module,exports){
 "use strict";
 
 var _classnames = require("classnames");
@@ -50728,7 +50565,7 @@ var ZoomedResult = (0, _createReactClass2.default)({
 
 module.exports = ZoomedResult;
 
-},{"./resultmixin.jsx":58,"classnames":2,"create-react-class":6,"prop-types":17,"react-transition-group":33}],62:[function(require,module,exports){
+},{"./resultmixin.jsx":57,"classnames":2,"create-react-class":6,"prop-types":17,"react-transition-group":32}],61:[function(require,module,exports){
 "use strict";
 
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; };
@@ -51101,7 +50938,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 	window.onpopstate = routeFromLocation.bind(main);
 })();
 
-},{"./components/embeddedfooter.jsx":50,"./components/errorpane.jsx":51,"./components/footer.jsx":52,"./pages/aboutpage.jsx":63,"./pages/aggregatorpage.jsx":64,"./pages/helppage.jsx":65,"./pages/statisticspage.jsx":66,"create-react-class":6,"prop-types":17}],63:[function(require,module,exports){
+},{"./components/embeddedfooter.jsx":49,"./components/errorpane.jsx":50,"./components/footer.jsx":51,"./pages/aboutpage.jsx":62,"./pages/aggregatorpage.jsx":63,"./pages/helppage.jsx":64,"./pages/statisticspage.jsx":65,"create-react-class":6,"prop-types":17}],62:[function(require,module,exports){
 "use strict";
 
 var _classnames = require("classnames");
@@ -51460,7 +51297,7 @@ var AboutPage = (0, _createReactClass2.default)({
 
 module.exports = AboutPage;
 
-},{"classnames":2,"create-react-class":6,"prop-types":17}],64:[function(require,module,exports){
+},{"classnames":2,"create-react-class":6,"prop-types":17}],63:[function(require,module,exports){
 "use strict";
 
 var _classnames = require("classnames");
@@ -52423,7 +52260,7 @@ var queryTypeMap = {
 
 module.exports = AggregatorPage;
 
-},{"../components/corpusview.jsx":49,"../components/languageselector.jsx":54,"../components/modal.jsx":55,"../components/queryinput.jsx":57,"../components/results.jsx":59,"../components/zoomedresult.jsx":61,"classnames":2,"create-react-class":6,"prop-types":17}],65:[function(require,module,exports){
+},{"../components/corpusview.jsx":48,"../components/languageselector.jsx":53,"../components/modal.jsx":54,"../components/queryinput.jsx":56,"../components/results.jsx":58,"../components/zoomedresult.jsx":60,"classnames":2,"create-react-class":6,"prop-types":17}],64:[function(require,module,exports){
 "use strict";
 
 var _classnames = require("classnames");
@@ -52526,7 +52363,7 @@ var HelpPage = (0, _createReactClass2.default)({
 
 module.exports = HelpPage;
 
-},{"classnames":2,"create-react-class":6,"prop-types":17}],66:[function(require,module,exports){
+},{"classnames":2,"create-react-class":6,"prop-types":17}],65:[function(require,module,exports){
 "use strict";
 
 var _classnames = require("classnames");
@@ -52895,4 +52732,4 @@ var StatisticsPage = (0, _createReactClass2.default)({
 
 module.exports = StatisticsPage;
 
-},{"classnames":2,"create-react-class":6,"prop-types":17}]},{},[62]);
+},{"classnames":2,"create-react-class":6,"prop-types":17}]},{},[61]);

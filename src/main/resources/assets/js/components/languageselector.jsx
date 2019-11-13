@@ -2,7 +2,6 @@
 import classNames from "classnames";
 import PropTypes from "prop-types";
 import createReactClass from "create-react-class";
-import LinkedStateMixin from "react-addons-linked-state-mixin";
 
 var PT = PropTypes;
 
@@ -14,8 +13,7 @@ var LanguageSelector = createReactClass({
 		languageFilter: PT.string.isRequired,
 		languageChangeHandler: PT.func.isRequired,
 	},
-	mixins: [LinkedStateMixin],
-//fixme! - react-addons-linked-state-mixin - Explicitly set the value and onChange handler instead.
+
 	selectLang: function(language) {
 		this.props.languageChangeHandler(language, this.props.languageFilter);
 	},
