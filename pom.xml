@@ -108,7 +108,6 @@
     </exclusions>
             -->
         </dependency>      
-
         
         <dependency>
                 <groupId>io.dropwizard</groupId>
@@ -237,10 +236,16 @@
                     <groupId>org.apache.httpcomponents</groupId>
                     <artifactId>httpclient</artifactId>
                 </exclusion>
-                <!--exclusion>
+                <!--
+                <exclusion>
+                    <groupId>com.sun.jersey</groupId>
+                    <artifactId>jersey-core</artifactId>
+                </exclusion>
+                    -->
+                <exclusion>
                         <groupId>com.sun.jersey</groupId>
                         <artifactId>jersey-client</artifactId>
-                </exclusion-->
+                </exclusion>
 
             </exclusions>
         </dependency>
