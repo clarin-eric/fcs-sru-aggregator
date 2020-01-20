@@ -197,13 +197,13 @@
             <version>3.17</version>
         </dependency>
 
-        <!-- Using it from jersey-apache-client4 instead -->
-        <!--dependency>
+        <!-- Using it from jersey-apache-client4 instead -->        
+        <dependency>
                 <groupId>com.sun.jersey</groupId>
                 <artifactId>jersey-client</artifactId>
                 <version>1.19.4</version>
                 <type>jar</type>
-        </dependency-->
+        </dependency>
 
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
@@ -227,6 +227,7 @@
             <artifactId>commons-lang3</artifactId>
             <version>3.6</version>
         </dependency>
+
         <dependency>
             <groupId>com.sun.jersey.contribs</groupId>
             <artifactId>jersey-apache-client4</artifactId>
@@ -236,19 +237,17 @@
                     <groupId>org.apache.httpcomponents</groupId>
                     <artifactId>httpclient</artifactId>
                 </exclusion>
-                <!--
                 <exclusion>
                     <groupId>com.sun.jersey</groupId>
                     <artifactId>jersey-core</artifactId>
                 </exclusion>
-                    -->
                 <exclusion>
                         <groupId>com.sun.jersey</groupId>
                         <artifactId>jersey-client</artifactId>
                 </exclusion>
-
             </exclusions>
         </dependency>
+
         <dependency>
             <groupId>org.jopendocument</groupId>
             <artifactId>jOpenDocument</artifactId>
