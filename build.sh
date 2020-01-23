@@ -75,13 +75,13 @@ if [ $BUILD_JSX ]
 then
 	echo; echo "---- jsx"
 	for f in $JSDIR/*.jsx; do
-	    jsxtime=`gstat -c %Y ${f}`
+	    jsxtime=`stat -c %Y ${f}`
 	    jstime=""
 	    if [ -e ${f%.jsx}.js ]; then
-		jstime=`gstat -c %Y ${f%.jsx}.js`
+		jstime=`stat -c %Y ${f%.jsx}.js`
 	    fi
 	    for subres in $(find $JSDIR/{pages,components}/ -name '*.jsx'); do
-		jsxsubtime=`gstat -c %Y ${subres}`
+		jsxsubtime=`stat -c %Y ${subres}`
 		if [ ${jsxsubtime} -gt ${jsxtime} ]; then
 		    jsxtime=${jsxsubtime};
 		fi
