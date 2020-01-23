@@ -19,6 +19,7 @@ import eu.clarin.sru.fcs.aggregator.search.Result;
 import eu.clarin.sru.fcs.aggregator.search.Search;
 import eu.clarin.sru.fcs.aggregator.util.LanguagesISO693;
 import eu.clarin.sru.fcs.aggregator.search.Exports;
+import io.dropwizard.setup.Environment;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
@@ -67,6 +68,12 @@ public class RestService {
 	@Context
 	ServletContext servletContext;
 
+        private final Environment environment;
+        
+        public RestService(Environment environment) {
+            this.environment = environment;
+        }
+        
 	private String toJson(Object o) throws JsonProcessingException {
 		return ow.writeValueAsString(o);
 	}
@@ -293,7 +300,7 @@ public class RestService {
 		byte[] bytes = Exports.getExportTCF(
 				search.getResults(corpusId), search.getSearchLanguage(), filterLanguage);
 		if (bytes != null) {
-			url = DataTransfer.uploadToDropOff(bytes, "text/tcf+xml", ".tcf");
+			url = DataTransfer.uploadToDropOff(bytes, "text/tcf+xml", ".tcf", environment);
 		}
 
 		WeblichtConfig weblicht = Aggregator.getInstance().getParams().getWeblichtConfig();

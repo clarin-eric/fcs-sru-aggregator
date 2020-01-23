@@ -163,10 +163,10 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 		environment.getApplicationContext().setErrorHandler(new ErrorHandler());
 		// Moved to configuration section server in later versions
 		environment.jersey().setUrlPattern("/rest/*");
-		environment.jersey().register(new RestService());
+		environment.jersey().register(new RestService(environment));
 
 		try {
-			init();
+			init(environment);
 		} catch (Exception ex) {
 			log.error("INIT EXCEPTION", ex);
 			throw ex; // force exit
@@ -193,7 +193,7 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 		return searchStatsAtom.get();
 	}
 
-	public void init() throws IOException {
+	public void init(Environment environment) throws IOException {
 		log.info("Aggregator initialization started.");
 
 		SRUThreadedClient sruScanClient
@@ -269,7 +269,8 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 				params.additionalCQLEndpoints,
 				params.additionalFCSEndpoints,
 				null, scanCacheAtom, corporaCacheFile, corporaOldCacheFile,
-				scanStatsAtom, searchStatsAtom);
+				scanStatsAtom, searchStatsAtom,
+                                 environment);
 		scheduler.scheduleAtFixedRate(task, params.SCAN_TASK_INITIAL_DELAY,
 				params.SCAN_TASK_INTERVAL, params.getScanTaskTimeUnit());
 

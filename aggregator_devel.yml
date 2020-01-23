@@ -11,8 +11,10 @@ aggregatorParams:
 
   #AGGREGATOR_FILE_PATH: /Users/edima/fcsAggregatorCorpora.json
   #AGGREGATOR_FILE_PATH_BACKUP: /Users/edima/fcsAggregatorCorpora.backup.json
-  AGGREGATOR_FILE_PATH: /home/ljo/arbete/Clarin-eric/fcs-sru-aggregator/fcsAggregatorCorpora.json
-  AGGREGATOR_FILE_PATH_BACKUP: /home/ljo/arbete/Clarin-eric/fcs-sru-aggregator/fcsAggregatorCorpora.backup.json
+  #AGGREGATOR_FILE_PATH: /home/ljo/arbete/Clarin-eric/fcs-sru-aggregator/fcsAggregatorCorpora.json
+  #AGGREGATOR_FILE_PATH_BACKUP: /home/ljo/arbete/Clarin-eric/fcs-sru-aggregator/fcsAggregatorCorpora.backup.json
+  AGGREGATOR_FILE_PATH: /Users/wilelb/fcs-sru-aggregator/fcsAggregatorCorpora.json
+  AGGREGATOR_FILE_PATH_BACKUP: /Users/wilelb/fcs-sru-aggregator/fcsAggregatorCorpora.backup.json
 
   SCAN_MAX_DEPTH: 1 # recommended 3
   SCAN_TASK_INITIAL_DELAY: 0

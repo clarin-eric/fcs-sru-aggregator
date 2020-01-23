@@ -2,6 +2,7 @@ package eu.clarin.sru.fcs.aggregator.scan;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.clarin.sru.fcs.aggregator.client.ThrottledClient;
+import io.dropwizard.setup.Environment;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -32,6 +33,7 @@ public class ScanCrawlTask implements Runnable {
 	private List<URL> additionalCQLEndpoints;
 	private List<URL> additionalFCSEndpoints;
 
+        private final Environment environment;
 	public ScanCrawlTask(ThrottledClient sruClient, String centerRegistryUrl,
 			int cacheMaxDepth,
 			List<URL> additionalCQLEndpoints,
@@ -40,7 +42,8 @@ public class ScanCrawlTask implements Runnable {
 			AtomicReference<Corpora> corporaAtom,
 			File cachedCorpora, File oldCachedCorpora,
 			AtomicReference<Statistics> scanStatisticsAtom,
-			AtomicReference<Statistics> searchStatisticsAtom
+			AtomicReference<Statistics> searchStatisticsAtom,
+                        Environment environment
 	) {
 		this.sruClient = sruClient;
 		this.centerRegistryUrl = centerRegistryUrl;
@@ -53,6 +56,7 @@ public class ScanCrawlTask implements Runnable {
 		this.oldCachedCorpora = oldCachedCorpora;
 		this.scanStatisticsAtom = scanStatisticsAtom;
 		this.searchStatisticsAtom = searchStatisticsAtom;
+                this.environment = environment;
 	}
 
 	@Override
@@ -63,7 +67,7 @@ public class ScanCrawlTask implements Runnable {
 			log.info("ScanCrawlTask: Initiating crawl");
 			List<Institution> institutions = new ArrayList<Institution>();
 			if (centerRegistryUrl != null && !centerRegistryUrl.isEmpty()) {
-				institutions = new CenterRegistryLive(centerRegistryUrl, filter).getCQLInstitutions();
+				institutions = new CenterRegistryLive(centerRegistryUrl, filter, environment).getCQLInstitutions();
 			}
 			if (additionalCQLEndpoints != null && !additionalCQLEndpoints.isEmpty()) {
 				institutions.add(0,
