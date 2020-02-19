@@ -35,7 +35,7 @@ var AggregatorPage = createReactClass({
 			corpora: new Corpora([], this.updateCorpora),
 			languageMap: {},
 			weblichtLanguages: [],
-            queryTypeId: getQueryVariable('queryType') || 'cql',
+		        queryTypeId: getQueryVariable('queryType') || 'cql',
 			cqlQuery: ((getQueryVariable('queryType') || 'cql') === 'cql') && getQueryVariable('query') || '',
 			fcsQuery: ((getQueryVariable('queryType') || 'cql') === 'fcs') && getQueryVariable('query') || '',
 			aggregationContext: aggrContext || null,

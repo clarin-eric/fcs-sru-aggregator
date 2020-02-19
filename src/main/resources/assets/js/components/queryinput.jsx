@@ -231,11 +231,11 @@ var ADVTokenMenu = createReactClass({
 	    this.setState((st) => ({isEnd: !st.isEnd}));
 	},
 	componentDidMount() {
-	    // make this compoent controlled to so that this awkward ref.getMenuState() stuff can be removed
+	    // make this compoent controlled too so that this awkward ref.getMenuState() stuff can be removed
 	    this.props.onChange(this.getMenuState());
 	},
 	componentDidUpdate() {
-	    // safe because of pure render mixin: will only update on state change.
+	    // safe because of pure-render-mixin: will only update on state change.
 	    this.props.onChange(this.getMenuState());
 	},
 	
