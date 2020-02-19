@@ -2,6 +2,7 @@ package eu.clarin.sru.fcs.aggregator.app;
 
 import eu.clarin.sru.client.SRUThreadedClient;
 import eu.clarin.sru.client.fcs.ClarinFCSClientBuilder;
+import static eu.clarin.sru.fcs.aggregator.app.CQLEnumerationTest.RULE;
 import eu.clarin.sru.fcs.aggregator.client.MaxConcurrentRequestsCallback;
 import eu.clarin.sru.fcs.aggregator.scan.Corpora;
 import eu.clarin.sru.fcs.aggregator.scan.EndpointUrlFilterAllow;
@@ -9,12 +10,16 @@ import eu.clarin.sru.fcs.aggregator.scan.ScanCrawler;
 import eu.clarin.sru.fcs.aggregator.client.ThrottledClient;
 import eu.clarin.sru.fcs.aggregator.scan.CenterRegistryLive;
 import eu.clarin.sru.fcs.aggregator.scan.Corpus;
+import io.dropwizard.setup.Environment;
+import io.dropwizard.testing.ResourceHelpers;
+import io.dropwizard.testing.junit.DropwizardAppRule;
 import java.net.URI;
 import java.util.HashSet;
 import java.util.Set;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import org.junit.Assert;
+import org.junit.ClassRule;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -25,8 +30,13 @@ import org.junit.Test;
 @Ignore
 public class ScanCrawlerTest {
 
+    @ClassRule
+    public static final DropwizardAppRule<AggregatorConfiguration> RULE =
+            new DropwizardAppRule<>(Aggregator.class, ResourceHelpers.resourceFilePath("aggregator_devel.yaml"));
+    
 	@Test
 	public void testCrawlForMpiAndTue() throws NamingException {
+                Environment env = RULE.getEnvironment();
 		SRUThreadedClient sruThreadedClient = new ClarinFCSClientBuilder()
 				.addDefaultDataViewParsers()
 				.buildThreadedClient();
@@ -47,7 +57,7 @@ public class ScanCrawlerTest {
 			InitialContext context = new InitialContext();
 			String centerRegistryUrl = (String) context.lookup("java:comp/env/center-registry-url");
 			ScanCrawler crawler = new ScanCrawler(
-					new CenterRegistryLive(centerRegistryUrl, filter).getCQLInstitutions(),
+					new CenterRegistryLive(centerRegistryUrl, filter, env).getCQLInstitutions(),
 					sruClient, 2);
 			Corpora cache = crawler.crawl();
 			Corpus tueRootCorpus = cache.findByEndpoint("http://weblicht.sfs.uni-tuebingen.de/rws/sru/").get(0);

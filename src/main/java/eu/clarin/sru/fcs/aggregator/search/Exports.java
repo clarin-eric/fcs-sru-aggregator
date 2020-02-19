@@ -158,7 +158,8 @@ public class Exports {
 		Sheet sheet = workbook.createSheet();
 		
 		Font boldFont = workbook.createFont();
-		boldFont.setBoldweight(Font.BOLDWEIGHT_BOLD);
+		//boldFont.setBoldweight(Font.BOLDWEIGHT_BOLD);
+                boldFont.setBold(true);
 		
 		// Header
 		CellStyle headerStyle = workbook.createCellStyle();

@@ -37,7 +37,7 @@ public class ErrorHandler extends org.eclipse.jetty.server.handler.ErrorHandler 
 
 
 	@Override
-	public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException {
+	public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
 		// On 404 page we need to show index.html and let JS router do the work, otherwise show error page
 		if (response.getStatus() == HttpServletResponse.SC_NOT_FOUND) {
 			forward(redirectRoute, baseRequest, request, response);
@@ -84,7 +84,7 @@ public class ErrorHandler extends org.eclipse.jetty.server.handler.ErrorHandler 
 		}
 	}
 
-	void forward(final String target, final Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException {
+	void forward(final String target, final Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
 	        StringBuilder params = new StringBuilder();
 		if (request.getSession().getAttribute(PARAM_AGGREGATION_CONTEXT) != null) {
 		    params.append("x-aggregation-context=" + request.getSession().getAttribute(PARAM_AGGREGATION_CONTEXT));

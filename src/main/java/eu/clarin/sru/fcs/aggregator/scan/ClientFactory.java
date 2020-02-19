@@ -1,23 +1,23 @@
 package eu.clarin.sru.fcs.aggregator.scan;
-
+/*
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.filter.LoggingFilter;
 import com.sun.jersey.client.apache4.ApacheHttpClient4;
 import com.sun.jersey.client.apache4.ApacheHttpClient4Handler;
-import org.apache.http.client.HttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.impl.client.LaxRedirectStrategy;
+*/
+import io.dropwizard.client.JerseyClientBuilder;
+import io.dropwizard.client.JerseyClientConfiguration;
+import io.dropwizard.setup.Environment;
+import io.dropwizard.util.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import javax.ws.rs.client.Client;
+import org.glassfish.jersey.client.ClientProperties;
 
 /**
  * Create {@link Client} instances that:
@@ -35,7 +35,8 @@ import java.security.cert.X509Certificate;
 public class ClientFactory {
     private static final Logger LOGGER = LoggerFactory.getLogger(ClientFactory.class);
 
-    public static Client create(int connectTimeout, int readTimeout) {
+    public static Client create(int connectTimeout, int readTimeout, Environment env) {
+        /*
         SSLContext sc = null;
         try {
             sc = SSLContext.getInstance("SSL");
@@ -50,11 +51,14 @@ public class ClientFactory {
                 .setRedirectStrategy(new LaxRedirectStrategy())
                 .setSslcontext(sc)
                 .build();
-
-        Client client = new ApacheHttpClient4(new ApacheHttpClient4Handler(httpClient, null, false));
-        client.setConnectTimeout(connectTimeout);
-        client.setReadTimeout(readTimeout);
-        client.setFollowRedirects(true);
+        */
+        JerseyClientConfiguration config = new JerseyClientConfiguration();
+        //config.setTlsConfiguration(new TlsConfiguration());
+        config.setConnectionTimeout(Duration.milliseconds(connectTimeout));
+        config.setTimeout(Duration.milliseconds(readTimeout));
+        
+        Client client = new JerseyClientBuilder(env).using(config).build(ClientFactory.class.getName());
+        client.property(ClientProperties.FOLLOW_REDIRECTS, Boolean.TRUE);
 
         return client;
     }

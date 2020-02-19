@@ -4,6 +4,9 @@ import eu.clarin.sru.fcs.aggregator.scan.CenterRegistry;
 import eu.clarin.sru.fcs.aggregator.scan.CenterRegistryLive;
 import eu.clarin.sru.fcs.aggregator.scan.Endpoint;
 import eu.clarin.sru.fcs.aggregator.scan.Institution;
+import io.dropwizard.setup.Environment;
+import io.dropwizard.testing.ResourceHelpers;
+import io.dropwizard.testing.junit.DropwizardAppRule;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -11,6 +14,7 @@ import javax.naming.NamingException;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.Assert;
+import org.junit.ClassRule;
 
 /**
  *
@@ -19,10 +23,14 @@ import org.junit.Assert;
 @Ignore
 public class CQLEnumerationTest {
 
+    @ClassRule
+    public static final DropwizardAppRule<AggregatorConfiguration> RULE =
+            new DropwizardAppRule<>(Aggregator.class, ResourceHelpers.resourceFilePath("aggregator_devel.yaml"));
+    
 	public void printAll(String centerRegistryUrl) throws NamingException {
-
+                Environment env = RULE.getEnvironment();
 		try {
-			CenterRegistry centerRegistry = new CenterRegistryLive(centerRegistryUrl, null);
+			CenterRegistry centerRegistry = new CenterRegistryLive(centerRegistryUrl, null, env);
 			List<Institution> list = centerRegistry.getCQLInstitutions();
 			for (Institution institution : list) {
 				System.out.println("1: " + institution.getName() + ": ");
@@ -46,12 +54,12 @@ public class CQLEnumerationTest {
 
 	@Test
 	public void testEq() throws NamingException {
-
+                Environment env = RULE.getEnvironment();
 		try {
 			Set<Endpoint> list1, list2;
 			{
 				String centerRegistryUrl = "http://centerregistry-clarin.esc.rzg.mpg.de/restxml/";
-				CenterRegistry centerRegistry = new CenterRegistryLive(centerRegistryUrl, null);
+				CenterRegistry centerRegistry = new CenterRegistryLive(centerRegistryUrl, null, env);
 				list1 = new HashSet<Endpoint>();
 				for (Institution i : centerRegistry.getCQLInstitutions()) {
 					list1.addAll(i.getEndpoints());
@@ -60,7 +68,7 @@ public class CQLEnumerationTest {
 
 			{
 				String centerRegistryUrl = "https://centres-staging.clarin.eu:4430/restxml/";
-				CenterRegistry centerRegistry = new CenterRegistryLive(centerRegistryUrl, null);
+				CenterRegistry centerRegistry = new CenterRegistryLive(centerRegistryUrl, null, env);
 				list2 = new HashSet<Endpoint>();
 				for (Institution i : centerRegistry.getCQLInstitutions()) {
 					list2.addAll(i.getEndpoints());

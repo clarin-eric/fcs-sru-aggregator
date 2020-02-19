@@ -1,14 +1,17 @@
 package eu.clarin.sru.fcs.aggregator.rest;
 
-import com.sun.jersey.api.client.Client;
-import com.sun.jersey.api.client.ClientResponse;
-import com.sun.jersey.api.client.WebResource;
-import com.sun.jersey.api.client.config.ClientConfig;
-import com.sun.jersey.api.client.config.DefaultClientConfig;
+import io.dropwizard.client.JerseyClientBuilder;
+import io.dropwizard.client.JerseyClientConfiguration;
+import io.dropwizard.setup.Environment;
 import java.util.logging.*;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Random;
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 
 /**
  * @author Yana Panchenko
@@ -26,7 +29,7 @@ public class DataTransfer {
 	private static final String WSPACE_AGGREGATOR_DIR = "aggregator_results/";
 	private static final String DROP_OFF_URL = "http://ws1-clarind.esc.rzg.mpg.de/drop-off/storage/";
 
-	static String uploadToDropOff(byte[] bytes, String mimeType, String fileExtention) {
+	static String uploadToDropOff(byte[] bytes, String mimeType, String fileExtention, Environment env) {
 		Client client = null;
 		String url = null;
 		try {
@@ -36,14 +39,16 @@ public class DataTransfer {
 			int rn1 = generator.nextInt(1000000000);
 			String createdFileName = format.format(currentDate) + "-" + rn1 + fileExtention;
 
-			ClientConfig config = new DefaultClientConfig();
-			client = Client.create(config);
+			JerseyClientConfiguration config = new JerseyClientConfiguration();
+                        client = new JerseyClientBuilder(env).using(config).build("DataTransfer");
+			
 			url = DROP_OFF_URL + createdFileName;
-			WebResource service = client.resource(url);
+			WebTarget service = client.target(url);
 
-			ClientResponse response = service.type(mimeType) //.accept(MediaType.TEXT_PLAIN).post(String.class, media.getStringData());
-					.post(ClientResponse.class, bytes);
-			if (response.getClientResponseStatus() != ClientResponse.Status.CREATED) {
+			Response response = service
+                                .request(mimeType) 
+                                .post(Entity.entity(bytes, MediaType.APPLICATION_OCTET_STREAM));
+			if (response.getStatus() != Response.Status.CREATED.getStatusCode()) {
 				LOGGER.log(Level.SEVERE, "Error uploading {0}", new String[]{url});
 				//"Sorry, export to drop-off error!"
 				return null;
@@ -54,7 +59,7 @@ public class DataTransfer {
 			return null;
 		} finally {
 			if (client != null) {
-				client.destroy();
+				client.close();
 			}
 		}
 		return url;
