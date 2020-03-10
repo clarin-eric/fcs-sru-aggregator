@@ -203,7 +203,7 @@
                 </exclusion>
                 <exclusion>
                     <groupId>org.glassfish.jersey.media</groupId>
-                    <artifactId>jersey-media-jax</artifactId>
+                    <artifactId>jersey-media-jaxb</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
