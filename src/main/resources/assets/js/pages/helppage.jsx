@@ -45,7 +45,7 @@ var HelpPage = createReactClass({
 
 					<h3>More help</h3>
 					<p>More detailed information on using FCS Aggregator is available at the &nbsp;
-					<a href="http://weblicht.sfs.uni-tuebingen.de/weblichtwiki/index.php/FCS_Aggregator">
+					<a href="https://www.clarin.eu/content/content-search-tutorial">
 						Aggregator wiki page
 					</a>.
 					If you still cannot find an answer to your question,
