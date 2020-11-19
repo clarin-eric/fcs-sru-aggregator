@@ -47,7 +47,7 @@ var service_list = [
 	{
 		href: 'https://www.clarin.eu/content/content-search',
 		image: 'https://www.clarin.eu/sites/default/files/search.png',
-		title: "Federated Content Search",
+		title: "Content Search",
 		description: "Search different corpora with a single search engine"
 	},
 	{

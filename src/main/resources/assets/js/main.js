@@ -48132,7 +48132,7 @@ var EmbeddedFooter = (0, _createReactClass2.default)({
 							React.createElement(
 								"header",
 								{ className: "inline float-left" },
-								" Federated Content Search "
+								" Content Search "
 							)
 						)
 					)
@@ -50851,7 +50851,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 								React.createElement(
 									"header",
 									{ className: "inline" },
-									" Federated Content Search "
+									" Content Search "
 								)
 							)
 						),
@@ -52307,7 +52307,7 @@ var HelpPage = (0, _createReactClass2.default)({
 				React.createElement(
 					"h3",
 					null,
-					"Performing search in Federated Content Search corpora"
+					"Performing federated search in corpora"
 				),
 				React.createElement(
 					"p",

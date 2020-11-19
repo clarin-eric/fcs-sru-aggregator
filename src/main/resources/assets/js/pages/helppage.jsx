@@ -17,7 +17,7 @@ var HelpPage = createReactClass({
 			<div>
 				<div className="top-gap">
 					<h1>Help</h1>
-					<h3>Performing search in Federated Content Search corpora</h3>
+					<h3>Performing federated search in corpora</h3>
 					<p>To perform a simple keyword search in all CLARIN Federated Content Search centres
 					and their corpora, go to the search field at the top of the page or switch to Text Layer Contextual Query Language (CQL) in the dropdown list,
 					enter your query, and click the 'search' button or press the 'Enter' key.</p>

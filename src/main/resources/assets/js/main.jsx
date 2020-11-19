@@ -197,7 +197,7 @@ var Main = createReactClass({
 							</button>
 							<a className="navbar-brand" href={URLROOT + "/"} tabIndex="-1">
 								<img width="28px" height="28px" src="img/magglass1.png"/>
-								<header className="inline"> Federated Content Search </header>
+								<header className="inline"> Content Search </header>
 							</a>
 						</div>
 						{this.renderCollapsible()}
