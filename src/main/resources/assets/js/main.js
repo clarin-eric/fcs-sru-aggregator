@@ -49751,6 +49751,8 @@ var _propTypes2 = _interopRequireDefault(_propTypes);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
+
 var PT = _propTypes2.default;
 
 window.MyAggregator = window.MyAggragtor || {};
@@ -49875,6 +49877,24 @@ var ResultMixin = {
 		);
 	},
 
+	renderRowsAsADVGrouped: function renderRowsAsADVGrouped(corpusHit) {
+		function renderWithSeperators(layers, i) {
+			var pre = i != 0 ? [React.createElement(
+				"tr",
+				{ "class": "hitrow-sep" },
+				React.createElement("td", { colspan: "100%" })
+			)] : [];
+			return pre.concat(layers.map(this.renderRowsAsADV));
+		}
+		function renderPlainList(layers, i) {
+			return layers.map(this.renderRowsAsADV);
+		}
+		var needsSeparators = Math.min.apply(Math, _toConsumableArray(corpusHit.advancedLayers.map(function (x) {
+			return x.length;
+		}))) > 1;
+		return corpusHit.advancedLayers.map((needsSeparators ? renderWithSeperators : renderPlainList).bind(this));
+	},
+
 	renderDiagnostic: function renderDiagnostic(d, key) {
 		if (d.uri === window.MyAggregator.NO_MORE_RECORDS_DIAGNOSTIC_URI) {
 			return false;
@@ -49931,11 +49951,11 @@ var ResultMixin = {
 				this.renderDiagnostics(corpusHit),
 				React.createElement(
 					"table",
-					{ className: "table table-condensed table-hover", style: fulllength },
+					{ className: "table table-condensed table-hover advanced-layers", style: fulllength },
 					React.createElement(
 						"tbody",
 						null,
-						corpusHit.advancedLayers.map(this.renderRowsAsADV)
+						this.renderRowsAsADVGrouped(corpusHit)
 					)
 				)
 			);
@@ -49947,7 +49967,7 @@ var ResultMixin = {
 				this.renderDiagnostics(corpusHit),
 				React.createElement(
 					"table",
-					{ className: "table table-condensed table-hover", style: fulllength },
+					{ className: "table table-condensed table-hover kwic", style: fulllength },
 					React.createElement(
 						"tbody",
 						null,
@@ -51635,8 +51655,10 @@ var AggregatorPage = (0, _createReactClass2.default)({
 					kwics: noLangFiltering ? corpusHit.kwics : corpusHit.kwics.filter(function (kwic) {
 						return kwic.language === langCode || langCode === multipleLanguageCode || langCode === null;
 					}),
-					advancedLayers: noLangFiltering ? corpusHit.advancedLayers : corpusHit.advancedLayers.filter(function (layer) {
-						return layer.language === langCode || langCode === multipleLanguageCode || langCode === null;
+					advancedLayers: noLangFiltering ? corpusHit.advancedLayers : corpusHit.advancedLayers.filter(function (layers) {
+						return layers.every(function (layer) {
+							return layer.language === langCode || langCode === multipleLanguageCode || langCode === null;
+						});
 					})
 				};
 			});

@@ -300,10 +300,12 @@ var AggregatorPage = createReactClass({
 							       langCode === null;
 						}),
 					advancedLayers: noLangFiltering ? corpusHit.advancedLayers :
-					 	corpusHit.advancedLayers.filter(function(layer) {
-					 		return layer.language === langCode ||
-					 		       langCode === multipleLanguageCode ||
-					 		       langCode === null;
+					 	corpusHit.advancedLayers.filter(function(layers) {
+							return layers.every(function(layer) {
+								return layer.language === langCode ||
+									langCode === multipleLanguageCode ||
+									langCode === null;
+							});
 					 	}),
 				};
 			});

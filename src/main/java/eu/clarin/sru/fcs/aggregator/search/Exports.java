@@ -88,7 +88,8 @@ public class Exports {
 			    }
 			}
 			firstRow = true;
-			for (AdvancedLayer layer : result.getAdvancedLayers()) {
+			for (List<AdvancedLayer> layers : result.getAdvancedLayers()) {
+		    for (AdvancedLayer layer : layers) {
 			    if (firstRow) {
 				String[] headers = new String[]{
 				    "PID", "REFERENCE", "SPANS"};
@@ -125,6 +126,7 @@ public class Exports {
 			    }
 			    csv.append("\n");
 			    noResult = false;
+			}
 			}
 		    }
 		}
@@ -205,7 +207,8 @@ public class Exports {
 			    cell.setCellValue(kwic.getRight());
 			}
 		    }
-		    for (AdvancedLayer layer : result.getAdvancedLayers()) {
+			for (List<AdvancedLayer> layers : result.getAdvancedLayers()) {
+		    for (AdvancedLayer layer : layers) {
 			if (firstRow) {
 			    String[] headers = new String[]{
 				"PID", "REFERENCE", "SPANS"};
@@ -241,6 +244,7 @@ public class Exports {
 			    j++;
 			}
 		    }
+			}
 		}
 		workbook.write(excelStream);
 	    } catch (IOException ex) {
@@ -310,8 +314,13 @@ public class Exports {
 			firstRow = false;
 		    }
 
-		    sheet.ensureRowCount(rownum + result.getAdvancedLayers().size() + 2);
-		    for (AdvancedLayer layer : result.getAdvancedLayers()) {
+			int numAdvancedLayers = 0;
+			for (List<AdvancedLayer> layers : result.getAdvancedLayers()) {
+				numAdvancedLayers += layers.size();
+			}
+		    sheet.ensureRowCount(rownum + numAdvancedLayers + 2);
+			for (List<AdvancedLayer> layers : result.getAdvancedLayers()) {
+		    for (AdvancedLayer layer : layers) {
 			if (filterLanguage != null && !filterLanguage.equals(layer.getLanguage())) {
 			    continue;
 			}
@@ -336,6 +345,7 @@ public class Exports {
 			    j++;
 			}
 		    }
+			}
 		}
 	    }
 	    try {

@@ -409,6 +409,14 @@ div.popover {
 	max-width:552px;
 }
 
+.panel-body .table.advanced-layers > tbody > tr.hitrow-sep {
+	border-bottom: 1px solid #ddd;
+}
+
+.panel-body .table.advanced-layers > tbody > tr.hitrow-sep > td {
+	padding: 0;
+}
+
 /*** zoomed result ***/
 
 .modal-body .corpusDescription {
