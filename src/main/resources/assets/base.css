@@ -423,6 +423,7 @@ div.popover {
 	border: 1px solid #ddd;
 	border-left: 5px solid #036;
 	border-radius: 4px;
+	overflow-x: auto;
 }
 
 
