@@ -1,6 +1,6 @@
 .query_token:only-of-type .close_btn {
 	opacity: 0;
-	cursor: default;
+	pointer-events: none;
 	transition: opacity 200ms ease;
 }
 
@@ -94,7 +94,7 @@
 }
 
 .query_arg:only-of-type .or_arg:only-child .remove_arg {
-	cursor: default;
+	pointer-events: none;
 	opacity: 0;
 	transition: opacity 200ms ease;
 }
