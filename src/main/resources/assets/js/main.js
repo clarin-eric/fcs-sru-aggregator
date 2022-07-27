@@ -52683,8 +52683,10 @@ var StatisticsPage = (0, _createReactClass2.default)({
 		);
 	},
 
-	setTab: function setTab(idx) {
+	setTab: function setTab(idx, e) {
 		this.setState({ activeTab: idx });
+		e.preventDefault();
+		e.stopPropagation();
 	},
 
 	render: function render() {
@@ -52713,7 +52715,7 @@ var StatisticsPage = (0, _createReactClass2.default)({
 								{ role: "presentation", className: classname, key: st[0] },
 								React.createElement(
 									"a",
-									{ href: "#", role: "tab", onClick: this.setTab.bind(this, idx) },
+									{ href: "#", title: st[0], role: "tab", onClick: this.setTab.bind(this, idx) },
 									st[0]
 								)
 							);
