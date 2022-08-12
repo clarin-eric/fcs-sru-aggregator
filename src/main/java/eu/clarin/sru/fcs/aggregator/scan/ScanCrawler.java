@@ -189,7 +189,9 @@ public class ScanCrawler {
 			Corpus c = new Corpus(institution, endpoint);
 			c.setHandle(ri.getPid());
 			c.setTitle(getBestValueFrom(ri.getTitle()));
-			c.setDescription(getBestValueFrom(ri.getDescription()));
+			if (ri.getDescription() != null) {
+				c.setDescription(getBestValueFrom(ri.getDescription()));
+			}
 			c.setLanguages(new HashSet<String>(ri.getLanguages()));
 			c.setLandingPage(ri.getLandingPageURI());
 
