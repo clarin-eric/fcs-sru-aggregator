@@ -231,6 +231,7 @@ div.corpus-container {
 	border-bottom: 1px solid #eee;
 }
 div.corpusview-institutions > div.corpusview-corpora:hover,
+div.corpusview-languages > div.corpusview-corpora:hover,
 div.corpus-container:hover {
 	box-shadow: 0 0 10px rgb(179,216,253) !important;
 }
