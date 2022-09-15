@@ -92,6 +92,12 @@ var CorpusView = createReactClass({
 		this.props.corpora.update();
 	},
 
+	selectAllFromList: function (corpora, value) {
+		// like selectAll(), just for list of corpora
+		this.props.corpora.recurseCorpora(corpora, function (c) { c.visible ? c.selected = value : false });
+		this.props.corpora.update();
+	},
+
 	selectAllShown: function (value) {
 		// select only visible/shown corpora, i.e. corpora that are shown in dialog, possibly filtered due to query
 		this.props.corpora.recurse(function (c) { c.visible && c.priority > 0 ? c.selected = value : false });
@@ -227,6 +233,15 @@ var CorpusView = createReactClass({
 		</div>;
 	},
 
+	renderSelectionButtonsGrouped: function (corpora) {
+		return (<div className="float-right inline" style={{ paddingTop: "1.5em" }}>
+			<button className="btn btn-default" style={{ marginRight: 10 }} onClick={this.selectAllFromList.bind(this, corpora, true)}>
+				{" Select all"}</button>
+			<button className="btn btn-default" style={{ marginRight: 20 }} onClick={this.selectAllFromList.bind(this, corpora, false)}>
+				{" Deselect all"}</button>
+		</div>);
+	},
+
 	renderLanguages: function(languages) {
 		return languages
 				.map(function(l) { return this.props.languageMap[l]; }.bind(this))
@@ -352,6 +367,7 @@ var CorpusView = createReactClass({
 			});
 			if (corpListRender.length > 0) {
 				groupedListRender.push(<div className="corpusview-corpora">
+					{this.renderSelectionButtonsGrouped(groupedCorpora.corpora)}
 					<h3 style={{ paddingTop: "0.5em" }}><i class="fa fa-institution"/> {institution}</h3>
 					{this.renderExpansionGrouped(groupedCorpora)}
 					{groupedCorpora.expanded ? corpListRender : false}
