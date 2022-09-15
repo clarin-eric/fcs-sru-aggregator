@@ -50,6 +50,12 @@ var CorpusView = createReactClass({
 		this.props.corpora.update();
 	},
 
+	selectAllShown: function (value) {
+		// select only visible/shown corpora, i.e. corpora that are shown in dialog, possibly filtered due to query
+		this.props.corpora.recurse(function (c) { c.visible && c.priority > 0 ? c.selected = value : false });
+		this.props.corpora.update();
+	},
+
 	searchCorpus: function(query) {
 		// sort fn: descending priority, stable sort
 		var sortFn = function(a, b){
@@ -307,6 +313,8 @@ var CorpusView = createReactClass({
 						<div className="float-right inline">
 							<button className="btn btn-default" style={{ marginRight: 10 }} onClick={this.selectAll.bind(this,true)}>
 								{" Select all"}</button>
+							<button className="btn btn-default" style={{ marginRight: 10 }} onClick={this.selectAllShown.bind(this, true)}>
+								{" Select visible"}</button>
 							<button className="btn btn-default" style={{ marginRight: 20 }} onClick={this.selectAll.bind(this,false)}>
 								{" Deselect all"}</button>
 						</div>

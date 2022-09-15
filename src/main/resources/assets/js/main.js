@@ -47750,6 +47750,14 @@ var CorpusView = (0, _createReactClass2.default)({
 		this.props.corpora.update();
 	},
 
+	selectAllShown: function selectAllShown(value) {
+		// select only visible/shown corpora, i.e. corpora that are shown in dialog, possibly filtered due to query
+		this.props.corpora.recurse(function (c) {
+			c.visible && c.priority > 0 ? c.selected = value : false;
+		});
+		this.props.corpora.update();
+	},
+
 	searchCorpus: function searchCorpus(query) {
 		// sort fn: descending priority, stable sort
 		var sortFn = function sortFn(a, b) {
@@ -48060,6 +48068,11 @@ var CorpusView = (0, _createReactClass2.default)({
 						"button",
 						{ className: "btn btn-default", style: { marginRight: 10 }, onClick: this.selectAll.bind(this, true) },
 						" Select all"
+					),
+					React.createElement(
+						"button",
+						{ className: "btn btn-default", style: { marginRight: 10 }, onClick: this.selectAllShown.bind(this, true) },
+						" Select visible"
 					),
 					React.createElement(
 						"button",
