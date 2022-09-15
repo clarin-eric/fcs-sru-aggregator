@@ -14,10 +14,42 @@ var CorpusView = createReactClass({
 	},
 	
 	getInitialState() {
+		const corpora = this.props.corpora;
+		const corporaGroupedByInstitute = this.updateCorporaGroupedByInstitute(corpora);
+
 	    return {
 	        viewSelected: false, // only show the selected collections
 	        //showDisabled: false, // dont hide items with {visible = false} // implemented, but out commented feature...
+	        viewGroupedByInstitution: false, // group by institution, then as usual
+	        corporaGroupedByInstitute: corporaGroupedByInstitute, // group info (is-expanded, corpora list)
+	        corpora: corpora, // cached but unused, just to check for updates
 	    }
+	},
+
+	componentWillReceiveProps(nextProps) {
+		// console.debug("componentWillReceiveProps", nextProps);
+		const corpora = nextProps.corpora;
+		if (this.props.corpora == corpora) {
+			return;
+		}
+		const corporaGroupedByInstitute = this.updateCorporaGroupedByInstitute(corpora);
+		this.setState({
+			corpora: this.props.corpora,
+			corporaGroupedByInstitute: corporaGroupedByInstitute,
+		});
+	},
+
+	updateCorporaGroupedByInstitute: function (corpora) {
+		const corporaGroupedByInstitute = {};
+		corpora.corpora.forEach(corpus => {
+			const institute = corpus.institution.name;
+			if (!corporaGroupedByInstitute.hasOwnProperty(institute)) {
+				corporaGroupedByInstitute[institute] = {expanded: true, corpora: []};
+			}
+			corporaGroupedByInstitute[institute].corpora.push(corpus);
+		});
+		//console.debug(corporaGroupedByInstitute);
+		return corporaGroupedByInstitute;
 	},
 
 	toggleSelection: function (corpus, e) {
@@ -33,6 +65,9 @@ var CorpusView = createReactClass({
 	toggleShowDisabled(evt) {
 	    this.setState( (st)=> ({showDisabled:!st.showDisabled}) );
 	},
+	toggleViewGroupByInstitution(evt) {
+	    this.setState((st) => ({ viewGroupedByInstitution: !st.viewGroupedByInstitution }));
+	},
 
 	toggleDescExpansion: function (corpus) {
 		corpus.descExpanded = !corpus.descExpanded;
@@ -42,6 +77,13 @@ var CorpusView = createReactClass({
 	toggleExpansion: function (corpus) {
 		corpus.expanded = !corpus.expanded;
 		this.props.corpora.update();
+	},
+
+	toggleExpansionGrouped: function (groupedCorpora) {
+		groupedCorpora.expanded = !groupedCorpora.expanded;
+		this.setState({
+			corporaGroupedByInstitute: this.state.corporaGroupedByInstitute,
+		});
 	},
 
 	selectAll: function(value) {
@@ -164,6 +206,27 @@ var CorpusView = createReactClass({
 				</div>;
 	},
 
+	renderExpansionGrouped: function (groupedCorpora) {
+		if (!groupedCorpora.corpora || groupedCorpora.corpora.length === 0) {
+			return false;
+		}
+
+		var selectedCount = 0;
+		this.props.corpora.recurseCorpora(groupedCorpora.corpora, c => {
+			if (c.selected && c.visible) selectedCount++;
+		});
+
+		return <div className="expansion-handle" onClick={this.toggleExpansionGrouped.bind(this, groupedCorpora)}>
+			<a>
+				{groupedCorpora.expanded ?
+					<span className="glyphicon glyphicon-minus" aria-hidden="true" /> :
+					<span className="glyphicon glyphicon-plus" aria-hidden="true" />
+				}
+				{groupedCorpora.expanded ? " Collapse " : " Expand "} ({groupedCorpora.corpora.length} root collection{groupedCorpora.corpora.length != 1 ? "s" : ""}, {selectedCount} (sub)collections selected)
+			</a>
+		</div>;
+	},
+
 	renderLanguages: function(languages) {
 		return languages
 				.map(function(l) { return this.props.languageMap[l]; }.bind(this))
@@ -275,6 +338,35 @@ var CorpusView = createReactClass({
 		</div>
 		
 	},
+
+	renderCorpListGroupedByInstitution() {
+		var minmaxp = this.getMinMaxPriority();
+
+		const groupedListRender = [];
+		Object.entries(this.state.corporaGroupedByInstitute).forEach(([institution, groupedCorpora]) => {
+			const corpListRender = [];
+			// this is so we get a non-undefined items .length in corpListRender.
+			groupedCorpora.corpora.forEach(c => {
+				var rend = this.renderCorpus(0, minmaxp, c);
+				if (rend) corpListRender.push(rend);
+			});
+			if (corpListRender.length > 0) {
+				groupedListRender.push(<div className="corpusview-corpora">
+					<h3 style={{ paddingTop: "0.5em" }}><i class="fa fa-institution"/> {institution}</h3>
+					{this.renderExpansionGrouped(groupedCorpora)}
+					{groupedCorpora.expanded ? corpListRender : false}
+				</div>);
+			}
+		});
+
+		return <div className="corpusview-institutions">
+			{groupedListRender.length > 0 ? groupedListRender :
+				<h3 className="aligncenter">{
+					this.state.viewSelected ? "No collections selected yet!" : "No collections found."
+				}</h3>
+			}
+		</div>
+	},
 	
 	render() {
 	    var selectedCount = 0;
@@ -307,6 +399,9 @@ var CorpusView = createReactClass({
                                 <span className={this.state.showDisabled ? "glyphicon glyphicon-check" : "glyphicon glyphicon-unchecked"} />  Show disabled ({disabledCount})
                               </label>
                               */}
+                              <label className={"btn btn-light btn " + (this.state.viewGroupedByInstitution ? 'active' : 'inactive')} onClick={this.toggleViewGroupByInstitution} title="Group collections by institution">
+                                <span className={this.state.viewGroupedByInstitution ? "glyphicon glyphicon-check" : "glyphicon glyphicon-unchecked"} /> Group by Institution
+                              </label>
                             </div>
 						</div>
 						
@@ -325,7 +420,7 @@ var CorpusView = createReactClass({
 							</div>
 						</div>
 					</div>
-					{this.renderCorpList()}
+					{this.state.viewGroupedByInstitution ? this.renderCorpListGroupedByInstitution() : this.renderCorpList()}
 				</div>;
 	}
 });

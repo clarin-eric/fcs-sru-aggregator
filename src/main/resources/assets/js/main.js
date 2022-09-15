@@ -47674,6 +47674,8 @@ if (process.env.NODE_ENV === 'production') {
 },{}],48:[function(require,module,exports){
 "use strict";
 
+var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
+
 var _classnames = require("classnames");
 
 var _classnames2 = _interopRequireDefault(_classnames);
@@ -47704,12 +47706,43 @@ var CorpusView = (0, _createReactClass2.default)({
 	},
 
 	getInitialState: function getInitialState() {
+		var corpora = this.props.corpora;
+		var corporaGroupedByInstitute = this.updateCorporaGroupedByInstitute(corpora);
+
 		return {
-			viewSelected: false // only show the selected collections
+			viewSelected: false, // only show the selected collections
 			//showDisabled: false, // dont hide items with {visible = false} // implemented, but out commented feature...
+			viewGroupedByInstitution: false, // group by institution, then as usual
+			corporaGroupedByInstitute: corporaGroupedByInstitute, // group info (is-expanded, corpora list)
+			corpora: corpora // cached but unused, just to check for updates
 		};
 	},
+	componentWillReceiveProps: function componentWillReceiveProps(nextProps) {
+		// console.debug("componentWillReceiveProps", nextProps);
+		var corpora = nextProps.corpora;
+		if (this.props.corpora == corpora) {
+			return;
+		}
+		var corporaGroupedByInstitute = this.updateCorporaGroupedByInstitute(corpora);
+		this.setState({
+			corpora: this.props.corpora,
+			corporaGroupedByInstitute: corporaGroupedByInstitute
+		});
+	},
 
+
+	updateCorporaGroupedByInstitute: function updateCorporaGroupedByInstitute(corpora) {
+		var corporaGroupedByInstitute = {};
+		corpora.corpora.forEach(function (corpus) {
+			var institute = corpus.institution.name;
+			if (!corporaGroupedByInstitute.hasOwnProperty(institute)) {
+				corporaGroupedByInstitute[institute] = { expanded: true, corpora: [] };
+			}
+			corporaGroupedByInstitute[institute].corpora.push(corpus);
+		});
+		//console.debug(corporaGroupedByInstitute);
+		return corporaGroupedByInstitute;
+	},
 
 	toggleSelection: function toggleSelection(corpus, e) {
 		var s = !corpus.selected;
@@ -47730,6 +47763,11 @@ var CorpusView = (0, _createReactClass2.default)({
 			return { showDisabled: !st.showDisabled };
 		});
 	},
+	toggleViewGroupByInstitution: function toggleViewGroupByInstitution(evt) {
+		this.setState(function (st) {
+			return { viewGroupedByInstitution: !st.viewGroupedByInstitution };
+		});
+	},
 
 
 	toggleDescExpansion: function toggleDescExpansion(corpus) {
@@ -47740,6 +47778,13 @@ var CorpusView = (0, _createReactClass2.default)({
 	toggleExpansion: function toggleExpansion(corpus) {
 		corpus.expanded = !corpus.expanded;
 		this.props.corpora.update();
+	},
+
+	toggleExpansionGrouped: function toggleExpansionGrouped(groupedCorpora) {
+		groupedCorpora.expanded = !groupedCorpora.expanded;
+		this.setState({
+			corporaGroupedByInstitute: this.state.corporaGroupedByInstitute
+		});
 	},
 
 	selectAll: function selectAll(value) {
@@ -47873,6 +47918,35 @@ var CorpusView = (0, _createReactClass2.default)({
 				" (",
 				corpus.subCorpora.length,
 				" subcollections)"
+			)
+		);
+	},
+
+	renderExpansionGrouped: function renderExpansionGrouped(groupedCorpora) {
+		if (!groupedCorpora.corpora || groupedCorpora.corpora.length === 0) {
+			return false;
+		}
+
+		var selectedCount = 0;
+		this.props.corpora.recurseCorpora(groupedCorpora.corpora, function (c) {
+			if (c.selected && c.visible) selectedCount++;
+		});
+
+		return React.createElement(
+			"div",
+			{ className: "expansion-handle", onClick: this.toggleExpansionGrouped.bind(this, groupedCorpora) },
+			React.createElement(
+				"a",
+				null,
+				groupedCorpora.expanded ? React.createElement("span", { className: "glyphicon glyphicon-minus", "aria-hidden": "true" }) : React.createElement("span", { className: "glyphicon glyphicon-plus", "aria-hidden": "true" }),
+				groupedCorpora.expanded ? " Collapse " : " Expand ",
+				" (",
+				groupedCorpora.corpora.length,
+				" root collection",
+				groupedCorpora.corpora.length != 1 ? "s" : "",
+				", ",
+				selectedCount,
+				" (sub)collections selected)"
 			)
 		);
 	},
@@ -48030,6 +48104,50 @@ var CorpusView = (0, _createReactClass2.default)({
 			)
 		);
 	},
+	renderCorpListGroupedByInstitution: function renderCorpListGroupedByInstitution() {
+		var _this3 = this;
+
+		var minmaxp = this.getMinMaxPriority();
+
+		var groupedListRender = [];
+		Object.entries(this.state.corporaGroupedByInstitute).forEach(function (_ref) {
+			var _ref2 = _slicedToArray(_ref, 2),
+			    institution = _ref2[0],
+			    groupedCorpora = _ref2[1];
+
+			var corpListRender = [];
+			// this is so we get a non-undefined items .length in corpListRender.
+			groupedCorpora.corpora.forEach(function (c) {
+				var rend = _this3.renderCorpus(0, minmaxp, c);
+				if (rend) corpListRender.push(rend);
+			});
+			if (corpListRender.length > 0) {
+				groupedListRender.push(React.createElement(
+					"div",
+					{ className: "corpusview-corpora" },
+					React.createElement(
+						"h3",
+						{ style: { paddingTop: "0.5em" } },
+						React.createElement("i", { "class": "fa fa-institution" }),
+						" ",
+						institution
+					),
+					_this3.renderExpansionGrouped(groupedCorpora),
+					groupedCorpora.expanded ? corpListRender : false
+				));
+			}
+		});
+
+		return React.createElement(
+			"div",
+			{ className: "corpusview-institutions" },
+			groupedListRender.length > 0 ? groupedListRender : React.createElement(
+				"h3",
+				{ className: "aligncenter" },
+				this.state.viewSelected ? "No collections selected yet!" : "No collections found."
+			)
+		);
+	},
 	render: function render() {
 		var selectedCount = 0;
 		//var disabledCount = 0;
@@ -48058,6 +48176,12 @@ var CorpusView = (0, _createReactClass2.default)({
 							" View selected (",
 							selectedCount,
 							")"
+						),
+						React.createElement(
+							"label",
+							{ className: "btn btn-light btn " + (this.state.viewGroupedByInstitution ? 'active' : 'inactive'), onClick: this.toggleViewGroupByInstitution, title: "Group collections by institution" },
+							React.createElement("span", { className: this.state.viewGroupedByInstitution ? "glyphicon glyphicon-check" : "glyphicon glyphicon-unchecked" }),
+							" Group by Institution"
 						)
 					)
 				),
@@ -48091,7 +48215,7 @@ var CorpusView = (0, _createReactClass2.default)({
 					)
 				)
 			),
-			this.renderCorpList()
+			this.state.viewGroupedByInstitution ? this.renderCorpListGroupedByInstitution() : this.renderCorpList()
 		);
 	}
 });
