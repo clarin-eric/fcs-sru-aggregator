@@ -7,23 +7,23 @@ import createReactClass from "create-react-class";
 var PT = PropTypes;
 
 var Popover = createReactClass({
-	propTypes: {
-		placement: PT.string,
-		title: PT.string,
-		triggerButtonClass: PT.string,
-		triggerButtonContent: PT.element.isRequired
-	},
-	mixins: [PopoverMixin],
+  propTypes: {
+    placement: PT.string,
+    title: PT.string,
+    triggerButtonClass: PT.string,
+    triggerButtonContent: PT.element.isRequired
+  },
+  mixins: [PopoverMixin],
 
-	handleClick: function(e) {
-		e.stopPropagation();
-	},
+  handleClick: function (e) {
+    e.stopPropagation();
+  },
 
-	render: function() {
-		return	<button className={this.props.triggerButtonClass} onClick={this.handleClick}>
-					{this.props.triggerButtonContent}
-				</button>;
-	}
+  render: function () {
+    return <button className={this.props.triggerButtonClass} onClick={this.handleClick}>
+      {this.props.triggerButtonContent}
+    </button>;
+  }
 });
 
 module.exports = Popover;
