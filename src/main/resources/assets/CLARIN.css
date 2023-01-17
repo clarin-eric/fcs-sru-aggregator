@@ -4,6 +4,7 @@
   font-weight: 400;
   src: local("Roboto Regular"), local("Roboto-Regular"), url("fonts/Roboto_with_European_character_sets.woff") format("woff");
 }
+
 body {
   font-family: "Roboto", sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -14,7 +15,9 @@ body {
 a {
   color: #B27000;
 }
-a:hover, a:focus {
+
+a:hover,
+a:focus {
   text-decoration: none;
   color: #D08000;
 }
@@ -24,20 +27,35 @@ div.navbar-header {
   overflow: hidden;
 }
 
-.navbar a.navbar-brand, #footer a {
+.navbar a.navbar-brand,
+#footer a {
   color: #036;
 }
-.navbar a.navbar-brand:hover, #footer a:hover {
+
+.navbar a.navbar-brand:hover,
+#footer a:hover {
   color: #259;
 }
 
-h1, h2, h3, h4, h5, h6, label {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+label {
   color: #666;
   font-weight: normal;
   line-height: 1.2em;
 }
 
-body, h1, h2, h3, h4, h5, h6 {
+body,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   font-size-adjust: 0.5;
 }
 
@@ -106,6 +124,7 @@ blockquote {
     line-height: 1.25;
   }
 }
+
 @media (min-width: 43.75em) {
   #page {
     font-size: 1em;
@@ -144,11 +163,14 @@ blockquote {
     /* 35px / 24px */
   }
 }
+
 p {
   margin: 0 0 15px 0;
 }
 
-menu, ol, ul {
+menu,
+ol,
+ul {
   padding: 0 0 0 20px;
 }
 
@@ -156,7 +178,8 @@ hr {
   clear: both;
 }
 
-html body ul#nav ul, html body ul#nav ul li {
+html body ul#nav ul,
+html body ul#nav ul li {
   width: 200px;
 }
 
@@ -170,7 +193,8 @@ html body ul#nav ul ul {
   font-size: 14px;
 }
 
-#footer .leftist, #footer .rightist {
+#footer .leftist,
+#footer .rightist {
   margin: 21px 0;
   padding: 0 4px;
   width: 120px;
