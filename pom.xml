@@ -44,82 +44,82 @@
                     <artifactId>checker-qual</artifactId>
                 </exclusion>
             </exclusions>
-                  -->
+            -->
             <!--
-      <exclusions>
-              <exclusion>
-                      <groupId>org.slf4j</groupId>
-                      <artifactId>slf4j-api</artifactId>
-              </exclusion>
-              <exclusion>
-                      <groupId>com.sun.jersey</groupId>
-                      <artifactId>jersey-core</artifactId>
-              </exclusion>
-              <exclusion>
-                      <groupId>org.eclipse.jetty</groupId>
-                      <artifactId>jetty-http</artifactId>
-              </exclusion>
-              <exclusion>
-                      <groupId>org.eclipse.jetty</groupId>
-                      <artifactId>jetty-servlet</artifactId>
-              </exclusion>
-              <exclusion>
-                      <groupId>org.eclipse.jetty</groupId>
-                      <artifactId>jetty-util</artifactId>
-              </exclusion>
-              <exclusion>
-                      <groupId>org.eclipse.jetty</groupId>
-                      <artifactId>jetty-server</artifactId>
-              </exclusion>
-              <exclusion>
-                      <groupId>org.eclipse.jetty</groupId>
-                      <artifactId>jetty-io</artifactId>
-              </exclusion>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.sun.jersey</groupId>
+                    <artifactId>jersey-core</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.eclipse.jetty</groupId>
+                    <artifactId>jetty-http</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.eclipse.jetty</groupId>
+                    <artifactId>jetty-servlet</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.eclipse.jetty</groupId>
+                    <artifactId>jetty-util</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.eclipse.jetty</groupId>
+                    <artifactId>jetty-server</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.eclipse.jetty</groupId>
+                    <artifactId>jetty-io</artifactId>
+                </exclusion>
 
-              <exclusion>
-                      <groupId>io.dropwizard</groupId>
-                      <artifactId>dropwizard-logging</artifactId>
-              </exclusion>
+                <exclusion>
+                    <groupId>io.dropwizard</groupId>
+                    <artifactId>dropwizard-logging</artifactId>
+                </exclusion>
 
-              <exclusion>
-                      <groupId>io.dropwizard</groupId>
-                      <artifactId>dropwizard-validation</artifactId>
-              </exclusion>
-              <exclusion>
-                      <groupId>io.dropwizard</groupId>
-                      <artifactId>dropwizard-util</artifactId>
-              </exclusion>
-              <exclusion>
-                      <groupId>io.dropwizard</groupId>
-                      <artifactId>dropwizard-jackson</artifactId>
-              </exclusion>
-              <exclusion>
-                      <groupId>com.fasterxml.jackson.core</groupId>
-                      <artifactId>jackson-annotations</artifactId>
-              </exclusion>
-              <exclusion>
-                      <groupId>com.fasterxml.jackson.core</groupId>
-                      <artifactId>jackson-core</artifactId>
-              </exclusion>
-              <exclusion>
-                      <groupId>com.google.guava</groupId>
-                      <artifactId>guava</artifactId>
-              </exclusion>
-    </exclusions>
+                <exclusion>
+                    <groupId>io.dropwizard</groupId>
+                    <artifactId>dropwizard-validation</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.dropwizard</groupId>
+                    <artifactId>dropwizard-util</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.dropwizard</groupId>
+                    <artifactId>dropwizard-jackson</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-annotations</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-core</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.google.guava</groupId>
+                    <artifactId>guava</artifactId>
+                </exclusion>
+            </exclusions>
             -->
         </dependency>
 
         <dependency>
-                <groupId>io.dropwizard</groupId>
-                <artifactId>dropwizard-assets</artifactId>
-                <version>${version.dropwizard}</version>
+            <groupId>io.dropwizard</groupId>
+            <artifactId>dropwizard-assets</artifactId>
+            <version>${version.dropwizard}</version>
         </dependency>
 
        <dependency>
             <groupId>io.dropwizard</groupId>
             <artifactId>dropwizard-client</artifactId>
             <version>${version.dropwizard}</version>
-       </dependency>
+        </dependency>
 
         <dependency>
             <groupId>javax.servlet</groupId>
@@ -243,15 +243,15 @@
         </dependency>
 
         <!-- Using it from jersey-apache-client4 instead -->
-<!--
+        <!--
         <dependency>
                 <groupId>com.sun.jersey</groupId>
                 <artifactId>jersey-client</artifactId>
                 <version>1.19.4</version>
                 <type>jar</type>
         </dependency>
--->
-    <!--
+        -->
+        <!--
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
@@ -265,11 +265,13 @@
         </dependency>
         -->
         <!-- dropwizard 0.8 uses commons-lang3, changed imports -->
-        <!--dependency>
-          <groupId>commons-lang</groupId>
-          <artifactId>commons-lang</artifactId>
-          <version>2.4</version>
-        </dependency-->
+        <!--
+        <dependency>
+            <groupId>commons-lang</groupId>
+            <artifactId>commons-lang</artifactId>
+            <version>2.4</version>
+        </dependency>
+        -->
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
