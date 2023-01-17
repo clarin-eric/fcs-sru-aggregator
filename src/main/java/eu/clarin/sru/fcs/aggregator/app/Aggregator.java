@@ -106,250 +106,248 @@ import org.slf4j.LoggerFactory;
  */
 public class Aggregator extends Application<AggregatorConfiguration> {
 
-	private static final org.slf4j.Logger log = LoggerFactory.getLogger(Aggregator.class);
+    private static final org.slf4j.Logger log = LoggerFactory.getLogger(Aggregator.class);
 
-	final int SEARCHES_SIZE_GC_THRESHOLD = 1000;
-	final int SEARCHES_AGE_GC_THRESHOLD = 60;
+    final int SEARCHES_SIZE_GC_THRESHOLD = 1000;
+    final int SEARCHES_AGE_GC_THRESHOLD = 60;
 
-	private static final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-	private static Aggregator instance;
-	private AggregatorConfiguration.Params params;
+    private static final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+    private static Aggregator instance;
+    private AggregatorConfiguration.Params params;
 
-	private AtomicReference<Corpora> scanCacheAtom = new AtomicReference<Corpora>(new Corpora());
-	private AtomicReference<Statistics> scanStatsAtom = new AtomicReference<Statistics>(new Statistics());
-	private AtomicReference<Statistics> searchStatsAtom = new AtomicReference<Statistics>(new Statistics());
+    private AtomicReference<Corpora> scanCacheAtom = new AtomicReference<Corpora>(new Corpora());
+    private AtomicReference<Statistics> scanStatsAtom = new AtomicReference<Statistics>(new Statistics());
+    private AtomicReference<Statistics> searchStatsAtom = new AtomicReference<Statistics>(new Statistics());
 
-	private LanguageDetector languageDetector;
-	private TextObjectFactory textObjectFactory;
+    private LanguageDetector languageDetector;
+    private TextObjectFactory textObjectFactory;
 
-	private ThrottledClient sruClient = null;
-	public MaxConcurrentRequestsCallback maxScanConcurrentRequestsCallback;
-	public MaxConcurrentRequestsCallback maxSearchConcurrentRequestsCallback;
-	private Map<Long, Search> activeSearches = Collections.synchronizedMap(new HashMap<Long, Search>());
+    private ThrottledClient sruClient = null;
+    public MaxConcurrentRequestsCallback maxScanConcurrentRequestsCallback;
+    public MaxConcurrentRequestsCallback maxSearchConcurrentRequestsCallback;
+    private Map<Long, Search> activeSearches = Collections.synchronizedMap(new HashMap<Long, Search>());
 
-	public static void main(String[] args) throws Exception {
-		new Aggregator().run(args);
-	}
+    public static void main(String[] args) throws Exception {
+        new Aggregator().run(args);
+    }
 
-	@Override
-	public String getName() {
-		return "CLARIN FCS Aggregator";
-	}
+    @Override
+    public String getName() {
+        return "CLARIN FCS Aggregator";
+    }
 
-	@Override
-	public void initialize(Bootstrap<AggregatorConfiguration> bootstrap) {
-		bootstrap.addBundle(new AssetsBundle("/assets", "/", "index.html", "static"));
-	}
+    @Override
+    public void initialize(Bootstrap<AggregatorConfiguration> bootstrap) {
+        bootstrap.addBundle(new AssetsBundle("/assets", "/", "index.html", "static"));
+    }
 
-	@Override
-	public void run(AggregatorConfiguration config, Environment environment) throws Exception {
-		params = config.aggregatorParams;
-		instance = this;
+    @Override
+    public void run(AggregatorConfiguration config, Environment environment) throws Exception {
+        params = config.aggregatorParams;
+        instance = this;
 
-		List<String> wll = new ArrayList<String>();
-		for (String l : config.aggregatorParams.weblichtConfig.getAcceptedTcfLanguages()) {
-			wll.add(LanguagesISO693.getInstance().code_3ForCode(l));
-		}
-		config.aggregatorParams.weblichtConfig.acceptedTcfLanguages = wll;
+        List<String> wll = new ArrayList<String>();
+        for (String l : config.aggregatorParams.weblichtConfig.getAcceptedTcfLanguages()) {
+            wll.add(LanguagesISO693.getInstance().code_3ForCode(l));
+        }
+        config.aggregatorParams.weblichtConfig.acceptedTcfLanguages = wll;
 
-		System.out.println("Using parameters: ");
-		try {
-			System.out.println(new ObjectMapper().writerWithDefaultPrettyPrinter().
-					writeValueAsString(config.aggregatorParams));
-		} catch (IOException xc) {
-		}
+        System.out.println("Using parameters: ");
+        try {
+            System.out.println(
+                    new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(config.aggregatorParams));
+        } catch (IOException xc) {
+        }
 
-		environment.getApplicationContext().setSessionHandler(new SessionHandler());
-		environment.getApplicationContext().setErrorHandler(new ErrorHandler());
-		// Moved to configuration section server in later versions
-		environment.jersey().setUrlPattern("/rest/*");
-		environment.jersey().register(new RestService(environment));
+        environment.getApplicationContext().setSessionHandler(new SessionHandler());
+        environment.getApplicationContext().setErrorHandler(new ErrorHandler());
+        // Moved to configuration section server in later versions
+        environment.jersey().setUrlPattern("/rest/*");
+        environment.jersey().register(new RestService(environment));
 
-		try {
-			init(environment);
-		} catch (Exception ex) {
-			log.error("INIT EXCEPTION", ex);
-			throw ex; // force exit
-		}
-	}
+        try {
+            init(environment);
+        } catch (Exception ex) {
+            log.error("INIT EXCEPTION", ex);
+            throw ex; // force exit
+        }
+    }
 
-	public static Aggregator getInstance() {
-		return instance;
-	}
+    public static Aggregator getInstance() {
+        return instance;
+    }
 
-	public AggregatorConfiguration.Params getParams() {
-		return params;
-	}
+    public AggregatorConfiguration.Params getParams() {
+        return params;
+    }
 
-	public Corpora getCorpora() {
-		return scanCacheAtom.get();
-	}
+    public Corpora getCorpora() {
+        return scanCacheAtom.get();
+    }
 
-	public Statistics getScanStatistics() {
-		return scanStatsAtom.get();
-	}
+    public Statistics getScanStatistics() {
+        return scanStatsAtom.get();
+    }
 
-	public Statistics getSearchStatistics() {
-		return searchStatsAtom.get();
-	}
+    public Statistics getSearchStatistics() {
+        return searchStatsAtom.get();
+    }
 
-	public void init(Environment environment) throws IOException {
-		log.info("Aggregator initialization started.");
+    public void init(Environment environment) throws IOException {
+        log.info("Aggregator initialization started.");
 
-		SRUThreadedClient sruScanClient
-				= new ClarinFCSClientBuilder()
-				.setConnectTimeout(params.ENDPOINTS_SCAN_TIMEOUT_MS)
-				.setSocketTimeout(params.ENDPOINTS_SCAN_TIMEOUT_MS)
-				.addDefaultDataViewParsers()
-				.registerExtraResponseDataParser(
-						new ClarinFCSEndpointDescriptionParser())
-				.enableLegacySupport()
-				.buildThreadedClient();
+        SRUThreadedClient sruScanClient = new ClarinFCSClientBuilder()
+                .setConnectTimeout(params.ENDPOINTS_SCAN_TIMEOUT_MS)
+                .setSocketTimeout(params.ENDPOINTS_SCAN_TIMEOUT_MS)
+                .addDefaultDataViewParsers()
+                .registerExtraResponseDataParser(
+                        new ClarinFCSEndpointDescriptionParser())
+                .enableLegacySupport()
+                .buildThreadedClient();
 
-		SRUThreadedClient sruSearchClient
-				= new ClarinFCSClientBuilder()
-				.setConnectTimeout(params.ENDPOINTS_SEARCH_TIMEOUT_MS)
-				.setSocketTimeout(params.ENDPOINTS_SEARCH_TIMEOUT_MS)
-				.addDefaultDataViewParsers()
-				.registerExtraResponseDataParser(
-						new ClarinFCSEndpointDescriptionParser())
-				.enableLegacySupport()
-				.buildThreadedClient();
+        SRUThreadedClient sruSearchClient = new ClarinFCSClientBuilder()
+                .setConnectTimeout(params.ENDPOINTS_SEARCH_TIMEOUT_MS)
+                .setSocketTimeout(params.ENDPOINTS_SEARCH_TIMEOUT_MS)
+                .addDefaultDataViewParsers()
+                .registerExtraResponseDataParser(
+                        new ClarinFCSEndpointDescriptionParser())
+                .enableLegacySupport()
+                .buildThreadedClient();
 
-		maxScanConcurrentRequestsCallback = new MaxConcurrentRequestsCallback() {
-			@Override
-			public int getMaxConcurrentRequest(URI baseURI) {
-				return params.SCAN_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT;
-			}
-		};
+        maxScanConcurrentRequestsCallback = new MaxConcurrentRequestsCallback() {
+            @Override
+            public int getMaxConcurrentRequest(URI baseURI) {
+                return params.SCAN_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT;
+            }
+        };
 
-		maxSearchConcurrentRequestsCallback = new MaxConcurrentRequestsCallback() {
-			@Override
-			public int getMaxConcurrentRequest(URI baseURI) {
-				return (params.slowEndpoints != null && params.slowEndpoints.contains(baseURI))
-						? params.SEARCH_MAX_CONCURRENT_REQUESTS_PER_SLOW_ENDPOINT
-						: params.SEARCH_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT;
-			}
-		};
+        maxSearchConcurrentRequestsCallback = new MaxConcurrentRequestsCallback() {
+            @Override
+            public int getMaxConcurrentRequest(URI baseURI) {
+                return (params.slowEndpoints != null && params.slowEndpoints.contains(baseURI))
+                        ? params.SEARCH_MAX_CONCURRENT_REQUESTS_PER_SLOW_ENDPOINT
+                        : params.SEARCH_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT;
+            }
+        };
 
-		sruClient = new ThrottledClient(
-				sruScanClient, maxScanConcurrentRequestsCallback,
-				sruSearchClient, maxSearchConcurrentRequestsCallback
-		);
+        sruClient = new ThrottledClient(
+                sruScanClient, maxScanConcurrentRequestsCallback,
+                sruSearchClient, maxSearchConcurrentRequestsCallback);
 
-		File corporaCacheFile = new File(params.AGGREGATOR_FILE_PATH);
-		File corporaOldCacheFile = new File(params.AGGREGATOR_FILE_PATH_BACKUP);
+        File corporaCacheFile = new File(params.AGGREGATOR_FILE_PATH);
+        File corporaOldCacheFile = new File(params.AGGREGATOR_FILE_PATH_BACKUP);
 
-		// init corpora from file
-		{
-			Corpora corpora = null;
-			try {
-				corpora = new ObjectMapper().readValue(corporaCacheFile, Corpora.class);
-			} catch (Exception xc) {
-				log.error("Failed to load cached corpora from primary file:", xc);
-			}
-			if (corpora == null) {
-				try {
-					corpora = new ObjectMapper().readValue(corporaOldCacheFile, Corpora.class);
-				} catch (Exception e) {
-					log.error("Failed to load cached corpora from backup file:", e);
-				}
-			}
-			if (corpora != null) {
-				scanCacheAtom.set(corpora);
-				log.info("corpus list read from file; number of root corpora: " + scanCacheAtom.get().getCorpora().size());
-			}
-		}
+        // init corpora from file
+        {
+            Corpora corpora = null;
+            try {
+                corpora = new ObjectMapper().readValue(corporaCacheFile, Corpora.class);
+            } catch (Exception xc) {
+                log.error("Failed to load cached corpora from primary file:", xc);
+            }
+            if (corpora == null) {
+                try {
+                    corpora = new ObjectMapper().readValue(corporaOldCacheFile, Corpora.class);
+                } catch (Exception e) {
+                    log.error("Failed to load cached corpora from backup file:", e);
+                }
+            }
+            if (corpora != null) {
+                scanCacheAtom.set(corpora);
+                log.info("corpus list read from file; number of root corpora: "
+                        + scanCacheAtom.get().getCorpora().size());
+            }
+        }
 
-		LanguagesISO693.getInstance(); // force init
-		initLanguageDetector();
+        LanguagesISO693.getInstance(); // force init
+        initLanguageDetector();
 
-		ScanCrawlTask task = new ScanCrawlTask(sruClient,
-				params.CENTER_REGISTRY_URL, params.SCAN_MAX_DEPTH,
-				params.additionalCQLEndpoints,
-				params.additionalFCSEndpoints,
-				null, scanCacheAtom, corporaCacheFile, corporaOldCacheFile,
-				scanStatsAtom, searchStatsAtom,
-                                 environment);
-		scheduler.scheduleAtFixedRate(task, params.SCAN_TASK_INITIAL_DELAY,
-				params.SCAN_TASK_INTERVAL, params.getScanTaskTimeUnit());
+        ScanCrawlTask task = new ScanCrawlTask(sruClient,
+                params.CENTER_REGISTRY_URL, params.SCAN_MAX_DEPTH,
+                params.additionalCQLEndpoints,
+                params.additionalFCSEndpoints,
+                null, scanCacheAtom, corporaCacheFile, corporaOldCacheFile,
+                scanStatsAtom, searchStatsAtom,
+                environment);
+        scheduler.scheduleAtFixedRate(task, params.SCAN_TASK_INITIAL_DELAY,
+                params.SCAN_TASK_INTERVAL, params.getScanTaskTimeUnit());
 
-		log.info("Aggregator initialization finished.");
-	}
+        log.info("Aggregator initialization finished.");
+    }
 
-	public void shutdown(AggregatorConfiguration config) {
-		log.info("Aggregator is shutting down.");
-		for (Search search : activeSearches.values()) {
-			search.shutdown();
-		}
-		shutdownAndAwaitTermination(config.aggregatorParams, sruClient, scheduler);
-		log.info("Aggregator shutdown complete.");
-	}
+    public void shutdown(AggregatorConfiguration config) {
+        log.info("Aggregator is shutting down.");
+        for (Search search : activeSearches.values()) {
+            search.shutdown();
+        }
+        shutdownAndAwaitTermination(config.aggregatorParams, sruClient, scheduler);
+        log.info("Aggregator shutdown complete.");
+    }
 
-	// this function should be thread-safe
-	public Search startSearch(SRUVersion version, List<Corpus> corpora,
-			String queryType, String searchString, String searchLang,
-			int firstRecord, int maxRecords) throws Exception {
-		if (corpora.isEmpty()) {
-			// No corpora
-			return null;
-		} else if (searchString.isEmpty()) {
-			// No query
-			return null;
-		} else {
-			Search sr = new Search(sruClient,
-					version, searchStatsAtom.get(),
-					corpora, queryType, searchString, searchLang, maxRecords);
-			if (activeSearches.size() > SEARCHES_SIZE_GC_THRESHOLD) {
-				List<Long> toBeRemoved = new ArrayList<Long>();
-				long t0 = System.currentTimeMillis();
-				for (Map.Entry<Long, Search> e : activeSearches.entrySet()) {
-					long dtmin = (t0 - e.getValue().getCreatedAt()) / 1000 / 60;
-					if (dtmin > SEARCHES_AGE_GC_THRESHOLD) {
-						log.info("removing search " + e.getKey() + ": " + dtmin + " minutes old");
-						toBeRemoved.add(e.getKey());
-					}
-				}
-				for (Long l : toBeRemoved) {
-					activeSearches.remove(l);
-				}
-			}
-			activeSearches.put(sr.getId(), sr);
-			return sr;
-		}
-	}
+    // this function should be thread-safe
+    public Search startSearch(SRUVersion version, List<Corpus> corpora,
+            String queryType, String searchString, String searchLang,
+            int firstRecord, int maxRecords) throws Exception {
+        if (corpora.isEmpty()) {
+            // No corpora
+            return null;
+        } else if (searchString.isEmpty()) {
+            // No query
+            return null;
+        } else {
+            Search sr = new Search(sruClient,
+                    version, searchStatsAtom.get(),
+                    corpora, queryType, searchString, searchLang, maxRecords);
+            if (activeSearches.size() > SEARCHES_SIZE_GC_THRESHOLD) {
+                List<Long> toBeRemoved = new ArrayList<Long>();
+                long t0 = System.currentTimeMillis();
+                for (Map.Entry<Long, Search> e : activeSearches.entrySet()) {
+                    long dtmin = (t0 - e.getValue().getCreatedAt()) / 1000 / 60;
+                    if (dtmin > SEARCHES_AGE_GC_THRESHOLD) {
+                        log.info("removing search " + e.getKey() + ": " + dtmin + " minutes old");
+                        toBeRemoved.add(e.getKey());
+                    }
+                }
+                for (Long l : toBeRemoved) {
+                    activeSearches.remove(l);
+                }
+            }
+            activeSearches.put(sr.getId(), sr);
+            return sr;
+        }
+    }
 
-	public Search getSearchById(Long id) {
-		return activeSearches.get(id);
-	}
+    public Search getSearchById(Long id) {
+        return activeSearches.get(id);
+    }
 
-	private static void shutdownAndAwaitTermination(AggregatorConfiguration.Params params,
-			ThrottledClient sruClient, ExecutorService scheduler) {
-		try {
-			sruClient.shutdown();
-			scheduler.shutdown();
-			Thread.sleep(params.EXECUTOR_SHUTDOWN_TIMEOUT_MS);
-			sruClient.shutdownNow();
-			scheduler.shutdownNow();
-			Thread.sleep(params.EXECUTOR_SHUTDOWN_TIMEOUT_MS);
-		} catch (InterruptedException ie) {
-			sruClient.shutdownNow();
-			scheduler.shutdownNow();
-			Thread.currentThread().interrupt();
-		}
-	}
+    private static void shutdownAndAwaitTermination(AggregatorConfiguration.Params params,
+            ThrottledClient sruClient, ExecutorService scheduler) {
+        try {
+            sruClient.shutdown();
+            scheduler.shutdown();
+            Thread.sleep(params.EXECUTOR_SHUTDOWN_TIMEOUT_MS);
+            sruClient.shutdownNow();
+            scheduler.shutdownNow();
+            Thread.sleep(params.EXECUTOR_SHUTDOWN_TIMEOUT_MS);
+        } catch (InterruptedException ie) {
+            sruClient.shutdownNow();
+            scheduler.shutdownNow();
+            Thread.currentThread().interrupt();
+        }
+    }
 
-	public void initLanguageDetector() throws IOException {
-		List<LanguageProfile> languageProfiles = new LanguageProfileReader().readAll();
-		languageDetector = LanguageDetectorBuilder
-				.create(NgramExtractors.standard())
-				.withProfiles(languageProfiles)
-				.build();
+    public void initLanguageDetector() throws IOException {
+        List<LanguageProfile> languageProfiles = new LanguageProfileReader().readAll();
+        languageDetector = LanguageDetectorBuilder
+                .create(NgramExtractors.standard())
+                .withProfiles(languageProfiles)
+                .build();
 
-		textObjectFactory = CommonTextObjectFactories.forDetectingOnLargeText();
-	}
+        textObjectFactory = CommonTextObjectFactories.forDetectingOnLargeText();
+    }
 
-	public String detectLanguage(String text) {
-		return languageDetector.detect(textObjectFactory.forText(text)).orNull();
-	}
+    public String detectLanguage(String text) {
+        return languageDetector.detect(textObjectFactory.forText(text)).orNull();
+    }
 }

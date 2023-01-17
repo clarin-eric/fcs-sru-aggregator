@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.logging.Logger;
 
 /**
- * Center registry node. Its children are centers (institutions). 
+ * Center registry node. Its children are centers (institutions).
  * The class is created after a request from MPI to provide them
  * with a possibility to test their endpoints on development
  * servers with the aggregator before they put them on production
@@ -17,11 +17,11 @@ public class CenterRegistryForTesting implements CenterRegistry {
 
     private static final Logger logger = Logger.getLogger(CenterRegistryForTesting.class.getName());
     private boolean hasChildrenLoaded = false;
-	private List<Institution> centers = new ArrayList<Institution>();
+    private List<Institution> centers = new ArrayList<Institution>();
 
     @Override
     public boolean hasCQLInstitutionsLoaded() {
-		return true;
+        return true;
     }
 
     @Override

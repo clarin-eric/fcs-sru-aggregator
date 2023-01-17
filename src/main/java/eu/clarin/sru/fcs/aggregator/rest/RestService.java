@@ -43,301 +43,302 @@ import javax.ws.rs.core.Response;
 import org.slf4j.LoggerFactory;
 
 /**
+ * The REST API of the Aggregator (actually, it's a HTTP API, not very restful).
  *
  * @author edima
  * @author ljo
- * The REST API of the Aggregator (actually, it's a HTTP API, not very restful).
- *
  */
 @Produces(MediaType.APPLICATION_JSON)
 @Path("/")
 public class RestService {
 
-	private static final String EXPORT_FILENAME_PREFIX = "ClarinFederatedContentSearch-";
-	private static final String TCF_MEDIA_TYPE = "text/tcf+xml";
-	private static final String ODS_MEDIA_TYPE = "application/vnd.oasis.opendocument.spreadsheet";
-	private static final String EXCEL_MEDIA_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-	private static final String SEARCH_RESULTS_ENCODING = "UTF-8";
+    private static final String EXPORT_FILENAME_PREFIX = "ClarinFederatedContentSearch-";
+    private static final String TCF_MEDIA_TYPE = "text/tcf+xml";
+    private static final String ODS_MEDIA_TYPE = "application/vnd.oasis.opendocument.spreadsheet";
+    private static final String EXCEL_MEDIA_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+    private static final String SEARCH_RESULTS_ENCODING = "UTF-8";
 
-	private static final org.slf4j.Logger log = LoggerFactory.getLogger(RestService.class);
+    private static final org.slf4j.Logger log = LoggerFactory.getLogger(RestService.class);
 
-	ObjectWriter ow = new ObjectMapper().writerWithDefaultPrettyPrinter();
+    ObjectWriter ow = new ObjectMapper().writerWithDefaultPrettyPrinter();
 
-	@Context
-	HttpServletRequest request;
-	@Context
-	ServletContext servletContext;
+    @Context
+    HttpServletRequest request;
+    @Context
+    ServletContext servletContext;
 
-        private final Environment environment;
-        
-        public RestService(Environment environment) {
-            this.environment = environment;
+    private final Environment environment;
+
+    public RestService(Environment environment) {
+        this.environment = environment;
+    }
+
+    private String toJson(Object o) throws JsonProcessingException {
+        return ow.writeValueAsString(o);
+    }
+
+    @GET
+    @Path("corpora")
+    public Response getCorpora() throws IOException {
+        List<Corpus> corpora = Aggregator.getInstance().getCorpora().getCorpora();
+        return Response.ok(toJson(corpora)).build();
+    }
+
+    @GET
+    @Path("languages")
+    public Response getLanguages() throws IOException {
+        Set<String> codes = Aggregator.getInstance().getCorpora().getLanguages();
+        log.info("get language codes", codes);
+        Map<String, String> languages = LanguagesISO693.getInstance().getLanguageMap(codes);
+        return Response.ok(toJson(languages)).build();
+    }
+
+    @GET
+    @Path("init")
+    public Response getInit(@Context final HttpServletRequest request) throws IOException {
+        log.info("get initial data");
+        final Corpora corpora = Aggregator.getInstance().getCorpora();
+        final Object query = request.getSession().getAttribute(PARAM_QUERY);
+        final Object mode = request.getSession().getAttribute(PARAM_MODE);
+        final Object contextString = request.getSession().getAttribute(PARAM_AGGREGATION_CONTEXT);
+        Object j = new HashMap<String, Object>() {
+            {
+                if (query != null) {
+                    put(PARAM_QUERY, query);
+                    request.getSession().setAttribute(PARAM_QUERY, null);
+                }
+                if (mode != null) {
+                    put(PARAM_MODE, mode);
+                    request.getSession().setAttribute(PARAM_MODE, null);
+                }
+                if (contextString instanceof String) {
+                    Object context = new ObjectMapper().readValue((String) contextString, Object.class);
+                    put(PARAM_AGGREGATION_CONTEXT, context); // preselected corpora
+                    request.getSession().setAttribute(PARAM_AGGREGATION_CONTEXT, null);
+                }
+                put("corpora", corpora.getCorpora());
+                put("languages", LanguagesISO693.getInstance().getLanguageMap(corpora.getLanguages()));
+                put("weblichtLanguages",
+                        Aggregator.getInstance().getParams().getWeblichtConfig().getAcceptedTcfLanguages());
+            }
+        };
+        return Response.ok(toJson(j)).build();
+    }
+
+    @POST
+    @Path("search")
+    public Response postSearch(
+            @FormParam("query") String query,
+            @FormParam("queryType") String queryType,
+            @FormParam("firstResultIndex") Integer firstResultIndex,
+            @FormParam("numberOfResults") Integer numberOfResults,
+            @FormParam("language") String language,
+            @FormParam("corporaIds[]") List<String> corporaIds) throws Exception {
+        if (query == null || query.isEmpty()) {
+            return Response.status(400).entity("'query' parameter expected").build();
         }
-        
-	private String toJson(Object o) throws JsonProcessingException {
-		return ow.writeValueAsString(o);
-	}
+        // log.info("POST /search corporaIds: " + corporaIds);
+        if (corporaIds == null || corporaIds.isEmpty()) {
+            return Response.status(400).entity("'corporaIds' parameter expected").build();
+        }
+        List<Corpus> corpora = Aggregator.getInstance().getCorpora().getCorporaByIds(new HashSet<String>(corporaIds));
+        if ("fcs".equals(queryType)) {
+            List<Corpus> tmp = new ArrayList<Corpus>();
+            for (Corpus corpus : corpora) {
+                if (corpus.getEndpoint().getProtocol().equals(FCSProtocolVersion.VERSION_2)) {
+                    tmp.add(corpus);
+                }
+            }
+            corpora = tmp;
+        }
+        if (corpora == null || corpora.isEmpty()) {
+            return Response.status(503).entity("No corpora, please wait for the server to finish scanning").build();
+        }
 
-	@GET
-	@Path("corpora")
-	public Response getCorpora() throws IOException {
-		List<Corpus> corpora = Aggregator.getInstance().getCorpora().getCorpora();
-		return Response.ok(toJson(corpora)).build();
-	}
+        if (firstResultIndex == null || firstResultIndex < 1) {
+            firstResultIndex = 1;
+        }
+        if (firstResultIndex > 250) {
+            firstResultIndex = 250;
+        }
 
-	@GET
-	@Path("languages")
-	public Response getLanguages() throws IOException {
-		Set<String> codes = Aggregator.getInstance().getCorpora().getLanguages();
-		log.info("get language codes", codes);
-		Map<String, String> languages = LanguagesISO693.getInstance().getLanguageMap(codes);
-		return Response.ok(toJson(languages)).build();
-	}
+        if (numberOfResults == null || numberOfResults < 10) {
+            numberOfResults = 10;
+        }
+        if (numberOfResults > 250) {
+            numberOfResults = 250;
+        }
+        Search search = Aggregator.getInstance().startSearch(
+                "fcs".equals(queryType) ? SRUVersion.VERSION_2_0 : SRUVersion.VERSION_1_2,
+                corpora, queryType, query, language, firstResultIndex, numberOfResults);
+        if (search == null) {
+            return Response.status(500).entity("Initiating search failed").build();
+        }
+        URI uri = URI.create("" + search.getId());
+        return Response.created(uri).entity(uri).build();
+    }
 
-	@GET
-	@Path("init")
-	public Response getInit(@Context final HttpServletRequest request) throws IOException {
-		log.info("get initial data");
-		final Corpora corpora = Aggregator.getInstance().getCorpora();
-		final Object query = request.getSession().getAttribute(PARAM_QUERY);
-		final Object mode = request.getSession().getAttribute(PARAM_MODE);
-		final Object contextString = request.getSession().getAttribute(PARAM_AGGREGATION_CONTEXT);
-		Object j = new HashMap<String, Object>() {
-			{
-				if (query != null) {
-					put(PARAM_QUERY, query);
-					request.getSession().setAttribute(PARAM_QUERY, null);
-				}
-				if (mode != null) {
-					put(PARAM_MODE, mode);
-					request.getSession().setAttribute(PARAM_MODE, null);
-				}
-				if (contextString instanceof String) {
-					Object context = new ObjectMapper().readValue((String) contextString, Object.class);
-					put(PARAM_AGGREGATION_CONTEXT, context); // preselected corpora
-					request.getSession().setAttribute(PARAM_AGGREGATION_CONTEXT, null);
-				}
-				put("corpora", corpora.getCorpora());
-				put("languages", LanguagesISO693.getInstance().getLanguageMap(corpora.getLanguages()));
-				put("weblichtLanguages", Aggregator.getInstance().getParams().getWeblichtConfig().getAcceptedTcfLanguages());
-			}
-		};
-		return Response.ok(toJson(j)).build();
-	}
+    public static class JsonSearch {
 
-	@POST
-	@Path("search")
-	public Response postSearch(
-			@FormParam("query") String query,
-			@FormParam("queryType") String queryType,
-			@FormParam("firstResultIndex") Integer firstResultIndex,
-			@FormParam("numberOfResults") Integer numberOfResults,
-			@FormParam("language") String language,
-			@FormParam("corporaIds[]") List<String> corporaIds) throws Exception {
-		if (query == null || query.isEmpty()) {
-			return Response.status(400).entity("'query' parameter expected").build();
-		}
-//		log.info("POST /search corporaIds: " + corporaIds);
-		if (corporaIds == null || corporaIds.isEmpty()) {
-			return Response.status(400).entity("'corporaIds' parameter expected").build();
-		}
-		List<Corpus> corpora = Aggregator.getInstance().getCorpora().getCorporaByIds(new HashSet<String>(corporaIds));
-		if ("fcs".equals(queryType)) {
-		    List<Corpus> tmp = new ArrayList<Corpus>();
-		    for (Corpus corpus : corpora) {
-			if (corpus.getEndpoint().getProtocol().equals(FCSProtocolVersion.VERSION_2)) {
-			    tmp.add(corpus);
-			}
-		    }
-		    corpora = tmp;
-		}
-		if (corpora == null || corpora.isEmpty()) {
-			return Response.status(503).entity("No corpora, please wait for the server to finish scanning").build();
-		}
+        @JsonProperty
+        int inProgress = 0;
+        @JsonProperty
+        List<Result> results;
 
-		if (firstResultIndex == null || firstResultIndex < 1) {
-			firstResultIndex = 1;
-		}
-		if (firstResultIndex > 250) {
-			firstResultIndex = 250;
-		}
+        public JsonSearch(List<Result> results) {
+            this.results = results;
+        }
+    }
 
-		if (numberOfResults == null || numberOfResults < 10) {
-			numberOfResults = 10;
-		}
-		if (numberOfResults > 250) {
-			numberOfResults = 250;
-		}
-		Search search = Aggregator.getInstance().startSearch("fcs".equals(queryType) ? SRUVersion.VERSION_2_0 : SRUVersion.VERSION_1_2,
-				corpora, queryType, query, language, firstResultIndex, numberOfResults);
-		if (search == null) {
-			return Response.status(500).entity("Initiating search failed").build();
-		}
-		URI uri = URI.create("" + search.getId());
-		return Response.created(uri).entity(uri).build();
-	}
+    @GET
+    @Path("search/{id}")
+    public Response getSearch(@PathParam("id") Long searchId,
+            @QueryParam("corpusId") String corpusId) throws Exception {
+        Search search = Aggregator.getInstance().getSearchById(searchId);
+        if (search == null) {
+            return Response.status(Response.Status.NOT_FOUND).entity("Search job not found").build();
+        }
 
-	public static class JsonSearch {
+        JsonSearch js = new JsonSearch(search.getResults(corpusId));
+        for (Result r : js.results) {
+            if (r.getInProgress()) {
+                js.inProgress++;
+            }
+        }
+        return Response.ok(js).build();
+    }
 
-		@JsonProperty
-		int inProgress = 0;
-		@JsonProperty
-		List<Result> results;
+    @POST
+    @Path("search/{id}")
+    public Response postSearchNextResults(@PathParam("id") Long searchId,
+            @FormParam("corpusId") String corpusId,
+            @FormParam("numberOfResults") Integer numberOfResults) throws Exception {
+        log.info("POST /search/{id}, corpusId: " + corpusId);
+        if (corpusId == null || corpusId.isEmpty()) {
+            return Response.status(400).entity("'corpusId' parameter expected").build();
+        }
+        Search search = Aggregator.getInstance().getSearchById(searchId);
+        if (search == null) {
+            return Response.status(Response.Status.NOT_FOUND).entity("Search job not found").build();
+        }
+        if (numberOfResults == null || numberOfResults < 10) {
+            numberOfResults = 10;
+        }
+        if (numberOfResults > 250) {
+            numberOfResults = 250;
+        }
 
-		public JsonSearch(List<Result> results) {
-			this.results = results;
-		}
-	}
+        boolean ret = search.searchForNextResults(corpusId, numberOfResults);
+        if (ret == false) {
+            return Response.status(500).entity("Initiating subSearch failed").build();
+        }
+        URI uri = URI.create("" + search.getId());
+        return Response.created(uri).entity(uri).build();
+    }
 
-	@GET
-	@Path("search/{id}")
-	public Response getSearch(@PathParam("id") Long searchId,
-			@QueryParam("corpusId") String corpusId) throws Exception {
-		Search search = Aggregator.getInstance().getSearchById(searchId);
-		if (search == null) {
-			return Response.status(Response.Status.NOT_FOUND).entity("Search job not found").build();
-		}
+    @GET
+    @Path("search/{id}/download")
+    public Response downloadSearchResults(@PathParam("id") Long searchId,
+            @QueryParam("corpusId") String corpusId,
+            @QueryParam("filterLanguage") String filterLanguage,
+            @QueryParam("format") String format) throws Exception {
+        Search search = Aggregator.getInstance().getSearchById(searchId);
+        if (search == null) {
+            return Response.status(Response.Status.NOT_FOUND).entity("Search job not found").build();
+        }
+        if (filterLanguage == null || filterLanguage.isEmpty()) {
+            filterLanguage = null;
+        }
 
-		JsonSearch js = new JsonSearch(search.getResults(corpusId));
-		for (Result r : js.results) {
-			if (r.getInProgress()) {
-				js.inProgress++;
-			}
-		}
-		return Response.ok(js).build();
-	}
+        if (format == null || format.trim().isEmpty() || format.trim().equals("text")) {
+            String text = Exports.getExportText(search.getResults(corpusId), filterLanguage);
+            return download(text, MediaType.TEXT_PLAIN, search.getQuery() + ".txt");
+        } else if (format.equals("tcf")) {
+            byte[] bytes = Exports.getExportTCF(
+                    search.getResults(corpusId), search.getSearchLanguage(), filterLanguage);
+            return download(bytes, TCF_MEDIA_TYPE, search.getQuery() + ".xml");
+        } else if (format.equals("ods")) {
+            byte[] bytes = Exports.getExportODS(search.getResults(corpusId), filterLanguage);
+            return download(bytes, ODS_MEDIA_TYPE, search.getQuery() + ".ods");
+        } else if (format.equals("excel")) {
+            byte[] bytes = Exports.getExportExcel(search.getResults(corpusId), filterLanguage);
+            return download(bytes, EXCEL_MEDIA_TYPE, search.getQuery() + ".xls");
+        } else if (format.equals("csv")) {
+            String csv = Exports.getExportCSV(search.getResults(corpusId), filterLanguage, ";");
+            return download(csv, MediaType.TEXT_PLAIN, search.getQuery() + ".csv");
+        }
 
-	@POST
-	@Path("search/{id}")
-	public Response postSearchNextResults(@PathParam("id") Long searchId,
-			@FormParam("corpusId") String corpusId,
-			@FormParam("numberOfResults") Integer numberOfResults) throws Exception {
-		log.info("POST /search/{id}, corpusId: " + corpusId);
-		if (corpusId == null || corpusId.isEmpty()) {
-			return Response.status(400).entity("'corpusId' parameter expected").build();
-		}
-		Search search = Aggregator.getInstance().getSearchById(searchId);
-		if (search == null) {
-			return Response.status(Response.Status.NOT_FOUND).entity("Search job not found").build();
-		}
-		if (numberOfResults == null || numberOfResults < 10) {
-			numberOfResults = 10;
-		}
-		if (numberOfResults > 250) {
-			numberOfResults = 250;
-		}
+        return Response.status(Response.Status.BAD_REQUEST)
+                .entity("format parameter must be one of: text, tcf, ods, excel, csv")
+                .build();
+    }
 
-		boolean ret = search.searchForNextResults(corpusId, numberOfResults);
-		if (ret == false) {
-			return Response.status(500).entity("Initiating subSearch failed").build();
-		}
-		URI uri = URI.create("" + search.getId());
-		return Response.created(uri).entity(uri).build();
-	}
+    Response download(Object entity, String mediaType, String filesuffix) {
+        if (entity == null) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity("error while converting to the export format").build();
+        }
+        String filename = EXPORT_FILENAME_PREFIX + filesuffix;
+        return Response.ok(entity, mediaType)
+                .header("Content-Disposition", "attachment; filename=\"" + filename + "\"")
+                .build();
+    }
 
-	@GET
-	@Path("search/{id}/download")
-	public Response downloadSearchResults(@PathParam("id") Long searchId,
-			@QueryParam("corpusId") String corpusId,
-			@QueryParam("filterLanguage") String filterLanguage,
-			@QueryParam("format") String format) throws Exception {
-		Search search = Aggregator.getInstance().getSearchById(searchId);
-		if (search == null) {
-			return Response.status(Response.Status.NOT_FOUND).entity("Search job not found").build();
-		}
-		if (filterLanguage == null || filterLanguage.isEmpty()) {
-			filterLanguage = null;
-		}
+    @GET
+    @Path("search/{id}/toWeblicht")
+    public Response sendSearchResultsToWeblicht(@PathParam("id") Long searchId,
+            @QueryParam("filterLanguage") String filterLanguage,
+            @QueryParam("corpusId") String corpusId) throws Exception {
+        Search search = Aggregator.getInstance().getSearchById(searchId);
+        if (search == null) {
+            return Response.status(Response.Status.NOT_FOUND).entity("Search job not found").build();
+        }
+        if (filterLanguage == null || filterLanguage.isEmpty()) {
+            filterLanguage = null;
+        }
 
-		if (format == null || format.trim().isEmpty() || format.trim().equals("text")) {
-			String text = Exports.getExportText(search.getResults(corpusId), filterLanguage);
-			return download(text, MediaType.TEXT_PLAIN, search.getQuery() + ".txt");
-		} else if (format.equals("tcf")) {
-			byte[] bytes = Exports.getExportTCF(
-					search.getResults(corpusId), search.getSearchLanguage(), filterLanguage);
-			return download(bytes, TCF_MEDIA_TYPE, search.getQuery() + ".xml");
-		} else if (format.equals("ods")) {
-			byte[] bytes = Exports.getExportODS(search.getResults(corpusId), filterLanguage);
-			return download(bytes, ODS_MEDIA_TYPE, search.getQuery() + ".ods");
-		} else if (format.equals("excel")) {
-			byte[] bytes = Exports.getExportExcel(search.getResults(corpusId), filterLanguage);
-			return download(bytes, EXCEL_MEDIA_TYPE, search.getQuery() + ".xls");
-		} else if (format.equals("csv")) {
-			String csv = Exports.getExportCSV(search.getResults(corpusId), filterLanguage, ";");
-			return download(csv, MediaType.TEXT_PLAIN, search.getQuery() + ".csv");
-		}
+        String url = null;
+        byte[] bytes = Exports.getExportTCF(
+                search.getResults(corpusId), search.getSearchLanguage(), filterLanguage);
+        if (bytes != null) {
+            url = DataTransfer.uploadToDropOff(bytes, "text/tcf+xml", ".tcf", environment);
+        }
 
-		return Response.status(Response.Status.BAD_REQUEST)
-				.entity("format parameter must be one of: text, tcf, ods, excel, csv")
-				.build();
-	}
+        WeblichtConfig weblicht = Aggregator.getInstance().getParams().getWeblichtConfig();
+        URI weblichtUri = new URI(weblicht.getUrl() + url);
+        return url == null
+                ? Response.status(503).entity("error while exporting to weblicht").build()
+                : Response.seeOther(weblichtUri).entity(weblichtUri).build();
+    }
 
-	Response download(Object entity, String mediaType, String filesuffix) {
-		if (entity == null) {
-			return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-					.entity("error while converting to the export format").build();
-		}
-		String filename = EXPORT_FILENAME_PREFIX + filesuffix;
-		return Response.ok(entity, mediaType)
-				.header("Content-Disposition", "attachment; filename=\"" + filename + "\"")
-				.build();
-	}
+    @GET
+    @Path("statistics")
+    public Response getStatistics() throws IOException {
+        final Statistics scan = Aggregator.getInstance().getScanStatistics();
+        final Statistics search = Aggregator.getInstance().getSearchStatistics();
+        final AggregatorConfiguration.Params params = Aggregator.getInstance().getParams();
 
-	@GET
-	@Path("search/{id}/toWeblicht")
-	public Response sendSearchResultsToWeblicht(@PathParam("id") Long searchId,
-			@QueryParam("filterLanguage") String filterLanguage,
-			@QueryParam("corpusId") String corpusId) throws Exception {
-		Search search = Aggregator.getInstance().getSearchById(searchId);
-		if (search == null) {
-			return Response.status(Response.Status.NOT_FOUND).entity("Search job not found").build();
-		}
-		if (filterLanguage == null || filterLanguage.isEmpty()) {
-			filterLanguage = null;
-		}
-
-		String url = null;
-		byte[] bytes = Exports.getExportTCF(
-				search.getResults(corpusId), search.getSearchLanguage(), filterLanguage);
-		if (bytes != null) {
-			url = DataTransfer.uploadToDropOff(bytes, "text/tcf+xml", ".tcf", environment);
-		}
-
-		WeblichtConfig weblicht = Aggregator.getInstance().getParams().getWeblichtConfig();
-		URI weblichtUri = new URI(weblicht.getUrl() + url);
-		return url == null
-				? Response.status(503).entity("error while exporting to weblicht").build()
-				: Response.seeOther(weblichtUri).entity(weblichtUri).build();
-	}
-
-	@GET
-	@Path("statistics")
-	public Response getStatistics() throws IOException {
-		final Statistics scan = Aggregator.getInstance().getScanStatistics();
-		final Statistics search = Aggregator.getInstance().getSearchStatistics();
-		final AggregatorConfiguration.Params params = Aggregator.getInstance().getParams();
-
-		Object j = new HashMap<String, Object>() {
-			{
-				put("Last Scan", new HashMap<String, Object>() {
-					{
-						put("timeout", params.getENDPOINTS_SCAN_TIMEOUT_MS() / 1000.);
-						put("isScan", true);
-						put("institutions", scan.getInstitutions());
-						put("date", scan.getDate());
-					}
-				});
-				put("Recent Searches", new HashMap<String, Object>() {
-					{
-						put("timeout", params.getENDPOINTS_SEARCH_TIMEOUT_MS() / 1000.);
-						put("isScan", false);
-						put("institutions", search.getInstitutions());
-						put("date", scan.getDate());
-					}
-				});
-			}
-		};
-		return Response.ok(toJson(j)).build();
-	}
+        Object j = new HashMap<String, Object>() {
+            {
+                put("Last Scan", new HashMap<String, Object>() {
+                    {
+                        put("timeout", params.getENDPOINTS_SCAN_TIMEOUT_MS() / 1000.);
+                        put("isScan", true);
+                        put("institutions", scan.getInstitutions());
+                        put("date", scan.getDate());
+                    }
+                });
+                put("Recent Searches", new HashMap<String, Object>() {
+                    {
+                        put("timeout", params.getENDPOINTS_SEARCH_TIMEOUT_MS() / 1000.);
+                        put("isScan", false);
+                        put("institutions", search.getInstitutions());
+                        put("date", scan.getDate());
+                    }
+                });
+            }
+        };
+        return Response.ok(toJson(j)).build();
+    }
 
 }

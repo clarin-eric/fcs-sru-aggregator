@@ -7,6 +7,6 @@ import java.net.URI;
  */
 public interface MaxConcurrentRequestsCallback {
 
-	int getMaxConcurrentRequest(URI baseURI);
+    int getMaxConcurrentRequest(URI baseURI);
 
 }

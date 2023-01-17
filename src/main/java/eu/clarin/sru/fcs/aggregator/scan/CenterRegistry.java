@@ -14,8 +14,8 @@ public interface CenterRegistry {
     public boolean hasCQLInstitutionsLoaded();
 
     public void loadCQLInstitutions();
-        
+
     public List<Institution> getCQLInstitutions();
 
-	public Institution getCQLInstitution(int index);
+    public Institution getCQLInstitution(int index);
 }

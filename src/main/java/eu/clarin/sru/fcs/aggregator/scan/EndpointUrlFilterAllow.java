@@ -13,20 +13,20 @@ import java.util.Set;
  */
 public class EndpointUrlFilterAllow implements EndpointFilter {
 
-	private Set<String> allow = new HashSet<String>();
+    private Set<String> allow = new HashSet<String>();
 
-	public EndpointUrlFilterAllow(String... fragments) {
-		Collections.addAll(allow, fragments);
-	}
+    public EndpointUrlFilterAllow(String... fragments) {
+        Collections.addAll(allow, fragments);
+    }
 
-	@Override
-	public boolean filter(String endpoint) {
-		for (String a : allow) {
-			if (endpoint.contains(a)) {
-				return true;
-			}
-		}
-		return false;
-	}
+    @Override
+    public boolean filter(String endpoint) {
+        for (String a : allow) {
+            if (endpoint.contains(a)) {
+                return true;
+            }
+        }
+        return false;
+    }
 
 }

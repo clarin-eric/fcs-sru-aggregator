@@ -12,124 +12,125 @@ import org.hibernate.validator.constraints.Range;
 
 public class AggregatorConfiguration extends Configuration {
 
-	public static class Params {
+    public static class Params {
 
-		@JsonProperty
-		String CENTER_REGISTRY_URL;
+        @JsonProperty
+        String CENTER_REGISTRY_URL;
 
-		@JsonProperty
-		List<URL> additionalCQLEndpoints;
+        @JsonProperty
+        List<URL> additionalCQLEndpoints;
 
-		@JsonProperty
-		List<URL> additionalFCSEndpoints;
+        @JsonProperty
+        List<URL> additionalFCSEndpoints;
 
-		@JsonProperty
-		List<URI> slowEndpoints;
+        @JsonProperty
+        List<URI> slowEndpoints;
 
-		@NotEmpty
-		@JsonProperty
-		String AGGREGATOR_FILE_PATH;
+        @NotEmpty
+        @JsonProperty
+        String AGGREGATOR_FILE_PATH;
 
-		@NotEmpty
-		@JsonProperty
-		String AGGREGATOR_FILE_PATH_BACKUP;
+        @NotEmpty
+        @JsonProperty
+        String AGGREGATOR_FILE_PATH_BACKUP;
 
-		@JsonProperty
-		@Range
-		int SCAN_MAX_DEPTH;
+        @JsonProperty
+        @Range
+        int SCAN_MAX_DEPTH;
 
-		@JsonProperty
-		@Range
-		long SCAN_TASK_INITIAL_DELAY;
+        @JsonProperty
+        @Range
+        long SCAN_TASK_INITIAL_DELAY;
 
-		@Range
-		@JsonProperty
-		int SCAN_TASK_INTERVAL;
+        @Range
+        @JsonProperty
+        int SCAN_TASK_INTERVAL;
 
-		@NotEmpty
-		@JsonProperty
-		String SCAN_TASK_TIME_UNIT;
+        @NotEmpty
+        @JsonProperty
+        String SCAN_TASK_TIME_UNIT;
 
-		@JsonProperty
-		@Range
-		int SCAN_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT;
+        @JsonProperty
+        @Range
+        int SCAN_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT;
 
-		@JsonProperty
-		@Range
-		int SEARCH_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT;
+        @JsonProperty
+        @Range
+        int SEARCH_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT;
 
-		@JsonProperty
-		@Range
-		int SEARCH_MAX_CONCURRENT_REQUESTS_PER_SLOW_ENDPOINT;
+        @JsonProperty
+        @Range
+        int SEARCH_MAX_CONCURRENT_REQUESTS_PER_SLOW_ENDPOINT;
 
-		@JsonProperty
-		@Range
-		int ENDPOINTS_SCAN_TIMEOUT_MS;
+        @JsonProperty
+        @Range
+        int ENDPOINTS_SCAN_TIMEOUT_MS;
 
-		@JsonProperty
-		@Range
-		int ENDPOINTS_SEARCH_TIMEOUT_MS;
+        @JsonProperty
+        @Range
+        int ENDPOINTS_SEARCH_TIMEOUT_MS;
 
-		@JsonProperty
-		@Range
-		long EXECUTOR_SHUTDOWN_TIMEOUT_MS;
+        @JsonProperty
+        @Range
+        long EXECUTOR_SHUTDOWN_TIMEOUT_MS;
 
-		public static class WeblichtConfig {
-			@JsonProperty
-			String url;
+        public static class WeblichtConfig {
+            @JsonProperty
+            String url;
 
-			@JsonProperty
-			List<String> acceptedTcfLanguages;
+            @JsonProperty
+            List<String> acceptedTcfLanguages;
 
-			@JsonIgnore
-			public String getUrl() {
-				return url;
-			}
+            @JsonIgnore
+            public String getUrl() {
+                return url;
+            }
 
-			@JsonIgnore
-			public List<String> getAcceptedTcfLanguages() {
-				return acceptedTcfLanguages;
-			}
-		}
+            @JsonIgnore
+            public List<String> getAcceptedTcfLanguages() {
+                return acceptedTcfLanguages;
+            }
+        }
 
-		@NotEmpty
-		@JsonProperty
-		WeblichtConfig weblichtConfig;
+        @NotEmpty
+        @JsonProperty
+        WeblichtConfig weblichtConfig;
 
-		@JsonIgnore
-		public TimeUnit getScanTaskTimeUnit() {
-			return TimeUnit.valueOf(SCAN_TASK_TIME_UNIT);
-		}
+        @JsonIgnore
+        public TimeUnit getScanTaskTimeUnit() {
+            return TimeUnit.valueOf(SCAN_TASK_TIME_UNIT);
+        }
 
-		@JsonIgnore
-		public int getENDPOINTS_SCAN_TIMEOUT_MS() {
-			return ENDPOINTS_SCAN_TIMEOUT_MS;
-		}
+        @JsonIgnore
+        public int getENDPOINTS_SCAN_TIMEOUT_MS() {
+            return ENDPOINTS_SCAN_TIMEOUT_MS;
+        }
 
-		@JsonIgnore
-		public int getENDPOINTS_SEARCH_TIMEOUT_MS() {
-			return ENDPOINTS_SEARCH_TIMEOUT_MS;
-		}
+        @JsonIgnore
+        public int getENDPOINTS_SEARCH_TIMEOUT_MS() {
+            return ENDPOINTS_SEARCH_TIMEOUT_MS;
+        }
 
-		@JsonIgnore
-		public int getSCAN_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT() {
-			return SCAN_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT;
-		}
+        @JsonIgnore
+        public int getSCAN_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT() {
+            return SCAN_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT;
+        }
 
-		@JsonIgnore
-		public int getSEARCH_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT() {
-			return SEARCH_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT;
-		}
+        @JsonIgnore
+        public int getSEARCH_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT() {
+            return SEARCH_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT;
+        }
 
-		@JsonIgnore
-		public int getSEARCH_MAX_CONCURRENT_REQUESTS_PER_SLOW_ENDPOINT() {
-			return SEARCH_MAX_CONCURRENT_REQUESTS_PER_SLOW_ENDPOINT;
-		}
+        @JsonIgnore
+        public int getSEARCH_MAX_CONCURRENT_REQUESTS_PER_SLOW_ENDPOINT() {
+            return SEARCH_MAX_CONCURRENT_REQUESTS_PER_SLOW_ENDPOINT;
+        }
 
-		@JsonIgnore
-		public WeblichtConfig getWeblichtConfig() {
-			return weblichtConfig;
-		}
-	}
-	public Params aggregatorParams = new Params();
+        @JsonIgnore
+        public WeblichtConfig getWeblichtConfig() {
+            return weblichtConfig;
+        }
+    }
+
+    public Params aggregatorParams = new Params();
 }
