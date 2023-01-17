@@ -109,7 +109,7 @@ var ResultMixin = {
     var fulllength = { width: "100%" };
 
     if (this.state.displayADV) {
-      return (<div>
+      return (<div className="corpusResultsADV">
         {this.renderErrors(corpusHit)}
         {this.renderDiagnostics(corpusHit)}
         <table className="table table-condensed table-hover" style={fulllength}>

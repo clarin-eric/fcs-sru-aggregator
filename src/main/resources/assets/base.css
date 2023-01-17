@@ -422,6 +422,10 @@ td {
   border: none !important;
 }
 
+.panel-body div.corpusResultsADV {
+  overflow-x: auto;
+}
+
 .panel-body .table-hover>tbody>tr.hitrow:hover {
   background-color: #F5F5F5;
 }
