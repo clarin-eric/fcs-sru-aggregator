@@ -1,0 +1,72 @@
+name: Build (npm + maven)
+
+on: [push]
+
+jobs:
+  build-frontend:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [16.x]
+    
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+
+    - name: Update npm dependencies
+      run: ./build.sh --npm
+
+    - name: Build jsx
+      run: ./build.sh --jsx-force
+
+    - uses: actions/upload-artifact@v3
+      with:
+        name: frontend-artifact
+        path: src/main/resources/assets
+
+  build-backend:
+    needs: build-frontend
+
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        java-version: [11.x]
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Use Java ${{ matrix.java-version }}
+      uses: actions/setup-java@v3
+      with:
+        java-version: ${{ matrix.java-version }}
+        distribution: 'temurin'
+        cache: maven
+
+    - name: Fetch frontend build result
+      uses: actions/download-artifact@v3
+      with:
+        name: frontend-artifact
+
+    - name: Allow maven http repositories
+      run: sed -i 's/<mirrorOf>external:http:\*<\/mirrorOf>/<mirrorOf>external:dummy:\*<\/mirrorOf>/' /usr/share/apache-maven-*/conf/settings.xml
+
+    - name: Build jar
+      #run: ./build.sh --jar
+      run: mvn clean package
+
+    - name: Prepare build artifact for packaging
+      run: |
+        mkdir -p staging/target
+        cp aggregator.yml staging/
+        cp target/aggregator-*.jar staging/target/
+
+    - uses: actions/upload-artifact@v3
+      with:
+        name: Package
+        path: staging
