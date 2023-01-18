@@ -155,8 +155,10 @@ var StatisticsPage = createReactClass({
       ;
   },
 
-  setTab: function (idx) {
+  setTab: function (idx, e) {
     this.setState({ activeTab: idx });
+    e.preventDefault();
+		e.stopPropagation();
   },
 
   render: function () {
@@ -170,7 +172,7 @@ var StatisticsPage = createReactClass({
               {_.pairs(this.state.stats).map(function (st, idx) {
                 var classname = idx === this.state.activeTab ? "active" : "";
                 return <li role="presentation" className={classname} key={st[0]}>
-                  <a href="#" role="tab" onClick={this.setTab.bind(this, idx)}>{st[0]}</a>
+                  <a href="#" title={st[0]} role="tab" onClick={this.setTab.bind(this, idx)}>{st[0]}</a>
                 </li>;
               }.bind(this))
               }
