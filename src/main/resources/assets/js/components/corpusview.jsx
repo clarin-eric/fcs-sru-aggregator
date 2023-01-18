@@ -30,6 +30,7 @@ var CorpusView = createReactClass({
   toggleViewSelected(evt) {
     this.setState((st) => ({ viewSelected: !st.viewSelected }));
   },
+
   toggleShowDisabled(evt) {
     this.setState((st) => ({ showDisabled: !st.showDisabled }));
   },
@@ -47,6 +48,12 @@ var CorpusView = createReactClass({
   selectAll: function (value) {
     // select all _visible_
     this.props.corpora.recurse(function (c) { c.visible ? c.selected = value : false });
+    this.props.corpora.update();
+  },
+
+  selectAllShown: function (value) {
+    // select only visible/shown corpora, i.e. corpora that are shown in dialog, possibly filtered due to query
+    this.props.corpora.recurse(function (c) { c.visible && c.priority > 0 ? c.selected = value : false });
     this.props.corpora.update();
   },
 
@@ -307,6 +314,8 @@ var CorpusView = createReactClass({
         <div className="float-right inline">
           <button className="btn btn-default" style={{ marginRight: 10 }} onClick={this.selectAll.bind(this, true)}>
             {" Select all"}</button>
+          <button className="btn btn-default" style={{ marginRight: 10 }} onClick={this.selectAllShown.bind(this, true)}>
+            {" Select visible"}</button>
           <button className="btn btn-default" style={{ marginRight: 20 }} onClick={this.selectAll.bind(this, false)}>
             {" Deselect all"}</button>
         </div>
