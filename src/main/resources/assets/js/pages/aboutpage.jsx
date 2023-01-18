@@ -25,6 +25,7 @@ var AboutPage = createReactClass({
           <h3>People</h3>
           <ul>
             <li>Emanuel Dima</li>
+            <li>Erik Körner</li>
             <li>Leif-Jöran Olsson</li>
             <li>Yana Panchenko</li>
             <li>Oliver Schonefeld</li>

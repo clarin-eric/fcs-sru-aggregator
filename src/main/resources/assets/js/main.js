@@ -49927,7 +49927,7 @@ var ResultMixin = {
     if (this.state.displayADV) {
       return React.createElement(
         "div",
-        null,
+        { className: "corpusResultsADV" },
         this.renderErrors(corpusHit),
         this.renderDiagnostics(corpusHit),
         React.createElement(
@@ -50618,7 +50618,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
   window.MyAggregator = window.MyAggregator || {};
 
-  var VERSION = window.MyAggregator.VERSION = "v.3.0.2-67";
+  var VERSION = window.MyAggregator.VERSION = "v.3.1.0";
 
   var URLROOT = window.MyAggregator.URLROOT = window.location.pathname.substring(0, window.location.pathname.indexOf("/", 2)) ||
   //window.location.pathname ||
@@ -51003,6 +51003,11 @@ var AboutPage = (0, _createReactClass2.default)({
               "li",
               null,
               "Emanuel Dima"
+            ),
+            React.createElement(
+              "li",
+              null,
+              "Erik K\xF6rner"
             ),
             React.createElement(
               "li",
@@ -52684,8 +52689,10 @@ var StatisticsPage = (0, _createReactClass2.default)({
     );
   },
 
-  setTab: function setTab(idx) {
+  setTab: function setTab(idx, e) {
     this.setState({ activeTab: idx });
+    e.preventDefault();
+    e.stopPropagation();
   },
 
   render: function render() {
@@ -52714,7 +52721,7 @@ var StatisticsPage = (0, _createReactClass2.default)({
                 { role: "presentation", className: classname, key: st[0] },
                 React.createElement(
                   "a",
-                  { href: "#", role: "tab", onClick: this.setTab.bind(this, idx) },
+                  { href: "#", title: st[0], role: "tab", onClick: this.setTab.bind(this, idx) },
                   st[0]
                 )
               );
