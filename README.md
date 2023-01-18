@@ -1,5 +1,5 @@
 # fcs-sru-aggregator
-CLARIN Federated Content Search v2.0 Aggregator – Augmenting your Search Engine
+CLARIN Federated Content Search v3.0 Aggregator – Augmenting your Search Engine
 
 # Introduction
   The CLARIN Federated Content Search

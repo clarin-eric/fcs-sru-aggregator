@@ -1,5 +1,14 @@
 # Changelog
 
+# 3.2.0 - 2023-01-18
+
+- Changes:
+  - Added Github Actions CI build script
+  - Upgraded dropwizard from 2.0.3 to 2.1.4
+  - Upgraded `org.apache.poi:poi-ooxml` from 3.17 to 5.2.3
+  - Added `org.glassfish.jersey.media:jersey-media-jaxb:2.36` for newer jaxb dependency
+  - Upgraded `eu.clarin.weblicht:wlfxb` from 1.3.1 to 1.4.3
+
 # 3.1.0 - 2023-01-18
 
 - Enhancements:
