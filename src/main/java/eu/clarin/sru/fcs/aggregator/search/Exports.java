@@ -15,6 +15,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -176,7 +177,7 @@ public class Exports {
                                 String[] headers = new String[] {
                                         "PID", "REFERENCE", "LEFT CONTEXT", "KEYWORD", "RIGHT CONTEXT" };
                                 for (int j = 0; j < headers.length; ++j) {
-                                    cell = row.createCell(j, Cell.CELL_TYPE_STRING);
+                                    cell = row.createCell(j, CellType.STRING);
                                     cell.setCellValue(headers[j]);
                                     cell.setCellStyle(headerStyle);
                                 }
@@ -188,21 +189,21 @@ public class Exports {
                                 continue;
                             }
                             row = sheet.createRow(rownum++);
-                            cell = row.createCell(0, Cell.CELL_TYPE_STRING);
+                            cell = row.createCell(0, CellType.STRING);
                             if (kwic.getPid() != null) {
                                 cell.setCellValue(kwic.getPid());
                             }
-                            cell = row.createCell(1, Cell.CELL_TYPE_STRING);
+                            cell = row.createCell(1, CellType.STRING);
                             if (kwic.getReference() != null) {
                                 cell.setCellValue(kwic.getReference());
                             }
 
-                            cell = row.createCell(2, Cell.CELL_TYPE_STRING);
+                            cell = row.createCell(2, CellType.STRING);
                             cell.setCellValue(kwic.getLeft());
-                            cell = row.createCell(3, Cell.CELL_TYPE_STRING);
+                            cell = row.createCell(3, CellType.STRING);
                             cell.setCellValue(kwic.getKeyword());
                             cell.setCellStyle(headerStyle);
-                            cell = row.createCell(4, Cell.CELL_TYPE_STRING);
+                            cell = row.createCell(4, CellType.STRING);
                             cell.setCellValue(kwic.getRight());
                         }
                     }
@@ -211,7 +212,7 @@ public class Exports {
                             String[] headers = new String[] {
                                     "PID", "REFERENCE", "SPANS" };
                             for (int j = 0; j < headers.length; ++j) {
-                                cell = row.createCell(j, Cell.CELL_TYPE_STRING);
+                                cell = row.createCell(j, CellType.STRING);
                                 cell.setCellValue(headers[j]);
                                 cell.setCellStyle(headerStyle);
                             }
@@ -223,18 +224,18 @@ public class Exports {
                         }
                         row = sheet.createRow(rownum++);
                         int j = 0;
-                        cell = row.createCell(j, Cell.CELL_TYPE_STRING);
+                        cell = row.createCell(j, CellType.STRING);
                         if (layer.getPid() != null) {
                             cell.setCellValue(layer.getPid());
                         }
                         j++;
-                        cell = row.createCell(j, Cell.CELL_TYPE_STRING);
+                        cell = row.createCell(j, CellType.STRING);
                         if (layer.getReference() != null) {
                             cell.setCellValue(layer.getReference());
                         }
                         j++;
                         for (AdvancedLayer.Span span : layer.getSpans()) {
-                            cell = row.createCell(j, Cell.CELL_TYPE_STRING);
+                            cell = row.createCell(j, CellType.STRING);
                             cell.setCellValue(span.getText());
                             if (span.isHit()) {
                                 cell.setCellStyle(headerStyle);
