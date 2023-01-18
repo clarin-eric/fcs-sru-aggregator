@@ -14,10 +14,61 @@ var CorpusView = createReactClass({
   },
 
   getInitialState() {
+    const corpora = this.props.corpora;
+    const corporaGroupedByInstitute = this.updateCorporaGroupedByInstitute(corpora);
+    const corporaGroupedByLanguage = this.updateCorporaGroupedByLanguage(corpora);
+
     return {
-      viewSelected: false, // only show the selected collections
-      //showDisabled: false, // dont hide items with {visible = false} // implemented, but out commented feature...
+      viewSelected: false,  // only show the selected collections
+      //showDisabled: false,  // don't hide items with {visible = false} // implemented, but out commented feature...
+      viewGroupedByInstitution: false,  // group by institution, then as usual
+      viewGroupedByLanguage: false,  // group by (single) language, then as usual
+      corporaGroupedByInstitute: corporaGroupedByInstitute,  // group info (is-expanded, corpora list)
+      corporaGroupedByLanguage: corporaGroupedByLanguage,  // group info (with language as key) (is-expanded, corpora list)
+      corpora: corpora,  // cached but unused, just to check for updates
     }
+  },
+
+  componentWillReceiveProps(nextProps) {
+    // console.debug("componentWillReceiveProps", nextProps);
+    const corpora = nextProps.corpora;
+    if (this.props.corpora == corpora) {
+      return;
+    }
+    const corporaGroupedByInstitute = this.updateCorporaGroupedByInstitute(corpora);
+    const corporaGroupedByLanguage = this.updateCorporaGroupedByLanguage(corpora);
+    this.setState({
+      corpora: this.props.corpora,
+      corporaGroupedByInstitute: corporaGroupedByInstitute,
+      corporaGroupedByLanguage: corporaGroupedByLanguage,
+    });
+  },
+
+  updateCorporaGroupedByInstitute: function (corpora) {
+    const corporaGroupedByInstitute = {};
+    corpora.corpora.forEach(corpus => {
+      const institute = corpus.institution.name;
+      if (!corporaGroupedByInstitute.hasOwnProperty(institute)) {
+        corporaGroupedByInstitute[institute] = { expanded: true, corpora: [] };
+      }
+      corporaGroupedByInstitute[institute].corpora.push(corpus);
+    });
+    //console.debug(corporaGroupedByInstitute);
+    return corporaGroupedByInstitute;
+  },
+
+  updateCorporaGroupedByLanguage: function (corpora) {
+    const corporaGroupedByLanguage = {};
+    corpora.corpora.forEach(corpus => {
+      corpus.languages.forEach(language => {
+        if (!corporaGroupedByLanguage.hasOwnProperty(language)) {
+          corporaGroupedByLanguage[language] = { expanded: true, corpora: [] };
+        }
+        corporaGroupedByLanguage[language].corpora.push(corpus);
+      });
+    });
+    //console.debug(corporaGroupedByLanguage);
+    return corporaGroupedByLanguage;
   },
 
   toggleSelection: function (corpus, e) {
@@ -35,6 +86,20 @@ var CorpusView = createReactClass({
     this.setState((st) => ({ showDisabled: !st.showDisabled }));
   },
 
+  toggleViewGroupByInstitution(evt) {
+    this.setState((st) => ({
+      viewGroupedByInstitution: !st.viewGroupedByInstitution,
+      viewGroupedByLanguage: false,
+    }));
+  },
+
+  toggleViewGroupByLanguage(evt) {
+    this.setState((st) => ({
+      viewGroupedByInstitution: false,
+      viewGroupedByLanguage: !st.viewGroupedByLanguage,
+    }));
+  },
+
   toggleDescExpansion: function (corpus) {
     corpus.descExpanded = !corpus.descExpanded;
     this.props.corpora.update();
@@ -45,9 +110,23 @@ var CorpusView = createReactClass({
     this.props.corpora.update();
   },
 
+  toggleExpansionGrouped: function (groupedCorpora) {
+    groupedCorpora.expanded = !groupedCorpora.expanded;
+    this.setState({
+      corporaGroupedByInstitute: this.state.corporaGroupedByInstitute,
+      corporaGroupedByLanguage: this.state.corporaGroupedByLanguage,
+    });
+  },
+
   selectAll: function (value) {
     // select all _visible_
     this.props.corpora.recurse(function (c) { c.visible ? c.selected = value : false });
+    this.props.corpora.update();
+  },
+
+  selectAllFromList: function (corpora, value) {
+    // like selectAll(), just for list of corpora
+    this.props.corpora.recurseCorpora(corpora, function (c) { c.visible ? c.selected = value : false });
     this.props.corpora.update();
   },
 
@@ -165,6 +244,36 @@ var CorpusView = createReactClass({
     </div>;
   },
 
+  renderExpansionGrouped: function (groupedCorpora) {
+    if (!groupedCorpora.corpora || groupedCorpora.corpora.length === 0) {
+      return false;
+    }
+
+    var selectedCount = 0;
+    this.props.corpora.recurseCorpora(groupedCorpora.corpora, c => {
+      if (c.selected && c.visible) selectedCount++;
+    });
+
+    return <div className="expansion-handle" onClick={this.toggleExpansionGrouped.bind(this, groupedCorpora)}>
+      <a>
+        {groupedCorpora.expanded ?
+          <span className="glyphicon glyphicon-minus" aria-hidden="true" /> :
+          <span className="glyphicon glyphicon-plus" aria-hidden="true" />
+        }
+        {groupedCorpora.expanded ? " Collapse " : " Expand "} ({groupedCorpora.corpora.length} root collection{groupedCorpora.corpora.length != 1 ? "s" : ""}, {selectedCount} (sub)collections selected)
+      </a>
+    </div>;
+  },
+
+  renderSelectionButtonsGrouped: function (corpora) {
+    return (<div className="float-right inline" style={{ paddingTop: "1.5em" }}>
+      <button className="btn btn-default" style={{ marginRight: 10 }} onClick={this.selectAllFromList.bind(this, corpora, true)}>
+        {" Select all"}</button>
+      <button className="btn btn-default" style={{ marginRight: 20 }} onClick={this.selectAllFromList.bind(this, corpora, false)}>
+        {" Deselect all"}</button>
+    </div>);
+  },
+
   renderLanguages: function (languages) {
     return languages
       .map(function (l) { return this.props.languageMap[l]; }.bind(this))
@@ -277,6 +386,66 @@ var CorpusView = createReactClass({
 
   },
 
+  renderCorpListGroupedByInstitution() {
+    var minmaxp = this.getMinMaxPriority();
+
+    const groupedListRender = [];
+    Object.entries(this.state.corporaGroupedByInstitute).forEach(([institution, groupedCorpora]) => {
+      const corpListRender = [];
+      // this is so we get a non-undefined items .length in corpListRender.
+      groupedCorpora.corpora.forEach(c => {
+        var rend = this.renderCorpus(0, minmaxp, c);
+        if (rend) corpListRender.push(rend);
+      });
+      if (corpListRender.length > 0) {
+        groupedListRender.push(<div className="corpusview-corpora">
+          {this.renderSelectionButtonsGrouped(groupedCorpora.corpora)}
+          <h3 style={{ paddingTop: "0.5em" }}><i class="fa fa-institution" /> {institution}</h3>
+          {this.renderExpansionGrouped(groupedCorpora)}
+          {groupedCorpora.expanded ? corpListRender : false}
+        </div>);
+      }
+    });
+
+    return <div className="corpusview-institutions">
+      {groupedListRender.length > 0 ? groupedListRender :
+        <h3 className="aligncenter">{
+          this.state.viewSelected ? "No collections selected yet!" : "No collections found."
+        }</h3>
+      }
+    </div>
+  },
+
+  renderCorpListGroupedByLanguage() {
+    var minmaxp = this.getMinMaxPriority();
+
+    const groupedListRender = [];
+    Object.entries(this.state.corporaGroupedByLanguage).forEach(([language, groupedCorpora]) => {
+      const corpListRender = [];
+      // this is so we get a non-undefined items .length in corpListRender.
+      groupedCorpora.corpora.forEach(c => {
+        var rend = this.renderCorpus(0, minmaxp, c);
+        if (rend) corpListRender.push(rend);
+      });
+      if (corpListRender.length > 0) {
+        groupedListRender.push(<div className="corpusview-corpora">
+          {this.renderSelectionButtonsGrouped(groupedCorpora.corpora)}
+          <h3 style={{ paddingTop: "0.5em" }}><i class="fa fa-language" /> {this.props.languageMap[language]} [{language}]</h3>
+          {this.renderExpansionGrouped(groupedCorpora)}
+          {groupedCorpora.expanded ? corpListRender : false}
+        </div>);
+      }
+    });
+
+    return <div className="corpusview-languages">
+      {groupedListRender.length > 0 ? groupedListRender :
+        <h3 className="aligncenter">{
+          this.state.viewSelected ? "No collections selected yet!" : "No collections found."
+        }</h3>
+      }
+    </div>
+  },
+
   render() {
     var selectedCount = 0;
     //var disabledCount = 0;
@@ -286,16 +455,24 @@ var CorpusView = createReactClass({
       //if (!c.visible) disabledCount++;
     });
 
+    var renderCorporaFn = null;
+    if (this.state.viewGroupedByInstitution) {
+      renderCorporaFn = this.renderCorpListGroupedByInstitution;
+    } else if (this.state.viewGroupedByLanguage) {
+      renderCorporaFn = this.renderCorpListGroupedByLanguage;
+    } else {
+      renderCorporaFn = this.renderCorpList;
+    }
 
     return <div style={{ margin: "0 30px" }}>
       <div className="row">
         {/*
-                        <div className="float-left inline">
-                            <h3 style={{marginTop: 0}}>
-                                {this.props.corpora.getSelectedMessage()}
-                            </h3>
-                        </div>
-                    */}
+        <div className="float-left inline">
+          <h3 style={{marginTop: 0}}>
+            {this.props.corpora.getSelectedMessage()}
+          </h3>
+        </div>
+        */}
 
         <div className="float-left inline corpusview-filter-buttons">
           <div className="btn-group btn-group-toggle" >
@@ -304,10 +481,17 @@ var CorpusView = createReactClass({
               <span className={this.state.viewSelected ? "glyphicon glyphicon-check" : "glyphicon glyphicon-unchecked"} /> View selected ({selectedCount})
             </label>
             {/*
-                              <label className={"btn btn-light btn-sm " + (this.state.showDisabled ? 'active':'inactive')} onClick={this.toggleShowDisabled} label="Toggle showing of collections disabled in this search mode">
-                                <span className={this.state.showDisabled ? "glyphicon glyphicon-check" : "glyphicon glyphicon-unchecked"} />  Show disabled ({disabledCount})
-                              </label>
-                              */}
+            <label className={"btn btn-light btn-sm " + (this.state.showDisabled ? 'active':'inactive')} onClick={this.toggleShowDisabled} label="Toggle showing of collections disabled in this search mode">
+              <span className={this.state.showDisabled ? "glyphicon glyphicon-check" : "glyphicon glyphicon-unchecked"} />  Show disabled ({disabledCount})
+            </label>
+            */}
+            <label className={"btn btn-light btn"} style={{ paddingRight: "0ex", pointerEvents: "none" }}>Group by </label>
+            <label className={"btn btn-light btn " + (this.state.viewGroupedByInstitution ? 'active' : 'inactive')} style={{ paddingRight: "0.5ex", paddingLeft: "0.5ex" }} onClick={this.toggleViewGroupByInstitution} title="Group collections by institution">
+              <span className={this.state.viewGroupedByInstitution ? "glyphicon glyphicon-check" : "glyphicon glyphicon-unchecked"} /> Institution
+            </label>
+            <label className={"btn btn-light btn " + (this.state.viewGroupedByLanguage ? 'active' : 'inactive')} style={{ paddingLeft: "0.5ex" }} onClick={this.toggleViewGroupByLanguage} title="Group collections by language">
+              <span className={this.state.viewGroupedByLanguage ? "glyphicon glyphicon-check" : "glyphicon glyphicon-unchecked"} /> Language
+            </label>
           </div>
         </div>
 
@@ -322,11 +506,13 @@ var CorpusView = createReactClass({
         <div className="float-right inline">
           <div className="inline" style={{ marginRight: 20 }} >
             <SearchCorpusBox search={this.searchCorpus} />
-            {this.renderFilteredMessage()}
           </div>
         </div>
       </div>
-      {this.renderCorpList()}
+      <div className="row" style={{ marginBottom: 15 }}>
+        {this.renderFilteredMessage()}
+      </div>
+      {renderCorporaFn()}
     </div>;
   }
 });
