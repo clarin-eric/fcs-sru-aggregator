@@ -91,7 +91,8 @@ function renderCell(service) {
 }
 
 function renderDropdown(service_table) {
-	var more_button_img_data = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAMAAABg3Am1AAAAAXNSR0IArs4c6QAAAFFQTFRFAAAAADFiADNjADJmADFkAC9lAC1aADFlADNmADJjADJkADJlADFmADJmADNmADFkADFmADFkADBlADRkADBlADJkADJgADBiADJnADNk////FNjxtwAAABp0Uk5TAEl+mX1MEXzD4vLhwXvT9P3+80r9wk1/mn0E3ppfAAAAAWJLR0QadWfkMgAAAAlwSFlzAAALEgAACxIB0t1+/AAAAAd0SU1FB98EHg4nNnUbiMAAAACJSURBVEjH7dPBDsIgFETRERBaaCkPK+L//6ioTbrRZFzownB3h01TyAC/6aC0Nkfa1g2j92GaLWe4uCSRlOPM+TQsq7TWfC6McRmTPEpBMYb2suU1Y9T9oDKG2j9pGH/+07jG/Lw2x7k9zBTuD+Ms51YxtZoC2n9R30Pfwyuj74Fx30Pfwzt/tRtvbj0b8L7dXQAAACV0RVh0ZGF0ZTpjcmVhdGUAMjAxNS0wNC0zMFQxNDozOTo1NCswMjowMKXl2r4AAAAldEVYdGRhdGU6bW9kaWZ5ADIwMTUtMDQtMzBUMTQ6Mzk6NTQrMDI6MDDUuGICAAAAFXRFWHR0aWZmOmFscGhhAGFzc29jaWF0ZWRof6P+AAAAMnRFWHR0aWZmOmRvY3VtZW50AC9Vc2Vycy9lZGltYS9Eb3dubG9hZHMvVW50aXRsZWQudGlmZjc1HjAAAAAPdEVYdHRpZmY6ZW5kaWFuAGxzYlW3F0MAAAAUdEVYdHRpZmY6cGhvdG9tZXRyaWMAUkdCsyBJ3wAAABZ0RVh0dGlmZjpyb3dzLXBlci1zdHJpcAA2NAlacBsAAAAASUVORK5CYII=";
+	var img_svg = '<svg version="1.0" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet"><circle cx="25%" cy="25%" r="9" fill="#052d4d"/><circle cx="50%" cy="25%" r="9" fill="#052d4d"/><circle cx="75%" cy="25%" r="9" fill="#052d4d"/><circle cx="25%" cy="50%" r="9" fill="#052d4d"/><circle cx="50%" cy="50%" r="9" fill="#052d4d"/><circle cx="75%" cy="50%" r="9" fill="#052d4d"/><circle cx="25%" cy="75%" r="9" fill="#052d4d"/><circle cx="50%" cy="75%" r="9" fill="#052d4d"/><circle cx="75%" cy="75%" r="9" fill="#052d4d"/></svg>';
+	var more_button_img_data = "data:image/svg+xml;utf8," + encodeURIComponent(img_svg);
 	var img = $('<img>').attr('src', more_button_img_data);
 
 	var imgdiv = $('<div>').append(img);

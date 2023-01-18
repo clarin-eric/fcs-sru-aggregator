@@ -173,7 +173,7 @@ import createReactClass from "create-react-class";
             </li>
           </ul>
           <ul className="nav navbar-nav navbar-right">
-            <li> <div id="clarinservices" style={{ padding: 4 }} /> </li>
+            <li> <div id="clarinservices" style={{ padding: 4, paddingTop: 8 }} /> </li>
             {this.renderLogin()}
           </ul>
         </div>
