@@ -2,7 +2,7 @@ package eu.clarin.sru.fcs.aggregator.scan;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Center registry node. Its children are centers (institutions).
@@ -15,7 +15,7 @@ import java.util.logging.Logger;
  */
 public class CenterRegistryForTesting implements CenterRegistry {
 
-    private static final Logger logger = Logger.getLogger(CenterRegistryForTesting.class.getName());
+    private static final org.slf4j.Logger log = LoggerFactory.getLogger(CenterRegistryForTesting.class);
     private boolean hasChildrenLoaded = false;
     private List<Institution> centers = new ArrayList<Institution>();
 

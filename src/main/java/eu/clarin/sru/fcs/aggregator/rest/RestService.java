@@ -88,7 +88,7 @@ public class RestService {
     @Path("languages")
     public Response getLanguages() throws IOException {
         Set<String> codes = Aggregator.getInstance().getCorpora().getLanguages();
-        log.info("get language codes", codes);
+        log.info("get language codes: {}", codes);
         Map<String, String> languages = LanguagesISO693.getInstance().getLanguageMap(codes);
         return Response.ok(toJson(languages)).build();
     }
@@ -137,7 +137,7 @@ public class RestService {
         if (query == null || query.isEmpty()) {
             return Response.status(400).entity("'query' parameter expected").build();
         }
-        // log.info("POST /search corporaIds: " + corporaIds);
+        // log.info("POST /search corporaIds: {}", corporaIds);
         if (corporaIds == null || corporaIds.isEmpty()) {
             return Response.status(400).entity("'corporaIds' parameter expected").build();
         }
@@ -213,7 +213,7 @@ public class RestService {
     public Response postSearchNextResults(@PathParam("id") Long searchId,
             @FormParam("corpusId") String corpusId,
             @FormParam("numberOfResults") Integer numberOfResults) throws Exception {
-        log.info("POST /search/{id}, corpusId: " + corpusId);
+        log.info("POST /search/{id}, searchId: {}, corpusId: {}", searchId, corpusId);
         if (corpusId == null || corpusId.isEmpty()) {
             return Response.status(400).entity("'corpusId' parameter expected").build();
         }

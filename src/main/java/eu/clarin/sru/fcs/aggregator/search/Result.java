@@ -90,14 +90,13 @@ public final class Result {
             ClarinFCSRecordData rd = (ClarinFCSRecordData) record.getRecordData();
             Resource resource = rd.getResource();
             setClarinRecord(resource);
-            log.debug("Resource ref={0}, pid={1}, dataViews={2}",
-                    new Object[] { resource.getRef(), resource.getPid(), resource.hasDataViews() });
+            log.debug("Resource ref={}, pid={}, dataViews={}", resource.getRef(), resource.getPid(),
+                    resource.hasDataViews());
         } else if (record.isRecordSchema(SRUSurrogateRecordData.RECORD_SCHEMA)) {
             SRUSurrogateRecordData r = (SRUSurrogateRecordData) record.getRecordData();
-            log.info("Surrogate diagnostic: uri={0}, message={1}, detail={2}",
-                    new Object[] { r.getURI(), r.getMessage(), r.getDetails() });
+            log.info("Surrogate diagnostic: uri={}, message={}, detail={}", r.getURI(), r.getMessage(), r.getDetails());
         } else {
-            log.info("Unsupported schema: {0}", record.getRecordSchema());
+            log.info("Unsupported schema: {}", record.getRecordSchema());
         }
     }
 
@@ -111,8 +110,8 @@ public final class Result {
 
         if (resource.hasResourceFragments()) {
             for (Resource.ResourceFragment fragment : resource.getResourceFragments()) {
-                log.debug("ResourceFragment: ref={0}, pid={1}, dataViews={2}",
-                        new Object[] { fragment.getRef(), fragment.getPid(), fragment.hasDataViews() });
+                log.debug("ResourceFragment: ref={}, pid={}, dataViews={}", fragment.getRef(), fragment.getPid(),
+                        fragment.hasDataViews());
                 if (fragment.hasDataViews()) {
                     processDataViews(fragment.getDataViews(),
                             fragment.getPid() != null ? fragment.getPid() : pid,

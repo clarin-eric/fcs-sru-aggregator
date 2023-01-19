@@ -11,8 +11,6 @@ import java.awt.Color;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CellType;
@@ -25,6 +23,7 @@ import org.jopendocument.dom.ODPackage;
 import org.jopendocument.dom.ODDocument;
 import org.jopendocument.dom.text.TextDocument;
 import org.jopendocument.dom.spreadsheet.SpreadSheet;
+import org.slf4j.LoggerFactory;
 
 /**
  * Utility for representing SearchResult data in different formats.
@@ -34,7 +33,7 @@ import org.jopendocument.dom.spreadsheet.SpreadSheet;
  */
 public class Exports {
 
-    private static final Logger LOGGER = Logger.getLogger(Exports.class.getName());
+    private static final org.slf4j.Logger log = LoggerFactory.getLogger(Exports.class);
     private static final Color HIT_BACKGROUND = new Color(230, 242, 254);
     private static final Color CQL_BACKGROUND = new Color(255, 240, 225);
     private static final Color FCS_BACKGROUND = new Color(240, 255, 225);
@@ -246,7 +245,7 @@ public class Exports {
                 }
                 workbook.write(excelStream);
             } catch (IOException ex) {
-                LOGGER.log(Level.SEVERE, null, ex);
+                log.error("Exception exporting Excel:", ex);
                 throw new ExportException("Exception exporting Excel", ex);
             } finally {
                 if (workbook != null) {
@@ -343,7 +342,7 @@ public class Exports {
             try {
                 spreadSheet.getPackage().save(odsStream);
             } catch (IOException ex) {
-                LOGGER.log(Level.SEVERE, null, ex);
+                log.error("Exception exporting ODS:", ex);
                 throw new ExportException("Exception exporting ODS", ex);
             } finally {
                 if (spreadSheet != null) {
@@ -375,8 +374,7 @@ public class Exports {
             try {
                 WLDObjector.write(data, os);
             } catch (WLFormatException ex) {
-                LOGGER.log(Level.SEVERE, "Error exporting TCF {0} {1}",
-                        new String[] { ex.getClass().getName(), ex.getMessage() });
+                log.error("Error exporting TCF: {} {}", ex.getClass().getName(), ex.getMessage());
                 throw new ExportException("Error exporting TCF", ex);
             }
             return os.toByteArray();

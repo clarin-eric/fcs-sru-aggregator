@@ -49,7 +49,7 @@ public class LanguagesISO693 {
                 if (line.length() > 0) {
                     String[] toks = line.split("\\t");
                     if (toks.length != 7 && toks.length != 8) {
-                        log.error("Line error in language codes file: ", line);
+                        log.error("Line error in language codes file: '{}'", line);
                         continue;
                     }
                     String code_3 = toks[0].trim();
@@ -94,7 +94,7 @@ public class LanguagesISO693 {
         }
         Language l = codeToLang.get(code639_1);
         if (l == null) {
-            log.error("Unknown ISO-639-1 code: " + code639_1);
+            log.error("Unknown ISO-639-1 code: {}", code639_1);
             return null;
         }
         return l.code_3;
@@ -106,7 +106,7 @@ public class LanguagesISO693 {
         }
         Language l = codeToLang.get(code639_3);
         if (l == null) {
-            log.error("Unknown ISO-639-3 code: " + code639_3);
+            log.error("Unknown ISO-639-3 code: {}", code639_3);
             return null;
         }
         return l.code_1;
@@ -115,7 +115,7 @@ public class LanguagesISO693 {
     public String code_3ForName(String name) {
         Language l = nameToLang.get(name);
         if (l == null) {
-            log.error("Unknown language name: " + name);
+            log.error("Unknown language name: {}", name);
             return null;
         }
         return l.code_3;
@@ -124,7 +124,7 @@ public class LanguagesISO693 {
     public String nameForCode(String code) {
         Language l = codeToLang.get(code);
         if (l == null) {
-            log.error("Unknown language code: " + code);
+            log.error("Unknown language code: {}", code);
             return null;
         }
         return l.name;

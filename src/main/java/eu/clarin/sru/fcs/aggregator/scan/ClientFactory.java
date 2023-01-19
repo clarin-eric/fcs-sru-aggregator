@@ -10,7 +10,6 @@ import io.dropwizard.client.JerseyClientBuilder;
 import io.dropwizard.client.JerseyClientConfiguration;
 import io.dropwizard.setup.Environment;
 import io.dropwizard.util.Duration;
-import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.TrustManager;
@@ -34,7 +33,7 @@ import org.glassfish.jersey.client.ClientProperties;
  *         Shamelessly copied from the weblicht Harvester by emanueldima
  */
 public class ClientFactory {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ClientFactory.class);
+    private static final org.slf4j.Logger log = LoggerFactory.getLogger(ClientFactory.class);
 
     public static Client create(int connectTimeout, int readTimeout, Environment env) {
         /*
@@ -43,9 +42,9 @@ public class ClientFactory {
          * sc = SSLContext.getInstance("SSL");
          * sc.init(null, trustAllCerts, new SecureRandom());
          * } catch (NoSuchAlgorithmException e) {
-         * LOGGER.error("Unknown algorithm, SSL: {}", e.getMessage());
+         * log.error("Unknown algorithm, SSL: {}", e.getMessage());
          * } catch (KeyManagementException e) {
-         * LOGGER.error("Key management problem: {}", e.getMessage());
+         * log.error("Key management problem: {}", e.getMessage());
          * }
          * 
          * HttpClient httpClient = HttpClientBuilder.create()

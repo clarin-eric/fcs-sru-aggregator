@@ -12,13 +12,12 @@ import io.dropwizard.setup.Environment;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.ws.rs.client.Client;
+import org.slf4j.LoggerFactory;
 
 public class CenterRegistryLive implements CenterRegistry {
 
-    private static final Logger LOGGER = Logger.getLogger(CenterRegistryLive.class.getName());
+    private static final org.slf4j.Logger log = LoggerFactory.getLogger(CenterRegistryLive.class);
 
     private static final Integer CONNECT_TIMEOUT = 3000;
     private static final Integer READ_TIMEOUT = 10000;
@@ -78,9 +77,9 @@ public class CenterRegistryLive implements CenterRegistry {
             }
 
         } catch (ConnectorException ex) {
-            Logger.getLogger(CenterRegistryLive.class.getName()).log(Level.SEVERE, null, ex);
+            log.error("Exception loading CQL institutions:", ex);
         }
-        LOGGER.log(Level.FINE, "Number of Centers: {0}", centers.size());
+        log.debug("Number of Centers: {}", centers.size());
     }
 
     @Override

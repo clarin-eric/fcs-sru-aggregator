@@ -3,7 +3,6 @@ package eu.clarin.sru.fcs.aggregator.rest;
 import io.dropwizard.client.JerseyClientBuilder;
 import io.dropwizard.client.JerseyClientConfiguration;
 import io.dropwizard.setup.Environment;
-import java.util.logging.*;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Random;
@@ -12,6 +11,7 @@ import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import org.slf4j.LoggerFactory;
 
 /**
  * A utility class that allows moving data from the Aggregator server to some
@@ -22,7 +22,7 @@ import javax.ws.rs.core.Response;
  */
 public class DataTransfer {
 
-    private static final Logger LOGGER = Logger.getLogger(DataTransfer.class.getName());
+    private static final org.slf4j.Logger log = LoggerFactory.getLogger(DataTransfer.class);
 
     private static final String WSPACE_SERVER_URL = "http://egi-cloud21.zam.kfa-juelich.de";
     private static final String WSPACE_WEBDAV_DIR = "/owncloud/remote.php/webdav/";
@@ -49,13 +49,12 @@ public class DataTransfer {
                     .request(mimeType)
                     .post(Entity.entity(bytes, MediaType.APPLICATION_OCTET_STREAM));
             if (response.getStatus() != Response.Status.CREATED.getStatusCode()) {
-                LOGGER.log(Level.SEVERE, "Error uploading {0}", new String[] { url });
+                log.error("Error uploading {}", url);
                 // "Sorry, export to drop-off error!"
                 return null;
             }
         } catch (Exception ex) {
-            LOGGER.log(Level.SEVERE, "Error uploading {0} {1} {2}",
-                    new String[] { url, ex.getClass().getName(), ex.getMessage() });
+            log.error("Error uploading {} : {} {}", url, ex.getClass().getName(), ex.getMessage());
             // "Sorry, export to drop-off error!"
             return null;
         } finally {

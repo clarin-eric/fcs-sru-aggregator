@@ -66,7 +66,7 @@ public class ErrorHandler extends org.eclipse.jetty.server.handler.ErrorHandler 
                     request.getSession().setAttribute(PARAM_AGGREGATION_CONTEXT, contextValues[0]);
                     request.setAttribute(PARAM_AGGREGATION_CONTEXT, contextValues[0]);
                     request.setAttribute(PARAM_AGGREGATION_CONTEXT, contextValues[0]);
-                    log.info("Error handler request.contextValues > 0: " + contextValues[0]);
+                    log.info("Error handler request.contextValues > 0: {}", contextValues[0]);
                 }
 
             }
@@ -103,18 +103,18 @@ public class ErrorHandler extends org.eclipse.jetty.server.handler.ErrorHandler 
             request.setAttribute(dispatcher.FORWARD_QUERY_STRING, params.toString());
             request.getSession().setAttribute(dispatcher.FORWARD_QUERY_STRING, params.toString());
             try {
-                log.info("dispatching attribute check:" + request.getSession().getAttribute(PARAM_AGGREGATION_CONTEXT)
-                        + " " + request.getSession());
+                log.info("dispatching attribute check: {} {}",
+                        request.getSession().getAttribute(PARAM_AGGREGATION_CONTEXT), request.getSession());
                 response.reset();
                 dispatcher.forward(request, response);
             } catch (ServletException e) {
-                log.info("dispatching failed, attribute check:"
-                        + request.getSession().getAttribute(PARAM_AGGREGATION_CONTEXT));
+                log.info("dispatching failed, attribute check: {}",
+                        request.getSession().getAttribute(PARAM_AGGREGATION_CONTEXT));
                 super.handle(target, baseRequest, request, response);
             }
         } else {
-            log.error("Can not find internal redirect route '" + target
-                    + "' while handling error. Will show system error page");
+            log.error("Can not find internal redirect route '{}' while handling error. Will show system error page",
+                    target);
             super.handle(target, baseRequest, request, response);
         }
     }

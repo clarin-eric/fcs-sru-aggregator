@@ -254,8 +254,8 @@ public class Aggregator extends Application<AggregatorConfiguration> {
             }
             if (corpora != null) {
                 scanCacheAtom.set(corpora);
-                log.info("corpus list read from file; number of root corpora: "
-                        + scanCacheAtom.get().getCorpora().size());
+                log.info("corpus list read from file; number of root corpora: {}",
+                        scanCacheAtom.get().getCorpora().size());
             }
         }
 
@@ -304,7 +304,7 @@ public class Aggregator extends Application<AggregatorConfiguration> {
                 for (Map.Entry<Long, Search> e : activeSearches.entrySet()) {
                     long dtmin = (t0 - e.getValue().getCreatedAt()) / 1000 / 60;
                     if (dtmin > SEARCHES_AGE_GC_THRESHOLD) {
-                        log.info("removing search " + e.getKey() + ": " + dtmin + " minutes old");
+                        log.info("removing search {}: {} minutes old", e.getKey(), dtmin);
                         toBeRemoved.add(e.getKey());
                     }
                 }
