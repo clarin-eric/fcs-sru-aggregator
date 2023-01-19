@@ -287,6 +287,21 @@ public class RestService {
     }
 
     @GET
+    @Path("search/{id}/weblicht-export/{eid}")
+    public Response getWeblichtExport(@PathParam("id") Long searchId, @PathParam("eid") Long exportId) {
+        Search search = Aggregator.getInstance().getSearchById(searchId);
+        if (search == null) {
+            return Response.status(Response.Status.NOT_FOUND).entity("Search job not found").build();
+        }
+        byte[] bytes = search.getWeblichtExport(exportId);
+        if (bytes == null) {
+            return Response.status(Response.Status.NOT_FOUND).entity("Weblicht export data not found").build();
+        }
+        return download(bytes, TCF_MEDIA_TYPE,
+                "export-{id}-{eid}.tcf".replace("{id}", searchId.toString()).replace("{eid}", exportId.toString()));
+    }
+
+    @GET
     @Path("search/{id}/toWeblicht")
     public Response sendSearchResultsToWeblicht(@PathParam("id") Long searchId,
             @QueryParam("filterLanguage") String filterLanguage,
@@ -299,14 +314,20 @@ public class RestService {
             filterLanguage = null;
         }
 
+        WeblichtConfig weblicht = Aggregator.getInstance().getParams().getWeblichtConfig();
+
         String url = null;
-        byte[] bytes = Exports.getExportTCF(
-                search.getResults(corpusId), search.getSearchLanguage(), filterLanguage);
+        byte[] bytes = Exports.getExportTCF(search.getResults(corpusId), search.getSearchLanguage(), filterLanguage);
         if (bytes != null) {
-            url = DataTransfer.uploadToDropOff(bytes, "text/tcf+xml", ".tcf", environment);
+            // store bytes in-memory TCF weblicht export in searches (searches might only
+            // live up to 60min if under high load)
+            Long exportId = search.addWeblichtExport(bytes);
+            url = "search/{id}/weblicht-export/{eid}".replace("{id}", searchId.toString()).replace("{eid}",
+                    exportId.toString());
+            url = weblicht.getExportServerUrl() + url;
+            log.debug("Export weblicht url: {}", url);
         }
 
-        WeblichtConfig weblicht = Aggregator.getInstance().getParams().getWeblichtConfig();
         URI weblichtUri = new URI(weblicht.getUrl() + url);
         return url == null
                 ? Response.status(503).entity("error while exporting to weblicht").build()

@@ -14,6 +14,7 @@ import eu.clarin.sru.fcs.aggregator.scan.FCSProtocolVersion;
 import eu.clarin.sru.fcs.aggregator.scan.Statistics;
 import eu.clarin.sru.fcs.aggregator.util.SRUCQL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
@@ -33,6 +34,7 @@ public class Search {
     private static final org.slf4j.Logger log = LoggerFactory.getLogger(Search.class);
 
     private static final String SEARCH_RESULTS_ENCODING = "UTF-8";
+    static final int EXPORTS_SIZE_GC_THRESHOLD = 3;
 
     private static final AtomicLong counter = new AtomicLong(Math.abs(new Random().nextInt()));
 
@@ -200,6 +202,62 @@ public class Search {
 
     public String getSearchLanguage() {
         return searchLanguage;
+    }
+
+    // ----------------------------------------------------------------------
+
+    public static class WeblichtExportCacheEntry {
+        private static final AtomicLong counter = new AtomicLong(Math.abs(new Random().nextInt()));
+
+        private final Long id;
+        private final byte[] data;
+
+        public WeblichtExportCacheEntry(byte[] data) {
+            this.id = counter.getAndIncrement();
+            this.data = data;
+        }
+
+        public Long getId() {
+            return id;
+        }
+
+        public byte[] getData() {
+            return data;
+        }
+    }
+
+    private final List<WeblichtExportCacheEntry> exports = Collections
+            .synchronizedList(new ArrayList<WeblichtExportCacheEntry>());
+
+    public byte[] getWeblichtExport(Long exportId) {
+        synchronized (exports) {
+            for (WeblichtExportCacheEntry export : exports) {
+                if (exportId.equals(export.getId())) {
+                    return export.getData();
+                }
+            }
+        }
+        return null;
+    }
+
+    public Long addWeblichtExport(byte[] data) {
+        synchronized (exports) {
+            // check if data already exists in cache
+            int dataHash = Arrays.hashCode(data);
+            for (WeblichtExportCacheEntry export : exports) {
+                if (Arrays.hashCode(export.data) == dataHash && Arrays.equals(data, export.data)) {
+                    return export.getId();
+                }
+            }
+            // needs to add new entry but check first if we need to evict old ones
+            if (exports.size() > EXPORTS_SIZE_GC_THRESHOLD) {
+                exports.remove(0);
+            }
+            // create and add new entry
+            WeblichtExportCacheEntry export = new WeblichtExportCacheEntry(data);
+            exports.add(export);
+            return export.getId();
+        }
     }
 
 }

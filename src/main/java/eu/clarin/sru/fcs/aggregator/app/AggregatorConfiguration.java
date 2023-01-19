@@ -79,11 +79,19 @@ public class AggregatorConfiguration extends Configuration {
             String url;
 
             @JsonProperty
+            String exportServerUrl;
+
+            @JsonProperty
             List<String> acceptedTcfLanguages;
 
             @JsonIgnore
             public String getUrl() {
                 return url;
+            }
+
+            @JsonIgnore
+            public String getExportServerUrl() {
+                return exportServerUrl;
             }
 
             @JsonIgnore

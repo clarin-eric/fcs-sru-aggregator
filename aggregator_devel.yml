@@ -34,6 +34,7 @@ aggregatorParams:
 
   weblichtConfig:
     url: https://weblicht.sfs.uni-tuebingen.de/weblicht/?input=
+    exportServerUrl: https://spraakbanken.gu.se/ws/fcs/2.0/aggregator/rest/
     acceptedTcfLanguages:
       - en
       - de
