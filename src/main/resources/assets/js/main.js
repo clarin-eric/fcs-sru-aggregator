@@ -50414,6 +50414,46 @@ var Results = (0, _createReactClass2.default)({
   },
   mixins: [_resultmixin2.default],
 
+  getInitialState: function getInitialState() {
+    return {
+      displayDiagnosticsForEmptyResults: false
+    };
+  },
+
+  toggleDiagnosticsForEmptyResults: function toggleDiagnosticsForEmptyResults() {
+    this.setState({ displayDiagnosticsForEmptyResults: !this.state.displayDiagnosticsForEmptyResults });
+  },
+
+  renderDisplayDiagnosticsForEmptyResults: function renderDisplayDiagnosticsForEmptyResults() {
+    var collhits = this.props.collhits;
+    if (!collhits.results) {
+      return false;
+    }
+    var numExceptions = collhits.results.filter(function (x) {
+      return !!x.exception;
+    }).length;
+    var numDiagnostics = collhits.results.filter(function (x) {
+      return x.diagnostics.length > 0;
+    }).length;
+    if (numExceptions <= 0 && numDiagnostics <= 0) {
+      return false;
+    }
+
+    return React.createElement(
+      "div",
+      { className: "inline btn-group", style: { display: "inline-block" } },
+      React.createElement(
+        "label",
+        { htmlFor: "inputDiagnosticsForEmptyResults", className: "btn btn-flat" },
+        this.state.displayDiagnosticsForEmptyResults ? React.createElement("input", { id: "inputDiagnosticsForEmptyResults", type: "checkbox", value: "kwic", checked: true, onChange: this.toggleDiagnosticsForEmptyResults }) : React.createElement("input", { id: "inputDiagnosticsForEmptyResults", type: "checkbox", value: "kwic", onChange: this.toggleDiagnosticsForEmptyResults }),
+        "\xA0 Show ",
+        numDiagnostics ? "warnings" : false,
+        numExceptions > 0 && numDiagnostics > 0 ? " and " : false,
+        numExceptions ? "errors" : false
+      )
+    );
+  },
+
   renderPanelInfo: function renderPanelInfo(corpusHit) {
     var corpus = corpusHit.corpus;
     var inline = { display: "inline-block" };
@@ -50439,6 +50479,9 @@ var Results = (0, _createReactClass2.default)({
 
   renderResultPanel: function renderResultPanel(corpusHit) {
     if (corpusHit.kwics.length === 0 && !corpusHit.exception && corpusHit.diagnostics.length === 0) {
+      return false;
+    }
+    if (!this.state.displayDiagnosticsForEmptyResults && corpusHit.kwics.length === 0) {
       return false;
     }
     return React.createElement(
@@ -50487,20 +50530,30 @@ var Results = (0, _createReactClass2.default)({
     }
     var showprogress = collhits.inProgress > 0;
 
+    var numExceptions = collhits.results.filter(function (x) {
+      return !!x.exception;
+    }).length;
+    var numDiagnostics = collhits.results.filter(function (x) {
+      return x.diagnostics.length > 0;
+    }).length;
+
     return React.createElement(
       "div",
       null,
       showprogress ? this.renderProgressMessage() : React.createElement("div", { style: { height: 20 } }),
       React.createElement(
         "div",
-        { style: { marginBottom: 2 } },
+        { style: { marginBottom: 5 } },
         showprogress ? false : React.createElement(
           "div",
-          { className: "float-left" },
-          " ",
+          { className: "float-left", style: { marginRight: "2ex" } },
           collhits.hits + " matching collections found",
-          " "
+          React.createElement("br", null),
+          collhits.results.length + " collections searched",
+          numExceptions ? ", " + numExceptions + " exceptions" : false,
+          numDiagnostics ? ", " + numDiagnostics + " warnings" : false
         ),
+        this.renderDisplayDiagnosticsForEmptyResults(),
         collhits.hits === 0 ? false : React.createElement(
           "div",
           { className: "float-right" },

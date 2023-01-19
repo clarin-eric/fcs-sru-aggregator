@@ -19,6 +19,39 @@ var Results = createReactClass({
   },
   mixins: [ResultMixin],
 
+  getInitialState: function () {
+    return {
+      displayDiagnosticsForEmptyResults: false,
+    };
+  },
+
+  toggleDiagnosticsForEmptyResults: function () {
+    this.setState({ displayDiagnosticsForEmptyResults: !this.state.displayDiagnosticsForEmptyResults });
+  },
+
+  renderDisplayDiagnosticsForEmptyResults: function () {
+    var collhits = this.props.collhits;
+    if (!collhits.results) {
+      return false;
+    }
+    var numExceptions = collhits.results.filter(x => !!x.exception).length;
+    var numDiagnostics = collhits.results.filter(x => x.diagnostics.length > 0).length;
+    if (numExceptions <= 0 && numDiagnostics <= 0) {
+      return false;
+    }
+
+    return (<div className="inline btn-group" style={{ display: "inline-block" }}>
+      <label htmlFor="inputDiagnosticsForEmptyResults" className="btn btn-flat">
+        {this.state.displayDiagnosticsForEmptyResults ?
+          <input id="inputDiagnosticsForEmptyResults" type="checkbox" value="kwic" checked onChange={this.toggleDiagnosticsForEmptyResults} /> :
+          <input id="inputDiagnosticsForEmptyResults" type="checkbox" value="kwic" onChange={this.toggleDiagnosticsForEmptyResults} />
+        }
+        &nbsp;
+        Show {numDiagnostics ? "warnings" : false}{(numExceptions > 0 && numDiagnostics > 0) ? " and " : false}{numExceptions ? "errors" : false}
+      </label>
+    </div>);
+  },
+
   renderPanelInfo: function (corpusHit) {
     var corpus = corpusHit.corpus;
     var inline = { display: "inline-block" };
@@ -37,6 +70,9 @@ var Results = createReactClass({
     if (corpusHit.kwics.length === 0 &&
       !corpusHit.exception &&
       corpusHit.diagnostics.length === 0) {
+      return false;
+    }
+    if (!this.state.displayDiagnosticsForEmptyResults && corpusHit.kwics.length === 0) {
       return false;
     }
     return (<CSSTransition key={corpusHit.corpus.id} classNames="fade" timeout={{ enter: 200, exit: 200 }}><Panel key={corpusHit.corpus.id}
@@ -75,12 +111,22 @@ var Results = createReactClass({
     }
     var showprogress = collhits.inProgress > 0;
 
+    var numExceptions = collhits.results.filter(x => !!x.exception).length;
+    var numDiagnostics = collhits.results.filter(x => x.diagnostics.length > 0).length;
+
     return (<div>
       {showprogress ? this.renderProgressMessage() : <div style={{ height: 20 }} />}
-      <div style={{ marginBottom: 2 }}>
+      <div style={{ marginBottom: 5 }}>
         {showprogress ? false :
-          <div className="float-left"> {collhits.hits + " matching collections found"} </div>
+          <div className="float-left" style={{ marginRight: "2ex" }}>
+            {collhits.hits + " matching collections found"}
+            <br />
+            {collhits.results.length + " collections searched"}
+            {numExceptions ? ", " + numExceptions + " exceptions" : false}
+            {numDiagnostics ? ", " + numDiagnostics + " warnings" : false}
+          </div>
         }
+        {this.renderDisplayDiagnosticsForEmptyResults()}
         {collhits.hits === 0 ? false :
           <div className="float-right">
             <div>
