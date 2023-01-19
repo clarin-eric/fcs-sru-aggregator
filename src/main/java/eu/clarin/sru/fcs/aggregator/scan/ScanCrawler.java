@@ -211,7 +211,7 @@ public class ScanCrawler {
             Corpus c = new Corpus(institution, endpoint);
             c.setHandle(ri.getPid());
             c.setTitle(getBestValueFrom(ri.getTitle()));
-            c.setDescription(getBestValueFrom(ri.getDescription()));
+            c.setDescription(getBestValueFromNullable(ri.getDescription()));
             c.setLanguages(new HashSet<String>(ri.getLanguages()));
             c.setLandingPage(ri.getLandingPageURI());
 
@@ -222,6 +222,13 @@ public class ScanCrawler {
                 addCorpora(corpora, institution, endpoint, null, ri.getSubResources(), c);
             }
         }
+    }
+
+    private static String getBestValueFromNullable(Map<String, String> map) {
+        if (map == null) {
+            return null;
+        }
+        return getBestValueFrom(map);
     }
 
     private static String getBestValueFrom(Map<String, String> map) {
