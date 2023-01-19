@@ -14,6 +14,7 @@ import static eu.clarin.sru.fcs.aggregator.app.ErrorHandler.PARAM_QUERY;
 import eu.clarin.sru.fcs.aggregator.scan.Corpora;
 import eu.clarin.sru.fcs.aggregator.scan.Corpus;
 import eu.clarin.sru.fcs.aggregator.scan.FCSProtocolVersion;
+import eu.clarin.sru.fcs.aggregator.scan.FCSSearchCapabilities;
 import eu.clarin.sru.fcs.aggregator.scan.Statistics;
 import eu.clarin.sru.fcs.aggregator.search.Result;
 import eu.clarin.sru.fcs.aggregator.search.Search;
@@ -145,7 +146,8 @@ public class RestService {
         if ("fcs".equals(queryType)) {
             List<Corpus> tmp = new ArrayList<Corpus>();
             for (Corpus corpus : corpora) {
-                if (corpus.getEndpoint().getProtocol().equals(FCSProtocolVersion.VERSION_2)) {
+                if (corpus.getEndpoint().getProtocol().equals(FCSProtocolVersion.VERSION_2) && corpus.getEndpoint()
+                        .getSearchCapabilities().contains(FCSSearchCapabilities.ADVANCED_SEARCH)) {
                     tmp.add(corpus);
                 }
             }

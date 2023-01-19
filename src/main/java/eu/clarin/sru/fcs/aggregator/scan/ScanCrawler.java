@@ -15,6 +15,8 @@ import eu.clarin.sru.fcs.aggregator.client.ThrottledClient;
 import eu.clarin.sru.fcs.aggregator.util.SRUCQL;
 import eu.clarin.sru.fcs.aggregator.util.Throw;
 import java.net.SocketTimeoutException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -42,6 +44,15 @@ public class ScanCrawler {
     private final CounterLatch latch;
     private final ThrottledClient sruClient;
     private final Statistics statistics = new Statistics();
+
+    private static final URI advSearchCap;
+    static {
+        try {
+            advSearchCap = new URI("http://clarin.eu/fcs/capability/advanced-search");
+        } catch (URISyntaxException e) {
+            throw new RuntimeException("Class initialization failed due to static variable exception.", e);
+        }
+    }
 
     public ScanCrawler(List<Institution> institutions, ThrottledClient sruClient, int maxDepth) {
         this.institutions = institutions;
@@ -125,8 +136,12 @@ public class ScanCrawler {
                             ClarinFCSEndpointDescription desc = (ClarinFCSEndpointDescription) data;
                             if (desc.getVersion() == 2) {
                                 endpoint.setProtocol(FCSProtocolVersion.VERSION_2);
+                                if (desc.getCapabilities().contains(advSearchCap)) {
+                                    endpoint.addSearchCapability(FCSSearchCapabilities.ADVANCED_SEARCH);
+                                }
                             } else {
                                 endpoint.setProtocol(FCSProtocolVersion.VERSION_1);
+                                // endpoint.addSearchCapability(FCSSearchCapabilities.BASIC_SEARCH);
                             }
                             statistics.upgradeProtocolVersion(institution, endpoint);
 

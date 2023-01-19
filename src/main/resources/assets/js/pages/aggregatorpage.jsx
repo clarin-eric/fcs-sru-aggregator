@@ -655,7 +655,8 @@ Corpora.prototype.getLanguageCodes = function () {
 };
 
 Corpora.prototype.isCorpusVisible = function (corpus, queryTypeId, languageCode) {
-  if (queryTypeId === "fcs" && (corpus.endpoint.protocol === "LEGACY" || corpus.endpoint.protocol === "VERSION_1")) {
+  // check search capabilities (ignore version, just check caps)
+  if (queryTypeId === "fcs" && corpus.endpoint.searchCapabilities.indexOf("ADVANCED_SEARCH") === -1) {
     return false;
   }
   // yes for any language

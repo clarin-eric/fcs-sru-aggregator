@@ -113,6 +113,15 @@ var StatisticsPage = createReactClass({
         </li>
       </ul>
       <div style={{ marginLeft: 40 }}>
+        Search capabilities: {stat.searchCapabilities
+          // strip "_SEARCH" suffix
+          .map(x => x.substring(0, x.lastIndexOf('_')))
+          // add heart icon for ADVANCED search
+          .map(x => (x === "ADVANCED") ? <span>{x} <i className="glyphicon glyphicon-heart-empty"></i></span> : x)
+          // join
+          .map((x, i) => <span>{i > 0 && ", "}{x}</span>)}
+      </div>
+      <div style={{ marginLeft: 40 }}>
         {isScan ?
           <div>Max concurrent scan requests:{" "} {stat.maxConcurrentRequests} </div> :
           <div>Max concurrent search requests:{" "} {stat.maxConcurrentRequests} </div>
@@ -158,7 +167,7 @@ var StatisticsPage = createReactClass({
   setTab: function (idx, e) {
     this.setState({ activeTab: idx });
     e.preventDefault();
-		e.stopPropagation();
+    e.stopPropagation();
   },
 
   render: function () {

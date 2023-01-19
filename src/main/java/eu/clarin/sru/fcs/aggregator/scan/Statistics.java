@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +24,9 @@ public class Statistics {
 
         @JsonProperty
         FCSProtocolVersion version = FCSProtocolVersion.LEGACY;
+
+        @JsonProperty
+        EnumSet<FCSSearchCapabilities> searchCapabilities = EnumSet.of(FCSSearchCapabilities.BASIC_SEARCH);
 
         @JsonProperty
         List<String> rootCollections = new ArrayList<String>();
@@ -173,6 +177,8 @@ public class Statistics {
         synchronized (stats.lock) {
             stats.version = endpoint.getProtocol().equals(FCSProtocolVersion.VERSION_2) ? FCSProtocolVersion.VERSION_2
                     : FCSProtocolVersion.VERSION_1;
+            // also update search capabilities (related to version)
+            stats.searchCapabilities = EnumSet.copyOf(endpoint.getSearchCapabilities());
         }
     }
 
@@ -201,6 +207,7 @@ public class Statistics {
             if (!esmap.containsKey(endpoint.getUrl())) {
                 EndpointStats es = new EndpointStats();
                 es.version = endpoint.getProtocol();
+                es.searchCapabilities = EnumSet.copyOf(endpoint.getSearchCapabilities());
                 esmap.put(endpoint.getUrl(), es);
             }
             stats = esmap.get(endpoint.getUrl());

@@ -52368,7 +52368,8 @@ Corpora.prototype.getLanguageCodes = function () {
 };
 
 Corpora.prototype.isCorpusVisible = function (corpus, queryTypeId, languageCode) {
-  if (queryTypeId === "fcs" && (corpus.endpoint.protocol === "LEGACY" || corpus.endpoint.protocol === "VERSION_1")) {
+  // check search capabilities (ignore version, just check caps)
+  if (queryTypeId === "fcs" && corpus.endpoint.searchCapabilities.indexOf("ADVANCED_SEARCH") === -1) {
     return false;
   }
   // yes for any language
@@ -52852,6 +52853,35 @@ var StatisticsPage = (0, _createReactClass2.default)({
           ),
           " " + endpoint[0]
         )
+      ),
+      React.createElement(
+        "div",
+        { style: { marginLeft: 40 } },
+        "Search capabilities: ",
+        stat.searchCapabilities
+        // strip "_SEARCH" suffix
+        .map(function (x) {
+          return x.substring(0, x.lastIndexOf('_'));
+        })
+        // add heart icon for ADVANCED search
+        .map(function (x) {
+          return x === "ADVANCED" ? React.createElement(
+            "span",
+            null,
+            x,
+            " ",
+            React.createElement("i", { className: "glyphicon glyphicon-heart-empty" })
+          ) : x;
+        })
+        // join
+        .map(function (x, i) {
+          return React.createElement(
+            "span",
+            null,
+            i > 0 && ", ",
+            x
+          );
+        })
       ),
       React.createElement(
         "div",
