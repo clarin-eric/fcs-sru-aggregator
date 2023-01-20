@@ -20,9 +20,6 @@ WORKDIR /work
 # might be required for caching of maven deps?
 #ENV MAVEN_OPTS=-Dmaven.repo.local=./.m2/
 
-# fix: https://stackoverflow.com/questions/67833372/getting-blocked-mirror-for-repositories-maven-error-even-after-adding-mirrors
-RUN sed -i 's/<mirrorOf>external:http:\*<\/mirrorOf>/<mirrorOf>external:dummy:\*<\/mirrorOf>/' /usr/share/maven/conf/settings.xml
-
 COPY pom.xml /work/
 RUN mvn -q dependency:resolve-plugins
 RUN mvn -q dependency:resolve

@@ -22,13 +22,33 @@
 
     <repositories>
         <repository>
-            <id>clarin</id>
-            <url>http://catalog.clarin.eu/ds/nexus/content/repositories/Clarin/</url>
+            <id>CLARIN</id>
+            <name>CLARIN Repository</name>
+            <url>https://nexus.clarin.eu/content/repositories/Clarin</url>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
         </repository>
+
+        <repository>
+            <id>CLARIN-snapshot</id>
+            <name>CLARIN Snapshot Repository</name>
+            <url>https://nexus.clarin.eu/content/repositories/clarin-snapshot</url>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </repository>
+
         <repository>
             <id>sonatype-nexus-snapshots</id>
             <name>Sonatype Nexus Snapshots</name>
-            <url>http://oss.sonatype.org/content/repositories/snapshots</url>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
         </repository>
     </repositories>
 
