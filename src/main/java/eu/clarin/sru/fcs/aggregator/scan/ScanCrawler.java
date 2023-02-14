@@ -220,6 +220,16 @@ public class ScanCrawler {
                     rootCollections.add(c.getTitle());
                 }
                 addCorpora(corpora, institution, endpoint, null, ri.getSubResources(), c);
+            } else {
+                Corpus otherCorpus = corpora.findByHandle(c.getHandle());
+                if (otherCorpus != null && endpoint.equals(otherCorpus.getEndpoint())) {
+                    log.debug("Found multiple corpora with same handle '{}' at endpoint {}", c.getHandle(),
+                            endpoint.getUrl());
+                } else {
+                    log.debug("Found existing corpus with same handle '{}' at endpoint {}. Skip for this endpoint {}.",
+                            c.getHandle(), (otherCorpus != null) ? otherCorpus.getEndpoint().getUrl() : null,
+                            endpoint.getUrl());
+                }
             }
         }
     }
