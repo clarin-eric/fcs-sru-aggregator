@@ -1,5 +1,21 @@
 # Changelog
 
+# WIP [3.4.0](https://github.com/clarin-eric/fcs-sru-aggregator/releases/tag/3.4.0) - 2023-02-16
+
+- Bug fixes:
+  - Fix external search requests handling (e.g. for VLO) - Issue #13;
+    due to changes in how [jetty](https://github.com/dropwizard/dropwizard/issues/6691) handles unconsumed input in error cases, now a `ServletFilter` instead of `ErrorHandler` is being used.
+  - Fix single page application routing (behind proxy)
+
+- General:
+  - Add VSCode debugger options to `build.js`
+  - Some general code leanup
+  - Extra logging to allow debugging for corpus resources with duplicate handles (same/other endpoints)
+  - Set application prefix to `/` (remove `/Aggregator`)
+  - Extract to central `APIROOT` variable in frontend
+  - Set `aggregatorParams.weblichtConfig.exportServerUrl` with environment variable `SERVER_URL` for more flexible deployments
+  - Update [README](README.md)
+
 # [3.3.0](https://github.com/clarin-eric/fcs-sru-aggregator/releases/tag/3.3.0) - 2023-01-19
 
 - Enhancements:
@@ -8,11 +24,10 @@
   - Resolved Issue #22, switched to SVG icon for clarinservices menu; changed hover shape
   - Refactor logging (fix format substitution, only use `org.slf4j`)
   - Added endpoint capabilities to model (show in statistics, use for search type corpus filtering)
-- Bug Fixes:
-  - Allow resources without descriptions
-  - Added button to hide empty results with warnings/errors only
 
 - Bug fixes:
+  - Allow resources without descriptions
+  - Added button to hide empty results with warnings/errors only
   - Fix weblicht support (cache tcf exports in aggregator)
 
 # [3.2.0](https://github.com/clarin-eric/fcs-sru-aggregator/releases/tag/3.2.0) - 2023-01-18
