@@ -1,14 +1,19 @@
 #!/bin/bash
 
+set -eu
+
 ASSETDIR=src/main/resources/assets
 LIBDIR=$ASSETDIR/lib
 FONTDIR=$ASSETDIR/fonts
 JSDIR=$ASSETDIR/js
 
+DEBUGGER_OPTS=
+
 RUN_NPM=
 BUILD_JSX=
 BUILD_JSX_FORCE=
 BUILD_JAR=
+BUILD_JAR_DEBUG=
 BUILD_RPM=
 RUN_JAR=
 RUN_JAR_PRODUCTION=
@@ -46,6 +51,9 @@ case $key in
 	;;
 	--run-production)
 	RUN_JAR_PRODUCTION=1
+	;;
+	--with-debugger)
+	DEBUGGER_OPTS="-agentlib:jdwp=transport=dt_socket,server=y,address=0.0.0.0:5005"
 	;;
 	*)
 	echo "Unknown option:" $1
@@ -135,7 +143,7 @@ then
 	echo; echo "---- run devel"
 	JAR=`find target -iname 'aggregator-*.jar'`
 	echo java -cp src/main/resources:$JAR -Xmx4096m eu.clarin.sru.fcs.aggregator.app.Aggregator server aggregator_devel.yml
-	java -cp src/main/resources:$JAR -Xmx4096m eu.clarin.sru.fcs.aggregator.app.Aggregator server aggregator_devel.yml
+	java $DEBUGGER_OPTS -cp src/main/resources:$JAR -Xmx4096m eu.clarin.sru.fcs.aggregator.app.Aggregator server aggregator_devel.yml
 fi
 
 if [ $RUN_JAR_PRODUCTION ]
@@ -143,5 +151,5 @@ then
 	echo; echo "---- run production"
 	JAR=`find target -iname 'aggregator-*.jar'`
 	echo java -Xmx4096m -jar $JAR server aggregator.yml
-	java -Xmx4096m -jar $JAR server aggregator.yml
+	java $DEBUGGER_OPTS -Xmx4096m -jar $JAR server aggregator.yml
 fi
