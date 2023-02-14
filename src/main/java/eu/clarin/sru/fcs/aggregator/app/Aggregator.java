@@ -24,11 +24,13 @@ import io.dropwizard.Application;
 import io.dropwizard.assets.AssetsBundle;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,6 +38,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
+
+import javax.servlet.DispatcherType;
+
 import org.eclipse.jetty.server.session.SessionHandler;
 import org.slf4j.LoggerFactory;
 
@@ -160,7 +165,11 @@ public class Aggregator extends Application<AggregatorConfiguration> {
         }
 
         environment.getApplicationContext().setSessionHandler(new SessionHandler());
-        environment.getApplicationContext().setErrorHandler(new ErrorHandler());
+
+        environment.servlets()
+                .addFilter("ExternalSearchRequestForwardingFilter", ExternalSearchRequestForwardingFilter.class)
+                .addMappingForUrlPatterns(EnumSet.of(DispatcherType.REQUEST), true, "/*");
+
         // Moved to configuration section server in later versions
         environment.jersey().setUrlPattern("/rest/*");
         environment.jersey().register(new RestService(environment));
