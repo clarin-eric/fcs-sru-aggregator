@@ -4,8 +4,6 @@ aggregatorParams:
     # - https://clarin.ids-mannheim.de/digibibsru-new
   # additionalFCSEndpoints:
 
-  #AGGREGATOR_FILE_PATH: /var/lib/aggregator/fcsAggregatorCorpora.json
-  #AGGREGATOR_FILE_PATH_BACKUP: /var/lib/aggregator/fcsAggregatorCorpora.backup.json
   AGGREGATOR_FILE_PATH: /var/lib/aggregator/fcsAggregatorCorpora.json
   AGGREGATOR_FILE_PATH_BACKUP: /var/lib/aggregator/fcsAggregatorCorpora.backup.json
 
