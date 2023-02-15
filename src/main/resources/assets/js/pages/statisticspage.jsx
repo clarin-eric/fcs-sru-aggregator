@@ -8,6 +8,7 @@ var PT = PropTypes;
 var StatisticsPage = createReactClass({
   // fixme! - class StatisticsPage extends React.Component {
   propTypes: {
+    APIROOT: PT.string.isRequired,
     ajax: PT.func.isRequired,
   },
 
@@ -26,7 +27,7 @@ var StatisticsPage = createReactClass({
 
   refreshStats: function () {
     this.props.ajax({
-      url: 'rest/statistics',
+      url: this.props.APIROOT + 'statistics',
       success: function (json, textStatus, jqXHR) {
         this.setState({ stats: json });
         // console.log("stats:", json);

@@ -17,6 +17,7 @@ import createReactClass from "create-react-class";
 
   // TODO: set this via environment variables at build time (envify)
   var URLROOT = window.MyAggregator.URLROOT = "";
+  var APIROOT = window.MyAggregator.APIROOT = "rest/";
 
   var PT = PropTypes;
 
@@ -103,7 +104,7 @@ import createReactClass from "create-react-class";
     },
 
     renderAggregator: function () {
-      return <AggregatorPage ajax={this.ajax} error={this.error} embedded={false} />;
+      return <AggregatorPage APIROOT={APIROOT} ajax={this.ajax} error={this.error} embedded={false} />;
     },
 
     renderHelp: function () {
@@ -115,11 +116,11 @@ import createReactClass from "create-react-class";
     },
 
     renderStatistics: function () {
-      return <StatisticsPage ajax={this.ajax} />;
+      return <StatisticsPage APIROOT={APIROOT} ajax={this.ajax} />;
     },
 
     renderEmbedded: function () {
-      return <AggregatorPage ajax={this.ajax} error={this.error} embedded={true} />;
+      return <AggregatorPage APIROOT={APIROOT} ajax={this.ajax} error={this.error} embedded={true} />;
     },
 
     getPageFns: function () {

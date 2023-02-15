@@ -50941,6 +50941,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
   // TODO: set this via environment variables at build time (envify)
   var URLROOT = window.MyAggregator.URLROOT = "";
+  var APIROOT = window.MyAggregator.APIROOT = "rest/";
 
   var PT = _propTypes2.default;
 
@@ -51029,7 +51030,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
     },
 
     renderAggregator: function renderAggregator() {
-      return React.createElement(_aggregatorpage2.default, { ajax: this.ajax, error: this.error, embedded: false });
+      return React.createElement(_aggregatorpage2.default, { APIROOT: APIROOT, ajax: this.ajax, error: this.error, embedded: false });
     },
 
     renderHelp: function renderHelp() {
@@ -51041,11 +51042,11 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
     },
 
     renderStatistics: function renderStatistics() {
-      return React.createElement(_statisticspage2.default, { ajax: this.ajax });
+      return React.createElement(_statisticspage2.default, { APIROOT: APIROOT, ajax: this.ajax });
     },
 
     renderEmbedded: function renderEmbedded() {
-      return React.createElement(_aggregatorpage2.default, { ajax: this.ajax, error: this.error, embedded: true });
+      return React.createElement(_aggregatorpage2.default, { APIROOT: APIROOT, ajax: this.ajax, error: this.error, embedded: true });
     },
 
     getPageFns: function getPageFns() {
@@ -51672,6 +51673,7 @@ var AggregatorPage = (0, _createReactClass2.default)({
 
   // fixme! - class AggregatorPage extends React.Component {
   propTypes: {
+    APIROOT: PT.string.isRequired,
     ajax: PT.func.isRequired,
     error: PT.func.isRequired,
     embedded: PT.bool.isRequired
@@ -51710,7 +51712,7 @@ var AggregatorPage = (0, _createReactClass2.default)({
     this._isMounted = true;
 
     this.props.ajax({
-      url: 'rest/init',
+      url: this.props.APIROOT + 'init',
       success: function (json, textStatus, jqXHR) {
         if (this._isMounted) {
           var corpora = new Corpora(json.corpora, this.updateCorpora);
@@ -51810,7 +51812,7 @@ var AggregatorPage = (0, _createReactClass2.default)({
     // console.log("searching in the following corpora:", selectedIds);
     // console.log("searching with queryType:", queryTypeId);
     this.props.ajax({
-      url: 'rest/search',
+      url: this.props.APIROOT + 'search',
       type: "POST",
       data: {
         query: query,
@@ -51840,7 +51842,7 @@ var AggregatorPage = (0, _createReactClass2.default)({
   nextResults: function nextResults(corpusId) {
     // console.log("searching next results in corpus:", corpusId);
     this.props.ajax({
-      url: 'rest/search/' + this.state.searchId,
+      url: this.props.APIROOT + 'search/' + this.state.searchId,
       type: "POST",
       data: {
         corpusId: corpusId,
@@ -51860,7 +51862,7 @@ var AggregatorPage = (0, _createReactClass2.default)({
       return;
     }
     this.props.ajax({
-      url: 'rest/search/' + this.state.searchId,
+      url: this.props.APIROOT + 'search/' + this.state.searchId,
       success: function (json, textStatus, jqXHR) {
         var timeout = this.state.timeout;
         if (json.inProgress) {
@@ -51899,11 +51901,11 @@ var AggregatorPage = (0, _createReactClass2.default)({
   },
 
   getDownloadLink: function getDownloadLink(corpusId, format) {
-    return 'rest/search/' + this.state.searchId + '/download?' + this.getExportParams(corpusId, format);
+    return this.props.APIROOT + 'search/' + this.state.searchId + '/download?' + this.getExportParams(corpusId, format);
   },
 
   getToWeblichtLink: function getToWeblichtLink(corpusId, forceLanguage) {
-    return 'rest/search/' + this.state.searchId + '/toWeblicht?' + this.getExportParams(corpusId, null, forceLanguage);
+    return this.props.APIROOT + 'search/' + this.state.searchId + '/toWeblicht?' + this.getExportParams(corpusId, null, forceLanguage);
   },
 
   setLanguageAndFilter: function setLanguageAndFilter(languageObj, languageFilter) {
@@ -52713,6 +52715,7 @@ var StatisticsPage = (0, _createReactClass2.default)({
 
   // fixme! - class StatisticsPage extends React.Component {
   propTypes: {
+    APIROOT: PT.string.isRequired,
     ajax: PT.func.isRequired
   },
 
@@ -52731,7 +52734,7 @@ var StatisticsPage = (0, _createReactClass2.default)({
 
   refreshStats: function refreshStats() {
     this.props.ajax({
-      url: 'rest/statistics',
+      url: this.props.APIROOT + 'statistics',
       success: function (json, textStatus, jqXHR) {
         this.setState({ stats: json });
         // console.log("stats:", json);

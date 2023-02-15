@@ -17,6 +17,7 @@ var multipleLanguageCode = window.MyAggregator.multipleLanguageCode = "mul"; // 
 var AggregatorPage = createReactClass({
   // fixme! - class AggregatorPage extends React.Component {
   propTypes: {
+    APIROOT: PT.string.isRequired,
     ajax: PT.func.isRequired,
     error: PT.func.isRequired,
     embedded: PT.bool.isRequired
@@ -55,7 +56,7 @@ var AggregatorPage = createReactClass({
     this._isMounted = true;
 
     this.props.ajax({
-      url: 'rest/init',
+      url: this.props.APIROOT + 'init',
       success: function (json, textStatus, jqXHR) {
         if (this._isMounted) {
           var corpora = new Corpora(json.corpora, this.updateCorpora);
@@ -151,7 +152,7 @@ var AggregatorPage = createReactClass({
     // console.log("searching in the following corpora:", selectedIds);
     // console.log("searching with queryType:", queryTypeId);
     this.props.ajax({
-      url: 'rest/search',
+      url: this.props.APIROOT + 'search',
       type: "POST",
       data: {
         query: query,
@@ -180,7 +181,7 @@ var AggregatorPage = createReactClass({
   nextResults: function (corpusId) {
     // console.log("searching next results in corpus:", corpusId);
     this.props.ajax({
-      url: 'rest/search/' + this.state.searchId,
+      url: this.props.APIROOT + 'search/' + this.state.searchId,
       type: "POST",
       data: {
         corpusId: corpusId,
@@ -200,7 +201,7 @@ var AggregatorPage = createReactClass({
       return;
     }
     this.props.ajax({
-      url: 'rest/search/' + this.state.searchId,
+      url: this.props.APIROOT + 'search/' + this.state.searchId,
       success: function (json, textStatus, jqXHR) {
         var timeout = this.state.timeout;
         if (json.inProgress) {
@@ -239,12 +240,12 @@ var AggregatorPage = createReactClass({
   },
 
   getDownloadLink: function (corpusId, format) {
-    return 'rest/search/' + this.state.searchId + '/download?' +
+    return this.props.APIROOT + 'search/' + this.state.searchId + '/download?' +
       this.getExportParams(corpusId, format);
   },
 
   getToWeblichtLink: function (corpusId, forceLanguage) {
-    return 'rest/search/' + this.state.searchId + '/toWeblicht?' +
+    return this.props.APIROOT + 'search/' + this.state.searchId + '/toWeblicht?' +
       this.getExportParams(corpusId, null, forceLanguage);
   },
 
