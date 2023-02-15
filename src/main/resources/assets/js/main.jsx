@@ -244,21 +244,18 @@ import createReactClass from "create-react-class";
   var routeFromLocation = function () {
     console.log("routeFromLocation: " + document.location);
     if (!this) throw "routeFromLocation must be bound to main";
-    var path = window.location.pathname.split('/');
+    var path = window.location.pathname.slice(URLROOT.length).split('/').slice(1);
     console.log("path: " + path);
-    if (path.length >= 3) {
-      var p = path[path.length - 1];
-      if (p === 'help') {
-        this.toHelp(false);
-      } else if (p === 'about') {
-        this.toAbout(false);
-      } else if (p === 'stats') {
-        this.toStatistics(false);
-      } else if (p === 'embed') {
-        this.toEmbedded(false);
-      } else {
-        this.toAggregator(false);
-      }
+    var pageFnName = window.location.pathname.slice(URLROOT.length).replace(/^\/+/, "");
+    console.log("pageFnName: " + pageFnName);
+    if (pageFnName === 'help') {
+      this.toHelp(false);
+    } else if (pageFnName === 'about') {
+      this.toAbout(false);
+    } else if (pageFnName === 'stats') {
+      this.toStatistics(false);
+    } else if (pageFnName === 'embed') {
+      this.toEmbedded(false);
     } else {
       this.toAggregator(false);
     }
