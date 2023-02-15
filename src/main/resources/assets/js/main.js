@@ -50939,10 +50939,8 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
   var VERSION = window.MyAggregator.VERSION = "v.3.3.0";
 
-  var URLROOT = window.MyAggregator.URLROOT = window.location.pathname.substring(0, window.location.pathname.indexOf("/", 2)) ||
-  //window.location.pathname ||
-  //"/ws/fcs/2.0/aggregator";
-  "/Aggregator";
+  // TODO: set this via environment variables at build time (envify)
+  var URLROOT = window.MyAggregator.URLROOT = "";
 
   var PT = _propTypes2.default;
 
