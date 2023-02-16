@@ -22,6 +22,8 @@ import eu.clarin.sru.fcs.aggregator.scan.Statistics;
 import eu.clarin.sru.fcs.aggregator.util.LanguagesISO693;
 import io.dropwizard.Application;
 import io.dropwizard.assets.AssetsBundle;
+import io.dropwizard.configuration.EnvironmentVariableSubstitutor;
+import io.dropwizard.configuration.SubstitutingSourceProvider;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 
@@ -143,6 +145,10 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 
     @Override
     public void initialize(Bootstrap<AggregatorConfiguration> bootstrap) {
+        // Enable variable substitution with environment variables
+        bootstrap.setConfigurationSourceProvider(new SubstitutingSourceProvider(
+                bootstrap.getConfigurationSourceProvider(), new EnvironmentVariableSubstitutor(false)));
+        // Static assets (available at root)
         bootstrap.addBundle(new AssetsBundle("/assets", "/", "index.html", "static"));
     }
 

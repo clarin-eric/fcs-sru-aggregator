@@ -24,7 +24,7 @@ aggregatorParams:
 
   weblichtConfig:
     url: https://weblicht.sfs.uni-tuebingen.de/weblicht/?input=
-    exportServerUrl: https://contentsearch.clarin.eu/rest/
+    exportServerUrl: ${SERVER_URL:-https://contentsearch.clarin.eu/}rest/
     acceptedTcfLanguages:
       - en
       - de
