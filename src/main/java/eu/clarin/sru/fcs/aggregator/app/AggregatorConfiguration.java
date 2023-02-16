@@ -3,6 +3,8 @@ package eu.clarin.sru.fcs.aggregator.app;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.dropwizard.Configuration;
+
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.util.List;
@@ -21,11 +23,39 @@ public class AggregatorConfiguration extends Configuration {
         @JsonProperty
         String CENTER_REGISTRY_URL;
 
-        @JsonProperty
-        List<URL> additionalCQLEndpoints;
+        public static class EndpointConfig {
+            @NotNull
+            @JsonProperty
+            URL url;
 
+            @JsonProperty
+            String name;
+
+            protected EndpointConfig(String url) throws MalformedURLException {
+                this.url = new URL(url);
+            }
+
+            protected EndpointConfig() {
+            }
+
+            @JsonIgnore
+            public URL getUrl() {
+                return url;
+            }
+
+            @JsonIgnore
+            public String getName() {
+                return name;
+            }
+        }
+
+        @Valid
         @JsonProperty
-        List<URL> additionalFCSEndpoints;
+        List<EndpointConfig> additionalCQLEndpoints;
+
+        @Valid
+        @JsonProperty
+        List<EndpointConfig> additionalFCSEndpoints;
 
         @JsonProperty
         List<URI> slowEndpoints;

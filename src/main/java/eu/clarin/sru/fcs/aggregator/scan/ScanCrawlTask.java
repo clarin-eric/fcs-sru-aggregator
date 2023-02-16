@@ -1,6 +1,8 @@
 package eu.clarin.sru.fcs.aggregator.scan;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import eu.clarin.sru.fcs.aggregator.app.AggregatorConfiguration;
 import eu.clarin.sru.fcs.aggregator.client.ThrottledClient;
 import io.dropwizard.setup.Environment;
 import java.io.File;
@@ -30,15 +32,15 @@ public class ScanCrawlTask implements Runnable {
     private AtomicReference<Statistics> scanStatisticsAtom;
     private AtomicReference<Statistics> searchStatisticsAtom;
     private String centerRegistryUrl;
-    private List<URL> additionalCQLEndpoints;
-    private List<URL> additionalFCSEndpoints;
+    private List<AggregatorConfiguration.Params.EndpointConfig> additionalCQLEndpoints;
+    private List<AggregatorConfiguration.Params.EndpointConfig> additionalFCSEndpoints;
 
     private final Environment environment;
 
     public ScanCrawlTask(ThrottledClient sruClient, String centerRegistryUrl,
             int cacheMaxDepth,
-            List<URL> additionalCQLEndpoints,
-            List<URL> additionalFCSEndpoints,
+            List<AggregatorConfiguration.Params.EndpointConfig> additionalCQLEndpoints,
+            List<AggregatorConfiguration.Params.EndpointConfig> additionalFCSEndpoints,
             EndpointFilter filter,
             AtomicReference<Corpora> corporaAtom,
             File cachedCorpora, File oldCachedCorpora,
@@ -66,29 +68,62 @@ public class ScanCrawlTask implements Runnable {
 
             log.info("ScanCrawlTask: Initiating crawl");
             List<Institution> institutions = new ArrayList<Institution>();
+            // Query endpoints from centre registry
             if (centerRegistryUrl != null && !centerRegistryUrl.isEmpty()) {
                 institutions = new CenterRegistryLive(centerRegistryUrl, filter, environment).getCQLInstitutions();
             }
+            // Add sideloaded endpoints
             if (additionalCQLEndpoints != null && !additionalCQLEndpoints.isEmpty()) {
+                // Add sideloaded endpoints with own name
+                for (final AggregatorConfiguration.Params.EndpointConfig ep : additionalCQLEndpoints) {
+                    if (ep.getName() == null || ep.getName().isEmpty()) {
+                        continue;
+                    }
+                    institutions.add(0, new Institution(ep.getName() + ", legacy", null) {
+                        {
+                            addEndpoint(ep.getUrl().toExternalForm(), FCSProtocolVersion.LEGACY);
+                        }
+                    });
+                }
+                // Add sideloaded endpoints that have no name
                 institutions.add(0,
                         new Institution("Unknown Institution, legacy", null) {
                             {
-                                for (URL u : additionalCQLEndpoints) {
-                                    addEndpoint(u.toExternalForm(), FCSProtocolVersion.LEGACY);
+                                for (final AggregatorConfiguration.Params.EndpointConfig ep : additionalCQLEndpoints) {
+                                    if (ep.getName() != null && !ep.getName().isEmpty()) {
+                                        continue;
+                                    }
+                                    addEndpoint(ep.getUrl().toExternalForm(), FCSProtocolVersion.LEGACY);
                                 }
                             }
                         });
             }
             if (additionalFCSEndpoints != null && !additionalFCSEndpoints.isEmpty()) {
+                // Add sideloaded endpoints with own name
+                for (final AggregatorConfiguration.Params.EndpointConfig ep : additionalFCSEndpoints) {
+                    if (ep.getName() == null || ep.getName().isEmpty()) {
+                        continue;
+                    }
+                    institutions.add(0, new Institution(ep.getName() + ", FCS v2.0", null) {
+                        {
+                            addEndpoint(ep.getUrl().toExternalForm(), FCSProtocolVersion.VERSION_2);
+                        }
+                    });
+                }
+                // Add sideloaded endpoints that have no name
                 institutions.add(0,
                         new Institution("Unknown Institution, FCS v2.0", null) {
                             {
-                                for (URL u : additionalFCSEndpoints) {
-                                    addEndpoint(u.toExternalForm(), FCSProtocolVersion.VERSION_2);
+                                for (final AggregatorConfiguration.Params.EndpointConfig ep : additionalFCSEndpoints) {
+                                    if (ep.getName() != null && !ep.getName().isEmpty()) {
+                                        continue;
+                                    }
+                                    addEndpoint(ep.getUrl().toExternalForm(), FCSProtocolVersion.VERSION_2);
                                 }
                             }
                         });
             }
+
             ScanCrawler scanCrawler = new ScanCrawler(institutions, sruClient, cacheMaxDepth);
 
             log.info("ScanCrawlTask: Starting crawl");
