@@ -1,6 +1,6 @@
 {
   "name": "fcs-aggregator",
-  "version": "3.3.0",
+  "version": "3.4.0",
   "description": "FCS Aggregator for FCS 2.0",
   "main": "index.html",
   "repository": "https://github.com/clarin-eric/fcs-sru-aggregator",

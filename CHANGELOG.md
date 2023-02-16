@@ -1,6 +1,6 @@
 # Changelog
 
-# WIP [3.4.0](https://github.com/clarin-eric/fcs-sru-aggregator/releases/tag/3.4.0) - 2023-02-16
+# [3.4.0](https://github.com/clarin-eric/fcs-sru-aggregator/releases/tag/3.4.0) - 2023-02-16
 
 - Bug fixes:
   - Fix external search requests handling (e.g. for VLO) - Issue #13;
