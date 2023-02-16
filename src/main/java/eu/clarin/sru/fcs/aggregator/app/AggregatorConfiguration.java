@@ -7,7 +7,11 @@ import java.net.URI;
 import java.net.URL;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import org.hibernate.validator.constraints.NotEmpty;
+
+import javax.validation.Valid;
+import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
+
 import org.hibernate.validator.constraints.Range;
 
 public class AggregatorConfiguration extends Configuration {
@@ -100,7 +104,8 @@ public class AggregatorConfiguration extends Configuration {
             }
         }
 
-        @NotEmpty
+        @Valid
+        @NotNull
         @JsonProperty
         WeblichtConfig weblichtConfig;
 
@@ -140,5 +145,6 @@ public class AggregatorConfiguration extends Configuration {
         }
     }
 
+    @Valid
     public Params aggregatorParams = new Params();
 }
