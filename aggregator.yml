@@ -24,7 +24,7 @@ aggregatorParams:
 
   weblichtConfig:
     url: https://weblicht.sfs.uni-tuebingen.de/weblicht/?input=
-    exportServerUrl: https://spraakbanken.gu.se/ws/fcs/2.0/aggregator/rest/
+    exportServerUrl: https://contentsearch.clarin.eu/rest/
     acceptedTcfLanguages:
       - en
       - de
@@ -36,7 +36,7 @@ aggregatorParams:
 
 # use the simple server factory, run on a single port
 server:
-  applicationContextPath: /Aggregator
+  applicationContextPath: /
   type: simple
   #rootPath: '/rest/*'
   connector:
