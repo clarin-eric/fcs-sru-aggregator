@@ -49,6 +49,10 @@ The following are the important folders and files for this application:
 └── README.md
 ```
 
+## OpenAPI/Swagger
+
+There is an OpenAPI (Swagger) endpoint at: [`/openapi.json`](http://localhost:4019/openapi.json). It can be disabled in the [`aggregator.yml`](aggregator.yml) file. Details in [`DEPLOYMENT.md`](DEPLOYMENT.md#openapiswagger).
+
 ## Workflow: Building
 
 A [`build.sh`](build.sh) script is included to handle common tasks such as building and running the application.

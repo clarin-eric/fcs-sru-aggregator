@@ -70,6 +70,15 @@ aggregatorParams:
       - pl
 ```
 
+### OpenAPI/Swagger
+
+OpenAPI documentation (for Swagger etc.) is enabled by default.
+
+```yaml
+aggregatorParams:
+  openapiEnabled: ${SWAGGER_ENABLED:-true}
+```
+
 ### Matomo (Piwik) Statistics Collection
 
 The following excerpt (from [`aggregator.yml`](aggregator.yml)) describes all the settings for configuring Matomo (Piwik). While the frontend will be built and delivered as static assets, the [`index.html`](src/main/resources/eu/clarin/sru/fcs/aggregator/app/index.mustache) uses templates to allow some dynamic configuration.

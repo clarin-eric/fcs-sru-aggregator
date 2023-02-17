@@ -60,6 +60,8 @@ aggregatorParams:
     siteID: ${PIWIK_SITEID:-20}
     setDomains: ${PIWIK_SETDOMAINS:-['*.contentsearch.clarin.eu']}
 
+  openapiEnabled: ${SWAGGER_ENABLED:-true}
+
 # use the simple server factory, run on a single port
 server:
   applicationContextPath: /
@@ -71,7 +73,7 @@ server:
 # Logging settings.
 logging:
   # The default level of all loggers. Can be OFF, ERROR, WARN, INFO, DEBUG, TRACE, or ALL.
-  level: WARN
+  level: INFO
   # Logger-specific levels.
   loggers:
     eu.clarin.sru.fcs.aggregator: INFO

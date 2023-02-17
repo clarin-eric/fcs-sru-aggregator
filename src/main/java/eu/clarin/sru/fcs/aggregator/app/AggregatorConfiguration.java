@@ -217,6 +217,14 @@ public class AggregatorConfiguration extends Configuration {
         public PiwikConfig getPiwikConfig() {
             return piwikConfig;
         }
+
+        @JsonProperty
+        boolean openapiEnabled;
+
+        @JsonIgnore
+        public boolean isOpenAPIEnabled() {
+            return openapiEnabled;
+        }
     }
 
     @Valid

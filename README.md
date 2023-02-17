@@ -49,7 +49,7 @@ starting point should be the way to go. If you more specifically are using Korp 
 a simple adaptation to corpora and tagsets needed. In any case do not forget to look at the tests.
 
 ## Endpoint Tester
-To test your Endpoint you can point the [IDS Endpoint Tester](http://clarin.ids-mannheim.de/srutest) to your Endpoint.
+To test your Endpoint you can point the [IDS Endpoint Tester](http://clarin.ids-mannheim.de/srutest) ([code](https://github.com/clarin-eric/fcs-endpoint-tester)) to your Endpoint.
 
 ## Endpoint developer's tutorial
 There is also an Endpoint developer's tutorial available.
@@ -72,4 +72,4 @@ you might also want to change the path to your cache files in `AGGREGATOR_FILE_P
 
 You then can access the locally running Aggregator at [http://localhost:4019/](http://localhost:4019/)
 
-See [`DEPLOYMENT.md`](DEPLOYMENT.md) for example deployment configurations.
+See [`DEPLOYMENT.md`](DEPLOYMENT.md) for example deployment configurations and descriptions about settings.

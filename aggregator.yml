@@ -40,6 +40,8 @@ aggregatorParams:
     siteID: ${PIWIK_SITEID:-20}
     setDomains: ${PIWIK_SETDOMAINS:-['*.contentsearch.clarin.eu']}
 
+  openapiEnabled: ${SWAGGER_ENABLED:-true}
+
 # use the simple server factory, run on a single port
 server:
   applicationContextPath: /

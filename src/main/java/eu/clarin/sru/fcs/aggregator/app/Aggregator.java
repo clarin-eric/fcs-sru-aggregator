@@ -29,11 +29,15 @@ import io.dropwizard.configuration.SubstitutingSourceProvider;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import io.dropwizard.views.ViewBundle;
+import io.swagger.v3.jaxrs2.SwaggerSerializers;
+import io.swagger.v3.jaxrs2.integration.resources.OpenApiResource;
+import io.swagger.v3.oas.integration.SwaggerConfiguration;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -43,9 +47,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 import javax.servlet.DispatcherType;
-import javax.servlet.Servlet;
 import javax.ws.rs.client.Client;
 
 import org.eclipse.jetty.server.session.SessionHandler;
@@ -153,6 +157,7 @@ public class Aggregator extends Application<AggregatorConfiguration> {
         // Enable variable substitution with environment variables
         bootstrap.setConfigurationSourceProvider(new SubstitutingSourceProvider(
                 bootstrap.getConfigurationSourceProvider(), new EnvironmentVariableSubstitutor(false)));
+
         // Static assets (available at root but need to be prefixed for jersey
         // resources otherwise path conflict at "/*")
         bootstrap.addBundle(new AssetsBundle("/assets/js", "/js", null, "static-js"));
@@ -162,6 +167,7 @@ public class Aggregator extends Application<AggregatorConfiguration> {
         bootstrap.addBundle(new AssetsBundle("/assets/lib", "/lib", null, "static-lib"));
         bootstrap.addBundle(
                 new AssetsBundle("/assets/clarinservices", "/clarinservices", null, "static-clarinservices"));
+
         // Template index.html with environment variables
         bootstrap.addBundle(new ViewBundle<AggregatorConfiguration>() {
             @Override
@@ -202,6 +208,17 @@ public class Aggregator extends Application<AggregatorConfiguration> {
         environment.jersey().setUrlPattern("/*");
         environment.jersey().register(new IndexResource());
         environment.jersey().register(new RestService(environment));
+
+        // swagger
+        if (config.aggregatorParams.openapiEnabled) {
+            final String[] resourcePackage = { "eu.clarin.sru.fcs.aggregator.rest" };
+            final SwaggerConfiguration oasConfiguration = new SwaggerConfiguration()
+                    .prettyPrint(true)
+                    .readAllResources(true)
+                    .resourcePackages(Arrays.stream(resourcePackage).collect(Collectors.toSet()));
+            environment.jersey().register(new OpenApiResource().openApiConfiguration(oasConfiguration));
+            environment.jersey().register(new SwaggerSerializers());
+        }
 
         try {
             init(environment);

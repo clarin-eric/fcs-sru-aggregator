@@ -16,20 +16,36 @@ import eu.clarin.sru.fcs.aggregator.scan.Corpus;
 import eu.clarin.sru.fcs.aggregator.scan.FCSProtocolVersion;
 import eu.clarin.sru.fcs.aggregator.scan.FCSSearchCapabilities;
 import eu.clarin.sru.fcs.aggregator.scan.Statistics;
+import eu.clarin.sru.fcs.aggregator.scan.Statistics.EndpointStats;
 import eu.clarin.sru.fcs.aggregator.search.Result;
 import eu.clarin.sru.fcs.aggregator.search.Search;
 import eu.clarin.sru.fcs.aggregator.util.LanguagesISO693;
 import eu.clarin.sru.fcs.aggregator.search.Exports;
 import io.dropwizard.setup.Environment;
+import io.swagger.v3.oas.annotations.OpenAPIDefinition;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.info.Info;
+import io.swagger.v3.oas.annotations.info.License;
+import io.swagger.v3.oas.annotations.links.Link;
+import io.swagger.v3.oas.annotations.links.LinkParameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.servers.Server;
+
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -40,6 +56,8 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriBuilder;
+
 import org.slf4j.LoggerFactory;
 
 /**
@@ -50,6 +68,8 @@ import org.slf4j.LoggerFactory;
  */
 @Produces(MediaType.APPLICATION_JSON)
 @Path("/rest")
+@OpenAPIDefinition(info = @Info(title = "CLARIN FCS Aggregator REST API", version = "1.0.0", license = @License(name = "GNU General Public License Version 3 (GPLv3)", url = "https://www.gnu.org/licenses/gpl-3.0.txt")))
+// servers = { @Server(url = "/", description = "Local API endpoint") }
 public class RestService {
 
     private static final String EXPORT_FILENAME_PREFIX = "ClarinFederatedContentSearch-";
@@ -73,14 +93,23 @@ public class RestService {
     }
 
     @GET
+    @Produces({ MediaType.APPLICATION_JSON })
     @Path("corpora")
+    @Operation(description = "Get all corpora.", responses = { @ApiResponse(content = {
+            @Content(mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Corpus.class))) }) })
     public Response getCorpora() throws IOException {
         List<Corpus> corpora = Aggregator.getInstance().getCorpora().getCorpora();
         return Response.ok(toJson(corpora)).build();
     }
 
+    private static abstract class LanguageMap implements Map<String, String> {
+    }
+
     @GET
+    @Produces({ MediaType.APPLICATION_JSON })
     @Path("languages")
+    @Operation(description = "Get all languages (code --> name) from all corpora.", responses = {
+            @ApiResponse(content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = LanguageMap.class), examples = @ExampleObject(value = "{\n  \"deu\": \"German\",\n  \"eng\": \"English\"}"))) })
     public Response getLanguages() throws IOException {
         Set<String> codes = Aggregator.getInstance().getCorpora().getLanguages();
         log.info("get language codes: {}", codes);
@@ -88,8 +117,28 @@ public class RestService {
         return Response.ok(toJson(languages)).build();
     }
 
+    private static class InitSchema {
+        @JsonProperty(required = true)
+        List<Corpus> corpora;
+        @JsonProperty(required = true)
+        List<String> languages;
+        @JsonProperty(required = true)
+        List<String> weblichtLanguages;
+        @JsonProperty
+        String query;
+        @JsonProperty
+        String mode;
+        @JsonProperty("x-aggregation-context")
+        Map<String, List<String>> contextString;
+    }
+
     @GET
+    @Produces({ MediaType.APPLICATION_JSON })
     @Path("init")
+    @Operation(description = "Get initial webpage data (corpora, languages)."
+            + " Optional 'x-aggregation-context' for pre-selecting corpora "
+            + "and/or 'mode' and 'query' for starting a search.", responses = {
+                    @ApiResponse(content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = InitSchema.class))) })
     public Response getInit(@Context final HttpServletRequest request) throws IOException {
         log.info("get initial data");
         final Corpora corpora = Aggregator.getInstance().getCorpora();
@@ -121,7 +170,19 @@ public class RestService {
     }
 
     @POST
+    @Consumes({ MediaType.APPLICATION_FORM_URLENCODED })
+    @Produces({ MediaType.APPLICATION_JSON })
     @Path("search")
+    @Operation(description = "Start a new search.", responses = {
+            @ApiResponse(responseCode = "201", description = "Started search, return search ID.", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Long.class)), links = {
+                    @Link(name = "Get search results", operationId = "getSearch", parameters = {
+                            @LinkParameter(name = "id", expression = "$response.body") }),
+                    @Link(name = "Load subSearch results", operationId = "postSearchNextResults", parameters = {
+                            @LinkParameter(name = "id", expression = "$response.body") }) }),
+            @ApiResponse(responseCode = "400", description = "Missing 'query' parameter."),
+            @ApiResponse(responseCode = "400", description = "Missing 'corporaIds' parameter."),
+            @ApiResponse(responseCode = "503", description = "No corpora. Server might still be scanning. Please try again later."),
+            @ApiResponse(responseCode = "500", description = "Initiating search failed.") })
     public Response postSearch(
             @FormParam("query") String query,
             @FormParam("queryType") String queryType,
@@ -170,15 +231,15 @@ public class RestService {
         if (search == null) {
             return Response.status(500).entity("Initiating search failed").build();
         }
-        URI uri = URI.create("" + search.getId());
-        return Response.created(uri).entity(uri).build();
+        URI uri = UriBuilder.fromMethod(RestService.class, "getSearch").resolveTemplate("id", search.getId()).build();
+        return Response.created(uri).entity(search.getId()).build();
     }
 
     public static class JsonSearch {
 
-        @JsonProperty
+        @JsonProperty(required = true)
         int inProgress = 0;
-        @JsonProperty
+        @JsonProperty(required = true)
         List<Result> results;
 
         public JsonSearch(List<Result> results) {
@@ -187,7 +248,12 @@ public class RestService {
     }
 
     @GET
+    @Produces({ MediaType.APPLICATION_JSON })
     @Path("search/{id}")
+    @Operation(description = "Get (partial) search result.", responses = {
+            @ApiResponse(responseCode = "200", description = "Search result with (partial) responses and number of outstanding responses.", content = {
+                    @Content(schema = @Schema(implementation = JsonSearch.class)) }),
+            @ApiResponse(responseCode = "404", description = "Search job not found.") })
     public Response getSearch(@PathParam("id") Long searchId,
             @QueryParam("corpusId") String corpusId) throws Exception {
         Search search = Aggregator.getInstance().getSearchById(searchId);
@@ -205,7 +271,16 @@ public class RestService {
     }
 
     @POST
+    @Consumes({ MediaType.APPLICATION_FORM_URLENCODED })
+    @Produces({ MediaType.APPLICATION_JSON })
     @Path("search/{id}")
+    @Operation(description = "Request more search results for a specific corpus.", responses = {
+            @ApiResponse(responseCode = "201", description = "Started subSearch, return search ID.", content = @Content(schema = @Schema(implementation = Long.class)), links = {
+                    @Link(name = "Get search results", operationId = "getSearch", parameters = {
+                            @LinkParameter(name = "id", expression = "$response.body") }) }),
+            @ApiResponse(responseCode = "400", description = "Missing 'corpusId' parameter."),
+            @ApiResponse(responseCode = "404", description = "Search job not found."),
+            @ApiResponse(responseCode = "500", description = "Initiating subSearch failed.") })
     public Response postSearchNextResults(@PathParam("id") Long searchId,
             @FormParam("corpusId") String corpusId,
             @FormParam("numberOfResults") Integer numberOfResults) throws Exception {
@@ -228,12 +303,23 @@ public class RestService {
         if (ret == false) {
             return Response.status(500).entity("Initiating subSearch failed").build();
         }
-        URI uri = URI.create("" + search.getId());
-        return Response.created(uri).entity(uri).build();
+        URI uri = UriBuilder.fromMethod(RestService.class, "getSearch").resolveTemplate("id", search.getId()).build();
+        return Response.created(uri).entity(search.getId()).build();
     }
 
     @GET
+    @Produces({ MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN, TCF_MEDIA_TYPE, ODS_MEDIA_TYPE, EXCEL_MEDIA_TYPE })
     @Path("search/{id}/download")
+    @Operation(description = "Download search results in various formats.", responses = {
+            @ApiResponse(responseCode = "200", description = "Download: text", content = @Content(mediaType = MediaType.TEXT_PLAIN)),
+            @ApiResponse(responseCode = "200", description = "Download: tcf", content = @Content(mediaType = TCF_MEDIA_TYPE)),
+            @ApiResponse(responseCode = "200", description = "Download: ods", content = @Content(mediaType = ODS_MEDIA_TYPE)),
+            @ApiResponse(responseCode = "200", description = "Download: excel", content = @Content(mediaType = EXCEL_MEDIA_TYPE)),
+            @ApiResponse(responseCode = "200", description = "Download: csv", content = @Content(mediaType = MediaType.TEXT_PLAIN)),
+            @ApiResponse(responseCode = "500", description = "Error while converting to the export format."),
+            @ApiResponse(responseCode = "404", description = "Search job not found."),
+            @ApiResponse(responseCode = "400", description = "format parameter must be one of: text, tcf, ods, excel, csv")
+    })
     public Response downloadSearchResults(@PathParam("id") Long searchId,
             @QueryParam("corpusId") String corpusId,
             @QueryParam("filterLanguage") String filterLanguage,
@@ -281,7 +367,14 @@ public class RestService {
     }
 
     @GET
+    @Produces({ TCF_MEDIA_TYPE })
     @Path("search/{id}/weblicht-export/{eid}")
+    @Operation(description = "Get search result as TCF export (e.g. for Weblicht).", responses = {
+            @ApiResponse(responseCode = "200", description = "Download: tcf", content = @Content(mediaType = TCF_MEDIA_TYPE)),
+            @ApiResponse(responseCode = "500", description = "Error while converting to the export format."),
+            @ApiResponse(responseCode = "404", description = "Search job not found."),
+            @ApiResponse(responseCode = "404", description = "Weblicht export data not found.")
+    })
     public Response getWeblichtExport(@PathParam("id") Long searchId, @PathParam("eid") Long exportId) {
         Search search = Aggregator.getInstance().getSearchById(searchId);
         if (search == null) {
@@ -296,7 +389,12 @@ public class RestService {
     }
 
     @GET
+    @Produces({ MediaType.APPLICATION_JSON })
     @Path("search/{id}/toWeblicht")
+    @Operation(description = "Prepares search results for export to Weblicht and redirects to Weblicht.", responses = {
+            @ApiResponse(description = "Redirect to Weblicht page with query parameters set to access TCF encoded search results."),
+            @ApiResponse(responseCode = "404", description = "Search job not found."),
+            @ApiResponse(responseCode = "503", description = "Error while exporting to weblicht.") })
     public Response sendSearchResultsToWeblicht(@PathParam("id") Long searchId,
             @QueryParam("filterLanguage") String filterLanguage,
             @QueryParam("corpusId") String corpusId) throws Exception {
@@ -328,8 +426,29 @@ public class RestService {
                 : Response.seeOther(weblichtUri).entity(weblichtUri).build();
     }
 
+    private static class ScanSearchStatisticsSchema {
+        private static class StatisticsSchema {
+            @JsonProperty(required = true)
+            int timeout;
+            @JsonProperty(required = true)
+            Boolean isScan;
+            @JsonProperty(required = true)
+            Map<String, Map<String, EndpointStats>> institutions;
+            @JsonProperty(required = true)
+            Date date;
+        }
+
+        @JsonProperty(value = "Last Scan", required = true)
+        StatisticsSchema scans;
+        @JsonProperty(value = "Recent Searches", required = true)
+        StatisticsSchema searches;
+    }
+
     @GET
+    @Produces({ MediaType.APPLICATION_JSON })
     @Path("statistics")
+    @Operation(description = "Get scan and search statistics.", responses = {
+            @ApiResponse(content = @Content(schema = @Schema(implementation = ScanSearchStatisticsSchema.class))) })
     public Response getStatistics() throws IOException {
         final Statistics scan = Aggregator.getInstance().getScanStatistics();
         final Statistics search = Aggregator.getInstance().getSearchStatistics();
