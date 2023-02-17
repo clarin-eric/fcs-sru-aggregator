@@ -1,5 +1,17 @@
 # Changelog
 
+# [3.5.0](https://github.com/clarin-eric/fcs-sru-aggregator/releases/tag/3.5.0) - 2023-02-17
+
+- Bug fixes:
+  - Fixed configuration validation (removed deprecation of `@NotEmpty`, added `@Valid`)
+
+- Enhancements:
+  - Extend sideloading configs to allow for custom endpoint names (institutions)
+  - Show info message when corpus selected from external search (`x-aggregation-context`)
+
+- General:
+  - Some cleanup, commenting
+
 # [3.4.0](https://github.com/clarin-eric/fcs-sru-aggregator/releases/tag/3.4.0) - 2023-02-16
 
 - Bug fixes:
