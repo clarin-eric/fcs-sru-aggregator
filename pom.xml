@@ -53,6 +53,7 @@
     </repositories>
 
     <dependencies>
+        <!-- dropwizard -->
         <dependency>
             <groupId>io.dropwizard</groupId>
             <artifactId>dropwizard-core</artifactId>
@@ -141,6 +142,7 @@
             <version>${version.dropwizard}</version>
         </dependency>
 
+        <!-- servlet stuff, e.g. request filtering -->
         <dependency>
             <groupId>javax.servlet</groupId>
             <artifactId>javax.servlet-api</artifactId>
@@ -164,6 +166,7 @@
             <version>2.3.1</version>
         </dependency>
 
+        <!-- CLARIN SRU/FCS -->
         <dependency>
             <groupId>eu.clarin.sru</groupId>
             <artifactId>sru-client</artifactId>
@@ -202,6 +205,7 @@
             </exclusions>
         </dependency>
 
+        <!-- CLARIN weblicht -->
         <dependency>
             <groupId>eu.clarin.weblicht</groupId>
             <artifactId>wlfxb</artifactId>
@@ -256,6 +260,7 @@
             <version>2.36</version>
         </dependency>
 
+        <!-- language detection -->
         <dependency>
             <groupId>com.optimaize.languagedetector</groupId>
             <artifactId>language-detector</artifactId>
@@ -273,25 +278,13 @@
             </exclusions>
         </dependency>
 
-        <dependency>
-            <groupId>org.apache.poi</groupId>
-            <artifactId>poi-ooxml</artifactId>
-            <version>5.2.3</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>commons-codec</groupId>
-                    <artifactId>commons-codec</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-
         <!-- Using it from jersey-apache-client4 instead -->
         <!--
         <dependency>
-                <groupId>com.sun.jersey</groupId>
-                <artifactId>jersey-client</artifactId>
-                <version>1.19.4</version>
-                <type>jar</type>
+            <groupId>com.sun.jersey</groupId>
+            <artifactId>jersey-client</artifactId>
+            <version>1.19.4</version>
+            <type>jar</type>
         </dependency>
         -->
         <!--
@@ -307,18 +300,25 @@
             </exclusions>
         </dependency>
         -->
-        <!-- dropwizard 0.8 uses commons-lang3, changed imports -->
-        <!--
-        <dependency>
-            <groupId>commons-lang</groupId>
-            <artifactId>commons-lang</artifactId>
-            <version>2.4</version>
-        </dependency>
-        -->
+
+        <!-- utils -->
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
             <version>3.9</version>
+        </dependency>
+
+        <!-- exporting stuff -->
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi-ooxml</artifactId>
+            <version>5.2.3</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>commons-codec</groupId>
+                    <artifactId>commons-codec</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
@@ -332,6 +332,8 @@
             <artifactId>mailapi</artifactId>
             <version>1.4.3</version>
         </dependency>
+
+        <!-- test -->
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
@@ -424,6 +426,8 @@
                     </execution>
                 </executions>
             </plugin>
+
+            <!-- other build artifacts -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>rpm-maven-plugin</artifactId>

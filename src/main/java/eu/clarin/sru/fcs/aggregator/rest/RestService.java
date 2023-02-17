@@ -29,7 +29,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
@@ -62,11 +61,6 @@ public class RestService {
     private static final org.slf4j.Logger log = LoggerFactory.getLogger(RestService.class);
 
     ObjectWriter ow = new ObjectMapper().writerWithDefaultPrettyPrinter();
-
-    @Context
-    HttpServletRequest request;
-    @Context
-    ServletContext servletContext;
 
     private final Environment environment;
 
