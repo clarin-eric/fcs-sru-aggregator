@@ -47671,8 +47671,72 @@ if (process.env.NODE_ENV === 'production') {
 
 }).call(this,require('_process'))
 },{"./cjs/scheduler-tracing.development.js":36,"./cjs/scheduler-tracing.production.min.js":37,"_process":11}],42:[function(require,module,exports){
+"use strict";
 
-},{}],43:[function(require,module,exports){
+var _classnames = require("classnames");
+
+var _classnames2 = _interopRequireDefault(_classnames);
+
+var _jqueryfade = require("./jqueryfade.jsx");
+
+var _jqueryfade2 = _interopRequireDefault(_jqueryfade);
+
+var _propTypes = require("prop-types");
+
+var _propTypes2 = _interopRequireDefault(_propTypes);
+
+var _createReactClass = require("create-react-class");
+
+var _createReactClass2 = _interopRequireDefault(_createReactClass);
+
+var _reactTransitionGroup = require("react-transition-group");
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var PT = _propTypes2.default;
+
+var AlertPane = (0, _createReactClass2.default)({
+  displayName: "AlertPane",
+
+  //fixme! - class AlertPane extends React.Component {
+  propTypes: {
+    alerts: PT.array.isRequired
+  },
+
+  renderAlertMessage: function renderAlertMessage(alert, index) {
+    return alert ? React.createElement(
+      _reactTransitionGroup.CSSTransition,
+      { key: alert.type + "-" + index, classNames: "fade", timeout: { enter: 200, exit: 200 } },
+      React.createElement(
+        "div",
+        { key: alert.type + "-" + index, className: "info" === alert.type ? "infoMessage" : "errorMessage" },
+        alert.msg
+      )
+    ) : false;
+  },
+
+  render: function render() {
+    return React.createElement(
+      "div",
+      { className: "container alertDiv" },
+      React.createElement(
+        "div",
+        { className: "row alertRow" },
+        React.createElement(
+          _reactTransitionGroup.TransitionGroup,
+          { component: "div" },
+          this.props.alerts.map(this.renderAlertMessage)
+        )
+      )
+    );
+  }
+});
+
+module.exports = AlertPane;
+
+},{"./jqueryfade.jsx":47,"classnames":2,"create-react-class":6,"prop-types":15,"react-transition-group":30}],43:[function(require,module,exports){
+
+},{}],44:[function(require,module,exports){
 "use strict";
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
@@ -48352,7 +48416,7 @@ var CorpusView = (0, _createReactClass2.default)({
 
 module.exports = CorpusView;
 
-},{"./searchcorpusbox.jsx":54,"classnames":2,"create-react-class":6,"prop-types":15}],44:[function(require,module,exports){
+},{"./searchcorpusbox.jsx":54,"classnames":2,"create-react-class":6,"prop-types":15}],45:[function(require,module,exports){
 "use strict";
 
 var _classnames = require("classnames");
@@ -48411,71 +48475,7 @@ var EmbeddedFooter = (0, _createReactClass2.default)({
 
 module.exports = EmbeddedFooter;
 
-},{"classnames":2,"create-react-class":6,"prop-types":15}],45:[function(require,module,exports){
-"use strict";
-
-var _classnames = require("classnames");
-
-var _classnames2 = _interopRequireDefault(_classnames);
-
-var _jqueryfade = require("./jqueryfade.jsx");
-
-var _jqueryfade2 = _interopRequireDefault(_jqueryfade);
-
-var _propTypes = require("prop-types");
-
-var _propTypes2 = _interopRequireDefault(_propTypes);
-
-var _createReactClass = require("create-react-class");
-
-var _createReactClass2 = _interopRequireDefault(_createReactClass);
-
-var _reactTransitionGroup = require("react-transition-group");
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-var PT = _propTypes2.default;
-
-var ErrorPane = (0, _createReactClass2.default)({
-  displayName: "ErrorPane",
-
-  //fixme! - class ErrorPane extends React.Component {
-  propTypes: {
-    errorMessages: PT.array.isRequired
-  },
-
-  renderErrorMessage: function renderErrorMessage(errorMessage, index) {
-    return errorMessage ? React.createElement(
-      _jqueryfade2.default,
-      { key: index },
-      React.createElement(
-        "div",
-        { key: index, className: "errorMessage" },
-        errorMessage
-      )
-    ) : false;
-  },
-
-  render: function render() {
-    return React.createElement(
-      "div",
-      { className: "container errorDiv" },
-      React.createElement(
-        "div",
-        { className: "row errorRow" },
-        React.createElement(
-          _reactTransitionGroup.TransitionGroup,
-          { component: "div" },
-          this.props.errorMessages.map(this.renderErrorMessage)
-        )
-      )
-    );
-  }
-});
-
-module.exports = ErrorPane;
-
-},{"./jqueryfade.jsx":47,"classnames":2,"create-react-class":6,"prop-types":15,"react-transition-group":30}],46:[function(require,module,exports){
+},{"classnames":2,"create-react-class":6,"prop-types":15}],46:[function(require,module,exports){
 "use strict";
 
 var _classnames = require("classnames");
@@ -50005,7 +50005,7 @@ var layerCategories = [{ cat: 'word', label: 'Word', layers: ['word'] }, { cat: 
 
 module.exports = QueryInput;
 
-},{"./codemirror/mode/fcs-ql/fcs-ql":42,"classnames":2,"codemirror/mode/javascript/javascript":4,"create-react-class":6,"prop-types":15,"react-addons-pure-render-mixin":17,"react-codemirror2":18,"react-transition-group":30}],52:[function(require,module,exports){
+},{"./codemirror/mode/fcs-ql/fcs-ql":43,"classnames":2,"codemirror/mode/javascript/javascript":4,"create-react-class":6,"prop-types":15,"react-addons-pure-render-mixin":17,"react-codemirror2":18,"react-transition-group":30}],52:[function(require,module,exports){
 "use strict";
 
 var _classnames = require("classnames");
@@ -50910,9 +50910,9 @@ var _statisticspage = require("./pages/statisticspage.jsx");
 
 var _statisticspage2 = _interopRequireDefault(_statisticspage);
 
-var _errorpane = require("./components/errorpane.jsx");
+var _alertpane = require("./components/alertpane.jsx");
 
-var _errorpane2 = _interopRequireDefault(_errorpane);
+var _alertpane2 = _interopRequireDefault(_alertpane);
 
 var _footer = require("./components/footer.jsx");
 
@@ -50980,7 +50980,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
       return {
         navbarCollapse: false,
         navbarPageFn: this.renderAggregator,
-        errorMessages: []
+        alerts: []
       };
     },
 
@@ -50994,16 +50994,32 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
       } else {
         return;
       }
+      this.alert(err, "error");
+    },
 
+    info: function info(msgObj) {
+      var msg = "";
+      if (typeof msgObj === 'string' || msgObj instanceof String) {
+        msg = msgObj;
+      } else if ((typeof msgObj === "undefined" ? "undefined" : _typeof(msgObj)) === 'object') {
+        console.log("INFO: obj = ", msgObj);
+        msg = JSON.stringify(msgObj);
+      } else {
+        return;
+      }
+      this.alert(msg, "info");
+    },
+
+    alert: function alert(message, type) {
       var that = this;
-      var errs = this.state.errorMessages.slice();
-      errs.push(err);
-      this.setState({ errorMessages: errs });
+      var alerts = this.state.alerts.slice();
+      alerts.push({ msg: message, type: type });
+      this.setState({ alerts: alerts });
 
       setTimeout(function () {
-        var errs = that.state.errorMessages.slice();
-        errs.shift();
-        that.setState({ errorMessages: errs });
+        var alerts = that.state.alerts.slice();
+        alerts.shift();
+        that.setState({ alerts: alerts });
       }, 10000);
     },
 
@@ -51030,7 +51046,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
     },
 
     renderAggregator: function renderAggregator() {
-      return React.createElement(_aggregatorpage2.default, { APIROOT: APIROOT, ajax: this.ajax, error: this.error, embedded: false });
+      return React.createElement(_aggregatorpage2.default, { APIROOT: APIROOT, ajax: this.ajax, error: this.error, info: this.info, embedded: false });
     },
 
     renderHelp: function renderHelp() {
@@ -51177,7 +51193,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
             this.renderCollapsible()
           )
         ),
-        React.createElement(_errorpane2.default, { errorMessages: this.state.errorMessages })
+        React.createElement(_alertpane2.default, { alerts: this.state.alerts })
       );
     },
 
@@ -51258,7 +51274,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
   window.onpopstate = routeFromLocation.bind(main);
 })();
 
-},{"./components/embeddedfooter.jsx":44,"./components/errorpane.jsx":45,"./components/footer.jsx":46,"./pages/aboutpage.jsx":57,"./pages/aggregatorpage.jsx":58,"./pages/helppage.jsx":59,"./pages/statisticspage.jsx":60,"create-react-class":6,"prop-types":15}],57:[function(require,module,exports){
+},{"./components/alertpane.jsx":42,"./components/embeddedfooter.jsx":45,"./components/footer.jsx":46,"./pages/aboutpage.jsx":57,"./pages/aggregatorpage.jsx":58,"./pages/helppage.jsx":59,"./pages/statisticspage.jsx":60,"create-react-class":6,"prop-types":15}],57:[function(require,module,exports){
 "use strict";
 
 var _classnames = require("classnames");
@@ -51676,6 +51692,7 @@ var AggregatorPage = (0, _createReactClass2.default)({
     APIROOT: PT.string.isRequired,
     ajax: PT.func.isRequired,
     error: PT.func.isRequired,
+    info: PT.func.isRequired,
     embedded: PT.bool.isRequired
   },
 
@@ -51760,6 +51777,10 @@ var AggregatorPage = (0, _createReactClass2.default)({
                 }).join('\n');
                 this.props.error(err);
               }
+            } else if (contextCorporaInfo.selected.length > 0) {
+              this.props.info("Pre-selected " + contextCorporaInfo.selected.length + " collection(s):\n" + contextCorporaInfo.selected.map(function (x) {
+                return x.title + " (" + x.handle + ")";
+              }).join('\n'));
             }
           } else {
             // no context set all visibl to selected as default.
@@ -52588,7 +52609,7 @@ var queryTypeMap = {
 
 module.exports = AggregatorPage;
 
-},{"../components/corpusview.jsx":43,"../components/languageselector.jsx":48,"../components/modal.jsx":49,"../components/queryinput.jsx":51,"../components/results.jsx":53,"../components/zoomedresult.jsx":55,"classnames":2,"create-react-class":6,"prop-types":15}],59:[function(require,module,exports){
+},{"../components/corpusview.jsx":44,"../components/languageselector.jsx":48,"../components/modal.jsx":49,"../components/queryinput.jsx":51,"../components/results.jsx":53,"../components/zoomedresult.jsx":55,"classnames":2,"create-react-class":6,"prop-types":15}],59:[function(require,module,exports){
 "use strict";
 
 var _classnames = require("classnames");

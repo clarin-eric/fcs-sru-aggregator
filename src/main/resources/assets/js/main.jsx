@@ -2,7 +2,7 @@ import AboutPage from "./pages/aboutpage.jsx";
 import AggregatorPage from "./pages/aggregatorpage.jsx";
 import HelpPage from "./pages/helppage.jsx";
 import StatisticsPage from "./pages/statisticspage.jsx";
-import ErrorPane from "./components/errorpane.jsx";
+import AlertPane from "./components/alertpane.jsx";
 import Footer from "./components/footer.jsx";
 import EmbeddedFooter from "./components/embeddedfooter.jsx";
 import PropTypes from "prop-types";
@@ -54,7 +54,7 @@ import createReactClass from "create-react-class";
       return {
         navbarCollapse: false,
         navbarPageFn: this.renderAggregator,
-        errorMessages: [],
+        alerts: [],
       };
     },
 
@@ -68,16 +68,32 @@ import createReactClass from "create-react-class";
       } else {
         return;
       }
+      this.alert(err, "error");
+    },
 
+    info: function (msgObj) {
+      var msg = "";
+      if (typeof msgObj === 'string' || msgObj instanceof String) {
+        msg = msgObj;
+      } else if (typeof msgObj === 'object') {
+        console.log("INFO: obj = ", msgObj);
+        msg = JSON.stringify(msgObj);
+      } else {
+        return;
+      }
+      this.alert(msg, "info");
+    },
+
+    alert: function (message, type) {
       var that = this;
-      var errs = this.state.errorMessages.slice();
-      errs.push(err);
-      this.setState({ errorMessages: errs });
+      var alerts = this.state.alerts.slice();
+      alerts.push({ msg: message, type: type });
+      this.setState({ alerts: alerts });
 
       setTimeout(function () {
-        var errs = that.state.errorMessages.slice();
-        errs.shift();
-        that.setState({ errorMessages: errs });
+        var alerts = that.state.alerts.slice();
+        alerts.shift();
+        that.setState({ alerts: alerts });
       }, 10000);
     },
 
@@ -104,7 +120,7 @@ import createReactClass from "create-react-class";
     },
 
     renderAggregator: function () {
-      return <AggregatorPage APIROOT={APIROOT} ajax={this.ajax} error={this.error} embedded={false} />;
+      return <AggregatorPage APIROOT={APIROOT} ajax={this.ajax} error={this.error} info={this.info} embedded={false} />;
     },
 
     renderHelp: function () {
@@ -201,7 +217,7 @@ import createReactClass from "create-react-class";
             </div>
           </div>
 
-          <ErrorPane errorMessages={this.state.errorMessages} />
+          <AlertPane alerts={this.state.alerts} />
 
         </div>
       );

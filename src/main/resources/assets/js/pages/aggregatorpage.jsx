@@ -20,6 +20,7 @@ var AggregatorPage = createReactClass({
     APIROOT: PT.string.isRequired,
     ajax: PT.func.isRequired,
     error: PT.func.isRequired,
+    info: PT.func.isRequired,
     embedded: PT.bool.isRequired
   },
 
@@ -100,6 +101,8 @@ var AggregatorPage = createReactClass({
                 }).map((c) => c.title).join('\n')
                 this.props.error(err);
               }
+            } else if (contextCorporaInfo.selected.length > 0) {
+              this.props.info("Pre-selected " + contextCorporaInfo.selected.length + " collection(s):\n" + contextCorporaInfo.selected.map(x => x.title + " (" + x.handle + ")").join('\n'));
             }
           }
           else {

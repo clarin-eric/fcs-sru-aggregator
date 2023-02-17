@@ -98,15 +98,15 @@ body.embedded #footer {
   border-color: #adadad;
 }
 
-/*** error ***/
+/*** alerts: error, info***/
 
-.errorDiv {
+.alertDiv {
   position: relative;
   height: 10px;
   text-align: center;
 }
 
-.errorRow {
+.alertRow {
   position: absolute;
   width: 100%;
   text-align: center;
@@ -114,15 +114,21 @@ body.embedded #footer {
   text-align: center;
 }
 
-.errorRow div * {
+.alertRow div * {
   color: #fff;
   border-radius: 4px;
-  background-color: #a20;
   text-align: center;
   margin: 0 auto;
+  white-space: pre-line;
 }
 
-.errorRow .errorMessage {
+.alertRow .errorMessage {
+  background-color: #a20;
+  margin: 2px 0;
+}
+
+.alertRow .infoMessage {
+  background-color: #407d00;
   margin: 2px 0;
 }
 
