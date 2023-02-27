@@ -31,55 +31,56 @@ import org.junit.Test;
 public class ScanCrawlerTest {
 
     @ClassRule
-    public static final DropwizardAppRule<AggregatorConfiguration> RULE =
-            new DropwizardAppRule<>(Aggregator.class, ResourceHelpers.resourceFilePath("aggregator_devel.yaml"));
-    
-	@Test
-	public void testCrawlForMpiAndTue() throws NamingException {
-                Environment env = RULE.getEnvironment();
-		SRUThreadedClient sruThreadedClient = new ClarinFCSClientBuilder()
-				.addDefaultDataViewParsers()
-				.buildThreadedClient();
-		MaxConcurrentRequestsCallback callback = new MaxConcurrentRequestsCallback() {
-			@Override
-			public int getMaxConcurrentRequest(URI baseURI) {
-				return 2;
-			}
-		};
-		ThrottledClient sruClient = new ThrottledClient(
-				sruThreadedClient, callback,
-				sruThreadedClient, callback
-		);
+    public static final DropwizardAppRule<AggregatorConfiguration> RULE = new DropwizardAppRule<>(Aggregator.class,
+            ResourceHelpers.resourceFilePath("aggregator_devel.yaml"));
 
-		try {
-			EndpointUrlFilterAllow filter = new EndpointUrlFilterAllow("uni-tuebingen.de"); //, "leipzig", ".mpi.nl", "dspin.dwds.de", "lindat."
+    @Test
+    public void testCrawlForMpiAndTue() throws NamingException {
+        Environment env = RULE.getEnvironment();
+        SRUThreadedClient sruThreadedClient = new ClarinFCSClientBuilder()
+                .addDefaultDataViewParsers()
+                .buildThreadedClient();
+        MaxConcurrentRequestsCallback callback = new MaxConcurrentRequestsCallback() {
+            @Override
+            public int getMaxConcurrentRequest(URI baseURI) {
+                return 2;
+            }
+        };
+        ThrottledClient sruClient = new ThrottledClient(
+                sruThreadedClient, callback,
+                sruThreadedClient, callback);
 
-			InitialContext context = new InitialContext();
-			String centerRegistryUrl = (String) context.lookup("java:comp/env/center-registry-url");
-			ScanCrawler crawler = new ScanCrawler(
-					new CenterRegistryLive(centerRegistryUrl, filter, env).getCQLInstitutions(),
-					sruClient, 2);
-			Corpora cache = crawler.crawl();
-			Corpus tueRootCorpus = cache.findByEndpoint("http://weblicht.sfs.uni-tuebingen.de/rws/sru/").get(0);
-			Corpus mpiRootCorpus = cache.findByEndpoint("http://cqlservlet.mpi.nl/").get(0);
-			Assert.assertEquals("http://hdl.handle.net/11858/00-1778-0000-0001-DDAF-D",
-					tueRootCorpus.getHandle());
-			Corpus mpiCorpus = cache.findByHandle("hdl:1839/00-0000-0000-0001-53A5-2@format=cmdi");
-			Assert.assertEquals("hdl:1839/00-0000-0000-0003-4692-D@format=cmdi", mpiCorpus.getSubCorpora().get(0).getHandle());
-			//check if languages and other corpus data is crawled corectly...
-			Set<String> tueLangs = new HashSet<>();
-			tueLangs.add("deu");
-			Assert.assertEquals(tueLangs, tueRootCorpus.getLanguages());
-			String tueDescSubstring = "Tübingen Treebank";
-			Assert.assertTrue("Description problem", tueRootCorpus.getDescription().contains(tueDescSubstring));
-			String tueNameSubstring = "TuebaDDC";
-			Assert.assertTrue("Name problem", tueRootCorpus.getTitle().contains(tueNameSubstring));
-			String tuePageSubstring = "sfs.uni-tuebingen.de";
-			Assert.assertTrue("Landing page problem", tueRootCorpus.getLandingPage().contains(tuePageSubstring));
-			Assert.assertTrue("Number of records problem", mpiRootCorpus.getNumberOfRecords() > 10);
+        try {
+            EndpointUrlFilterAllow filter = new EndpointUrlFilterAllow("uni-tuebingen.de");
+            // , "leipzig", ".mpi.nl", "dspin.dwds.de", "lindat."
 
-		} finally {
-			sruClient.shutdown();
-		}
-	}
+            InitialContext context = new InitialContext();
+            String centerRegistryUrl = (String) context.lookup("java:comp/env/center-registry-url");
+            ScanCrawler crawler = new ScanCrawler(
+                    new CenterRegistryLive(centerRegistryUrl, filter, env).getCQLInstitutions(),
+                    sruClient, 2);
+            Corpora cache = crawler.crawl();
+            Corpus tueRootCorpus = cache.findByEndpoint("http://weblicht.sfs.uni-tuebingen.de/rws/sru/").get(0);
+            Corpus mpiRootCorpus = cache.findByEndpoint("http://cqlservlet.mpi.nl/").get(0);
+            Assert.assertEquals("http://hdl.handle.net/11858/00-1778-0000-0001-DDAF-D",
+                    tueRootCorpus.getHandle());
+            Corpus mpiCorpus = cache.findByHandle("hdl:1839/00-0000-0000-0001-53A5-2@format=cmdi");
+            Assert.assertEquals("hdl:1839/00-0000-0000-0003-4692-D@format=cmdi",
+                    mpiCorpus.getSubCorpora().get(0).getHandle());
+            // check if languages and other corpus data is crawled corectly...
+            Set<String> tueLangs = new HashSet<>();
+            tueLangs.add("deu");
+            Assert.assertEquals(tueLangs, tueRootCorpus.getLanguages());
+            String tueDescSubstring = "Tübingen Treebank";
+            Assert.assertTrue("Description problem", tueRootCorpus.getDescription().contains(tueDescSubstring));
+            String tueNameSubstring = "TuebaDDC";
+            Assert.assertTrue("Name problem", tueRootCorpus.getTitle().contains(tueNameSubstring));
+            String tuePageSubstring = "sfs.uni-tuebingen.de";
+            Assert.assertTrue("Landing page problem", tueRootCorpus.getLandingPage().contains(tuePageSubstring));
+            Assert.assertTrue("Number of records problem", mpiRootCorpus.getNumberOfRecords() > 10);
+
+        } finally {
+            sruClient.shutdown();
+        }
+    }
 }
