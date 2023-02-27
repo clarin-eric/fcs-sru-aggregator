@@ -5,13 +5,8 @@
 package eu.clarin.sru.fcs.aggregator.search;
 
 import eu.clarin.sru.client.fcs.DataViewAdvanced;
-import eu.clarin.sru.client.fcs.DataViewAdvanced.Layer;
-import eu.clarin.sru.client.fcs.DataViewAdvanced.Segment;
-import eu.clarin.sru.fcs.aggregator.app.Aggregator;
-import eu.clarin.sru.fcs.aggregator.util.LanguagesISO693;
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.commons.lang3.StringEscapeUtils;
 
 /**
  * Represents an ADV layer and information about its PID and
@@ -61,8 +56,6 @@ public class AdvancedLayer {
         this.reference = layer.getId();
 
         for (DataViewAdvanced.Span span : layer.getSpans()) {
-            // String text = StringEscapeUtils.unescapeXml(str.substring(lastOffset,
-            // offsets[0]));
             spans.add(new Span(span.getContent(), reference,
                     ("".equals(span.getHighlight()) || span.getHighlight() == null) ? false : true, span.getSegment()));
         }

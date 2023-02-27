@@ -19,9 +19,6 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 
-import org.jopendocument.dom.ODPackage;
-import org.jopendocument.dom.ODDocument;
-import org.jopendocument.dom.text.TextDocument;
 import org.jopendocument.dom.spreadsheet.SpreadSheet;
 import org.slf4j.LoggerFactory;
 
