@@ -1,5 +1,10 @@
 # Changelog
 
+# [3.5.1](https://github.com/clarin-eric/fcs-sru-aggregator/releases/tag/3.5.1) - 2023-02-27
+
+- Dependencies:
+  - Upgraded `dropwizard` from 2.1.4 to 2.1.5
+
 # [3.5.0](https://github.com/clarin-eric/fcs-sru-aggregator/releases/tag/3.5.0) - 2023-02-17
 
 - Bug fixes:
@@ -44,12 +49,14 @@
 
 # [3.2.0](https://github.com/clarin-eric/fcs-sru-aggregator/releases/tag/3.2.0) - 2023-01-18
 
-- Changes:
-  - Added Github Actions CI build script
-  - Upgraded dropwizard from 2.0.3 to 2.1.4
+- Dependencies:
+  - Upgraded `dropwizard` from 2.0.3 to 2.1.4
   - Upgraded `org.apache.poi:poi-ooxml` from 3.17 to 5.2.3
   - Added `org.glassfish.jersey.media:jersey-media-jaxb:2.36` for newer jaxb dependency
   - Upgraded `eu.clarin.weblicht:wlfxb` from 1.3.1 to 1.4.3
+
+- Changes:
+  - Added Github Actions CI build script
 
 # [3.1.0](https://github.com/clarin-eric/fcs-sru-aggregator/releases/tag/3.1.0) - 2023-01-18
 
