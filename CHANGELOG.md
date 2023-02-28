@@ -1,10 +1,22 @@
 # Changelog
 
+# [3.5.3](https://github.com/clarin-eric/fcs-sru-aggregator/releases/tag/3.5.3) - 2023-02-28
+
+- Changes:
+  - Added [`DEPLOYMENT.md`](DEPLOYMENT.md) notes
+  - Small cleanups and improvements
+  - Moved to junit5 due to dropwizard 2.* deprecation;  
+    Fixed tests to use junit5 + adjusted center repository URLs
+
+- Dependencies:
+  - Migrated `junit` from 4.13.2 to `org.junit.jupiter` 5.9.1
+  - Added `mvn site` plugins with pinned versions
+
 # [3.5.2](https://github.com/clarin-eric/fcs-sru-aggregator/releases/tag/3.5.2) - 2023-02-28
 
 - Changes:
   - Set source/target java version to **1.8**
-  - Add [`DEVELOPMENT.md`](DEVELOPMENT.md) notes
+  - Added [`DEVELOPMENT.md`](DEVELOPMENT.md) notes
 
 - Dependencies:
   - Migrated from deprecated `org.apache.commons:commons-lang3:3.9` (`StringEscapeUtils`) to `org.apache.commons:commons-text:1.10.0`
