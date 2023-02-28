@@ -1,5 +1,17 @@
 # Changelog
 
+# [3.5.2](https://github.com/clarin-eric/fcs-sru-aggregator/releases/tag/3.5.2) - 2023-02-28
+
+- Changes:
+  - Set source/target java version to **1.8**
+  - Add [`DEVELOPMENT.md`](DEVELOPMENT.md) notes
+
+- Dependencies:
+  - Migrated from deprecated `org.apache.commons:commons-lang3:3.9` (`StringEscapeUtils`) to `org.apache.commons:commons-text:1.10.0`
+  - Upgraded `junit` from 4.12 to 4.13.2
+  - Upgraded `eu.clarin.sru:sru-client` from 1.8.0 to 2.1.0
+  - Updated maven plugin versions to latest
+
 # [3.5.1](https://github.com/clarin-eric/fcs-sru-aggregator/releases/tag/3.5.1) - 2023-02-27
 
 - Dependencies:
