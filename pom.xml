@@ -273,7 +273,7 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
-            <version>3.9</version>
+            <version>3.12.0</version>
         </dependency>
 
         <dependency>
@@ -370,7 +370,7 @@
                         </goals>
                         <configuration>
                             <transformers>
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                     <mainClass>eu.clarin.sru.fcs.aggregator.app.Aggregator</mainClass>
                                 </transformer>
