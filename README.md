@@ -17,7 +17,7 @@ The Specification for Federated Content Search v2.0 can be found as a
 For more details visit at the [CLARIN FCS - Technical Details](https://www.clarin.eu/content/federated-content-search-clarin-fcs-technical-details) page.
 
 ## Updates
-For a detailed list of changes, please take a look at [CHANGELOG.md](CHANGELOG.md).
+For a detailed list of changes, please take a look at [`CHANGELOG.md`](CHANGELOG.md).
 
 ### What is new in FCS Aggregator v3.0?
 * A new graphical query builder (GQB) to support  the new Query Language FCS-QL
@@ -71,3 +71,5 @@ add the endpoint to either `additionalCQLEndpoints` or `additionalFCSEndpoints` 
 you might also want to change the path to your cache files in `AGGREGATOR_FILE_PATH` and `AGGREGATOR_FILE_PATH_BACKUP` respectively.
 
 You then can access the locally running Aggregator at [http://localhost:4019/](http://localhost:4019/)
+
+See [`DEPLOYMENT.md`](DEPLOYMENT.md) for example deployment configurations.

@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # ---------------------------------------------------------------------------
-FROM node:16.19.0-bullseye AS web
+FROM node:16.19.1-bullseye AS web
 
 WORKDIR /work
 
@@ -13,7 +13,7 @@ RUN ./build.sh --npm
 RUN ./build.sh --jsx-force
 
 # ---------------------------------------------------------------------------
-FROM maven:3.8.6-jdk-11 AS jar
+FROM maven:3.8.7-eclipse-temurin-11-focal AS jar
 
 WORKDIR /work
 

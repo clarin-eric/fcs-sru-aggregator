@@ -404,7 +404,6 @@ var AggregatorPage = createReactClass({
     );
   },
 
-
   renderQueryInput() {
     var queryType = queryTypeMap[this.state.queryTypeId];
     return (
@@ -791,7 +790,6 @@ function setQueryVariable(qvar, value) {
   console.log("set url", newUrl);
   window.history.replaceState(window.history.state, null, newUrl);
 }
-
 
 function encodeQueryData(data) {
   var ret = [];
