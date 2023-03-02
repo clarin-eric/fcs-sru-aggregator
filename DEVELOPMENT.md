@@ -1,5 +1,7 @@
 # Development
 
+The FCS Aggregator consists of a frontend (ReactJS, JS) and backend (Dropwizard, Java) component. Both will be bundled into a single `aggregator-X.Y.Z.jar` file for deployment.
+
 ## Versions
 
 - Java: 11 JDK (for building)  
@@ -12,7 +14,72 @@
 
 Note that maven (3.6.3 on Ubuntu) may not work with Java 17! Either setup maven manually, use a docker container for building or use Java 11.
 
-## Workflow: Release a New Version
+## Filesystem Structure
+
+The following are the important folders and files for this application:
+
+```python
+# folders
+├── node_modules/                      # (ignore, nodejs dependencies)
+├── src/
+│   ├── main/
+│   │   ├── java/                      # backend (Dropwizard, Jersey) sources
+│   │   └── resources/
+│   │       └── assets/                # frontend (React) sources
+│   │           ├── fonts/
+│   │           ├── js/                # build artifacts
+│   │           ├── lib/               # frameworks (bootstrap, jquery, react)
+│   │           └── index.html         # SPA page, React entry point
+│   └── test/
+└── target/                            # build artifacts (e.g. aggregator-X.Y.Z.jar)
+
+# files
+├── Dockerfile                         # Example Docker image
+├── aggregator.yml                     # runtime configuration (production use)
+├── aggregator_devel.yml               # runtime configuration (development use)
+├── build.sh                           # helper script for building, running etc.
+├── package-lock.json
+├── package.json                       # frontend (JS) dependencies
+└── pom.xml                            # backend (Java) dependencies
+
+# information
+├── CHANGELOG.md
+├── DEPLOYMENT.md
+├── DEVELOPMENT.md                     # (this file)
+└── README.md
+```
+
+## Workflow: Building
+
+A [`build.sh`](build.sh) script is included to handle common tasks such as building and running the application.
+
+To do a full build of the application perform the following steps:
+1. `./build.sh --npm`  
+   _Downloads all node dependencies from [`package.json`](package.json) and puts relevant sources to [`src/main/resources/assets/`](src/main/resources/assets/)._
+2. `./build.sh --jsx`  
+   _If source `*.jsx` files are not newer than the [`main.js`](src/main/resources/assets/js/main.js) file, building is skipped. Use `./build.sh --jsx-force` if you want to force recompiling the React sources._
+3. `./build.sh --jar`  
+   _Runs tests with maven and then bundles frontend and backend into a single JAR file._
+
+Running only step 3. is enough for minor changes to the frontend (React) or backend (jersey servlet) code.
+
+## Workflow: Running the Application
+
+Check the [`aggregator_devel.yml`](aggregator_devel.yml) (development) or [`aggregator.yml`](aggregator.yml) (production) configuration file. If you want to sideload your enpoint simply add the endpoint to either `additionalCQLEndpoints` or `additionalFCSEndpoints`.
+
+To run the application in debug mode:
+`./build.sh --run`
+
+For production run:
+`./build.sh --run-production`
+
+You might also want to change the path to your cache files in `AGGREGATOR_FILE_PATH` and `AGGREGATOR_FILE_PATH_BACKUP` respectively.
+
+You then can access the locally running Aggregator at [http://localhost:4019/](http://localhost:4019/)
+
+See [`DEPLOYMENT.md`](DEPLOYMENT.md) for example deployment configurations.
+
+## Workflow: Releasing a New Version
 
 - add changes to [`CHANGELOG.md`](CHANGELOG.md)
 - update version number in:
