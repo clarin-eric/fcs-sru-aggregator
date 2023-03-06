@@ -4,13 +4,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import eu.clarin.sru.fcs.aggregator.app.AggregatorConfiguration;
 import eu.clarin.sru.fcs.aggregator.client.ThrottledClient;
-import io.dropwizard.setup.Environment;
 import java.io.File;
 import java.io.IOException;
-import java.net.URL;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicReference;
+
+import javax.ws.rs.client.Client;
+
 import org.slf4j.LoggerFactory;
 
 /**
@@ -23,7 +24,8 @@ public class ScanCrawlTask implements Runnable {
 
     private static final org.slf4j.Logger log = LoggerFactory.getLogger(ScanCrawlTask.class);
 
-    private ThrottledClient sruClient;
+    private final ThrottledClient sruClient;
+    private final Client jerseyClient;
     private int cacheMaxDepth;
     private EndpointFilter filter;
     private AtomicReference<Corpora> corporaAtom;
@@ -35,9 +37,7 @@ public class ScanCrawlTask implements Runnable {
     private List<AggregatorConfiguration.Params.EndpointConfig> additionalCQLEndpoints;
     private List<AggregatorConfiguration.Params.EndpointConfig> additionalFCSEndpoints;
 
-    private final Environment environment;
-
-    public ScanCrawlTask(ThrottledClient sruClient, String centerRegistryUrl,
+    public ScanCrawlTask(ThrottledClient sruClient, Client jerseyClient, String centerRegistryUrl,
             int cacheMaxDepth,
             List<AggregatorConfiguration.Params.EndpointConfig> additionalCQLEndpoints,
             List<AggregatorConfiguration.Params.EndpointConfig> additionalFCSEndpoints,
@@ -45,9 +45,9 @@ public class ScanCrawlTask implements Runnable {
             AtomicReference<Corpora> corporaAtom,
             File cachedCorpora, File oldCachedCorpora,
             AtomicReference<Statistics> scanStatisticsAtom,
-            AtomicReference<Statistics> searchStatisticsAtom,
-            Environment environment) {
+            AtomicReference<Statistics> searchStatisticsAtom) {
         this.sruClient = sruClient;
+        this.jerseyClient = jerseyClient;
         this.centerRegistryUrl = centerRegistryUrl;
         this.cacheMaxDepth = cacheMaxDepth;
         this.additionalCQLEndpoints = additionalCQLEndpoints;
@@ -58,7 +58,6 @@ public class ScanCrawlTask implements Runnable {
         this.oldCachedCorpora = oldCachedCorpora;
         this.scanStatisticsAtom = scanStatisticsAtom;
         this.searchStatisticsAtom = searchStatisticsAtom;
-        this.environment = environment;
     }
 
     @Override
@@ -70,7 +69,7 @@ public class ScanCrawlTask implements Runnable {
             List<Institution> institutions = new ArrayList<Institution>();
             // Query endpoints from centre registry
             if (centerRegistryUrl != null && !centerRegistryUrl.isEmpty()) {
-                institutions = new CenterRegistryLive(centerRegistryUrl, filter, environment).getCQLInstitutions();
+                institutions = new CenterRegistryLive(centerRegistryUrl, filter, jerseyClient).getCQLInstitutions();
             }
             // Add sideloaded endpoints
             if (additionalCQLEndpoints != null && !additionalCQLEndpoints.isEmpty()) {

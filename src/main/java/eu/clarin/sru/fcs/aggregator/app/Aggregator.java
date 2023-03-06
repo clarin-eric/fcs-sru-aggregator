@@ -10,6 +10,8 @@ import com.optimaize.langdetect.text.*;
 import eu.clarin.sru.client.SRUThreadedClient;
 import eu.clarin.sru.fcs.aggregator.search.Search;
 import eu.clarin.sru.fcs.aggregator.scan.ScanCrawlTask;
+import eu.clarin.sru.fcs.aggregator.scan.CenterRegistryLive;
+import eu.clarin.sru.fcs.aggregator.scan.ClientFactory;
 import eu.clarin.sru.fcs.aggregator.scan.Corpora;
 import eu.clarin.sru.client.SRUVersion;
 import eu.clarin.sru.client.fcs.ClarinFCSClientBuilder;
@@ -42,6 +44,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.servlet.DispatcherType;
+import javax.ws.rs.client.Client;
 
 import org.eclipse.jetty.server.session.SessionHandler;
 import org.slf4j.LoggerFactory;
@@ -277,13 +280,15 @@ public class Aggregator extends Application<AggregatorConfiguration> {
         LanguagesISO693.getInstance(); // force init
         initLanguageDetector();
 
-        ScanCrawlTask task = new ScanCrawlTask(sruClient,
+        final Client jerseyClient = ClientFactory.create(CenterRegistryLive.CONNECT_TIMEOUT,
+                CenterRegistryLive.READ_TIMEOUT, environment);
+
+        ScanCrawlTask task = new ScanCrawlTask(sruClient, jerseyClient,
                 params.CENTER_REGISTRY_URL, params.SCAN_MAX_DEPTH,
                 params.additionalCQLEndpoints,
                 params.additionalFCSEndpoints,
                 null, scanCacheAtom, corporaCacheFile, corporaOldCacheFile,
-                scanStatsAtom, searchStatsAtom,
-                environment);
+                scanStatsAtom, searchStatsAtom);
         scheduler.scheduleAtFixedRate(task, params.SCAN_TASK_INITIAL_DELAY,
                 params.SCAN_TASK_INTERVAL, params.getScanTaskTimeUnit());
 

@@ -11,6 +11,7 @@ import eu.clarin.sru.fcs.aggregator.scan.EndpointUrlFilterAllow;
 import eu.clarin.sru.fcs.aggregator.scan.ScanCrawler;
 import eu.clarin.sru.fcs.aggregator.client.ThrottledClient;
 import eu.clarin.sru.fcs.aggregator.scan.CenterRegistryLive;
+import eu.clarin.sru.fcs.aggregator.scan.ClientFactory;
 import eu.clarin.sru.fcs.aggregator.scan.Corpus;
 import io.dropwizard.setup.Environment;
 import io.dropwizard.testing.ResourceHelpers;
@@ -22,7 +23,9 @@ import java.util.HashSet;
 import java.util.Set;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
+import javax.ws.rs.client.Client;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -43,16 +46,24 @@ public class ScanCrawlerTest {
     private static final DropwizardAppExtension<AggregatorConfiguration> RULE = new DropwizardAppExtension<>(
             Aggregator.class, ResourceHelpers.resourceFilePath("aggregator_test.yml"));
 
-    @Test
-    public void testCrawlForMpiAndTue() throws NamingException {
+    public static Client jerseyClient;
+
+    @BeforeAll
+    public static void setupJerseyClient() {
         Environment env = RULE.getEnvironment();
+
         env.metrics().removeMatching(new MetricFilter() {
             @Override
             public boolean matches(String name, Metric metric) {
-                return true;
+                return name.contains(ClientFactory.class.getName());
             }
         });
 
+        jerseyClient = ClientFactory.create(CenterRegistryLive.CONNECT_TIMEOUT, CenterRegistryLive.READ_TIMEOUT, env);
+    }
+
+    @Test
+    public void testCrawlForMpiAndTue() throws NamingException {
         SRUThreadedClient sruThreadedClient = new ClarinFCSClientBuilder()
                 .addDefaultDataViewParsers()
                 .buildThreadedClient();
@@ -75,7 +86,7 @@ public class ScanCrawlerTest {
             // context.lookup("java:comp/env/center-registry-url");
             String centerRegistryUrl = RULE.getConfiguration().aggregatorParams.CENTER_REGISTRY_URL;
             ScanCrawler crawler = new ScanCrawler(
-                    new CenterRegistryLive(centerRegistryUrl, filter, env).getCQLInstitutions(),
+                    new CenterRegistryLive(centerRegistryUrl, filter, jerseyClient).getCQLInstitutions(),
                     sruClient, 2);
             Corpora cache = crawler.crawl();
             Corpus tueRootCorpus = cache.findByEndpoint("http://weblicht.sfs.uni-tuebingen.de/rws/sru/").get(0);

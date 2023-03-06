@@ -2,6 +2,7 @@ package eu.clarin.sru.fcs.aggregator.app;
 
 import eu.clarin.sru.fcs.aggregator.scan.CenterRegistry;
 import eu.clarin.sru.fcs.aggregator.scan.CenterRegistryLive;
+import eu.clarin.sru.fcs.aggregator.scan.ClientFactory;
 import eu.clarin.sru.fcs.aggregator.scan.Endpoint;
 import eu.clarin.sru.fcs.aggregator.scan.Institution;
 import io.dropwizard.setup.Environment;
@@ -13,14 +14,18 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import javax.naming.NamingException;
+import javax.ws.rs.client.Client;
+
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricFilter;
+
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  *
@@ -47,22 +52,29 @@ public class CQLEnumerationTest {
     // env.metrics().removeMatching(new MetricFilter() {
     //     @Override
     //     public boolean matches(String name, Metric metric) {
-    //         return true;
+    //         return name.contains(ClientFactory.class.getName());
+    //         // return true;  // to remove all
     //     }
     // });
     // @formatter:on
 
-    public void printAll(String centerRegistryUrl) throws NamingException {
+    public static Client jerseyClient;
+
+    @BeforeAll
+    public static void setupJerseyClient() {
         Environment env = RULE.getEnvironment();
         env.metrics().removeMatching(new MetricFilter() {
             @Override
             public boolean matches(String name, Metric metric) {
-                return true;
+                return name.contains(ClientFactory.class.getName());
             }
         });
+        jerseyClient = ClientFactory.create(CenterRegistryLive.CONNECT_TIMEOUT, CenterRegistryLive.READ_TIMEOUT, env);
+    }
 
+    public void printAll(String centerRegistryUrl) throws NamingException {
         try {
-            CenterRegistry centerRegistry = new CenterRegistryLive(centerRegistryUrl, null, env);
+            CenterRegistry centerRegistry = new CenterRegistryLive(centerRegistryUrl, null, jerseyClient);
             List<Institution> list = centerRegistry.getCQLInstitutions();
             for (Institution institution : list) {
                 System.out.println("1: " + institution.getName() + ": ");
@@ -87,18 +99,10 @@ public class CQLEnumerationTest {
 
     @Test
     public void testEq() throws NamingException {
-        Environment env = RULE.getEnvironment();
         try {
             Set<Endpoint> list1, list2;
             {
-                env.metrics().removeMatching(new MetricFilter() {
-                    @Override
-                    public boolean matches(String name, Metric metric) {
-                        return true;
-                    }
-                });
-
-                CenterRegistry centerRegistry = new CenterRegistryLive(CENTER_REGISTRY_OFFICIAL, null, env);
+                CenterRegistry centerRegistry = new CenterRegistryLive(CENTER_REGISTRY_OFFICIAL, null, jerseyClient);
                 list1 = new HashSet<Endpoint>();
                 for (Institution i : centerRegistry.getCQLInstitutions()) {
                     list1.addAll(i.getEndpoints());
@@ -106,14 +110,7 @@ public class CQLEnumerationTest {
             }
 
             {
-                env.metrics().removeMatching(new MetricFilter() {
-                    @Override
-                    public boolean matches(String name, Metric metric) {
-                        return true;
-                    }
-                });
-
-                CenterRegistry centerRegistry = new CenterRegistryLive(CENTER_REGISTRY_TESTING, null, env);
+                CenterRegistry centerRegistry = new CenterRegistryLive(CENTER_REGISTRY_TESTING, null, jerseyClient);
                 list2 = new HashSet<Endpoint>();
                 for (Institution i : centerRegistry.getCQLInstitutions()) {
                     list2.addAll(i.getEndpoints());

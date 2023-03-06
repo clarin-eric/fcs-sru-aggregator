@@ -1,6 +1,5 @@
 package eu.clarin.sru.fcs.aggregator.scan;
 
-//import com.sun.jersey.api.client.Client;
 import eu.clarin.weblicht.bindings.cmd.StringBinding;
 import eu.clarin.weblicht.bindings.cmd.cp.CenterExtendedInformation;
 import eu.clarin.weblicht.bindings.cmd.cp.CenterProfile;
@@ -8,7 +7,6 @@ import eu.clarin.weblicht.bindings.cmd.cp.WebReference;
 import eu.clarin.weblicht.bindings.cr.Center;
 import eu.clarin.weblicht.connectors.ConnectorException;
 import eu.clarin.weblicht.connectors.cr.CenterRegistryConnector;
-import io.dropwizard.setup.Environment;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
@@ -19,8 +17,8 @@ public class CenterRegistryLive implements CenterRegistry {
 
     private static final org.slf4j.Logger log = LoggerFactory.getLogger(CenterRegistryLive.class);
 
-    private static final Integer CONNECT_TIMEOUT = 3000;
-    private static final Integer READ_TIMEOUT = 10000;
+    public static final Integer CONNECT_TIMEOUT = 3000;
+    public static final Integer READ_TIMEOUT = 10000;
 
     private String centerRegistryUrl;
     private boolean hasInstitutionsLoaded = false;
@@ -28,11 +26,11 @@ public class CenterRegistryLive implements CenterRegistry {
     private final EndpointFilter filter;
     private final Client client;
 
-    public CenterRegistryLive(String centerRegistryUrl, EndpointFilter filter, Environment env) {
+    public CenterRegistryLive(String centerRegistryUrl, EndpointFilter filter, Client jerseyClient) {
         super();
         this.centerRegistryUrl = centerRegistryUrl;
         this.filter = filter;
-        this.client = ClientFactory.create(CONNECT_TIMEOUT, READ_TIMEOUT, env);
+        this.client = jerseyClient;
     }
 
     @Override
@@ -47,7 +45,14 @@ public class CenterRegistryLive implements CenterRegistry {
         }
         hasInstitutionsLoaded = true;
         URI url = URI.create(centerRegistryUrl);
-        try (CenterRegistryConnector connector = new CenterRegistryConnector(client, url)) {
+        try (CenterRegistryConnector connector = new CenterRegistryConnector(client, url) {
+            @Override
+            public void close() {
+                // NOTE: ignore closing of client in CenterRegistryConnector->AbstractConnector
+                // TODO: better to close and create a new client?
+                // But would require resetting dropwizard metrics
+            };
+        }) {
             List<Center> regCenters = connector.retrieveCenters();
             for (Center regCenter : regCenters) {
                 String institutionUrl = regCenter.getId();
