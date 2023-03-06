@@ -50937,7 +50937,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
   window.MyAggregator = window.MyAggregator || {};
 
-  var VERSION = window.MyAggregator.VERSION = "v.3.5.3";
+  var VERSION = window.MyAggregator.VERSION = "v.3.5.4";
 
   // TODO: set this via environment variables at build time (envify)
   var URLROOT = window.MyAggregator.URLROOT = "";

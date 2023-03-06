@@ -1,5 +1,15 @@
 # Changelog
 
+# [3.5.4](https://github.com/clarin-eric/fcs-sru-aggregator/releases/tag/3.5.4) - 2023-03-06
+
+- Bug fixes:
+  - Fixed jersey client usage in `ScanCrawlTask` for `CenterRegistryLive`,  
+    might relate and fix to Issue #20
+
+- Changes:
+  - Added OWASP dependency check (`mvn verify`, `mvn site`)
+  - Wrote more documentation (see [`DEVELOPMENT.md`](DEVELOPMENT.md))
+
 # [3.5.3](https://github.com/clarin-eric/fcs-sru-aggregator/releases/tag/3.5.3) - 2023-02-28
 
 - Changes:
