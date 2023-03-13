@@ -53,12 +53,9 @@ jobs:
       with:
         name: frontend-artifact
 
-    - name: Allow maven http repositories
-      run: sed -i 's/<mirrorOf>external:http:\*<\/mirrorOf>/<mirrorOf>external:dummy:\*<\/mirrorOf>/' /usr/share/apache-maven-*/conf/settings.xml
-
     - name: Build jar
       #run: ./build.sh --jar
-      run: mvn clean package
+      run: mvn -ntp clean package
 
     - name: Prepare build artifact for packaging
       run: |
@@ -70,3 +67,29 @@ jobs:
       with:
         name: Package
         path: staging
+
+  mvn-site-report:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Use Java 11
+      uses: actions/setup-java@v3
+      with:
+        java-version: '11'
+        distribution: 'temurin'
+        cache: maven
+
+    # XXX: for _now_ does not need access to built frontend artifact, e.g. for tests or similar
+
+    - name: Generate report
+      run: |
+        mvn -ntp clean site
+        mv target/site report
+
+    - uses: actions/upload-artifact@v3
+      with:
+        name: Report
+        path: report
