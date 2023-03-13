@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <!--
     <prerequisites>
-            <maven>3.0.0</maven>
+        <maven>3.0.0</maven>
     </prerequisites>
     -->
 
@@ -11,6 +11,19 @@
     <artifactId>aggregator</artifactId>
     <version>3.5.4</version>
     <name>FCS Aggregator</name>
+
+    <organization>
+        <name>CLARIN</name>
+        <url>https://www.clarin.eu</url>
+    </organization>
+    <url>https://contentsearch.clarin.eu/</url>
+
+    <licenses>
+        <license>
+            <name>GNU General Public License Version 3 (GPLv3)</name>
+            <url>https://www.gnu.org/licenses/gpl-3.0.txt</url>
+        </license>
+    </licenses>
 
     <properties>
         <!-- project settings -->
