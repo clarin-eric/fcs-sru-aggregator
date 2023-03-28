@@ -1,5 +1,12 @@
 # Changelog
 
+# [3.5.5](https://github.com/clarin-eric/fcs-sru-aggregator/releases/tag/3.5.5) - 2023-03-28
+
+- Changes:
+  - Added (missing) [`LICENSE`](LICENSE) file
+  - Updated Github Actions build script (generates `Report` artifact for `mvn site`)
+  - Parameterize Piwik statistics configuration/usage
+
 # [3.5.4](https://github.com/clarin-eric/fcs-sru-aggregator/releases/tag/3.5.4) - 2023-03-06
 
 - Bug fixes:
