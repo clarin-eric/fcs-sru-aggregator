@@ -140,6 +140,11 @@ public class AggregatorConfiguration extends Configuration {
         WeblichtConfig weblichtConfig;
 
         @JsonIgnore
+        public WeblichtConfig getWeblichtConfig() {
+            return weblichtConfig;
+        }
+
+        @JsonIgnore
         public TimeUnit getScanTaskTimeUnit() {
             return TimeUnit.valueOf(SCAN_TASK_TIME_UNIT);
         }
@@ -169,9 +174,48 @@ public class AggregatorConfiguration extends Configuration {
             return SEARCH_MAX_CONCURRENT_REQUESTS_PER_SLOW_ENDPOINT;
         }
 
+        public static class PiwikConfig {
+            @JsonProperty
+            boolean enabled;
+
+            @JsonProperty
+            String url;
+
+            @JsonProperty
+            int siteID;
+
+            @JsonProperty
+            List<String> setDomains;
+
+            @JsonIgnore
+            public boolean isEnabled() {
+                return enabled;
+            }
+
+            @JsonIgnore
+            public String getUrl() {
+                return url;
+            }
+
+            @JsonIgnore
+            public int getSiteID() {
+                return siteID;
+            }
+
+            @JsonIgnore
+            public List<String> getSetDomains() {
+                return setDomains;
+            }
+        }
+
+        @Valid
+        @NotNull
+        @JsonProperty
+        PiwikConfig piwikConfig;
+
         @JsonIgnore
-        public WeblichtConfig getWeblichtConfig() {
-            return weblichtConfig;
+        public PiwikConfig getPiwikConfig() {
+            return piwikConfig;
         }
     }
 

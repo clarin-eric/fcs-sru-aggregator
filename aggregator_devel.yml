@@ -54,6 +54,13 @@ aggregatorParams:
       - es
       - pl
 
+  piwikConfig:
+    enabled: false
+    url: https://stats.clarin.eu/
+    siteID: 20
+    setDomains:
+      - '*.contentsearch.clarin.eu'
+
 # use the simple server factory, run on a single port
 server:
   applicationContextPath: /

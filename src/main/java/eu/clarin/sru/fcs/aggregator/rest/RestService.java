@@ -49,7 +49,7 @@ import org.slf4j.LoggerFactory;
  * @author ljo
  */
 @Produces(MediaType.APPLICATION_JSON)
-@Path("/")
+@Path("/rest")
 public class RestService {
 
     private static final String EXPORT_FILENAME_PREFIX = "ClarinFederatedContentSearch-";

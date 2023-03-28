@@ -8,9 +8,9 @@
 
     <link href="lib/bootstrap.min.css" rel="stylesheet">
     <link href="lib/font-awesome.min.css" rel="stylesheet">
-    <link href="CLARIN.css" rel="stylesheet">
-    <link href="base.css" rel="stylesheet">
-    <link href="adv.css" rel="stylesheet">
+    <link href="css/CLARIN.css" rel="stylesheet">
+    <link href="css/base.css" rel="stylesheet">
+    <link href="css/adv.css" rel="stylesheet">
     <link rel="icon" type="image/png" sizes="32x32" href="img/icon-services-fcs-32x32.png">
 
     <!--[if lt IE 9]>
@@ -65,17 +65,23 @@
     <link href="clarinservices/clarinservices.css" rel="stylesheet">
     <script src="clarinservices/clarinservices.js"></script>
 
+    {{#piwikConfig}}
+    {{#enabled}}
     <!-- Piwik -->
     <script type="text/javascript">
         if (location.hostname !== "localhost") {
             var _paq = _paq || [];
             _paq.push(["trackPageView"]);
             _paq.push(["enableLinkTracking"]);
-            _paq.push(["setDomains", ["*.contentsearch.clarin.eu"]]);
+            _paq.push(["setDomains", [
+                {{#setDomains}}
+                    "{{{.}}}",
+                {{/setDomains}}
+            ]]);
             (function () {
-                var u = "https://stats.clarin.eu/";
+                var u = "{{{url}}}";
                 _paq.push(["setTrackerUrl", u + "piwik.php"]);
-                _paq.push(["setSiteId", 20]);
+                _paq.push(["setSiteId", {{siteID}}]);
                 var d = document, g = d.createElement("script"), s = d.getElementsByTagName("script")[0];
                 g.type = "text/javascript"; g.async = true; g.defer = true; g.src = u + "piwik.js"; s.parentNode.insertBefore(g, s);
             })();
@@ -83,10 +89,17 @@
     </script>
     <noscript>
         <p>
-            <img src="https://stats.clarin.eu/piwik.php?idsite=20" style="border:0;" alt="" />
+            <img src="{{{url}}}piwik.php?idsite={{siteID}}" style="border:0;" alt="" />
         </p>
     </noscript>
     <!-- End Piwik Code -->
+    {{/enabled}}
+    {{^enabled}}
+    <script type="text/javascript">
+        var _paq = _paq || [];
+    </script>
+    {{/enabled}}
+    {{/piwikConfig}}
 </body>
 
 </html>

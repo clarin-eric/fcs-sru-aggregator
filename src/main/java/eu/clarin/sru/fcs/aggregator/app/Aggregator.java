@@ -28,6 +28,7 @@ import io.dropwizard.configuration.EnvironmentVariableSubstitutor;
 import io.dropwizard.configuration.SubstitutingSourceProvider;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
+import io.dropwizard.views.ViewBundle;
 
 import java.io.File;
 import java.io.IOException;
@@ -44,6 +45,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.servlet.DispatcherType;
+import javax.servlet.Servlet;
 import javax.ws.rs.client.Client;
 
 import org.eclipse.jetty.server.session.SessionHandler;
@@ -151,8 +153,26 @@ public class Aggregator extends Application<AggregatorConfiguration> {
         // Enable variable substitution with environment variables
         bootstrap.setConfigurationSourceProvider(new SubstitutingSourceProvider(
                 bootstrap.getConfigurationSourceProvider(), new EnvironmentVariableSubstitutor(false)));
-        // Static assets (available at root)
-        bootstrap.addBundle(new AssetsBundle("/assets", "/", "index.html", "static"));
+        // Static assets (available at root but need to be prefixed for jersey
+        // resources otherwise path conflict at "/*")
+        bootstrap.addBundle(new AssetsBundle("/assets/js", "/js", null, "static-js"));
+        bootstrap.addBundle(new AssetsBundle("/assets/css", "/css", null, "static-css"));
+        bootstrap.addBundle(new AssetsBundle("/assets/fonts", "/fonts", null, "static-fonts"));
+        bootstrap.addBundle(new AssetsBundle("/assets/img", "/img", null, "static-img"));
+        bootstrap.addBundle(new AssetsBundle("/assets/lib", "/lib", null, "static-lib"));
+        bootstrap.addBundle(
+                new AssetsBundle("/assets/clarinservices", "/clarinservices", null, "static-clarinservices"));
+        // Template index.html with environment variables
+        bootstrap.addBundle(new ViewBundle<AggregatorConfiguration>() {
+            @Override
+            public Map<String, Map<String, String>> getViewConfiguration(AggregatorConfiguration config) {
+                return new HashMap<String, Map<String, String>>() {
+                    {
+                        put("mustache", new HashMap<String, String>());
+                    }
+                };
+            }
+        });
     }
 
     @Override
@@ -179,8 +199,8 @@ public class Aggregator extends Application<AggregatorConfiguration> {
                 .addFilter("ExternalSearchRequestForwardingFilter", ExternalSearchRequestForwardingFilter.class)
                 .addMappingForUrlPatterns(EnumSet.of(DispatcherType.REQUEST), true, "/*");
 
-        // Moved to configuration section server in later versions
-        environment.jersey().setUrlPattern("/rest/*");
+        environment.jersey().setUrlPattern("/*");
+        environment.jersey().register(new IndexResource());
         environment.jersey().register(new RestService(environment));
 
         try {
