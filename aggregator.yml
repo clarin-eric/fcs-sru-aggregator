@@ -35,11 +35,10 @@ aggregatorParams:
       - pl
 
   piwikConfig:
-    enabled: true
-    url: https://stats.clarin.eu/
-    siteID: 20
-    setDomains:
-      - '*.contentsearch.clarin.eu'
+    enabled: ${PIWIK_ENABLED:-true}
+    url: ${PIWIK_URL:-https://stats.clarin.eu/}
+    siteID: ${PIWIK_SITEID:-20}
+    setDomains: ${PIWIK_SETDOMAINS:-['*.contentsearch.clarin.eu']}
 
 # use the simple server factory, run on a single port
 server:
