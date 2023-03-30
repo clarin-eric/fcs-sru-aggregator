@@ -218,7 +218,8 @@ public class Aggregator extends Application<AggregatorConfiguration> {
             final String[] resourcePackage = { "eu.clarin.sru.fcs.aggregator.rest" };
             final SwaggerConfiguration oasConfiguration = new SwaggerConfiguration()
                     .openAPI(new OpenAPI().addServersItem(
-                            new Server().url(config.aggregatorParams.SERVER_URL).description("Local API endpoint")))
+                            new Server().url(config.aggregatorParams.SERVER_URL).description("Local API endpoint"))
+                            .paths(ExternalSearchRequestForwardingFilter.buildOpenAPIDesc().getPaths()))
                     .prettyPrint(true)
                     .readAllResources(true)
                     .resourcePackages(Arrays.stream(resourcePackage).collect(Collectors.toSet()));

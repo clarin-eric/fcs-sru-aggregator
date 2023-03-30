@@ -87,8 +87,9 @@ public class RestService {
     @GET
     @Produces({ MediaType.APPLICATION_JSON })
     @Path("corpora")
-    @Operation(description = "Get all corpora.", responses = { @ApiResponse(content = {
-            @Content(mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Corpus.class))) }) })
+    @Operation(description = "Get all corpora.", responses = {
+            @ApiResponse(description = "List of corpora objects.", content = {
+                    @Content(mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Corpus.class))) }) })
     public Response getCorpora() throws IOException {
         List<Corpus> corpora = Aggregator.getInstance().getCorpora().getCorpora();
         return Response.ok(toJson(corpora)).build();
@@ -101,7 +102,7 @@ public class RestService {
     @Produces({ MediaType.APPLICATION_JSON })
     @Path("languages")
     @Operation(description = "Get all languages (code --> name) from all corpora.", responses = {
-            @ApiResponse(content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = LanguageMap.class), examples = @ExampleObject(value = "{\n  \"deu\": \"German\",\n  \"eng\": \"English\"}"))) })
+            @ApiResponse(description = "Mapping of language ISO code to English name.", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = LanguageMap.class), examples = @ExampleObject(value = "{\n  \"deu\": \"German\",\n  \"eng\": \"English\"}"))) })
     public Response getLanguages() throws IOException {
         Set<String> codes = Aggregator.getInstance().getCorpora().getLanguages();
         log.info("get language codes: {}", codes);
@@ -130,7 +131,7 @@ public class RestService {
     @Operation(description = "Get initial webpage data (corpora, languages)."
             + " Optional 'x-aggregation-context' for pre-selecting corpora "
             + "and/or 'mode' and 'query' for starting a search.", responses = {
-                    @ApiResponse(content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = InitSchema.class))) })
+                    @ApiResponse(description = "Initial page data (corpora, languages)", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = InitSchema.class))) })
     public Response getInit(@Context final HttpServletRequest request) throws IOException {
         log.info("get initial data");
         final Corpora corpora = Aggregator.getInstance().getCorpora();
@@ -440,7 +441,7 @@ public class RestService {
     @Produces({ MediaType.APPLICATION_JSON })
     @Path("statistics")
     @Operation(description = "Get scan and search statistics.", responses = {
-            @ApiResponse(content = @Content(schema = @Schema(implementation = ScanSearchStatisticsSchema.class))) })
+            @ApiResponse(description = "Scan and Search statistics for each endpoint.", content = @Content(schema = @Schema(implementation = ScanSearchStatisticsSchema.class))) })
     public Response getStatistics() throws IOException {
         final Statistics scan = Aggregator.getInstance().getScanStatistics();
         final Statistics search = Aggregator.getInstance().getSearchStatistics();

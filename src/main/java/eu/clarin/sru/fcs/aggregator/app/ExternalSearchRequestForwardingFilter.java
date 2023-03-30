@@ -16,6 +16,17 @@ import javax.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.http.HttpMethod;
 import org.slf4j.LoggerFactory;
 
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.Operation;
+import io.swagger.v3.oas.models.PathItem;
+import io.swagger.v3.oas.models.links.Link;
+import io.swagger.v3.oas.models.media.Content;
+import io.swagger.v3.oas.models.media.MediaType;
+import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.parameters.RequestBody;
+import io.swagger.v3.oas.models.responses.ApiResponse;
+import io.swagger.v3.oas.models.responses.ApiResponses;
+
 /**
  * The Aggregator is a single web page application, and most of the URLs
  * are routed and handled by the javascript client, not in the server.
@@ -97,7 +108,7 @@ public class ExternalSearchRequestForwardingFilter implements Filter {
     private boolean forward(HttpServletRequest request, HttpServletResponse response, final String target)
             throws IOException {
         ServletContext ctx = request.getServletContext();
-        RequestDispatcher dispatcher = ctx.getNamedDispatcher("static");
+        RequestDispatcher dispatcher = ctx.getRequestDispatcher(target);
         if (dispatcher == null) {
             log.error("Can not find internal redirect route '{}'. Will default.", target);
             return false;
@@ -136,4 +147,18 @@ public class ExternalSearchRequestForwardingFilter implements Filter {
         return true;
     }
 
+    public static OpenAPI buildOpenAPIDesc() {
+        return new OpenAPI().path("/", new PathItem().post(new Operation().description(
+                "Start external search request to either preselect resources for searching and/or set the search query and optionally start the search. Redirects to the Aggregator home page. Parameters will be stored in a session and queries on page load.")
+                .operationId("postExternalSearchRequest")
+                .requestBody(new RequestBody()
+                        .content(new Content().addMediaType(javax.ws.rs.core.MediaType.APPLICATION_FORM_URLENCODED,
+                                new MediaType().schema(new Schema<>().type("object")
+                                        .addProperty(PARAM_AGGREGATION_CONTEXT, new Schema<>().type("string"))
+                                        .addProperty(PARAM_QUERY, new Schema<>().type("string"))
+                                        .addProperty(PARAM_MODE, new Schema<>().type("string"))))))
+                .responses(new ApiResponses().addApiResponse("200",
+                        new ApiResponse().description("Returns default Aggregator 'index.html'.")
+                                .link("Initial page load", new Link().operationId("getInit"))))));
+    }
 }
