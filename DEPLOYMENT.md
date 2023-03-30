@@ -77,7 +77,12 @@ OpenAPI documentation (for Swagger etc.) is enabled by default.
 ```yaml
 aggregatorParams:
   openapiEnabled: ${SWAGGER_ENABLED:-true}
+  SERVER_URL: ${SERVER_URL:-https://contentsearch.clarin.eu/}
 ```
+
+The environment variable `SERVER_URL` is by default used by `SERVER_URL` and in `weblichtConfig.exportServerUrl`.
+
+See the section about [Enabling CORS in nginx](#enabling-cors-in-nginx).
 
 ### Matomo (Piwik) Statistics Collection
 
@@ -106,13 +111,17 @@ Use a `default.conf` configuration like the following:
 ```nginx
 server {
     # public port
-    listen       80;
+    listen       80 default_server;
     # catch all server name
     server_name  _;
 
+    # block all requests to dropwizard admin servlet
+    # /admin/*, /tasks/*
     location ^~ /admin {
-        # block all requests to dropwizard admin servlet
-        # /admin/*, /tasks/*
+        deny all;
+        return 404;
+    }
+    location ^~ /tasks {
         deny all;
         return 404;
     }
@@ -132,6 +141,54 @@ server {
         # may be different depending on deployment
         proxy_pass http://localhost:4019/;
     }
+}
+```
+
+#### Enabling CORS in nginx
+
+To enable **CORS** for swagger the following template can be used and inserted in the `location / { ... }` block. It only opens up `/rest/*` and `/openapi.json` (`/openapi.yaml`) for cross-origin requests.
+
+See also [CORS with `nginx`](https://enable-cors.org/server_nginx.html) and [CORS for some routes only](https://gist.github.com/algal/5480916).
+
+```nginx
+location / {
+    # Enable CORS
+    set $cors "";
+    if ($request_uri ~* ^/(rest|openapi.(json|yaml)$)) {
+        set $cors "true";
+    }
+    if ($request_method = 'OPTIONS') {
+        set $cors "${cors}options";
+    }
+    if ($request_method = 'POST') {
+        set $cors "${cors}post";
+    }
+    if ($request_method = 'GET') {
+        set $cors "${cors}get";
+    }
+    if ($cors = 'trueoptions') {
+        add_header 'Access-Control-Allow-Origin' '*';
+        add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS';
+        add_header 'Access-Control-Allow-Headers' 'DNT,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Content-Range,Range';
+        add_header 'Access-Control-Max-Age' 1728000;
+        add_header 'Content-Type' 'text/plain; charset=utf-8';
+        add_header 'Content-Length' 0;
+        return 204;
+    }
+    if ($cors = 'truepost') {
+        add_header 'Access-Control-Allow-Origin' '*';
+        add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS';
+        add_header 'Access-Control-Allow-Headers' 'DNT,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Content-Range,Range';
+        add_header 'Access-Control-Expose-Headers' 'DNT,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Content-Range,Range';
+    }
+    if ($cors = 'trueget') {
+        add_header 'Access-Control-Allow-Origin' '*';
+        add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS';
+        add_header 'Access-Control-Allow-Headers' 'DNT,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Content-Range,Range';
+        add_header 'Access-Control-Expose-Headers' 'DNT,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Content-Range,Range';
+    }
+
+    # remaining configurations
 }
 ```
 

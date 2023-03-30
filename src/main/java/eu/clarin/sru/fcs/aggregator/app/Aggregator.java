@@ -32,6 +32,8 @@ import io.dropwizard.views.ViewBundle;
 import io.swagger.v3.jaxrs2.SwaggerSerializers;
 import io.swagger.v3.jaxrs2.integration.resources.OpenApiResource;
 import io.swagger.v3.oas.integration.SwaggerConfiguration;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.servers.Server;
 
 import java.io.File;
 import java.io.IOException;
@@ -124,6 +126,8 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 
     private static final org.slf4j.Logger log = LoggerFactory.getLogger(Aggregator.class);
 
+    public final static String NAME = "CLARIN FCS Aggregator";
+
     final int SEARCHES_SIZE_GC_THRESHOLD = 1000;
     final int SEARCHES_AGE_GC_THRESHOLD = 60;
 
@@ -149,7 +153,7 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 
     @Override
     public String getName() {
-        return "CLARIN FCS Aggregator";
+        return NAME;
     }
 
     @Override
@@ -207,12 +211,14 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 
         environment.jersey().setUrlPattern("/*");
         environment.jersey().register(new IndexResource());
-        environment.jersey().register(new RestService(environment));
+        environment.jersey().register(new RestService());
 
         // swagger
         if (config.aggregatorParams.openapiEnabled) {
             final String[] resourcePackage = { "eu.clarin.sru.fcs.aggregator.rest" };
             final SwaggerConfiguration oasConfiguration = new SwaggerConfiguration()
+                    .openAPI(new OpenAPI().addServersItem(
+                            new Server().url(config.aggregatorParams.SERVER_URL).description("Local API endpoint")))
                     .prettyPrint(true)
                     .readAllResources(true)
                     .resourcePackages(Arrays.stream(resourcePackage).collect(Collectors.toSet()));

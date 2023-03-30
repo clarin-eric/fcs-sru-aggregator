@@ -225,6 +225,14 @@ public class AggregatorConfiguration extends Configuration {
         public boolean isOpenAPIEnabled() {
             return openapiEnabled;
         }
+
+        @JsonProperty
+        String SERVER_URL;
+
+        @JsonIgnore
+        public String getSERVER_URL() {
+            return SERVER_URL;
+        }
     }
 
     @Valid

@@ -33,7 +33,6 @@ public class Search {
 
     private static final org.slf4j.Logger log = LoggerFactory.getLogger(Search.class);
 
-    private static final String SEARCH_RESULTS_ENCODING = "UTF-8";
     static final int EXPORTS_SIZE_GC_THRESHOLD = 3;
 
     private static final AtomicLong counter = new AtomicLong(Math.abs(new Random().nextInt()));

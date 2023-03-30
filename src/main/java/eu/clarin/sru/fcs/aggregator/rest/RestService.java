@@ -21,7 +21,6 @@ import eu.clarin.sru.fcs.aggregator.search.Result;
 import eu.clarin.sru.fcs.aggregator.search.Search;
 import eu.clarin.sru.fcs.aggregator.util.LanguagesISO693;
 import eu.clarin.sru.fcs.aggregator.search.Exports;
-import io.dropwizard.setup.Environment;
 import io.swagger.v3.oas.annotations.OpenAPIDefinition;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.info.Info;
@@ -33,7 +32,6 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.servers.Server;
 
 import java.io.IOException;
 import java.net.URI;
@@ -68,25 +66,19 @@ import org.slf4j.LoggerFactory;
  */
 @Produces(MediaType.APPLICATION_JSON)
 @Path("/rest")
-@OpenAPIDefinition(info = @Info(title = "CLARIN FCS Aggregator REST API", version = "1.0.0", license = @License(name = "GNU General Public License Version 3 (GPLv3)", url = "https://www.gnu.org/licenses/gpl-3.0.txt")))
-// servers = { @Server(url = "/", description = "Local API endpoint") }
+@OpenAPIDefinition(info = @Info(title = Aggregator.NAME + " REST API", version = "1.0.0", description = "The "
+        + Aggregator.NAME + " REST API is documented following the open API specification."
+        + "<br />Code repository is hosted on <a href=\"https://github.com/clarin-eric/fcs-sru-aggregator\">GitHub</a>.", license = @License(name = "GNU General Public License Version 3 (GPLv3)", url = "https://www.gnu.org/licenses/gpl-3.0.txt")))
 public class RestService {
 
     private static final String EXPORT_FILENAME_PREFIX = "ClarinFederatedContentSearch-";
     private static final String TCF_MEDIA_TYPE = "text/tcf+xml";
     private static final String ODS_MEDIA_TYPE = "application/vnd.oasis.opendocument.spreadsheet";
     private static final String EXCEL_MEDIA_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-    private static final String SEARCH_RESULTS_ENCODING = "UTF-8";
 
     private static final org.slf4j.Logger log = LoggerFactory.getLogger(RestService.class);
 
     ObjectWriter ow = new ObjectMapper().writerWithDefaultPrettyPrinter();
-
-    private final Environment environment;
-
-    public RestService(Environment environment) {
-        this.environment = environment;
-    }
 
     private String toJson(Object o) throws JsonProcessingException {
         return ow.writeValueAsString(o);

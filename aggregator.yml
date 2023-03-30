@@ -41,6 +41,7 @@ aggregatorParams:
     setDomains: ${PIWIK_SETDOMAINS:-['*.contentsearch.clarin.eu']}
 
   openapiEnabled: ${SWAGGER_ENABLED:-true}
+  SERVER_URL: ${SERVER_URL:-https://contentsearch.clarin.eu/}
 
 # use the simple server factory, run on a single port
 server:
