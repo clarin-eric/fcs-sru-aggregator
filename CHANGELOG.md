@@ -1,5 +1,17 @@
 # Changelog
 
+# [3.5.7](https://github.com/clarin-eric/fcs-sru-aggregator/releases/tag/3.5.7) - 2023-03-30
+
+- Bug fixes:
+  - Fix external search request integration (e.g. VLO)
+
+- Changes:
+  - `SERVER_KEY` configuration (for Swagger)
+
+- General:
+  - Code cleanup
+  - Removed request filter, code in `IndexResource`
+
 # [3.5.6](https://github.com/clarin-eric/fcs-sru-aggregator/releases/tag/3.5.6) - 2023-03-29
 
 - Enhancements:
