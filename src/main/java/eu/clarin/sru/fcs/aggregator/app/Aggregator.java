@@ -41,7 +41,6 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -51,7 +50,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
-import javax.servlet.DispatcherType;
 import javax.ws.rs.client.Client;
 
 import org.eclipse.jetty.server.session.SessionHandler;
@@ -205,24 +203,20 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 
         environment.getApplicationContext().setSessionHandler(new SessionHandler());
 
-        environment.servlets()
-                .addFilter("ExternalSearchRequestForwardingFilter", ExternalSearchRequestForwardingFilter.class)
-                .addMappingForUrlPatterns(EnumSet.of(DispatcherType.REQUEST), true, "/*");
-
         environment.jersey().setUrlPattern("/*");
         environment.jersey().register(new IndexResource());
         environment.jersey().register(new RestService());
 
         // swagger
         if (config.aggregatorParams.openapiEnabled) {
-            final String[] resourcePackage = { "eu.clarin.sru.fcs.aggregator.rest" };
+            final String[] resourceClasses = { "eu.clarin.sru.fcs.aggregator.app.IndexResource",
+                    "eu.clarin.sru.fcs.aggregator.rest.RestService" };
             final SwaggerConfiguration oasConfiguration = new SwaggerConfiguration()
                     .openAPI(new OpenAPI().addServersItem(
-                            new Server().url(config.aggregatorParams.SERVER_URL).description("Local API endpoint"))
-                            .paths(ExternalSearchRequestForwardingFilter.buildOpenAPIDesc().getPaths()))
+                            new Server().url(config.aggregatorParams.SERVER_URL).description("Local API endpoint")))
                     .prettyPrint(true)
                     .readAllResources(true)
-                    .resourcePackages(Arrays.stream(resourcePackage).collect(Collectors.toSet()));
+                    .resourceClasses(Arrays.stream(resourceClasses).collect(Collectors.toSet()));
             environment.jersey().register(new OpenApiResource().openApiConfiguration(oasConfiguration));
             environment.jersey().register(new SwaggerSerializers());
         }
