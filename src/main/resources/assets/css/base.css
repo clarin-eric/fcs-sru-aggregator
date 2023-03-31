@@ -458,6 +458,14 @@ td {
   background-color: #F5F5F5;
 }
 
+.panel-body .table.advanced-layers>tbody>tr.hitrow-sep {
+  background-color: #00336620;
+}
+
+.panel-body .table.advanced-layers>tbody>tr.hitrow-sep>td {
+  padding-top: 0 !important;
+}
+
 div.popover {
   max-width: 552px;
 }

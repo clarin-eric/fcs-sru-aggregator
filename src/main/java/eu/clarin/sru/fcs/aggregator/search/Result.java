@@ -46,13 +46,13 @@ public final class Result {
     private List<Diagnostic> diagnostics = Collections.synchronizedList(new ArrayList<Diagnostic>());
     private List<Kwic> kwics = Collections.synchronizedList(new ArrayList<Kwic>());
 
-    private List<AdvancedLayer> advLayers = Collections.synchronizedList(new ArrayList<AdvancedLayer>());
+    private List<List<AdvancedLayer>> advLayers = Collections.synchronizedList(new ArrayList<List<AdvancedLayer>>());
 
     public List<Kwic> getKwics() {
         return kwics;
     }
 
-    public List<AdvancedLayer> getAdvancedLayers() {
+    public List<List<AdvancedLayer>> getAdvancedLayers() {
         return advLayers;
     }
 
@@ -69,18 +69,20 @@ public final class Result {
     }
 
     public void addResponse(SRUSearchRetrieveResponse response) {
-        if (response != null && response.hasRecords()) {
-            for (SRURecord record : response.getRecords()) {
-                addRecord(record);
+        if (response != null) {
+            if (response.hasRecords()) {
+                for (SRURecord record : response.getRecords()) {
+                    addRecord(record);
+                }
             }
-        }
-        if (response != null && response.hasDiagnostics()) {
-            for (SRUDiagnostic d : response.getDiagnostics()) {
-                diagnostics.add(new Diagnostic(d.getURI(), d.getMessage(), d.getDetails()));
+            if (response.hasDiagnostics()) {
+                for (SRUDiagnostic d : response.getDiagnostics()) {
+                    diagnostics.add(new Diagnostic(d.getURI(), d.getMessage(), d.getDetails()));
+                }
             }
-        }
-        if (response.getNextRecordPosition() > 0) {
-            nextRecordPosition.set(response.getNextRecordPosition());
+            if (response.getNextRecordPosition() > 0) {
+                nextRecordPosition.set(response.getNextRecordPosition());
+            }
         }
     }
 
@@ -140,11 +142,13 @@ public final class Result {
                 log.debug("DataViewHits: {}", kwic.getFragments());
             } else if (dataview instanceof DataViewAdvanced) {
                 final DataViewAdvanced adv = (DataViewAdvanced) dataview;
+                List<AdvancedLayer> advLayersSingleGroup = new ArrayList<>();
                 for (DataViewAdvanced.Layer layer : adv.getLayers()) {
                     log.debug("DataViewAdvanced layer: {}", adv.getUnit(), layer.getId());
                     AdvancedLayer aLayer = new AdvancedLayer(layer, pid, reference);
-                    advLayers.add(aLayer);
+                    advLayersSingleGroup.add(aLayer);
                 }
+                advLayers.add(advLayersSingleGroup);
             }
         }
     }

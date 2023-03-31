@@ -44,8 +44,8 @@ public class Exports {
                 if (result.getAdvancedLayers().size() == 0) {
                     for (Kwic kwic : result.getKwics()) {
                         if (firstRow) {
-                            String[] headers = new String[] {
-                                    "PID", "REFERENCE", "LEFT CONTEXT", "KEYWORD", "RIGHT CONTEXT" };
+                            String[] headers = new String[] { "PID", "REFERENCE", "LEFT CONTEXT", "KEYWORD",
+                                    "RIGHT CONTEXT" };
                             for (String header : headers) {
                                 csv.append("\"");
                                 csv.append(header);
@@ -86,43 +86,45 @@ public class Exports {
                     }
                 }
                 firstRow = true;
-                for (AdvancedLayer layer : result.getAdvancedLayers()) {
-                    if (firstRow) {
-                        String[] headers = new String[] {
-                                "PID", "REFERENCE", "SPANS" };
-                        for (String header : headers) {
+                for (List<AdvancedLayer> layers : result.getAdvancedLayers()) {
+                    for (AdvancedLayer layer : layers) {
+                        if (firstRow) {
+                            String[] headers = new String[] { "PID", "REFERENCE", "SPANS" };
+                            for (String header : headers) {
+                                csv.append("\"");
+                                csv.append(header);
+                                csv.append("\"");
+                                csv.append(separator);
+                            }
+                            csv.append("\n");
+                            firstRow = false;
+                        }
+                        if (filterLanguage != null && !filterLanguage.equals(layer.getLanguage())) {
+                            continue;
+                        }
+                        csv.append("\"");
+                        if (layer.getPid() != null) {
+                            csv.append(escapeQuotes(layer.getPid()));
+                        }
+                        csv.append("\"");
+                        csv.append(separator);
+                        csv.append("\"");
+                        if (layer.getReference() != null) {
+                            csv.append(escapeQuotes(layer.getReference()));
+                        }
+                        csv.append("\"");
+                        csv.append(separator);
+                        for (AdvancedLayer.Span span : layer.getSpans()) {
                             csv.append("\"");
-                            csv.append(header);
+                            if (span.getText() != null) {
+                                csv.append(escapeQuotes(span.getText()));
+                            }
                             csv.append("\"");
                             csv.append(separator);
                         }
                         csv.append("\n");
-                        firstRow = false;
+                        noResult = false;
                     }
-                    if (filterLanguage != null && !filterLanguage.equals(layer.getLanguage())) {
-                        continue;
-                    }
-
-                    csv.append("\"");
-                    if (layer.getPid() != null) {
-                        csv.append(escapeQuotes(layer.getPid()));
-                    }
-                    csv.append("\"");
-                    csv.append(separator);
-                    csv.append("\"");
-                    if (layer.getReference() != null) {
-                        csv.append(escapeQuotes(layer.getReference()));
-                    }
-                    csv.append("\"");
-                    csv.append(separator);
-                    for (AdvancedLayer.Span span : layer.getSpans()) {
-                        csv.append("\"");
-                        csv.append(escapeQuotes(span.getText()));
-                        csv.append("\"");
-                        csv.append(separator);
-                    }
-                    csv.append("\n");
-                    noResult = false;
                 }
             }
         }
@@ -170,8 +172,8 @@ public class Exports {
                     if (result.getAdvancedLayers().size() == 0) {
                         for (Kwic kwic : result.getKwics()) {
                             if (firstRow) {
-                                String[] headers = new String[] {
-                                        "PID", "REFERENCE", "LEFT CONTEXT", "KEYWORD", "RIGHT CONTEXT" };
+                                String[] headers = new String[] { "PID", "REFERENCE", "LEFT CONTEXT", "KEYWORD",
+                                        "RIGHT CONTEXT" };
                                 for (int j = 0; j < headers.length; ++j) {
                                     cell = row.createCell(j, CellType.STRING);
                                     cell.setCellValue(headers[j]);
@@ -180,7 +182,6 @@ public class Exports {
                                 firstRow = false;
                             }
                             // Body
-
                             if (filterLanguage != null && !filterLanguage.equals(kwic.getLanguage())) {
                                 continue;
                             }
@@ -193,7 +194,6 @@ public class Exports {
                             if (kwic.getReference() != null) {
                                 cell.setCellValue(kwic.getReference());
                             }
-
                             cell = row.createCell(2, CellType.STRING);
                             cell.setCellValue(kwic.getLeft());
                             cell = row.createCell(3, CellType.STRING);
@@ -203,44 +203,45 @@ public class Exports {
                             cell.setCellValue(kwic.getRight());
                         }
                     }
-                    for (AdvancedLayer layer : result.getAdvancedLayers()) {
-                        if (firstRow) {
-                            String[] headers = new String[] {
-                                    "PID", "REFERENCE", "SPANS" };
-                            for (int j = 0; j < headers.length; ++j) {
-                                cell = row.createCell(j, CellType.STRING);
-                                cell.setCellValue(headers[j]);
-                                cell.setCellStyle(headerStyle);
+                    for (List<AdvancedLayer> layers : result.getAdvancedLayers()) {
+                        for (AdvancedLayer layer : layers) {
+                            if (firstRow) {
+                                String[] headers = new String[] { "PID", "REFERENCE", "SPANS" };
+                                for (int j = 0; j < headers.length; ++j) {
+                                    cell = row.createCell(j, CellType.STRING);
+                                    cell.setCellValue(headers[j]);
+                                    cell.setCellStyle(headerStyle);
+                                }
+                                firstRow = false;
                             }
-                            firstRow = false;
-                        }
-
-                        if (filterLanguage != null && !filterLanguage.equals(layer.getLanguage())) {
-                            continue;
-                        }
-                        row = sheet.createRow(rownum++);
-                        int j = 0;
-                        cell = row.createCell(j, CellType.STRING);
-                        if (layer.getPid() != null) {
-                            cell.setCellValue(layer.getPid());
-                        }
-                        j++;
-                        cell = row.createCell(j, CellType.STRING);
-                        if (layer.getReference() != null) {
-                            cell.setCellValue(layer.getReference());
-                        }
-                        j++;
-                        for (AdvancedLayer.Span span : layer.getSpans()) {
+                            if (filterLanguage != null && !filterLanguage.equals(layer.getLanguage())) {
+                                continue;
+                            }
+                            row = sheet.createRow(rownum++);
+                            int j = 0;
                             cell = row.createCell(j, CellType.STRING);
-                            cell.setCellValue(span.getText());
-                            if (span.isHit()) {
-                                cell.setCellStyle(headerStyle);
+                            if (layer.getPid() != null) {
+                                cell.setCellValue(layer.getPid());
                             }
                             j++;
+                            cell = row.createCell(j, CellType.STRING);
+                            if (layer.getReference() != null) {
+                                cell.setCellValue(layer.getReference());
+                            }
+                            j++;
+                            for (AdvancedLayer.Span span : layer.getSpans()) {
+                                cell = row.createCell(j, CellType.STRING);
+                                cell.setCellValue(span.getText());
+                                if (span.isHit()) {
+                                    cell.setCellStyle(headerStyle);
+                                }
+                                j++;
+                            }
                         }
                     }
                 }
                 workbook.write(excelStream);
+                workbook.close();
             } catch (IOException ex) {
                 log.error("Exception exporting Excel:", ex);
                 throw new ExportException("Exception exporting Excel", ex);
@@ -270,8 +271,8 @@ public class Exports {
             for (Result result : resultsProcessed) {
                 if (result.getAdvancedLayers().size() == 0) {
                     if (firstRow) {
-                        String[] headers = new String[] {
-                                "PID", "REFERENCE", "LEFT CONTEXT", "KEYWORD", "RIGHT CONTEXT" };
+                        String[] headers = new String[] { "PID", "REFERENCE", "LEFT CONTEXT", "KEYWORD",
+                                "RIGHT CONTEXT" };
                         for (int j = 0; j < headers.length; ++j) {
                             sheet.setValueAt(headers[j], j, rownum);
                             sheet.getCellAt(j, rownum).setBackgroundColor(CQL_BACKGROUND);
@@ -299,39 +300,42 @@ public class Exports {
                     }
                 } else { // ADV
                     if (firstRow) {
-                        String[] headers = new String[] {
-                                "PID", "REFERENCE", "SPANS" };
+                        String[] headers = new String[] { "PID", "REFERENCE", "SPANS" };
                         for (int j = 0; j < headers.length; ++j) {
                             sheet.setValueAt(headers[j], j, rownum);
                             sheet.getCellAt(j, rownum).setBackgroundColor(FCS_BACKGROUND);
                         }
                         firstRow = false;
                     }
-
-                    sheet.ensureRowCount(rownum + result.getAdvancedLayers().size() + 2);
-                    for (AdvancedLayer layer : result.getAdvancedLayers()) {
-                        if (filterLanguage != null && !filterLanguage.equals(layer.getLanguage())) {
-                            continue;
-                        }
-                        rownum++;
-                        if (layer.getPid() != null) {
-                            sheet.setValueAt(layer.getPid(), 0, rownum);
-                        }
-                        if (layer.getReference() != null) {
-                            sheet.setValueAt(layer.getReference(), 1, rownum);
-                        }
-
-                        if (layer.getSpans().size() + 2 > largestColumnCount) {
-                            largestColumnCount = layer.getSpans().size() + 2;
-                            sheet.ensureColumnCount(largestColumnCount);
-                        }
-                        int j = 2;
-                        for (AdvancedLayer.Span span : layer.getSpans()) {
-                            sheet.setValueAt(span.getText(), j, rownum);
-                            if (span.isHit()) {
-                                sheet.getCellAt(j, rownum).setBackgroundColor(HIT_BACKGROUND);
+                    int numAdvancedLayers = 0;
+                    for (List<AdvancedLayer> layers : result.getAdvancedLayers()) {
+                        numAdvancedLayers += layers.size();
+                    }
+                    sheet.ensureRowCount(rownum + numAdvancedLayers + 2);
+                    for (List<AdvancedLayer> layers : result.getAdvancedLayers()) {
+                        for (AdvancedLayer layer : layers) {
+                            if (filterLanguage != null && !filterLanguage.equals(layer.getLanguage())) {
+                                continue;
                             }
-                            j++;
+                            rownum++;
+                            if (layer.getPid() != null) {
+                                sheet.setValueAt(layer.getPid(), 0, rownum);
+                            }
+                            if (layer.getReference() != null) {
+                                sheet.setValueAt(layer.getReference(), 1, rownum);
+                            }
+                            if (layer.getSpans().size() + 2 > largestColumnCount) {
+                                largestColumnCount = layer.getSpans().size() + 2;
+                                sheet.ensureColumnCount(largestColumnCount);
+                            }
+                            int j = 2;
+                            for (AdvancedLayer.Span span : layer.getSpans()) {
+                                sheet.setValueAt(span.getText(), j, rownum);
+                                if (span.isHit()) {
+                                    sheet.getCellAt(j, rownum).setBackgroundColor(HIT_BACKGROUND);
+                                }
+                                j++;
+                            }
                         }
                     }
                 }

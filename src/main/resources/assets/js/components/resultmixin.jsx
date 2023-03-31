@@ -76,6 +76,20 @@ var ResultMixin = {
     </tr>);
   },
 
+  renderRowsAsADVGrouped: function (corpusHit) {
+    function renderWithSeperators(layers, i) {
+      var pre = (i != 0) ? [(
+        <tr class="hitrow-sep"><td colspan="100%" /></tr>
+      )] : [];
+      return pre.concat(layers.map(this.renderRowsAsADV));
+    }
+    function renderPlainList(layers, i) {
+      return layers.map(this.renderRowsAsADV);
+    }
+    var needsSeparators = Math.min(...corpusHit.advancedLayers.map(x => x.length)) > 1;
+    return corpusHit.advancedLayers.map((needsSeparators ? renderWithSeperators : renderPlainList).bind(this));
+  },
+
   renderDiagnostic: function (d, key) {
     if (d.uri === window.MyAggregator.NO_MORE_RECORDS_DIAGNOSTIC_URI) {
       return false;
@@ -112,15 +126,15 @@ var ResultMixin = {
       return (<div className="corpusResultsADV">
         {this.renderErrors(corpusHit)}
         {this.renderDiagnostics(corpusHit)}
-        <table className="table table-condensed table-hover" style={fulllength}>
-          <tbody>{corpusHit.advancedLayers.map(this.renderRowsAsADV)}</tbody>
+        <table className="table table-condensed table-hover advanced-layers" style={fulllength}>
+          <tbody>{this.renderRowsAsADVGrouped(corpusHit)}</tbody>
         </table>
       </div>);
     } else if (this.state.displayKwic) {
       return (<div>
         {this.renderErrors(corpusHit)}
         {this.renderDiagnostics(corpusHit)}
-        <table className="table table-condensed table-hover" style={fulllength}>
+        <table className="table table-condensed table-hover kwic" style={fulllength}>
           <tbody>{corpusHit.kwics.map(this.renderRowsAsKwic)}</tbody>
         </table>
       </div>);
