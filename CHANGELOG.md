@@ -1,9 +1,19 @@
 # Changelog
 
+# [3.6.0](https://github.com/clarin-eric/fcs-sru-aggregator/releases/tag/3.6.0) - 2023-03-31
+
+- Enhancements:
+  - Added frontend only perma link to search results
+  - Added separator for ADV result rows (grouping by dataview/result hit)
+  - Added Ref-link to hits results
+
+- Dependencies:
+  - Upgraded `dropwizard` from 2.1.5 to 2.1.6
+
 # [3.5.7](https://github.com/clarin-eric/fcs-sru-aggregator/releases/tag/3.5.7) - 2023-03-30
 
 - Bug fixes:
-  - Fix external search request integration (e.g. VLO)
+  - Fixed external search request integration (e.g. VLO)
 
 - Changes:
   - `SERVER_KEY` configuration (for Swagger)
