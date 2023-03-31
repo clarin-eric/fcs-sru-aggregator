@@ -38,12 +38,22 @@ var ResultMixin = {
     return false; //<span style={{fontFace:"Courier",color:"black"}}>{hit.language} </span> ;
   },
 
+  renderRefLink: function (hit) {
+    if (!hit.reference) {
+      return false;
+    }
+    return (<a href={hit.reference} target="_blank" title="Go to resource hit">
+      <span class="glyphicon glyphicon-link" style={{ marginRight: ".5em" }} aria-hidden="true"></span>
+    </a>);
+  },
+
   renderRowsAsHits: function (hit, i) {
     function renderTextFragments(tf, idx) {
       return (<span key={idx} className={tf.hit ? "keyword" : ""}>{tf.text}</span>);
     }
     return (<p key={i} className="hitrow">
       {this.renderRowLanguage(hit)}
+      {this.renderRefLink(hit)}
       {hit.fragments.map(renderTextFragments)}
     </p>);
   },
