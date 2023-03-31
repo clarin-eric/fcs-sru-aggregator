@@ -118,7 +118,7 @@ var Results = createReactClass({
       {showprogress ? this.renderProgressMessage() : <div style={{ height: 20 }} />}
       <div style={{ marginBottom: 5 }}>
         {showprogress ? false :
-          <div className="float-left" style={{ marginRight: "2ex" }}>
+          <div className="float-left" style={{ marginRight: "1ex" }}>
             {collhits.hits + " matching collections found"}
             <br />
             {collhits.results.length + " collections searched"}
