@@ -50980,7 +50980,8 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
       return {
         navbarCollapse: false,
         navbarPageFn: this.renderAggregator,
-        alerts: []
+        alerts: [], // messages (info/error)
+        initialSearchId: null // search id extracted from URL
       };
     },
 
@@ -51046,7 +51047,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
     },
 
     renderAggregator: function renderAggregator() {
-      return React.createElement(_aggregatorpage2.default, { APIROOT: APIROOT, ajax: this.ajax, error: this.error, info: this.info, embedded: false });
+      return React.createElement(_aggregatorpage2.default, { APIROOT: APIROOT, ajax: this.ajax, error: this.error, info: this.info, embedded: false, searchId: this.state.initialSearchId });
     },
 
     renderHelp: function renderHelp() {
@@ -51256,6 +51257,10 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
       this.toStatistics(false);
     } else if (pageFnName === 'embed') {
       this.toEmbedded(false);
+    } else if (pageFnName.startsWith("search-")) {
+      var searchId = Number.parseInt(pageFnName.substring(7));
+      this.setState({ initialSearchId: searchId });
+      this.toAggregator(false);
     } else {
       this.toAggregator(false);
     }
@@ -51693,7 +51698,8 @@ var AggregatorPage = (0, _createReactClass2.default)({
     ajax: PT.func.isRequired,
     error: PT.func.isRequired,
     info: PT.func.isRequired,
-    embedded: PT.bool.isRequired
+    embedded: PT.bool.isRequired,
+    searchId: PT.number
   },
 
   nohits: {
@@ -51717,7 +51723,7 @@ var AggregatorPage = (0, _createReactClass2.default)({
       languageFilter: 'byMeta',
       numberOfResults: 10,
 
-      searchId: null,
+      searchId: this.props.searchId,
       timeout: 0,
       hits: this.nohits,
 
@@ -51799,6 +51805,12 @@ var AggregatorPage = (0, _createReactClass2.default)({
         } else {
           console.warn("Got Aggregator init response, but not mounted!");
         }
+
+        // load old search state if provided and possible
+        if (this.state.searchId != null) {
+          console.log("Try loading exiting search, from searchId provided from URL:", this.state.searchId);
+          this.refreshSearchResults();
+        }
       }.bind(this)
     });
   },
@@ -51815,8 +51827,18 @@ var AggregatorPage = (0, _createReactClass2.default)({
   },
 
   getCurrentQuery: function getCurrentQuery() {
-    return this.state.queryTypeId === 'fcs' ? this.state.fcsQuery : this.state.cqlQuery;
+    return this.getCurrentQueryByQueryTypeId(this.state.queryTypeId);
   },
+
+
+  getCurrentQueryByQueryTypeId: function getCurrentQueryByQueryTypeId(queryTypeId) {
+    if (queryTypeId === 'fcs') {
+      return this.state.fcsQuery;
+    } else {
+      return this.state.cqlQuery;
+    }
+  },
+
   search: function search() {
     var query = this.getCurrentQuery();
     var queryTypeId = this.state.queryTypeId;
@@ -51941,7 +51963,7 @@ var AggregatorPage = (0, _createReactClass2.default)({
   setQueryType: function setQueryType(queryTypeId) {
     this.state.corpora.setVisibility(queryTypeId, this.state.language[0]);
     setQueryVariable('queryType', queryTypeId);
-    setQueryVariable('query', queryTypeId === 'cql' ? this.state.cqlQuery : this.state.fcsQuery);
+    setQueryVariable('query', this.getCurrentQueryByQueryTypeId(queryTypeId));
     this.setState({
       queryTypeId: queryTypeId,
       hits: this.nohits,
@@ -52038,6 +52060,18 @@ var AggregatorPage = (0, _createReactClass2.default)({
     }
   },
 
+  copyToClipboard: function copyToClipboard(text) {
+    if (!navigator.clipboard) {
+      console.warn("Failed to copy to clipboard!");
+      return;
+    }
+    navigator.clipboard.writeText(text).then(function () {
+      console.log("Async: Copying to clipboard was successful!");
+    }, function (err) {
+      console.error("Async: Could not copy text: ", err);
+    });
+  },
+
   renderZoomedResultTitle: function renderZoomedResultTitle(corpusHit) {
     if (!corpusHit) return React.createElement("span", null);
     var corpus = corpusHit.corpus;
@@ -52055,6 +52089,44 @@ var AggregatorPage = (0, _createReactClass2.default)({
         ),
         React.createElement("i", { className: "glyphicon glyphicon-home" })
       ) : false
+    );
+  },
+
+  getSearchPermaLink: function getSearchPermaLink() {
+    //var query = getQueryVariable('query');
+    //var query = this.getCurrentQueryByQueryTypeId(queryTypeId)
+    var query = this.getCurrentQuery();
+    var queryTypeId = this.state.queryTypeId;
+
+    //var tempUrl = window.location.origin + window.location.pathname + "/search-" + this.state.searchId;
+    //window.history.replaceState(window.history.state, null, tempUrl);
+    //setQueryVariable('queryType', queryTypeId);
+    //setQueryVariable('query', query);        
+    //var url = window.location.toString();
+    var url = window.location.origin + '/' + (!!window.MyAggregator.URLROOT.length ? window.MyAggregator.URLROOT + '/' : '') + "search-" + this.state.searchId + '?' + encodeQueryData({ queryType: queryTypeId, query: query });
+    return url;
+  },
+
+  renderSearchPermaLink: function renderSearchPermaLink() {
+    var url = this.getSearchPermaLink();
+    return React.createElement(
+      "div",
+      { className: "input-group input-group-sm col-md-4", style: { float: "right" } },
+      React.createElement(
+        "span",
+        { className: "input-group-addon" },
+        "Perma-Link"
+      ),
+      React.createElement("input", { type: "text", readOnly: true, value: url, id: "search-perma-link", className: "form-control input-sm search" }),
+      React.createElement(
+        "div",
+        { className: "input-group-btn" },
+        React.createElement(
+          "button",
+          { className: "btn btn-default input-sm image_button", type: "button", onClick: this.copyToClipboard.bind(this, url) },
+          React.createElement("i", { className: "glyphicon glyphicon-copy" })
+        )
+      )
     );
   },
 
@@ -52205,7 +52277,6 @@ var AggregatorPage = (0, _createReactClass2.default)({
 
 
   render: function render() {
-
     var queryType = queryTypeMap[this.state.queryTypeId];
     return React.createElement(
       "div",
@@ -52322,6 +52393,7 @@ var AggregatorPage = (0, _createReactClass2.default)({
           )
         )
       ),
+      this.state.searchId !== null ? this.renderSearchPermaLink() : false,
       React.createElement(
         _modal2.default,
         { ref: "corporaModal", title: React.createElement(
@@ -52491,8 +52563,8 @@ Corpora.prototype.setAggregationContext = function (endpoints2handles) {
   _.pairs(endpoints2handles).forEach(function (endp) {
     var endpoint = endp[0];
     var handles = endp[1];
-    console.log('setAggregationContext: endpoint', endpoint);
-    console.log('setAggregationContext: handles', handles);
+    console.log("setAggregationContext: endpoint", endpoint);
+    console.log("setAggregationContext: handles", handles);
     handles.forEach(function (handle) {
       var found = false;
       _this.recurse(function (corpus) {

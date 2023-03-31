@@ -54,7 +54,8 @@ import createReactClass from "create-react-class";
       return {
         navbarCollapse: false,
         navbarPageFn: this.renderAggregator,
-        alerts: [],
+        alerts: [],  // messages (info/error)
+        initialSearchId: null,  // search id extracted from URL
       };
     },
 
@@ -120,7 +121,7 @@ import createReactClass from "create-react-class";
     },
 
     renderAggregator: function () {
-      return <AggregatorPage APIROOT={APIROOT} ajax={this.ajax} error={this.error} info={this.info} embedded={false} />;
+      return <AggregatorPage APIROOT={APIROOT} ajax={this.ajax} error={this.error} info={this.info} embedded={false} searchId={this.state.initialSearchId} />;
     },
 
     renderHelp: function () {
@@ -273,6 +274,10 @@ import createReactClass from "create-react-class";
       this.toStatistics(false);
     } else if (pageFnName === 'embed') {
       this.toEmbedded(false);
+    } else if (pageFnName.startsWith("search-")) {
+      var searchId = Number.parseInt(pageFnName.substring(7));
+      this.setState({ initialSearchId: searchId });
+      this.toAggregator(false);
     } else {
       this.toAggregator(false);
     }

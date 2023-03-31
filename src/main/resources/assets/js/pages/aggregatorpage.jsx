@@ -21,7 +21,8 @@ var AggregatorPage = createReactClass({
     ajax: PT.func.isRequired,
     error: PT.func.isRequired,
     info: PT.func.isRequired,
-    embedded: PT.bool.isRequired
+    embedded: PT.bool.isRequired,
+    searchId: PT.number,
   },
 
   nohits: {
@@ -45,7 +46,7 @@ var AggregatorPage = createReactClass({
       languageFilter: 'byMeta',
       numberOfResults: 10,
 
-      searchId: null,
+      searchId: this.props.searchId,
       timeout: 0,
       hits: this.nohits,
 
@@ -121,6 +122,12 @@ var AggregatorPage = createReactClass({
         else {
           console.warn("Got Aggregator init response, but not mounted!");
         }
+
+        // load old search state if provided and possible
+        if (this.state.searchId != null) {
+          console.log("Try loading exiting search, from searchId provided from URL:", this.state.searchId);
+          this.refreshSearchResults();
+        }
       }.bind(this),
     });
   },
@@ -136,7 +143,15 @@ var AggregatorPage = createReactClass({
   },
 
   getCurrentQuery() {
-    return this.state.queryTypeId === 'fcs' ? this.state.fcsQuery : this.state.cqlQuery;
+    return this.getCurrentQueryByQueryTypeId(this.state.queryTypeId);
+  },
+
+  getCurrentQueryByQueryTypeId: function (queryTypeId) {
+    if (queryTypeId === 'fcs') {
+      return this.state.fcsQuery;
+    } else {
+      return this.state.cqlQuery;
+    }
   },
 
   search() {
@@ -265,7 +280,7 @@ var AggregatorPage = createReactClass({
   setQueryType: function (queryTypeId) {
     this.state.corpora.setVisibility(queryTypeId, this.state.language[0]);
     setQueryVariable('queryType', queryTypeId);
-    setQueryVariable('query', queryTypeId === 'cql' ? this.state.cqlQuery : this.state.fcsQuery)
+    setQueryVariable('query', this.getCurrentQueryByQueryTypeId(queryTypeId))
     this.setState({
       queryTypeId: queryTypeId,
       hits: this.nohits,
@@ -366,6 +381,18 @@ var AggregatorPage = createReactClass({
     }
   },
 
+  copyToClipboard: function (text) {
+    if (!navigator.clipboard) {
+      console.warn("Failed to copy to clipboard!");
+      return;
+    }
+    navigator.clipboard.writeText(text).then(function () {
+      console.log("Async: Copying to clipboard was successful!");
+    }, function (err) {
+      console.error("Async: Could not copy text: ", err);
+    });
+  },
+
   renderZoomedResultTitle: function (corpusHit) {
     if (!corpusHit) return (<span />);
     var corpus = corpusHit.corpus;
@@ -377,6 +404,37 @@ var AggregatorPage = createReactClass({
           <i className="glyphicon glyphicon-home" />
         </a> : false}
     </h3>);
+  },
+
+  getSearchPermaLink: function () {
+    //var query = getQueryVariable('query');
+    //var query = this.getCurrentQueryByQueryTypeId(queryTypeId)
+    var query = this.getCurrentQuery();
+    var queryTypeId = this.state.queryTypeId;
+
+    //var tempUrl = window.location.origin + window.location.pathname + "/search-" + this.state.searchId;
+    //window.history.replaceState(window.history.state, null, tempUrl);
+    //setQueryVariable('queryType', queryTypeId);
+    //setQueryVariable('query', query);        
+    //var url = window.location.toString();
+    var url = window.location.origin + '/'
+      + (!!window.MyAggregator.URLROOT.length ? window.MyAggregator.URLROOT + '/' : '')
+      + "search-" + this.state.searchId
+      + '?' + encodeQueryData({ queryType: queryTypeId, query: query, });
+    return url;
+  },
+
+  renderSearchPermaLink: function () {
+    var url = this.getSearchPermaLink();
+    return (<div className="input-group input-group-sm col-md-4" style={{ float: "right" }}>
+      <span className="input-group-addon">Perma-Link</span>
+      <input type="text" readOnly value={url} id="search-perma-link" className="form-control input-sm search" />
+      <div className="input-group-btn">
+        <button className="btn btn-default input-sm image_button" type="button" onClick={this.copyToClipboard.bind(this, url)}>
+          <i className="glyphicon glyphicon-copy" />
+        </button>
+      </div>
+    </div>);
   },
 
   renderSearchButtonOrLink: function () {
@@ -493,7 +551,6 @@ var AggregatorPage = createReactClass({
   },
 
   render: function () {
-
     var queryType = queryTypeMap[this.state.queryTypeId];
     return (
       <div className="top-gap">
@@ -559,6 +616,8 @@ var AggregatorPage = createReactClass({
             </form>
           </div>
         </div>
+
+        {this.state.searchId !== null ? this.renderSearchPermaLink() : false}
 
         <Modal ref="corporaModal" title={<span>Collections <small className="text-muted">{this.props.corpora && this.props.corpora.getSelectedMessage()}</small></span>}>
           <CorpusView corpora={this.state.corpora} languageMap={this.state.languageMap} />
@@ -704,8 +763,8 @@ Corpora.prototype.setAggregationContext = function (endpoints2handles) {
   _.pairs(endpoints2handles).forEach((endp) => {
     var endpoint = endp[0];
     var handles = endp[1];
-    console.log('setAggregationContext: endpoint', endpoint);
-    console.log('setAggregationContext: handles', handles);
+    console.log("setAggregationContext: endpoint", endpoint);
+    console.log("setAggregationContext: handles", handles);
     handles.forEach((handle) => {
       var found = false;
       this.recurse((corpus) => {
