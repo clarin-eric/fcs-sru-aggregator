@@ -82,7 +82,7 @@ aggregatorParams:
 
 The environment variable `SERVER_URL` is by default used by `SERVER_URL` and in `weblichtConfig.exportServerUrl`.
 
-See the section about [Enabling CORS in nginx](#enabling-cors-in-nginx).
+See the section about [Enabling CORS in nginx](#enabling-cors-in-nginx) or [in Apache2](#enabling-cors-in-apache2).
 
 ### Matomo (Piwik) Statistics Collection
 
@@ -148,7 +148,7 @@ server {
 
 To enable **CORS** for swagger the following template can be used and inserted in the `location / { ... }` block. It only opens up `/rest/*` and `/openapi.json` (`/openapi.yaml`) for cross-origin requests.
 
-See also [CORS with `nginx`](https://enable-cors.org/server_nginx.html) and [CORS for some routes only](https://gist.github.com/algal/5480916).
+See also [CORS on `Nginx`](https://enable-cors.org/server_nginx.html) and [CORS for some routes only](https://gist.github.com/algal/5480916).
 
 ```nginx
 location / {
@@ -216,6 +216,30 @@ Add your configuration to `/etc/apache2/sites-available`, e.g. `aggregator.conf`
 </VirtualHost>
 ```
 
+#### Enabling CORS in apache2
+
+To enable **CORS** for swagger the following template can be used and inserted in the `<VirtualHost>` block. It only opens up `/rest/*` and `/openapi.json` (`/openapi.yaml`) for cross-origin requests.
+
+See also [CORS on `Apache`](https://enable-cors.org/server_apache.html) and [CORS for some routes only](https://stackoverflow.com/a/42791714/9360161).
+
+Ensure that you have enabled the `headers` module with `a2enmod headers` and then test (`apachectl -t`) and reload your configuration (`systemctl restart apache2`).
+
+```apacheconf
+<VirtualHost *:80>
+    # ...
+    <IfModule mod_headers.c>
+        # enable module with: a2enmod headers
+        <If "%{REQUEST_URI} =~ m#^/(rest/\S+|openapi.(json|yaml)$)#">
+            Header set Access-Control-Allow-Origin "*"
+            Header set Access-Control-Allow-Methods "GET, POST, OPTIONS"
+            Header set Access-Control-Allow-Headers "DNT,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Content-Range,Range"
+            Header set Access-Control-Expose-Headers "DNT,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Content-Range,Range"
+        </If>
+    </IfModule>
+    # ...
+</VirtualHost>
+```
+
 ## Docker
 
 A simple [`Dockerfile`](Dockerfile) is included that shows how to build a small image with the application.
@@ -244,6 +268,14 @@ docker run \
     -v $(pwd)/fcsAggregatorCorpora.backup.json:/var/lib/aggregator/fcsAggregatorCorpora.backup.json \
     fcs-aggregator
 ```
+
+### Known issues
+
+#### Error: `Cannot create worker GC thread. Out of system resources.`
+
+There seems to be some issues with the image `eclipse-temurin:11-jre-jammy` and older docker engines (before 20.x). For more information see: https://github.com/adoptium/temurin-build/issues/3020
+
+An interim solution if updating docker itself is not possible would be to choose another base image for the [`run` stage](Dockerfile#L38). The now [_deprecated_](https://github.com/docker-library/openjdk/issues/505) image `openjdk:11-jre-slim-bullseye` seems to work. But use with caution and maybe try some of the other images suggested by the openjdk deprecation notice.
 
 ## CLARIN
 
