@@ -4,8 +4,6 @@ aggregatorParams:
     # - https://clarin.ids-mannheim.de/digibibsru-new
   # additionalFCSEndpoints:
 
-  #AGGREGATOR_FILE_PATH: /var/lib/aggregator/fcsAggregatorCorpora.json
-  #AGGREGATOR_FILE_PATH_BACKUP: /var/lib/aggregator/fcsAggregatorCorpora.backup.json
   AGGREGATOR_FILE_PATH: /var/lib/aggregator/fcsAggregatorCorpora.json
   AGGREGATOR_FILE_PATH_BACKUP: /var/lib/aggregator/fcsAggregatorCorpora.backup.json
 
@@ -26,6 +24,7 @@ aggregatorParams:
 
   weblichtConfig:
     url: https://weblicht.sfs.uni-tuebingen.de/weblicht/?input=
+    exportServerUrl: ${SERVER_URL:-https://contentsearch.clarin.eu/}rest/
     acceptedTcfLanguages:
       - en
       - de
@@ -35,9 +34,18 @@ aggregatorParams:
       - es
       - pl
 
+  piwikConfig:
+    enabled: ${PIWIK_ENABLED:-true}
+    url: ${PIWIK_URL:-https://stats.clarin.eu/}
+    siteID: ${PIWIK_SITEID:-20}
+    setDomains: ${PIWIK_SETDOMAINS:-['*.contentsearch.clarin.eu']}
+
+  openapiEnabled: ${SWAGGER_ENABLED:-true}
+  SERVER_URL: ${SERVER_URL:-https://contentsearch.clarin.eu/}
+
 # use the simple server factory, run on a single port
 server:
-  applicationContextPath: /Aggregator
+  applicationContextPath: /
   type: simple
   #rootPath: '/rest/*'
   connector:

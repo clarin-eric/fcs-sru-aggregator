@@ -3,133 +3,238 @@ package eu.clarin.sru.fcs.aggregator.app;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.dropwizard.Configuration;
+
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import org.hibernate.validator.constraints.NotEmpty;
+
+import javax.validation.Valid;
+import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
+
 import org.hibernate.validator.constraints.Range;
 
 public class AggregatorConfiguration extends Configuration {
 
-	public static class Params {
+    public static class Params {
 
-		@JsonProperty
-		String CENTER_REGISTRY_URL;
+        @JsonProperty
+        String CENTER_REGISTRY_URL;
 
-		@JsonProperty
-		List<URL> additionalCQLEndpoints;
+        public static class EndpointConfig {
+            @NotNull
+            @JsonProperty
+            URL url;
 
-		@JsonProperty
-		List<URL> additionalFCSEndpoints;
+            @JsonProperty
+            String name;
 
-		@JsonProperty
-		List<URI> slowEndpoints;
+            protected EndpointConfig(String url) throws MalformedURLException {
+                this.url = new URL(url);
+            }
 
-		@NotEmpty
-		@JsonProperty
-		String AGGREGATOR_FILE_PATH;
+            protected EndpointConfig() {
+            }
 
-		@NotEmpty
-		@JsonProperty
-		String AGGREGATOR_FILE_PATH_BACKUP;
+            @JsonIgnore
+            public URL getUrl() {
+                return url;
+            }
 
-		@JsonProperty
-		@Range
-		int SCAN_MAX_DEPTH;
+            @JsonIgnore
+            public String getName() {
+                return name;
+            }
+        }
 
-		@JsonProperty
-		@Range
-		long SCAN_TASK_INITIAL_DELAY;
+        @Valid
+        @JsonProperty
+        List<EndpointConfig> additionalCQLEndpoints;
 
-		@Range
-		@JsonProperty
-		int SCAN_TASK_INTERVAL;
+        @Valid
+        @JsonProperty
+        List<EndpointConfig> additionalFCSEndpoints;
 
-		@NotEmpty
-		@JsonProperty
-		String SCAN_TASK_TIME_UNIT;
+        @JsonProperty
+        List<URI> slowEndpoints;
 
-		@JsonProperty
-		@Range
-		int SCAN_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT;
+        @NotEmpty
+        @JsonProperty
+        String AGGREGATOR_FILE_PATH;
 
-		@JsonProperty
-		@Range
-		int SEARCH_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT;
+        @NotEmpty
+        @JsonProperty
+        String AGGREGATOR_FILE_PATH_BACKUP;
 
-		@JsonProperty
-		@Range
-		int SEARCH_MAX_CONCURRENT_REQUESTS_PER_SLOW_ENDPOINT;
+        @JsonProperty
+        @Range
+        int SCAN_MAX_DEPTH;
 
-		@JsonProperty
-		@Range
-		int ENDPOINTS_SCAN_TIMEOUT_MS;
+        @JsonProperty
+        @Range
+        long SCAN_TASK_INITIAL_DELAY;
 
-		@JsonProperty
-		@Range
-		int ENDPOINTS_SEARCH_TIMEOUT_MS;
+        @Range
+        @JsonProperty
+        int SCAN_TASK_INTERVAL;
 
-		@JsonProperty
-		@Range
-		long EXECUTOR_SHUTDOWN_TIMEOUT_MS;
+        @NotEmpty
+        @JsonProperty
+        String SCAN_TASK_TIME_UNIT;
 
-		public static class WeblichtConfig {
-			@JsonProperty
-			String url;
+        @JsonProperty
+        @Range
+        int SCAN_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT;
 
-			@JsonProperty
-			List<String> acceptedTcfLanguages;
+        @JsonProperty
+        @Range
+        int SEARCH_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT;
 
-			@JsonIgnore
-			public String getUrl() {
-				return url;
-			}
+        @JsonProperty
+        @Range
+        int SEARCH_MAX_CONCURRENT_REQUESTS_PER_SLOW_ENDPOINT;
 
-			@JsonIgnore
-			public List<String> getAcceptedTcfLanguages() {
-				return acceptedTcfLanguages;
-			}
-		}
+        @JsonProperty
+        @Range
+        int ENDPOINTS_SCAN_TIMEOUT_MS;
 
-		@NotEmpty
-		@JsonProperty
-		WeblichtConfig weblichtConfig;
+        @JsonProperty
+        @Range
+        int ENDPOINTS_SEARCH_TIMEOUT_MS;
 
-		@JsonIgnore
-		public TimeUnit getScanTaskTimeUnit() {
-			return TimeUnit.valueOf(SCAN_TASK_TIME_UNIT);
-		}
+        @JsonProperty
+        @Range
+        long EXECUTOR_SHUTDOWN_TIMEOUT_MS;
 
-		@JsonIgnore
-		public int getENDPOINTS_SCAN_TIMEOUT_MS() {
-			return ENDPOINTS_SCAN_TIMEOUT_MS;
-		}
+        public static class WeblichtConfig {
+            @JsonProperty
+            String url;
 
-		@JsonIgnore
-		public int getENDPOINTS_SEARCH_TIMEOUT_MS() {
-			return ENDPOINTS_SEARCH_TIMEOUT_MS;
-		}
+            @JsonProperty
+            String exportServerUrl;
 
-		@JsonIgnore
-		public int getSCAN_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT() {
-			return SCAN_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT;
-		}
+            @JsonProperty
+            List<String> acceptedTcfLanguages;
 
-		@JsonIgnore
-		public int getSEARCH_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT() {
-			return SEARCH_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT;
-		}
+            @JsonIgnore
+            public String getUrl() {
+                return url;
+            }
 
-		@JsonIgnore
-		public int getSEARCH_MAX_CONCURRENT_REQUESTS_PER_SLOW_ENDPOINT() {
-			return SEARCH_MAX_CONCURRENT_REQUESTS_PER_SLOW_ENDPOINT;
-		}
+            @JsonIgnore
+            public String getExportServerUrl() {
+                return exportServerUrl;
+            }
 
-		@JsonIgnore
-		public WeblichtConfig getWeblichtConfig() {
-			return weblichtConfig;
-		}
-	}
-	public Params aggregatorParams = new Params();
+            @JsonIgnore
+            public List<String> getAcceptedTcfLanguages() {
+                return acceptedTcfLanguages;
+            }
+        }
+
+        @Valid
+        @NotNull
+        @JsonProperty
+        WeblichtConfig weblichtConfig;
+
+        @JsonIgnore
+        public WeblichtConfig getWeblichtConfig() {
+            return weblichtConfig;
+        }
+
+        @JsonIgnore
+        public TimeUnit getScanTaskTimeUnit() {
+            return TimeUnit.valueOf(SCAN_TASK_TIME_UNIT);
+        }
+
+        @JsonIgnore
+        public int getENDPOINTS_SCAN_TIMEOUT_MS() {
+            return ENDPOINTS_SCAN_TIMEOUT_MS;
+        }
+
+        @JsonIgnore
+        public int getENDPOINTS_SEARCH_TIMEOUT_MS() {
+            return ENDPOINTS_SEARCH_TIMEOUT_MS;
+        }
+
+        @JsonIgnore
+        public int getSCAN_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT() {
+            return SCAN_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT;
+        }
+
+        @JsonIgnore
+        public int getSEARCH_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT() {
+            return SEARCH_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT;
+        }
+
+        @JsonIgnore
+        public int getSEARCH_MAX_CONCURRENT_REQUESTS_PER_SLOW_ENDPOINT() {
+            return SEARCH_MAX_CONCURRENT_REQUESTS_PER_SLOW_ENDPOINT;
+        }
+
+        public static class PiwikConfig {
+            @JsonProperty
+            boolean enabled;
+
+            @JsonProperty
+            String url;
+
+            @JsonProperty
+            int siteID;
+
+            @JsonProperty
+            List<String> setDomains;
+
+            @JsonIgnore
+            public boolean isEnabled() {
+                return enabled;
+            }
+
+            @JsonIgnore
+            public String getUrl() {
+                return url;
+            }
+
+            @JsonIgnore
+            public int getSiteID() {
+                return siteID;
+            }
+
+            @JsonIgnore
+            public List<String> getSetDomains() {
+                return setDomains;
+            }
+        }
+
+        @Valid
+        @NotNull
+        @JsonProperty
+        PiwikConfig piwikConfig;
+
+        @JsonIgnore
+        public PiwikConfig getPiwikConfig() {
+            return piwikConfig;
+        }
+
+        @JsonProperty
+        boolean openapiEnabled;
+
+        @JsonIgnore
+        public boolean isOpenAPIEnabled() {
+            return openapiEnabled;
+        }
+
+        @JsonProperty
+        String SERVER_URL;
+
+        @JsonIgnore
+        public String getSERVER_URL() {
+            return SERVER_URL;
+        }
+    }
+
+    @Valid
+    public Params aggregatorParams = new Params();
 }

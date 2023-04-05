@@ -13,20 +13,20 @@ import java.util.Set;
  */
 public class EndpointUrlFilterDeny implements EndpointFilter {
 
-	private Set<String> deny = new HashSet<String>();
+    private Set<String> deny = new HashSet<String>();
 
-	public EndpointUrlFilterDeny(String... fragments) {
-		Collections.addAll(deny, fragments);
-	}
+    public EndpointUrlFilterDeny(String... fragments) {
+        Collections.addAll(deny, fragments);
+    }
 
-	@Override
-	public boolean filter(String endpoint) {
-		for (String d : deny) {
-			if (endpoint.contains(d)) {
-				return false;
-			}
-		}
-		return true;
-	}
+    @Override
+    public boolean filter(String endpoint) {
+        for (String d : deny) {
+            if (endpoint.contains(d)) {
+                return false;
+            }
+        }
+        return true;
+    }
 
 }

@@ -1,0 +1,70 @@
+aggregatorParams:
+  CENTER_REGISTRY_URL: https://centres.clarin.eu/restxml/
+  #additionalCQLEndpoints:
+    # - https://clarin.ids-mannheim.de/digibibsru-new
+    #- http://localhost:8080/korp-endpoint/sru
+    #- https://spraakbanken.gu.se/ws/fcs/2.0/endpoint/korp/sru
+
+  #additionalFCSEndpoints:
+    #- http://localhost:8080/korp-endpoint/sru
+    #- https://spraakbanken.gu.se/ws/fcs/2.0/endpoint/korp/sru
+
+  #AGGREGATOR_FILE_PATH: /Users/edima/fcsAggregatorCorpora.json
+  #AGGREGATOR_FILE_PATH_BACKUP: /Users/edima/fcsAggregatorCorpora.backup.json
+  #AGGREGATOR_FILE_PATH: /Users/wilelb/fcs-sru-aggregator/fcsAggregatorCorpora.json
+  #AGGREGATOR_FILE_PATH_BACKUP: /Users/wilelb/fcs-sru-aggregator/fcsAggregatorCorpora.backup.json
+  #AGGREGATOR_FILE_PATH: /home/ljo/arbete/Clarin-eric/fcs-sru-aggregator/fcsAggregatorCorpora.json
+  #AGGREGATOR_FILE_PATH_BACKUP: /home/ljo/arbete/Clarin-eric/fcs-sru-aggregator/fcsAggregatorCorpora.backup.json
+  AGGREGATOR_FILE_PATH: fcsAggregatorCorpora.json
+  AGGREGATOR_FILE_PATH_BACKUP: fcsAggregatorCorpora.backup.json
+  
+
+  SCAN_MAX_DEPTH: 1 # recommended 3
+  SCAN_TASK_INITIAL_DELAY: 0
+  SCAN_TASK_INTERVAL: 12
+  SCAN_TASK_TIME_UNIT: HOURS
+  SCAN_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT: 4  # @depth2: 1=361s; 2=225s; 4=207s
+
+  SEARCH_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT: 4
+  SEARCH_MAX_CONCURRENT_REQUESTS_PER_SLOW_ENDPOINT: 1
+  slowEndpoints:
+    - http://cqlservlet.mpi.nl/
+
+  ENDPOINTS_SCAN_TIMEOUT_MS: 60000
+  ENDPOINTS_SEARCH_TIMEOUT_MS: 30000
+  EXECUTOR_SHUTDOWN_TIMEOUT_MS: 1000
+
+  weblichtConfig:
+    url: https://weblicht.sfs.uni-tuebingen.de/weblicht/?input=
+    exportServerUrl: ${SERVER_URL:-https://contentsearch.clarin.eu/}rest/
+    acceptedTcfLanguages:
+      - en
+      - de
+      - nl
+      - fr
+      - it
+      - es
+      - pl
+
+# use the simple server factory, run on a single port
+server:
+  applicationContextPath: /
+  type: simple
+  connector:
+    type: http
+    port: 4020
+
+# Logging settings.
+logging:
+  # The default level of all loggers. Can be OFF, ERROR, WARN, INFO, DEBUG, TRACE, or ALL.
+  level: WARN
+  # Logger-specific levels.
+  loggers:
+    eu.clarin.sru.fcs.aggregator: INFO
+    eu.clarin.sru.client: WARN
+    eu.clarin.sru.fcs.aggregator.scan.ScanCrawler: DEBUG
+    io.swagger: DEBUG
+    io.federecio.dropwizard.swagger: DEBUG
+
+  appenders:
+    - type: console

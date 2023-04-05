@@ -7,9 +7,9 @@ import eu.clarin.sru.client.SRUThreadedClient;
  */
 interface Operation<Request, Response> {
 
-	void setClient(GenericClient client);
+    void setClient(GenericClient client);
 
-	void execute(SRUThreadedClient sruClient);
+    void execute(SRUThreadedClient sruClient);
 
-	OpStats stats();
+    OpStats stats();
 }

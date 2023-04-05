@@ -1,4 +1,5 @@
 package eu.clarin.sru.fcs.aggregator.scan;
+
 /*
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.filter.LoggingFilter;
@@ -9,7 +10,6 @@ import io.dropwizard.client.JerseyClientBuilder;
 import io.dropwizard.client.JerseyClientConfiguration;
 import io.dropwizard.setup.Environment;
 import io.dropwizard.util.Duration;
-import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.TrustManager;
@@ -30,40 +30,40 @@ import org.glassfish.jersey.client.ClientProperties;
  * We might reconsider the latter feature though ;).
  *
  * @author Daniël de Kok <me@danieldk.eu>
- * Shamelessly copied from the weblicht Harvester by emanueldima
+ *         Shamelessly copied from the weblicht Harvester by emanueldima
  */
 public class ClientFactory {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ClientFactory.class);
+    private static final org.slf4j.Logger log = LoggerFactory.getLogger(ClientFactory.class);
 
     public static Client create(int connectTimeout, int readTimeout, Environment env) {
         /*
-        SSLContext sc = null;
-        try {
-            sc = SSLContext.getInstance("SSL");
-            sc.init(null, trustAllCerts, new SecureRandom());
-        } catch (NoSuchAlgorithmException e) {
-            LOGGER.error("Unknown algorithm, SSL: {}", e.getMessage());
-        } catch (KeyManagementException e) {
-            LOGGER.error("Key management problem: {}", e.getMessage());
-        }
-
-        HttpClient httpClient = HttpClientBuilder.create()
-                .setRedirectStrategy(new LaxRedirectStrategy())
-                .setSslcontext(sc)
-                .build();
-        */
+         * SSLContext sc = null;
+         * try {
+         * sc = SSLContext.getInstance("SSL");
+         * sc.init(null, trustAllCerts, new SecureRandom());
+         * } catch (NoSuchAlgorithmException e) {
+         * log.error("Unknown algorithm, SSL: {}", e.getMessage());
+         * } catch (KeyManagementException e) {
+         * log.error("Key management problem: {}", e.getMessage());
+         * }
+         * 
+         * HttpClient httpClient = HttpClientBuilder.create()
+         * .setRedirectStrategy(new LaxRedirectStrategy())
+         * .setSslcontext(sc)
+         * .build();
+         */
         JerseyClientConfiguration config = new JerseyClientConfiguration();
-        //config.setTlsConfiguration(new TlsConfiguration());
+        // config.setTlsConfiguration(new TlsConfiguration());
         config.setConnectionTimeout(Duration.milliseconds(connectTimeout));
         config.setTimeout(Duration.milliseconds(readTimeout));
-        
+
         Client client = new JerseyClientBuilder(env).using(config).build(ClientFactory.class.getName());
         client.property(ClientProperties.FOLLOW_REDIRECTS, Boolean.TRUE);
 
         return client;
     }
 
-    private static TrustManager[] trustAllCerts = {new X509TrustManager() {
+    private static TrustManager[] trustAllCerts = { new X509TrustManager() {
         @Override
         public void checkClientTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
         }
@@ -76,7 +76,7 @@ public class ClientFactory {
         public X509Certificate[] getAcceptedIssuers() {
             return null;
         }
-    }};
+    } };
 
     private ClientFactory() {
     }

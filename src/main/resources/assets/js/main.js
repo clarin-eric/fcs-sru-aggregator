@@ -62,9 +62,9 @@ module.exports = _interopRequireDefault;
 
 },{}],3:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
-// Distributed under an MIT license: https://codemirror.net/LICENSE
+// Distributed under an MIT license: https://codemirror.net/5/LICENSE
 
-// This is CodeMirror (https://codemirror.net), a code editor
+// This is CodeMirror (https://codemirror.net/5), a code editor
 // implemented in JavaScript on top of the browser's DOM.
 //
 // You can find some technical background for some of the code below
@@ -73,7 +73,7 @@ module.exports = _interopRequireDefault;
 (function (global, factory) {
   typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
   typeof define === 'function' && define.amd ? define(factory) :
-  (global.CodeMirror = factory());
+  (global = global || self, global.CodeMirror = factory());
 }(this, (function () { 'use strict';
 
   // Kludges for bugs and behavior differences that can't be feature
@@ -89,13 +89,14 @@ module.exports = _interopRequireDefault;
   var ie_version = ie && (ie_upto10 ? document.documentMode || 6 : +(edge || ie_11up)[1]);
   var webkit = !edge && /WebKit\//.test(userAgent);
   var qtwebkit = webkit && /Qt\/\d+\.\d+/.test(userAgent);
-  var chrome = !edge && /Chrome\//.test(userAgent);
+  var chrome = !edge && /Chrome\/(\d+)/.exec(userAgent);
+  var chrome_version = chrome && +chrome[1];
   var presto = /Opera\//.test(userAgent);
   var safari = /Apple Computer/.test(navigator.vendor);
   var mac_geMountainLion = /Mac OS X 1\d\D([8-9]|\d\d)\D/.test(userAgent);
   var phantom = /PhantomJS/.test(userAgent);
 
-  var ios = !edge && /AppleWebKit/.test(userAgent) && /Mobile\/\w+/.test(userAgent);
+  var ios = safari && (/Mobile\/\w+/.test(userAgent) || navigator.maxTouchPoints > 2);
   var android = /Android/.test(userAgent);
   // This is woefully incomplete. Suggestions for alternative methods welcome.
   var mobile = ios || android || /webOS|BlackBerry|Opera Mini|Opera Mobi|IEMobile/i.test(userAgent);
@@ -174,15 +175,15 @@ module.exports = _interopRequireDefault;
     } while (child = child.parentNode)
   }
 
-  function activeElt() {
+  function activeElt(doc) {
     // IE and Edge may throw an "Unspecified Error" when accessing document.activeElement.
     // IE < 10 will throw when accessed while the page is loading or in an iframe.
     // IE > 9 and Edge will throw when accessed in an iframe if document.body is unavailable.
     var activeElement;
     try {
-      activeElement = document.activeElement;
+      activeElement = doc.activeElement;
     } catch(e) {
-      activeElement = document.body || null;
+      activeElement = doc.body || null;
     }
     while (activeElement && activeElement.shadowRoot && activeElement.shadowRoot.activeElement)
       { activeElement = activeElement.shadowRoot.activeElement; }
@@ -205,6 +206,10 @@ module.exports = _interopRequireDefault;
     { selectInput = function(node) { node.selectionStart = 0; node.selectionEnd = node.value.length; }; }
   else if (ie) // Suppress mysterious IE10 errors
     { selectInput = function(node) { try { node.select(); } catch(_e) {} }; }
+
+  function doc(cm) { return cm.display.wrapper.ownerDocument }
+
+  function win(cm) { return doc(cm).defaultView }
 
   function bind(f) {
     var args = Array.prototype.slice.call(arguments, 1);
@@ -267,7 +272,7 @@ module.exports = _interopRequireDefault;
   }
 
   // Number of pixels added to scroller and sizer to hide scrollbar
-  var scrollerGap = 30;
+  var scrollerGap = 50;
 
   // Returned or thrown by various protocols to signal 'I'm not
   // handling this'.
@@ -548,14 +553,15 @@ module.exports = _interopRequireDefault;
           for (++i$7; i$7 < len && countsAsLeft.test(types[i$7]); ++i$7) {}
           order.push(new BidiSpan(0, start, i$7));
         } else {
-          var pos = i$7, at = order.length;
+          var pos = i$7, at = order.length, isRTL = direction == "rtl" ? 1 : 0;
           for (++i$7; i$7 < len && types[i$7] != "L"; ++i$7) {}
           for (var j$2 = pos; j$2 < i$7;) {
             if (countsAsNum.test(types[j$2])) {
-              if (pos < j$2) { order.splice(at, 0, new BidiSpan(1, pos, j$2)); }
+              if (pos < j$2) { order.splice(at, 0, new BidiSpan(1, pos, j$2)); at += isRTL; }
               var nstart = j$2;
               for (++j$2; j$2 < i$7 && countsAsNum.test(types[j$2]); ++j$2) {}
               order.splice(at, 0, new BidiSpan(2, nstart, j$2));
+              at += isRTL;
               pos = j$2;
             } else { ++j$2; }
           }
@@ -599,8 +605,8 @@ module.exports = _interopRequireDefault;
     } else if (emitter.attachEvent) {
       emitter.attachEvent("on" + type, f);
     } else {
-      var map$$1 = emitter._handlers || (emitter._handlers = {});
-      map$$1[type] = (map$$1[type] || noHandlers).concat(f);
+      var map = emitter._handlers || (emitter._handlers = {});
+      map[type] = (map[type] || noHandlers).concat(f);
     }
   };
 
@@ -614,11 +620,11 @@ module.exports = _interopRequireDefault;
     } else if (emitter.detachEvent) {
       emitter.detachEvent("on" + type, f);
     } else {
-      var map$$1 = emitter._handlers, arr = map$$1 && map$$1[type];
+      var map = emitter._handlers, arr = map && map[type];
       if (arr) {
         var index = indexOf(arr, f);
         if (index > -1)
-          { map$$1[type] = arr.slice(0, index).concat(arr.slice(index + 1)); }
+          { map[type] = arr.slice(0, index).concat(arr.slice(index + 1)); }
       }
     }
   }
@@ -746,11 +752,11 @@ module.exports = _interopRequireDefault;
     try { return te.selectionStart != te.selectionEnd }
     catch(e) { return false }
   } : function (te) {
-    var range$$1;
-    try {range$$1 = te.ownerDocument.selection.createRange();}
+    var range;
+    try {range = te.ownerDocument.selection.createRange();}
     catch(e) {}
-    if (!range$$1 || range$$1.parentElement() != te) { return false }
-    return range$$1.compareEndPoints("StartToEnd", range$$1) != 0
+    if (!range || range.parentElement() != te) { return false }
+    return range.compareEndPoints("StartToEnd", range) != 0
   };
 
   var hasCopyEvent = (function () {
@@ -898,10 +904,8 @@ module.exports = _interopRequireDefault;
     return this.pos > start
   };
   StringStream.prototype.eatSpace = function () {
-      var this$1 = this;
-
     var start = this.pos;
-    while (/[\s\u00a0]/.test(this.string.charAt(this.pos))) { ++this$1.pos; }
+    while (/[\s\u00a0]/.test(this.string.charAt(this.pos))) { ++this.pos; }
     return this.pos > start
   };
   StringStream.prototype.skipToEnd = function () {this.pos = this.string.length;};
@@ -1097,11 +1101,9 @@ module.exports = _interopRequireDefault;
   };
 
   Context.prototype.baseToken = function (n) {
-      var this$1 = this;
-
     if (!this.baseTokens) { return null }
     while (this.baseTokens[this.baseTokenPos] <= n)
-      { this$1.baseTokenPos += 2; }
+      { this.baseTokenPos += 2; }
     var type = this.baseTokens[this.baseTokenPos + 1];
     return {type: type && type.replace(/( |^)overlay .*/, ""),
             size: this.baseTokens[this.baseTokenPos] - n}
@@ -1267,7 +1269,7 @@ module.exports = _interopRequireDefault;
       var prop = lineClass[1] ? "bgClass" : "textClass";
       if (output[prop] == null)
         { output[prop] = lineClass[2]; }
-      else if (!(new RegExp("(?:^|\s)" + lineClass[2] + "(?:$|\s)")).test(output[prop]))
+      else if (!(new RegExp("(?:^|\\s)" + lineClass[2] + "(?:$|\\s)")).test(output[prop]))
         { output[prop] += " " + lineClass[2]; }
     } }
     return type
@@ -1377,6 +1379,7 @@ module.exports = _interopRequireDefault;
       if (span.marker == marker) { return span }
     } }
   }
+
   // Remove a span from an array, returning undefined if no spans are
   // left (we don't store arrays for lines without spans).
   function removeMarkedSpan(spans, span) {
@@ -1385,9 +1388,16 @@ module.exports = _interopRequireDefault;
       { if (spans[i] != span) { (r || (r = [])).push(spans[i]); } }
     return r
   }
+
   // Add a span to a line.
-  function addMarkedSpan(line, span) {
-    line.markedSpans = line.markedSpans ? line.markedSpans.concat([span]) : [span];
+  function addMarkedSpan(line, span, op) {
+    var inThisOp = op && window.WeakSet && (op.markedSpans || (op.markedSpans = new WeakSet));
+    if (inThisOp && line.markedSpans && inThisOp.has(line.markedSpans)) {
+      line.markedSpans.push(span);
+    } else {
+      line.markedSpans = line.markedSpans ? line.markedSpans.concat([span]) : [span];
+      if (inThisOp) { inThisOp.add(line.markedSpans); }
+    }
     span.marker.attachLine(line);
   }
 
@@ -1590,8 +1600,8 @@ module.exports = _interopRequireDefault;
   // Test whether there exists a collapsed span that partially
   // overlaps (covers the start or end, but not both) of a new span.
   // Such overlap is not allowed.
-  function conflictingCollapsedRange(doc, lineNo$$1, from, to, marker) {
-    var line = getLine(doc, lineNo$$1);
+  function conflictingCollapsedRange(doc, lineNo, from, to, marker) {
+    var line = getLine(doc, lineNo);
     var sps = sawCollapsedSpans && line.markedSpans;
     if (sps) { for (var i = 0; i < sps.length; ++i) {
       var sp = sps[i];
@@ -1907,7 +1917,7 @@ module.exports = _interopRequireDefault;
       }
     }
     builder.trailingSpace = displayText.charCodeAt(text.length - 1) == 32;
-    if (style || startStyle || endStyle || mustWrap || css) {
+    if (style || startStyle || endStyle || mustWrap || css || attributes) {
       var fullStyle = style || "";
       if (startStyle) { fullStyle += startStyle; }
       if (endStyle) { fullStyle += endStyle; }
@@ -2252,6 +2262,7 @@ module.exports = _interopRequireDefault;
     if (cm.options.lineNumbers || markers) {
       var wrap$1 = ensureLineWrapped(lineView);
       var gutterWrap = lineView.gutter = elt("div", null, "CodeMirror-gutter-wrapper", ("left: " + (cm.options.fixedGutter ? dims.fixedPos : -dims.gutterTotalWidth) + "px"));
+      gutterWrap.setAttribute("aria-hidden", "true");
       cm.display.input.setUneditable(gutterWrap);
       wrap$1.insertBefore(gutterWrap, lineView.text);
       if (lineView.line.gutterClass)
@@ -2272,10 +2283,10 @@ module.exports = _interopRequireDefault;
 
   function updateLineWidgets(cm, lineView, dims) {
     if (lineView.alignable) { lineView.alignable = null; }
+    var isWidget = classTest("CodeMirror-linewidget");
     for (var node = lineView.node.firstChild, next = (void 0); node; node = next) {
       next = node.nextSibling;
-      if (node.className == "CodeMirror-linewidget")
-        { lineView.node.removeChild(node); }
+      if (isWidget.test(node.className)) { lineView.node.removeChild(node); }
     }
     insertLineWidgets(cm, lineView, dims);
   }
@@ -2305,7 +2316,7 @@ module.exports = _interopRequireDefault;
     if (!line.widgets) { return }
     var wrap = ensureLineWrapped(lineView);
     for (var i = 0, ws = line.widgets; i < ws.length; ++i) {
-      var widget = ws[i], node = elt("div", [widget.node], "CodeMirror-linewidget");
+      var widget = ws[i], node = elt("div", [widget.node], "CodeMirror-linewidget" + (widget.className ? " " + widget.className : ""));
       if (!widget.handleMouseEvents) { node.setAttribute("cm-ignore-events", "true"); }
       positionLineWidget(widget, node, lineView, dims);
       cm.display.input.setUneditable(node);
@@ -2408,12 +2419,14 @@ module.exports = _interopRequireDefault;
   function mapFromLineView(lineView, line, lineN) {
     if (lineView.line == line)
       { return {map: lineView.measure.map, cache: lineView.measure.cache} }
-    for (var i = 0; i < lineView.rest.length; i++)
-      { if (lineView.rest[i] == line)
-        { return {map: lineView.measure.maps[i], cache: lineView.measure.caches[i]} } }
-    for (var i$1 = 0; i$1 < lineView.rest.length; i$1++)
-      { if (lineNo(lineView.rest[i$1]) > lineN)
-        { return {map: lineView.measure.maps[i$1], cache: lineView.measure.caches[i$1], before: true} } }
+    if (lineView.rest) {
+      for (var i = 0; i < lineView.rest.length; i++)
+        { if (lineView.rest[i] == line)
+          { return {map: lineView.measure.maps[i], cache: lineView.measure.caches[i]} } }
+      for (var i$1 = 0; i$1 < lineView.rest.length; i$1++)
+        { if (lineNo(lineView.rest[i$1]) > lineN)
+          { return {map: lineView.measure.maps[i$1], cache: lineView.measure.caches[i$1], before: true} } }
+    }
   }
 
   // Render a line into the hidden node display.externalMeasured. Used
@@ -2493,36 +2506,36 @@ module.exports = _interopRequireDefault;
 
   var nullRect = {left: 0, right: 0, top: 0, bottom: 0};
 
-  function nodeAndOffsetInLineMap(map$$1, ch, bias) {
+  function nodeAndOffsetInLineMap(map, ch, bias) {
     var node, start, end, collapse, mStart, mEnd;
     // First, search the line map for the text node corresponding to,
     // or closest to, the target character.
-    for (var i = 0; i < map$$1.length; i += 3) {
-      mStart = map$$1[i];
-      mEnd = map$$1[i + 1];
+    for (var i = 0; i < map.length; i += 3) {
+      mStart = map[i];
+      mEnd = map[i + 1];
       if (ch < mStart) {
         start = 0; end = 1;
         collapse = "left";
       } else if (ch < mEnd) {
         start = ch - mStart;
         end = start + 1;
-      } else if (i == map$$1.length - 3 || ch == mEnd && map$$1[i + 3] > ch) {
+      } else if (i == map.length - 3 || ch == mEnd && map[i + 3] > ch) {
         end = mEnd - mStart;
         start = end - 1;
         if (ch >= mEnd) { collapse = "right"; }
       }
       if (start != null) {
-        node = map$$1[i + 2];
+        node = map[i + 2];
         if (mStart == mEnd && bias == (node.insertLeft ? "left" : "right"))
           { collapse = bias; }
         if (bias == "left" && start == 0)
-          { while (i && map$$1[i - 2] == map$$1[i - 3] && map$$1[i - 1].insertLeft) {
-            node = map$$1[(i -= 3) + 2];
+          { while (i && map[i - 2] == map[i - 3] && map[i - 1].insertLeft) {
+            node = map[(i -= 3) + 2];
             collapse = "left";
           } }
         if (bias == "right" && start == mEnd - mStart)
-          { while (i < map$$1.length - 3 && map$$1[i + 3] == map$$1[i + 4] && !map$$1[i + 5].insertLeft) {
-            node = map$$1[(i += 3) + 2];
+          { while (i < map.length - 3 && map[i + 3] == map[i + 4] && !map[i + 5].insertLeft) {
+            node = map[(i += 3) + 2];
             collapse = "right";
           } }
         break
@@ -2627,22 +2640,24 @@ module.exports = _interopRequireDefault;
     cm.display.lineNumChars = null;
   }
 
-  function pageScrollX() {
+  function pageScrollX(doc) {
     // Work around https://bugs.chromium.org/p/chromium/issues/detail?id=489206
     // which causes page_Offset and bounding client rects to use
     // different reference viewports and invalidate our calculations.
-    if (chrome && android) { return -(document.body.getBoundingClientRect().left - parseInt(getComputedStyle(document.body).marginLeft)) }
-    return window.pageXOffset || (document.documentElement || document.body).scrollLeft
+    if (chrome && android) { return -(doc.body.getBoundingClientRect().left - parseInt(getComputedStyle(doc.body).marginLeft)) }
+    return doc.defaultView.pageXOffset || (doc.documentElement || doc.body).scrollLeft
   }
-  function pageScrollY() {
-    if (chrome && android) { return -(document.body.getBoundingClientRect().top - parseInt(getComputedStyle(document.body).marginTop)) }
-    return window.pageYOffset || (document.documentElement || document.body).scrollTop
+  function pageScrollY(doc) {
+    if (chrome && android) { return -(doc.body.getBoundingClientRect().top - parseInt(getComputedStyle(doc.body).marginTop)) }
+    return doc.defaultView.pageYOffset || (doc.documentElement || doc.body).scrollTop
   }
 
   function widgetTopHeight(lineObj) {
+    var ref = visualLine(lineObj);
+    var widgets = ref.widgets;
     var height = 0;
-    if (lineObj.widgets) { for (var i = 0; i < lineObj.widgets.length; ++i) { if (lineObj.widgets[i].above)
-      { height += widgetHeight(lineObj.widgets[i]); } } }
+    if (widgets) { for (var i = 0; i < widgets.length; ++i) { if (widgets[i].above)
+      { height += widgetHeight(widgets[i]); } } }
     return height
   }
 
@@ -2662,8 +2677,8 @@ module.exports = _interopRequireDefault;
     else { yOff -= cm.display.viewOffset; }
     if (context == "page" || context == "window") {
       var lOff = cm.display.lineSpace.getBoundingClientRect();
-      yOff += lOff.top + (context == "window" ? 0 : pageScrollY());
-      var xOff = lOff.left + (context == "window" ? 0 : pageScrollX());
+      yOff += lOff.top + (context == "window" ? 0 : pageScrollY(doc(cm)));
+      var xOff = lOff.left + (context == "window" ? 0 : pageScrollX(doc(cm)));
       rect.left += xOff; rect.right += xOff;
     }
     rect.top += yOff; rect.bottom += yOff;
@@ -2677,8 +2692,8 @@ module.exports = _interopRequireDefault;
     var left = coords.left, top = coords.top;
     // First move into "page" coordinate system
     if (context == "page") {
-      left -= pageScrollX();
-      top -= pageScrollY();
+      left -= pageScrollX(doc(cm));
+      top -= pageScrollY(doc(cm));
     } else if (context == "local" || !context) {
       var localBox = cm.display.sizer.getBoundingClientRect();
       left += localBox.left;
@@ -2805,13 +2820,13 @@ module.exports = _interopRequireDefault;
     return box.bottom <= y ? false : box.top > y ? true : (left ? box.left : box.right) > x
   }
 
-  function coordsCharInner(cm, lineObj, lineNo$$1, x, y) {
+  function coordsCharInner(cm, lineObj, lineNo, x, y) {
     // Move y into line-local coordinate space
     y -= heightAtLine(lineObj);
     var preparedMeasure = prepareMeasureForLine(cm, lineObj);
     // When directly calling `measureCharPrepared`, we have to adjust
     // for the widgets at this line.
-    var widgetHeight$$1 = widgetTopHeight(lineObj);
+    var widgetHeight = widgetTopHeight(lineObj);
     var begin = 0, end = lineObj.text.length, ltr = true;
 
     var order = getOrder(lineObj, cm.doc.direction);
@@ -2819,7 +2834,7 @@ module.exports = _interopRequireDefault;
     // which bidi section the coordinates fall into.
     if (order) {
       var part = (cm.options.lineWrapping ? coordsBidiPartWrapped : coordsBidiPart)
-                   (cm, lineObj, lineNo$$1, preparedMeasure, order, x, y);
+                   (cm, lineObj, lineNo, preparedMeasure, order, x, y);
       ltr = part.level != 1;
       // The awkward -1 offsets are needed because findFirst (called
       // on these below) will treat its first bound as inclusive,
@@ -2835,7 +2850,7 @@ module.exports = _interopRequireDefault;
     var chAround = null, boxAround = null;
     var ch = findFirst(function (ch) {
       var box = measureCharPrepared(cm, preparedMeasure, ch);
-      box.top += widgetHeight$$1; box.bottom += widgetHeight$$1;
+      box.top += widgetHeight; box.bottom += widgetHeight;
       if (!boxIsAfter(box, x, y, false)) { return false }
       if (box.top <= y && box.left <= x) {
         chAround = ch;
@@ -2859,27 +2874,27 @@ module.exports = _interopRequireDefault;
       // left of the character and compare it's vertical position to the
       // coordinates
       sticky = ch == 0 ? "after" : ch == lineObj.text.length ? "before" :
-        (measureCharPrepared(cm, preparedMeasure, ch - (ltr ? 1 : 0)).bottom + widgetHeight$$1 <= y) == ltr ?
+        (measureCharPrepared(cm, preparedMeasure, ch - (ltr ? 1 : 0)).bottom + widgetHeight <= y) == ltr ?
         "after" : "before";
       // Now get accurate coordinates for this place, in order to get a
       // base X position
-      var coords = cursorCoords(cm, Pos(lineNo$$1, ch, sticky), "line", lineObj, preparedMeasure);
+      var coords = cursorCoords(cm, Pos(lineNo, ch, sticky), "line", lineObj, preparedMeasure);
       baseX = coords.left;
       outside = y < coords.top ? -1 : y >= coords.bottom ? 1 : 0;
     }
 
     ch = skipExtendingChars(lineObj.text, ch, 1);
-    return PosWithInfo(lineNo$$1, ch, sticky, outside, x - baseX)
+    return PosWithInfo(lineNo, ch, sticky, outside, x - baseX)
   }
 
-  function coordsBidiPart(cm, lineObj, lineNo$$1, preparedMeasure, order, x, y) {
+  function coordsBidiPart(cm, lineObj, lineNo, preparedMeasure, order, x, y) {
     // Bidi parts are sorted left-to-right, and in a non-line-wrapping
     // situation, we can take this ordering to correspond to the visual
     // ordering. This finds the first part whose end is after the given
     // coordinates.
     var index = findFirst(function (i) {
       var part = order[i], ltr = part.level != 1;
-      return boxIsAfter(cursorCoords(cm, Pos(lineNo$$1, ltr ? part.to : part.from, ltr ? "before" : "after"),
+      return boxIsAfter(cursorCoords(cm, Pos(lineNo, ltr ? part.to : part.from, ltr ? "before" : "after"),
                                      "line", lineObj, preparedMeasure), x, y, true)
     }, 0, order.length - 1);
     var part = order[index];
@@ -2888,7 +2903,7 @@ module.exports = _interopRequireDefault;
     // that start, move one part back.
     if (index > 0) {
       var ltr = part.level != 1;
-      var start = cursorCoords(cm, Pos(lineNo$$1, ltr ? part.from : part.to, ltr ? "after" : "before"),
+      var start = cursorCoords(cm, Pos(lineNo, ltr ? part.from : part.to, ltr ? "after" : "before"),
                                "line", lineObj, preparedMeasure);
       if (boxIsAfter(start, x, y, true) && start.top > y)
         { part = order[index - 1]; }
@@ -3026,9 +3041,9 @@ module.exports = _interopRequireDefault;
     var x, y, space = display.lineSpace.getBoundingClientRect();
     // Fails unpredictably on IE[67] when mouse is dragged around quickly.
     try { x = e.clientX - space.left; y = e.clientY - space.top; }
-    catch (e) { return null }
+    catch (e$1) { return null }
     var coords = coordsChar(cm, x, y), line;
-    if (forRect && coords.xRel == 1 && (line = getLine(cm.doc, coords.line).text).length == coords.ch) {
+    if (forRect && coords.xRel > 0 && (line = getLine(cm.doc, coords.line).text).length == coords.ch) {
       var colDiff = countColumn(line, line.length, cm.options.tabSize) - line.length;
       coords = Pos(coords.line, Math.max(0, Math.round((x - paddingH(cm.display).left) / charWidth(cm.display)) - colDiff));
     }
@@ -3207,15 +3222,21 @@ module.exports = _interopRequireDefault;
     var curFragment = result.cursors = document.createDocumentFragment();
     var selFragment = result.selection = document.createDocumentFragment();
 
+    var customCursor = cm.options.$customCursor;
+    if (customCursor) { primary = true; }
     for (var i = 0; i < doc.sel.ranges.length; i++) {
       if (!primary && i == doc.sel.primIndex) { continue }
-      var range$$1 = doc.sel.ranges[i];
-      if (range$$1.from().line >= cm.display.viewTo || range$$1.to().line < cm.display.viewFrom) { continue }
-      var collapsed = range$$1.empty();
-      if (collapsed || cm.options.showCursorWhenSelecting)
-        { drawSelectionCursor(cm, range$$1.head, curFragment); }
+      var range = doc.sel.ranges[i];
+      if (range.from().line >= cm.display.viewTo || range.to().line < cm.display.viewFrom) { continue }
+      var collapsed = range.empty();
+      if (customCursor) {
+        var head = customCursor(cm, range);
+        if (head) { drawSelectionCursor(cm, head, curFragment); }
+      } else if (collapsed || cm.options.showCursorWhenSelecting) {
+        drawSelectionCursor(cm, range.head, curFragment);
+      }
       if (!collapsed)
-        { drawSelectionRange(cm, range$$1, selFragment); }
+        { drawSelectionRange(cm, range, selFragment); }
     }
     return result
   }
@@ -3228,6 +3249,12 @@ module.exports = _interopRequireDefault;
     cursor.style.left = pos.left + "px";
     cursor.style.top = pos.top + "px";
     cursor.style.height = Math.max(0, pos.bottom - pos.top) * cm.options.cursorHeight + "px";
+
+    if (/\bcm-fat-cursor\b/.test(cm.getWrapperElement().className)) {
+      var charPos = charCoords(cm, head, "div", null, null);
+      var width = charPos.right - charPos.left;
+      cursor.style.width = (width > 0 ? width : cm.defaultCharWidth()) + "px";
+    }
 
     if (pos.other) {
       // Secondary cursor, shown when on a 'jump' in bi-directional text
@@ -3242,7 +3269,7 @@ module.exports = _interopRequireDefault;
   function cmpCoords(a, b) { return a.top - b.top || a.left - b.left }
 
   // Draws the given range as a highlighted selection
-  function drawSelectionRange(cm, range$$1, output) {
+  function drawSelectionRange(cm, range, output) {
     var display = cm.display, doc = cm.doc;
     var fragment = document.createDocumentFragment();
     var padding = paddingH(cm.display), leftSide = padding.left;
@@ -3311,7 +3338,7 @@ module.exports = _interopRequireDefault;
       return {start: start, end: end}
     }
 
-    var sFrom = range$$1.from(), sTo = range$$1.to();
+    var sFrom = range.from(), sTo = range.to();
     if (sFrom.line == sTo.line) {
       drawForLine(sFrom.line, sFrom.ch, sTo.ch);
     } else {
@@ -3342,26 +3369,31 @@ module.exports = _interopRequireDefault;
     var on = true;
     display.cursorDiv.style.visibility = "";
     if (cm.options.cursorBlinkRate > 0)
-      { display.blinker = setInterval(function () { return display.cursorDiv.style.visibility = (on = !on) ? "" : "hidden"; },
-        cm.options.cursorBlinkRate); }
+      { display.blinker = setInterval(function () {
+        if (!cm.hasFocus()) { onBlur(cm); }
+        display.cursorDiv.style.visibility = (on = !on) ? "" : "hidden";
+      }, cm.options.cursorBlinkRate); }
     else if (cm.options.cursorBlinkRate < 0)
       { display.cursorDiv.style.visibility = "hidden"; }
   }
 
   function ensureFocus(cm) {
-    if (!cm.state.focused) { cm.display.input.focus(); onFocus(cm); }
+    if (!cm.hasFocus()) {
+      cm.display.input.focus();
+      if (!cm.state.focused) { onFocus(cm); }
+    }
   }
 
   function delayBlurEvent(cm) {
     cm.state.delayingBlurEvent = true;
     setTimeout(function () { if (cm.state.delayingBlurEvent) {
       cm.state.delayingBlurEvent = false;
-      onBlur(cm);
+      if (cm.state.focused) { onBlur(cm); }
     } }, 100);
   }
 
   function onFocus(cm, e) {
-    if (cm.state.delayingBlurEvent) { cm.state.delayingBlurEvent = false; }
+    if (cm.state.delayingBlurEvent && !cm.state.draggingText) { cm.state.delayingBlurEvent = false; }
 
     if (cm.options.readOnly == "nocursor") { return }
     if (!cm.state.focused) {
@@ -3396,10 +3428,14 @@ module.exports = _interopRequireDefault;
   function updateHeightsInViewport(cm) {
     var display = cm.display;
     var prevBottom = display.lineDiv.offsetTop;
+    var viewTop = Math.max(0, display.scroller.getBoundingClientRect().top);
+    var oldHeight = display.lineDiv.getBoundingClientRect().top;
+    var mustScroll = 0;
     for (var i = 0; i < display.view.length; i++) {
       var cur = display.view[i], wrapping = cm.options.lineWrapping;
       var height = (void 0), width = 0;
       if (cur.hidden) { continue }
+      oldHeight += cur.line.height;
       if (ie && ie_version < 8) {
         var bot = cur.node.offsetTop + cur.node.offsetHeight;
         height = bot - prevBottom;
@@ -3414,6 +3450,7 @@ module.exports = _interopRequireDefault;
       }
       var diff = cur.line.height - height;
       if (diff > .005 || diff < -.005) {
+        if (oldHeight < viewTop) { mustScroll -= diff; }
         updateLineHeight(cur.line, height);
         updateWidgetHeight(cur.line);
         if (cur.rest) { for (var j = 0; j < cur.rest.length; j++)
@@ -3428,6 +3465,7 @@ module.exports = _interopRequireDefault;
         }
       }
     }
+    if (Math.abs(mustScroll) > 2) { display.scroller.scrollTop += mustScroll; }
   }
 
   // Read and store the height of line widgets associated with the
@@ -3471,8 +3509,9 @@ module.exports = _interopRequireDefault;
     if (signalDOMEvent(cm, "scrollCursorIntoView")) { return }
 
     var display = cm.display, box = display.sizer.getBoundingClientRect(), doScroll = null;
+    var doc = display.wrapper.ownerDocument;
     if (rect.top + box.top < 0) { doScroll = true; }
-    else if (rect.bottom + box.top > (window.innerHeight || document.documentElement.clientHeight)) { doScroll = false; }
+    else if (rect.bottom + box.top > (doc.defaultView.innerHeight || doc.documentElement.clientHeight)) { doScroll = false; }
     if (doScroll != null && !phantom) {
       var scrollNode = elt("div", "\u200b", null, ("position: absolute;\n                         top: " + (rect.top - display.viewOffset - paddingTop(cm.display)) + "px;\n                         height: " + (rect.bottom - rect.top + scrollGap(cm) + display.barHeight) + "px;\n                         left: " + (rect.left) + "px; width: " + (Math.max(2, rect.right - rect.left)) + "px;"));
       cm.display.lineSpace.appendChild(scrollNode);
@@ -3491,8 +3530,8 @@ module.exports = _interopRequireDefault;
       // Set pos and end to the cursor positions around the character pos sticks to
       // If pos.sticky == "before", that is around pos.ch - 1, otherwise around pos.ch
       // If pos == Pos(_, 0, "before"), pos and end are unchanged
-      pos = pos.ch ? Pos(pos.line, pos.sticky == "before" ? pos.ch - 1 : pos.ch, "after") : pos;
       end = pos.sticky == "before" ? Pos(pos.line, pos.ch + 1, "before") : pos;
+      pos = pos.ch ? Pos(pos.line, pos.sticky == "before" ? pos.ch - 1 : pos.ch, "after") : pos;
     }
     for (var limit = 0; limit < 5; limit++) {
       var changed = false;
@@ -3543,14 +3582,15 @@ module.exports = _interopRequireDefault;
       if (newTop != screentop) { result.scrollTop = newTop; }
     }
 
-    var screenleft = cm.curOp && cm.curOp.scrollLeft != null ? cm.curOp.scrollLeft : display.scroller.scrollLeft;
-    var screenw = displayWidth(cm) - (cm.options.fixedGutter ? display.gutters.offsetWidth : 0);
+    var gutterSpace = cm.options.fixedGutter ? 0 : display.gutters.offsetWidth;
+    var screenleft = cm.curOp && cm.curOp.scrollLeft != null ? cm.curOp.scrollLeft : display.scroller.scrollLeft - gutterSpace;
+    var screenw = displayWidth(cm) - display.gutters.offsetWidth;
     var tooWide = rect.right - rect.left > screenw;
     if (tooWide) { rect.right = rect.left + screenw; }
     if (rect.left < 10)
       { result.scrollLeft = 0; }
     else if (rect.left < screenleft)
-      { result.scrollLeft = Math.max(0, rect.left - (tooWide ? 0 : 10)); }
+      { result.scrollLeft = Math.max(0, rect.left + gutterSpace - (tooWide ? 0 : 10)); }
     else if (rect.right > screenw + screenleft - 3)
       { result.scrollLeft = rect.right + (tooWide ? 0 : 10) - screenw; }
     return result
@@ -3578,9 +3618,9 @@ module.exports = _interopRequireDefault;
     if (y != null) { cm.curOp.scrollTop = y; }
   }
 
-  function scrollToRange(cm, range$$1) {
+  function scrollToRange(cm, range) {
     resolveScrollToPos(cm);
-    cm.curOp.scrollToPos = range$$1;
+    cm.curOp.scrollToPos = range;
   }
 
   // When an operation has its scrollToPos property set, and another
@@ -3588,11 +3628,11 @@ module.exports = _interopRequireDefault;
   // 'simulates' scrolling that position into view in a cheap way, so
   // that the effect of intermediate scroll commands is not ignored.
   function resolveScrollToPos(cm) {
-    var range$$1 = cm.curOp.scrollToPos;
-    if (range$$1) {
+    var range = cm.curOp.scrollToPos;
+    if (range) {
       cm.curOp.scrollToPos = null;
-      var from = estimateCoords(cm, range$$1.from), to = estimateCoords(cm, range$$1.to);
-      scrollToCoordsRange(cm, from, to, range$$1.margin);
+      var from = estimateCoords(cm, range.from), to = estimateCoords(cm, range.to);
+      scrollToCoordsRange(cm, from, to, range.margin);
     }
   }
 
@@ -3617,7 +3657,7 @@ module.exports = _interopRequireDefault;
   }
 
   function setScrollTop(cm, val, forceScroll) {
-    val = Math.min(cm.display.scroller.scrollHeight - cm.display.scroller.clientHeight, val);
+    val = Math.max(0, Math.min(cm.display.scroller.scrollHeight - cm.display.scroller.clientHeight, val));
     if (cm.display.scroller.scrollTop == val && !forceScroll) { return }
     cm.doc.scrollTop = val;
     cm.display.scrollbars.setScrollTop(val);
@@ -3627,7 +3667,7 @@ module.exports = _interopRequireDefault;
   // Sync scroller and scrollbar, ensure the gutter elements are
   // aligned.
   function setScrollLeft(cm, val, isScroller, forceScroll) {
-    val = Math.min(val, cm.display.scroller.scrollWidth - cm.display.scroller.clientWidth);
+    val = Math.max(0, Math.min(val, cm.display.scroller.scrollWidth - cm.display.scroller.clientWidth));
     if ((isScroller ? val == cm.doc.scrollLeft : Math.abs(cm.doc.scrollLeft - val) < 2) && !forceScroll) { return }
     cm.doc.scrollLeft = val;
     alignHorizontally(cm);
@@ -3687,6 +3727,7 @@ module.exports = _interopRequireDefault;
       this.vert.firstChild.style.height =
         Math.max(0, measure.scrollHeight - measure.clientHeight + totalHeight) + "px";
     } else {
+      this.vert.scrollTop = 0;
       this.vert.style.display = "";
       this.vert.firstChild.style.height = "0";
     }
@@ -3724,13 +3765,13 @@ module.exports = _interopRequireDefault;
   NativeScrollbars.prototype.zeroWidthHack = function () {
     var w = mac && !mac_geMountainLion ? "12px" : "18px";
     this.horiz.style.height = this.vert.style.width = w;
-    this.horiz.style.pointerEvents = this.vert.style.pointerEvents = "none";
+    this.horiz.style.visibility = this.vert.style.visibility = "hidden";
     this.disableHoriz = new Delayed;
     this.disableVert = new Delayed;
   };
 
   NativeScrollbars.prototype.enableZeroWidthBar = function (bar, delay, type) {
-    bar.style.pointerEvents = "auto";
+    bar.style.visibility = "";
     function maybeDisable() {
       // To find out whether the scrollbar is still visible, we
       // check whether the element under the pixel in the bottom
@@ -3739,9 +3780,9 @@ module.exports = _interopRequireDefault;
       // (when the bar is hidden). If it is still visible, we keep
       // it enabled, if it's hidden, we disable pointer events.
       var box = bar.getBoundingClientRect();
-      var elt$$1 = type == "vert" ? document.elementFromPoint(box.right - 1, (box.top + box.bottom) / 2)
+      var elt = type == "vert" ? document.elementFromPoint(box.right - 1, (box.top + box.bottom) / 2)
           : document.elementFromPoint((box.right + box.left) / 2, box.bottom - 1);
-      if (elt$$1 != bar) { bar.style.pointerEvents = "none"; }
+      if (elt != bar) { bar.style.visibility = "hidden"; }
       else { delay.set(1000, maybeDisable); }
     }
     delay.set(1000, maybeDisable);
@@ -3842,7 +3883,8 @@ module.exports = _interopRequireDefault;
       scrollLeft: null, scrollTop: null, // Intermediate scroll position, not pushed to DOM yet
       scrollToPos: null,       // Used to scroll to a specific position
       focus: false,
-      id: ++nextOpId           // Unique ID
+      id: ++nextOpId,          // Unique ID
+      markArrays: null         // Used by addMarkedSpan
     };
     pushOperation(cm.curOp);
   }
@@ -3921,7 +3963,7 @@ module.exports = _interopRequireDefault;
       cm.display.maxLineChanged = false;
     }
 
-    var takeFocus = op.focus && op.focus == activeElt();
+    var takeFocus = op.focus && op.focus == activeElt(doc(cm));
     if (op.preparedSelection)
       { cm.display.input.showSelection(op.preparedSelection, takeFocus); }
     if (op.updatedDisplay || op.startHeight != cm.doc.height)
@@ -4081,10 +4123,8 @@ module.exports = _interopRequireDefault;
       { this.events.push(arguments); }
   };
   DisplayUpdate.prototype.finish = function () {
-      var this$1 = this;
-
     for (var i = 0; i < this.events.length; i++)
-      { signal.apply(null, this$1.events[i]); }
+      { signal.apply(null, this.events[i]); }
   };
 
   function maybeClipScrollbars(cm) {
@@ -4100,11 +4140,11 @@ module.exports = _interopRequireDefault;
 
   function selectionSnapshot(cm) {
     if (cm.hasFocus()) { return null }
-    var active = activeElt();
+    var active = activeElt(doc(cm));
     if (!active || !contains(cm.display.lineDiv, active)) { return null }
     var result = {activeElt: active};
     if (window.getSelection) {
-      var sel = window.getSelection();
+      var sel = win(cm).getSelection();
       if (sel.anchorNode && sel.extend && contains(cm.display.lineDiv, sel.anchorNode)) {
         result.anchorNode = sel.anchorNode;
         result.anchorOffset = sel.anchorOffset;
@@ -4116,14 +4156,16 @@ module.exports = _interopRequireDefault;
   }
 
   function restoreSelection(snapshot) {
-    if (!snapshot || !snapshot.activeElt || snapshot.activeElt == activeElt()) { return }
+    if (!snapshot || !snapshot.activeElt || snapshot.activeElt == activeElt(snapshot.activeElt.ownerDocument)) { return }
     snapshot.activeElt.focus();
-    if (snapshot.anchorNode && contains(document.body, snapshot.anchorNode) && contains(document.body, snapshot.focusNode)) {
-      var sel = window.getSelection(), range$$1 = document.createRange();
-      range$$1.setEnd(snapshot.anchorNode, snapshot.anchorOffset);
-      range$$1.collapse(false);
+    if (!/^(INPUT|TEXTAREA)$/.test(snapshot.activeElt.nodeName) &&
+        snapshot.anchorNode && contains(document.body, snapshot.anchorNode) && contains(document.body, snapshot.focusNode)) {
+      var doc = snapshot.activeElt.ownerDocument;
+      var sel = doc.defaultView.getSelection(), range = doc.createRange();
+      range.setEnd(snapshot.anchorNode, snapshot.anchorOffset);
+      range.collapse(false);
       sel.removeAllRanges();
-      sel.addRange(range$$1);
+      sel.addRange(range);
       sel.extend(snapshot.focusNode, snapshot.focusOffset);
     }
   }
@@ -4216,6 +4258,8 @@ module.exports = _interopRequireDefault;
         update.visible = visibleLines(cm.display, cm.doc, viewport);
         if (update.visible.from >= cm.display.viewFrom && update.visible.to <= cm.display.viewTo)
           { break }
+      } else if (first) {
+        update.visible = visibleLines(cm.display, cm.doc, viewport);
       }
       if (!updateDisplayIfNeeded(cm, update)) { break }
       updateHeightsInViewport(cm);
@@ -4294,6 +4338,8 @@ module.exports = _interopRequireDefault;
   function updateGutterSpace(display) {
     var width = display.gutters.offsetWidth;
     display.sizer.style.marginLeft = width + "px";
+    // Send an event to consumers responding to changes in gutter width.
+    signalLater(display, "gutterChanged", display);
   }
 
   function setDocumentHeight(cm, measure) {
@@ -4432,6 +4478,12 @@ module.exports = _interopRequireDefault;
     d.scroller.setAttribute("tabIndex", "-1");
     // The element in which the editor lives.
     d.wrapper = elt("div", [d.scrollbarFiller, d.gutterFiller, d.scroller], "CodeMirror");
+    // See #6982. FIXME remove when this has been fixed for a while in Chrome
+    if (chrome && chrome_version >= 105) { d.wrapper.style.clipPath = "inset(0px)"; }
+
+    // This attribute is respected by automatic translation systems such as Google Translate,
+    // and may also be respected by tools used by human translators.
+    d.wrapper.setAttribute('translate', 'no');
 
     // Work around IE7 z-index bug (not perfect, hence IE7 not really being supported)
     if (ie && ie_version < 8) { d.gutters.style.zIndex = -1; d.scroller.style.paddingRight = 0; }
@@ -4529,7 +4581,24 @@ module.exports = _interopRequireDefault;
   }
 
   function onScrollWheel(cm, e) {
+    // On Chrome 102, viewport updates somehow stop wheel-based
+    // scrolling. Turning off pointer events during the scroll seems
+    // to avoid the issue.
+    if (chrome && chrome_version == 102) {
+      if (cm.display.chromeScrollHack == null) { cm.display.sizer.style.pointerEvents = "none"; }
+      else { clearTimeout(cm.display.chromeScrollHack); }
+      cm.display.chromeScrollHack = setTimeout(function () {
+        cm.display.chromeScrollHack = null;
+        cm.display.sizer.style.pointerEvents = "";
+      }, 100);
+    }
     var delta = wheelEventDelta(e), dx = delta.x, dy = delta.y;
+    var pixelsPerUnit = wheelPixelsPerUnit;
+    if (e.deltaMode === 0) {
+      dx = e.deltaX;
+      dy = e.deltaY;
+      pixelsPerUnit = 1;
+    }
 
     var display = cm.display, scroll = display.scroller;
     // Quit if there's nothing to scroll here
@@ -4558,10 +4627,10 @@ module.exports = _interopRequireDefault;
     // estimated pixels/delta value, we just handle horizontal
     // scrolling entirely here. It'll be slightly off from native, but
     // better than glitching out.
-    if (dx && !gecko && !presto && wheelPixelsPerUnit != null) {
+    if (dx && !gecko && !presto && pixelsPerUnit != null) {
       if (dy && canScrollY)
-        { updateScrollTop(cm, Math.max(0, scroll.scrollTop + dy * wheelPixelsPerUnit)); }
-      setScrollLeft(cm, Math.max(0, scroll.scrollLeft + dx * wheelPixelsPerUnit));
+        { updateScrollTop(cm, Math.max(0, scroll.scrollTop + dy * pixelsPerUnit)); }
+      setScrollLeft(cm, Math.max(0, scroll.scrollLeft + dx * pixelsPerUnit));
       // Only prevent default scrolling if vertical scrolling is
       // actually possible. Otherwise, it causes vertical scroll
       // jitter on OSX trackpads when deltaX is small and deltaY
@@ -4574,15 +4643,15 @@ module.exports = _interopRequireDefault;
 
     // 'Project' the visible viewport to cover the area that is being
     // scrolled into view (if we know enough to estimate it).
-    if (dy && wheelPixelsPerUnit != null) {
-      var pixels = dy * wheelPixelsPerUnit;
+    if (dy && pixelsPerUnit != null) {
+      var pixels = dy * pixelsPerUnit;
       var top = cm.doc.scrollTop, bot = top + display.wrapper.clientHeight;
       if (pixels < 0) { top = Math.max(0, top + pixels - 50); }
       else { bot = Math.min(cm.doc.height, bot + pixels + 50); }
       updateDisplaySimple(cm, {top: top, bottom: bot});
     }
 
-    if (wheelSamples < 20) {
+    if (wheelSamples < 20 && e.deltaMode !== 0) {
       if (display.wheelStartX == null) {
         display.wheelStartX = scroll.scrollLeft; display.wheelStartY = scroll.scrollTop;
         display.wheelDX = dx; display.wheelDY = dy;
@@ -4616,40 +4685,32 @@ module.exports = _interopRequireDefault;
   Selection.prototype.primary = function () { return this.ranges[this.primIndex] };
 
   Selection.prototype.equals = function (other) {
-      var this$1 = this;
-
     if (other == this) { return true }
     if (other.primIndex != this.primIndex || other.ranges.length != this.ranges.length) { return false }
     for (var i = 0; i < this.ranges.length; i++) {
-      var here = this$1.ranges[i], there = other.ranges[i];
+      var here = this.ranges[i], there = other.ranges[i];
       if (!equalCursorPos(here.anchor, there.anchor) || !equalCursorPos(here.head, there.head)) { return false }
     }
     return true
   };
 
   Selection.prototype.deepCopy = function () {
-      var this$1 = this;
-
     var out = [];
     for (var i = 0; i < this.ranges.length; i++)
-      { out[i] = new Range(copyPos(this$1.ranges[i].anchor), copyPos(this$1.ranges[i].head)); }
+      { out[i] = new Range(copyPos(this.ranges[i].anchor), copyPos(this.ranges[i].head)); }
     return new Selection(out, this.primIndex)
   };
 
   Selection.prototype.somethingSelected = function () {
-      var this$1 = this;
-
     for (var i = 0; i < this.ranges.length; i++)
-      { if (!this$1.ranges[i].empty()) { return true } }
+      { if (!this.ranges[i].empty()) { return true } }
     return false
   };
 
   Selection.prototype.contains = function (pos, end) {
-      var this$1 = this;
-
     if (!end) { end = pos; }
     for (var i = 0; i < this.ranges.length; i++) {
-      var range = this$1.ranges[i];
+      var range = this.ranges[i];
       if (cmp(end, range.from()) >= 0 && cmp(pos, range.to()) <= 0)
         { return i }
     }
@@ -4775,16 +4836,16 @@ module.exports = _interopRequireDefault;
   }
 
   // Perform a change on the document data structure.
-  function updateDoc(doc, change, markedSpans, estimateHeight$$1) {
+  function updateDoc(doc, change, markedSpans, estimateHeight) {
     function spansFor(n) {return markedSpans ? markedSpans[n] : null}
     function update(line, text, spans) {
-      updateLine(line, text, spans, estimateHeight$$1);
+      updateLine(line, text, spans, estimateHeight);
       signalLater(line, "change", line, change);
     }
     function linesFor(start, end) {
       var result = [];
       for (var i = start; i < end; ++i)
-        { result.push(new Line(text[i], spansFor(i), estimateHeight$$1)); }
+        { result.push(new Line(text[i], spansFor(i), estimateHeight)); }
       return result
     }
 
@@ -4808,7 +4869,7 @@ module.exports = _interopRequireDefault;
         update(firstLine, firstLine.text.slice(0, from.ch) + lastText + firstLine.text.slice(to.ch), lastSpans);
       } else {
         var added$1 = linesFor(1, text.length - 1);
-        added$1.push(new Line(lastText + firstLine.text.slice(to.ch), lastSpans, estimateHeight$$1));
+        added$1.push(new Line(lastText + firstLine.text.slice(to.ch), lastSpans, estimateHeight));
         update(firstLine, firstLine.text.slice(0, from.ch) + text[0], spansFor(0));
         doc.insert(from.line + 1, added$1);
       }
@@ -4849,6 +4910,7 @@ module.exports = _interopRequireDefault;
     estimateLineHeights(cm);
     loadMode(cm);
     setDirectionClass(cm);
+    cm.options.direction = doc.direction;
     if (!cm.options.lineWrapping) { findMaxLine(cm); }
     cm.options.mode = doc.modeOption;
     regChange(cm);
@@ -4865,19 +4927,19 @@ module.exports = _interopRequireDefault;
     });
   }
 
-  function History(startGen) {
+  function History(prev) {
     // Arrays of change events and selections. Doing something adds an
     // event to done and clears undo. Undoing moves events from done
     // to undone, redoing moves them in the other direction.
     this.done = []; this.undone = [];
-    this.undoDepth = Infinity;
+    this.undoDepth = prev ? prev.undoDepth : Infinity;
     // Used to track when changes can be merged into a single undo
     // event
     this.lastModTime = this.lastSelTime = 0;
     this.lastOp = this.lastSelOp = null;
     this.lastOrigin = this.lastSelOrigin = null;
     // Used by the isClean() method
-    this.generation = this.maxGeneration = startGen || 1;
+    this.generation = this.maxGeneration = prev ? prev.maxGeneration : 1;
   }
 
   // Create a history change event from an updateDoc-style change
@@ -5145,11 +5207,9 @@ module.exports = _interopRequireDefault;
     var obj = {
       ranges: sel.ranges,
       update: function(ranges) {
-        var this$1 = this;
-
         this.ranges = [];
         for (var i = 0; i < ranges.length; i++)
-          { this$1.ranges[i] = new Range(clipPos(doc, ranges[i].anchor),
+          { this.ranges[i] = new Range(clipPos(doc, ranges[i].anchor),
                                      clipPos(doc, ranges[i].head)); }
       },
       origin: options && options.origin
@@ -5184,7 +5244,7 @@ module.exports = _interopRequireDefault;
       (cmp(sel.primary().head, doc.sel.primary().head) < 0 ? -1 : 1);
     setSelectionInner(doc, skipAtomicInSelection(doc, sel, bias, true));
 
-    if (!(options && options.scroll === false) && doc.cm)
+    if (!(options && options.scroll === false) && doc.cm && doc.cm.getOption("readOnly") != "nocursor")
       { ensureCursorVisible(doc.cm); }
   }
 
@@ -5215,7 +5275,7 @@ module.exports = _interopRequireDefault;
       var range = sel.ranges[i];
       var old = sel.ranges.length == doc.sel.ranges.length && doc.sel.ranges[i];
       var newAnchor = skipAtomic(doc, range.anchor, old && old.anchor, bias, mayClear);
-      var newHead = skipAtomic(doc, range.head, old && old.head, bias, mayClear);
+      var newHead = range.head == range.anchor ? newAnchor : skipAtomic(doc, range.head, old && old.head, bias, mayClear);
       if (out || newAnchor != range.anchor || newHead != range.head) {
         if (!out) { out = sel.ranges.slice(0, i); }
         out[i] = new Range(newAnchor, newHead);
@@ -5636,13 +5696,11 @@ module.exports = _interopRequireDefault;
   // See also http://marijnhaverbeke.nl/blog/codemirror-line-tree.html
 
   function LeafChunk(lines) {
-    var this$1 = this;
-
     this.lines = lines;
     this.parent = null;
     var height = 0;
     for (var i = 0; i < lines.length; ++i) {
-      lines[i].parent = this$1;
+      lines[i].parent = this;
       height += lines[i].height;
     }
     this.height = height;
@@ -5653,11 +5711,9 @@ module.exports = _interopRequireDefault;
 
     // Remove the n lines at offset 'at'.
     removeInner: function(at, n) {
-      var this$1 = this;
-
       for (var i = at, e = at + n; i < e; ++i) {
-        var line = this$1.lines[i];
-        this$1.height -= line.height;
+        var line = this.lines[i];
+        this.height -= line.height;
         cleanUpLine(line);
         signalLater(line, "delete");
       }
@@ -5672,31 +5728,25 @@ module.exports = _interopRequireDefault;
     // Insert the given array of lines at offset 'at', count them as
     // having the given height.
     insertInner: function(at, lines, height) {
-      var this$1 = this;
-
       this.height += height;
       this.lines = this.lines.slice(0, at).concat(lines).concat(this.lines.slice(at));
-      for (var i = 0; i < lines.length; ++i) { lines[i].parent = this$1; }
+      for (var i = 0; i < lines.length; ++i) { lines[i].parent = this; }
     },
 
     // Used to iterate over a part of the tree.
     iterN: function(at, n, op) {
-      var this$1 = this;
-
       for (var e = at + n; at < e; ++at)
-        { if (op(this$1.lines[at])) { return true } }
+        { if (op(this.lines[at])) { return true } }
     }
   };
 
   function BranchChunk(children) {
-    var this$1 = this;
-
     this.children = children;
     var size = 0, height = 0;
     for (var i = 0; i < children.length; ++i) {
       var ch = children[i];
       size += ch.chunkSize(); height += ch.height;
-      ch.parent = this$1;
+      ch.parent = this;
     }
     this.size = size;
     this.height = height;
@@ -5707,16 +5757,14 @@ module.exports = _interopRequireDefault;
     chunkSize: function() { return this.size },
 
     removeInner: function(at, n) {
-      var this$1 = this;
-
       this.size -= n;
       for (var i = 0; i < this.children.length; ++i) {
-        var child = this$1.children[i], sz = child.chunkSize();
+        var child = this.children[i], sz = child.chunkSize();
         if (at < sz) {
           var rm = Math.min(n, sz - at), oldHeight = child.height;
           child.removeInner(at, rm);
-          this$1.height -= oldHeight - child.height;
-          if (sz == rm) { this$1.children.splice(i--, 1); child.parent = null; }
+          this.height -= oldHeight - child.height;
+          if (sz == rm) { this.children.splice(i--, 1); child.parent = null; }
           if ((n -= rm) == 0) { break }
           at = 0;
         } else { at -= sz; }
@@ -5733,18 +5781,14 @@ module.exports = _interopRequireDefault;
     },
 
     collapse: function(lines) {
-      var this$1 = this;
-
-      for (var i = 0; i < this.children.length; ++i) { this$1.children[i].collapse(lines); }
+      for (var i = 0; i < this.children.length; ++i) { this.children[i].collapse(lines); }
     },
 
     insertInner: function(at, lines, height) {
-      var this$1 = this;
-
       this.size += lines.length;
       this.height += height;
       for (var i = 0; i < this.children.length; ++i) {
-        var child = this$1.children[i], sz = child.chunkSize();
+        var child = this.children[i], sz = child.chunkSize();
         if (at <= sz) {
           child.insertInner(at, lines, height);
           if (child.lines && child.lines.length > 50) {
@@ -5754,11 +5798,11 @@ module.exports = _interopRequireDefault;
             for (var pos = remaining; pos < child.lines.length;) {
               var leaf = new LeafChunk(child.lines.slice(pos, pos += 25));
               child.height -= leaf.height;
-              this$1.children.splice(++i, 0, leaf);
-              leaf.parent = this$1;
+              this.children.splice(++i, 0, leaf);
+              leaf.parent = this;
             }
             child.lines = child.lines.slice(0, remaining);
-            this$1.maybeSpill();
+            this.maybeSpill();
           }
           break
         }
@@ -5790,10 +5834,8 @@ module.exports = _interopRequireDefault;
     },
 
     iterN: function(at, n, op) {
-      var this$1 = this;
-
       for (var i = 0; i < this.children.length; ++i) {
-        var child = this$1.children[i], sz = child.chunkSize();
+        var child = this.children[i], sz = child.chunkSize();
         if (at < sz) {
           var used = Math.min(n, sz - at);
           if (child.iterN(at, used, op)) { return true }
@@ -5807,20 +5849,16 @@ module.exports = _interopRequireDefault;
   // Line widgets are block elements displayed above or below a line.
 
   var LineWidget = function(doc, node, options) {
-    var this$1 = this;
-
     if (options) { for (var opt in options) { if (options.hasOwnProperty(opt))
-      { this$1[opt] = options[opt]; } } }
+      { this[opt] = options[opt]; } } }
     this.doc = doc;
     this.node = node;
   };
 
   LineWidget.prototype.clear = function () {
-      var this$1 = this;
-
     var cm = this.doc.cm, ws = this.line.widgets, line = this.line, no = lineNo(line);
     if (no == null || !ws) { return }
-    for (var i = 0; i < ws.length; ++i) { if (ws[i] == this$1) { ws.splice(i--, 1); } }
+    for (var i = 0; i < ws.length; ++i) { if (ws[i] == this) { ws.splice(i--, 1); } }
     if (!ws.length) { line.widgets = null; }
     var height = widgetHeight(this);
     updateLineHeight(line, Math.max(0, line.height - height));
@@ -5863,7 +5901,7 @@ module.exports = _interopRequireDefault;
     changeLine(doc, handle, "widget", function (line) {
       var widgets = line.widgets || (line.widgets = []);
       if (widget.insertAt == null) { widgets.push(widget); }
-      else { widgets.splice(Math.min(widgets.length - 1, Math.max(0, widget.insertAt)), 0, widget); }
+      else { widgets.splice(Math.min(widgets.length, Math.max(0, widget.insertAt)), 0, widget); }
       widget.line = line;
       if (cm && !lineIsHidden(doc, line)) {
         var aboveVisible = heightAtLine(line) < doc.scrollTop;
@@ -5903,8 +5941,6 @@ module.exports = _interopRequireDefault;
 
   // Clear the marker.
   TextMarker.prototype.clear = function () {
-      var this$1 = this;
-
     if (this.explicitlyCleared) { return }
     var cm = this.doc.cm, withOp = cm && !cm.curOp;
     if (withOp) { startOperation(cm); }
@@ -5914,19 +5950,19 @@ module.exports = _interopRequireDefault;
     }
     var min = null, max = null;
     for (var i = 0; i < this.lines.length; ++i) {
-      var line = this$1.lines[i];
-      var span = getMarkedSpanFor(line.markedSpans, this$1);
-      if (cm && !this$1.collapsed) { regLineChange(cm, lineNo(line), "text"); }
+      var line = this.lines[i];
+      var span = getMarkedSpanFor(line.markedSpans, this);
+      if (cm && !this.collapsed) { regLineChange(cm, lineNo(line), "text"); }
       else if (cm) {
         if (span.to != null) { max = lineNo(line); }
         if (span.from != null) { min = lineNo(line); }
       }
       line.markedSpans = removeMarkedSpan(line.markedSpans, span);
-      if (span.from == null && this$1.collapsed && !lineIsHidden(this$1.doc, line) && cm)
+      if (span.from == null && this.collapsed && !lineIsHidden(this.doc, line) && cm)
         { updateLineHeight(line, textHeight(cm.display)); }
     }
     if (cm && this.collapsed && !cm.options.lineWrapping) { for (var i$1 = 0; i$1 < this.lines.length; ++i$1) {
-      var visual = visualLine(this$1.lines[i$1]), len = lineLength(visual);
+      var visual = visualLine(this.lines[i$1]), len = lineLength(visual);
       if (len > cm.display.maxLineLength) {
         cm.display.maxLine = visual;
         cm.display.maxLineLength = len;
@@ -5952,13 +5988,11 @@ module.exports = _interopRequireDefault;
   // Pos objects returned contain a line object, rather than a line
   // number (used to prevent looking up the same line twice).
   TextMarker.prototype.find = function (side, lineObj) {
-      var this$1 = this;
-
     if (side == null && this.type == "bookmark") { side = 1; }
     var from, to;
     for (var i = 0; i < this.lines.length; ++i) {
-      var line = this$1.lines[i];
-      var span = getMarkedSpanFor(line.markedSpans, this$1);
+      var line = this.lines[i];
+      var span = getMarkedSpanFor(line.markedSpans, this);
       if (span.from != null) {
         from = Pos(lineObj ? line : lineNo(line), span.from);
         if (side == -1) { return from }
@@ -6053,7 +6087,7 @@ module.exports = _interopRequireDefault;
       if (marker.collapsed && curLine != from.line) { updateLineHeight(line, 0); }
       addMarkedSpan(line, new MarkedSpan(marker,
                                          curLine == from.line ? from.ch : null,
-                                         curLine == to.line ? to.ch : null));
+                                         curLine == to.line ? to.ch : null), doc.cm && doc.cm.curOp);
       ++curLine;
     });
     // lineIsHidden depends on the presence of the spans, so needs a second pass
@@ -6092,21 +6126,17 @@ module.exports = _interopRequireDefault;
   // implemented as a meta-marker-object controlling multiple normal
   // markers.
   var SharedTextMarker = function(markers, primary) {
-    var this$1 = this;
-
     this.markers = markers;
     this.primary = primary;
     for (var i = 0; i < markers.length; ++i)
-      { markers[i].parent = this$1; }
+      { markers[i].parent = this; }
   };
 
   SharedTextMarker.prototype.clear = function () {
-      var this$1 = this;
-
     if (this.explicitlyCleared) { return }
     this.explicitlyCleared = true;
     for (var i = 0; i < this.markers.length; ++i)
-      { this$1.markers[i].clear(); }
+      { this.markers[i].clear(); }
     signalLater(this, "clear");
   };
 
@@ -6229,6 +6259,7 @@ module.exports = _interopRequireDefault;
     getRange: function(from, to, lineSep) {
       var lines = getBetween(this, clipPos(this, from), clipPos(this, to));
       if (lineSep === false) { return lines }
+      if (lineSep === '') { return lines.join('') }
       return lines.join(lineSep || this.lineSeparator())
     },
 
@@ -6249,11 +6280,11 @@ module.exports = _interopRequireDefault;
     clipPos: function(pos) {return clipPos(this, pos)},
 
     getCursor: function(start) {
-      var range$$1 = this.sel.primary(), pos;
-      if (start == null || start == "head") { pos = range$$1.head; }
-      else if (start == "anchor") { pos = range$$1.anchor; }
-      else if (start == "end" || start == "to" || start === false) { pos = range$$1.to(); }
-      else { pos = range$$1.from(); }
+      var range = this.sel.primary(), pos;
+      if (start == null || start == "head") { pos = range.head; }
+      else if (start == "anchor") { pos = range.anchor; }
+      else if (start == "end" || start == "to" || start === false) { pos = range.to(); }
+      else { pos = range.from(); }
       return pos
     },
     listSelections: function() { return this.sel.ranges },
@@ -6276,13 +6307,11 @@ module.exports = _interopRequireDefault;
       extendSelections(this, clipPosArray(this, heads), options);
     }),
     setSelections: docMethodOp(function(ranges, primary, options) {
-      var this$1 = this;
-
       if (!ranges.length) { return }
       var out = [];
       for (var i = 0; i < ranges.length; i++)
-        { out[i] = new Range(clipPos(this$1, ranges[i].anchor),
-                           clipPos(this$1, ranges[i].head)); }
+        { out[i] = new Range(clipPos(this, ranges[i].anchor),
+                           clipPos(this, ranges[i].head || ranges[i].anchor)); }
       if (primary == null) { primary = Math.min(ranges.length - 1, this.sel.primIndex); }
       setSelection(this, normalizeSelection(this.cm, out, primary), options);
     }),
@@ -6293,23 +6322,19 @@ module.exports = _interopRequireDefault;
     }),
 
     getSelection: function(lineSep) {
-      var this$1 = this;
-
       var ranges = this.sel.ranges, lines;
       for (var i = 0; i < ranges.length; i++) {
-        var sel = getBetween(this$1, ranges[i].from(), ranges[i].to());
+        var sel = getBetween(this, ranges[i].from(), ranges[i].to());
         lines = lines ? lines.concat(sel) : sel;
       }
       if (lineSep === false) { return lines }
       else { return lines.join(lineSep || this.lineSeparator()) }
     },
     getSelections: function(lineSep) {
-      var this$1 = this;
-
       var parts = [], ranges = this.sel.ranges;
       for (var i = 0; i < ranges.length; i++) {
-        var sel = getBetween(this$1, ranges[i].from(), ranges[i].to());
-        if (lineSep !== false) { sel = sel.join(lineSep || this$1.lineSeparator()); }
+        var sel = getBetween(this, ranges[i].from(), ranges[i].to());
+        if (lineSep !== false) { sel = sel.join(lineSep || this.lineSeparator()); }
         parts[i] = sel;
       }
       return parts
@@ -6321,16 +6346,14 @@ module.exports = _interopRequireDefault;
       this.replaceSelections(dup, collapse, origin || "+input");
     },
     replaceSelections: docMethodOp(function(code, collapse, origin) {
-      var this$1 = this;
-
       var changes = [], sel = this.sel;
       for (var i = 0; i < sel.ranges.length; i++) {
-        var range$$1 = sel.ranges[i];
-        changes[i] = {from: range$$1.from(), to: range$$1.to(), text: this$1.splitLines(code[i]), origin: origin};
+        var range = sel.ranges[i];
+        changes[i] = {from: range.from(), to: range.to(), text: this.splitLines(code[i]), origin: origin};
       }
       var newSel = collapse && collapse != "end" && computeReplacedSel(this, changes, collapse);
       for (var i$1 = changes.length - 1; i$1 >= 0; i$1--)
-        { makeChange(this$1, changes[i$1]); }
+        { makeChange(this, changes[i$1]); }
       if (newSel) { setSelectionReplaceHistory(this, newSel); }
       else if (this.cm) { ensureCursorVisible(this.cm); }
     }),
@@ -6348,7 +6371,12 @@ module.exports = _interopRequireDefault;
       for (var i$1 = 0; i$1 < hist.undone.length; i$1++) { if (!hist.undone[i$1].ranges) { ++undone; } }
       return {undo: done, redo: undone}
     },
-    clearHistory: function() {this.history = new History(this.history.maxGeneration);},
+    clearHistory: function() {
+      var this$1 = this;
+
+      this.history = new History(this.history);
+      linkedDocs(this, function (doc) { return doc.history = this$1.history; }, true);
+    },
 
     markClean: function() {
       this.cleanGeneration = this.changeGeneration(true);
@@ -6367,7 +6395,7 @@ module.exports = _interopRequireDefault;
               undone: copyHistoryArray(this.history.undone)}
     },
     setHistory: function(histData) {
-      var hist = this.history = new History(this.history.maxGeneration);
+      var hist = this.history = new History(this.history);
       hist.done = copyHistoryArray(histData.done.slice(0), null, true);
       hist.undone = copyHistoryArray(histData.undone.slice(0), null, true);
     },
@@ -6469,18 +6497,18 @@ module.exports = _interopRequireDefault;
     },
     findMarks: function(from, to, filter) {
       from = clipPos(this, from); to = clipPos(this, to);
-      var found = [], lineNo$$1 = from.line;
+      var found = [], lineNo = from.line;
       this.iter(from.line, to.line + 1, function (line) {
         var spans = line.markedSpans;
         if (spans) { for (var i = 0; i < spans.length; i++) {
           var span = spans[i];
-          if (!(span.to != null && lineNo$$1 == from.line && from.ch >= span.to ||
-                span.from == null && lineNo$$1 != from.line ||
-                span.from != null && lineNo$$1 == to.line && span.from >= to.ch) &&
+          if (!(span.to != null && lineNo == from.line && from.ch >= span.to ||
+                span.from == null && lineNo != from.line ||
+                span.from != null && lineNo == to.line && span.from >= to.ch) &&
               (!filter || filter(span.marker)))
             { found.push(span.marker.parent || span.marker); }
         } }
-        ++lineNo$$1;
+        ++lineNo;
       });
       return found
     },
@@ -6495,14 +6523,14 @@ module.exports = _interopRequireDefault;
     },
 
     posFromIndex: function(off) {
-      var ch, lineNo$$1 = this.first, sepSize = this.lineSeparator().length;
+      var ch, lineNo = this.first, sepSize = this.lineSeparator().length;
       this.iter(function (line) {
         var sz = line.text.length + sepSize;
         if (sz > off) { ch = off; return true }
         off -= sz;
-        ++lineNo$$1;
+        ++lineNo;
       });
-      return clipPos(this, Pos(lineNo$$1, ch))
+      return clipPos(this, Pos(lineNo, ch))
     },
     indexFromPos: function (coords) {
       coords = clipPos(this, coords);
@@ -6541,15 +6569,13 @@ module.exports = _interopRequireDefault;
       return copy
     },
     unlinkDoc: function(other) {
-      var this$1 = this;
-
       if (other instanceof CodeMirror) { other = other.doc; }
       if (this.linked) { for (var i = 0; i < this.linked.length; ++i) {
-        var link = this$1.linked[i];
+        var link = this.linked[i];
         if (link.doc != other) { continue }
-        this$1.linked.splice(i, 1);
-        other.unlinkDoc(this$1);
-        detachSharedMarkers(findSharedMarkers(this$1));
+        this.linked.splice(i, 1);
+        other.unlinkDoc(this);
+        detachSharedMarkers(findSharedMarkers(this));
         break
       } }
       // If the histories were shared, split them again
@@ -6601,28 +6627,39 @@ module.exports = _interopRequireDefault;
     // and insert it.
     if (files && files.length && window.FileReader && window.File) {
       var n = files.length, text = Array(n), read = 0;
-      var loadFile = function (file, i) {
-        if (cm.options.allowDropFileTypes &&
-            indexOf(cm.options.allowDropFileTypes, file.type) == -1)
-          { return }
-
-        var reader = new FileReader;
-        reader.onload = operation(cm, function () {
-          var content = reader.result;
-          if (/[\x00-\x08\x0e-\x1f]{2}/.test(content)) { content = ""; }
-          text[i] = content;
-          if (++read == n) {
+      var markAsReadAndPasteIfAllFilesAreRead = function () {
+        if (++read == n) {
+          operation(cm, function () {
             pos = clipPos(cm.doc, pos);
             var change = {from: pos, to: pos,
-                          text: cm.doc.splitLines(text.join(cm.doc.lineSeparator())),
+                          text: cm.doc.splitLines(
+                              text.filter(function (t) { return t != null; }).join(cm.doc.lineSeparator())),
                           origin: "paste"};
             makeChange(cm.doc, change);
-            setSelectionReplaceHistory(cm.doc, simpleSelection(pos, changeEnd(change)));
+            setSelectionReplaceHistory(cm.doc, simpleSelection(clipPos(cm.doc, pos), clipPos(cm.doc, changeEnd(change))));
+          })();
+        }
+      };
+      var readTextFromFile = function (file, i) {
+        if (cm.options.allowDropFileTypes &&
+            indexOf(cm.options.allowDropFileTypes, file.type) == -1) {
+          markAsReadAndPasteIfAllFilesAreRead();
+          return
+        }
+        var reader = new FileReader;
+        reader.onerror = function () { return markAsReadAndPasteIfAllFilesAreRead(); };
+        reader.onload = function () {
+          var content = reader.result;
+          if (/[\x00-\x08\x0e-\x1f]{2}/.test(content)) {
+            markAsReadAndPasteIfAllFilesAreRead();
+            return
           }
-        });
+          text[i] = content;
+          markAsReadAndPasteIfAllFilesAreRead();
+        };
         reader.readAsText(file);
       };
-      for (var i = 0; i < n; ++i) { loadFile(files[i], i); }
+      for (var i = 0; i < files.length; i++) { readTextFromFile(files[i], i); }
     } else { // Normal drop
       // Don't do a replace if the drop happened inside of the selected text.
       if (cm.state.draggingText && cm.doc.sel.contains(pos) > -1) {
@@ -6644,7 +6681,7 @@ module.exports = _interopRequireDefault;
           cm.display.input.focus();
         }
       }
-      catch(e){}
+      catch(e$1){}
     }
   }
 
@@ -6740,7 +6777,7 @@ module.exports = _interopRequireDefault;
     46: "Delete", 59: ";", 61: "=", 91: "Mod", 92: "Mod", 93: "Mod",
     106: "*", 107: "=", 109: "-", 110: ".", 111: "/", 145: "ScrollLock",
     173: "-", 186: ";", 187: "=", 188: ",", 189: "-", 190: ".", 191: "/", 192: "`", 219: "[", 220: "\\",
-    221: "]", 222: "'", 63232: "Up", 63233: "Down", 63234: "Left", 63235: "Right", 63272: "Delete",
+    221: "]", 222: "'", 224: "Mod", 63232: "Up", 63233: "Down", 63234: "Left", 63235: "Right", 63272: "Delete",
     63273: "Home", 63275: "End", 63276: "PageUp", 63277: "PageDown", 63302: "Insert"
   };
 
@@ -6777,10 +6814,9 @@ module.exports = _interopRequireDefault;
   // Very basic readline/emacs-style bindings, which are standard on Mac.
   keyMap.emacsy = {
     "Ctrl-F": "goCharRight", "Ctrl-B": "goCharLeft", "Ctrl-P": "goLineUp", "Ctrl-N": "goLineDown",
-    "Alt-F": "goWordRight", "Alt-B": "goWordLeft", "Ctrl-A": "goLineStart", "Ctrl-E": "goLineEnd",
-    "Ctrl-V": "goPageDown", "Shift-Ctrl-V": "goPageUp", "Ctrl-D": "delCharAfter", "Ctrl-H": "delCharBefore",
-    "Alt-D": "delWordAfter", "Alt-Backspace": "delWordBefore", "Ctrl-K": "killLine", "Ctrl-T": "transposeChars",
-    "Ctrl-O": "openLine"
+    "Ctrl-A": "goLineStart", "Ctrl-E": "goLineEnd", "Ctrl-V": "goPageDown", "Shift-Ctrl-V": "goPageUp",
+    "Ctrl-D": "delCharAfter", "Ctrl-H": "delCharBefore", "Alt-Backspace": "delWordBefore", "Ctrl-K": "killLine",
+    "Ctrl-T": "transposeChars", "Ctrl-O": "openLine"
   };
   keyMap.macDefault = {
     "Cmd-A": "selectAll", "Cmd-D": "deleteLine", "Cmd-Z": "undo", "Shift-Cmd-Z": "redo", "Cmd-Y": "redo",
@@ -6847,18 +6883,18 @@ module.exports = _interopRequireDefault;
     return keymap
   }
 
-  function lookupKey(key, map$$1, handle, context) {
-    map$$1 = getKeyMap(map$$1);
-    var found = map$$1.call ? map$$1.call(key, context) : map$$1[key];
+  function lookupKey(key, map, handle, context) {
+    map = getKeyMap(map);
+    var found = map.call ? map.call(key, context) : map[key];
     if (found === false) { return "nothing" }
     if (found === "...") { return "multi" }
     if (found != null && handle(found)) { return "handled" }
 
-    if (map$$1.fallthrough) {
-      if (Object.prototype.toString.call(map$$1.fallthrough) != "[object Array]")
-        { return lookupKey(key, map$$1.fallthrough, handle, context) }
-      for (var i = 0; i < map$$1.fallthrough.length; i++) {
-        var result = lookupKey(key, map$$1.fallthrough[i], handle, context);
+    if (map.fallthrough) {
+      if (Object.prototype.toString.call(map.fallthrough) != "[object Array]")
+        { return lookupKey(key, map.fallthrough, handle, context) }
+      for (var i = 0; i < map.fallthrough.length; i++) {
+        var result = lookupKey(key, map.fallthrough[i], handle, context);
         if (result) { return result }
       }
     }
@@ -6875,7 +6911,7 @@ module.exports = _interopRequireDefault;
     var base = name;
     if (event.altKey && base != "Alt") { name = "Alt-" + name; }
     if ((flipCtrlCmd ? event.metaKey : event.ctrlKey) && base != "Ctrl") { name = "Ctrl-" + name; }
-    if ((flipCtrlCmd ? event.ctrlKey : event.metaKey) && base != "Cmd") { name = "Cmd-" + name; }
+    if ((flipCtrlCmd ? event.ctrlKey : event.metaKey) && base != "Mod") { name = "Cmd-" + name; }
     if (!noShift && event.shiftKey && base != "Shift") { name = "Shift-" + name; }
     return name
   }
@@ -6932,6 +6968,7 @@ module.exports = _interopRequireDefault;
 
   function endOfLine(visually, cm, lineObj, lineNo, dir) {
     if (visually) {
+      if (cm.doc.direction == "rtl") { dir = -dir; }
       var order = getOrder(lineObj, cm.doc.direction);
       if (order) {
         var part = dir < 0 ? lst(order) : order[0];
@@ -7100,7 +7137,7 @@ module.exports = _interopRequireDefault;
     goGroupRight: function (cm) { return cm.moveH(1, "group"); },
     goGroupLeft: function (cm) { return cm.moveH(-1, "group"); },
     goWordRight: function (cm) { return cm.moveH(1, "word"); },
-    delCharBefore: function (cm) { return cm.deleteH(-1, "char"); },
+    delCharBefore: function (cm) { return cm.deleteH(-1, "codepoint"); },
     delCharAfter: function (cm) { return cm.deleteH(1, "char"); },
     delWordBefore: function (cm) { return cm.deleteH(-1, "word"); },
     delWordAfter: function (cm) { return cm.deleteH(1, "word"); },
@@ -7186,7 +7223,7 @@ module.exports = _interopRequireDefault;
     var line = getLine(cm.doc, start.line);
     var order = getOrder(line, cm.doc.direction);
     if (!order || order[0].level == 0) {
-      var firstNonWS = Math.max(0, line.text.search(/\S/));
+      var firstNonWS = Math.max(start.ch, line.text.search(/\S/));
       var inWS = pos.line == start.line && pos.ch <= firstNonWS && pos.ch;
       return Pos(start.line, inWS ? 0 : firstNonWS, start.sticky)
     }
@@ -7289,7 +7326,8 @@ module.exports = _interopRequireDefault;
   var lastStoppedKey = null;
   function onKeyDown(e) {
     var cm = this;
-    cm.curOp.focus = activeElt();
+    if (e.target && e.target != cm.display.input.getField()) { return }
+    cm.curOp.focus = activeElt(doc(cm));
     if (signalDOMEvent(cm, e)) { return }
     // IE does strange things with escape.
     if (ie && ie_version < 11 && e.keyCode == 27) { e.returnValue = false; }
@@ -7302,6 +7340,8 @@ module.exports = _interopRequireDefault;
       if (!handled && code == 88 && !hasCopyEvent && (mac ? e.metaKey : e.ctrlKey))
         { cm.replaceSelection("", null, "cut"); }
     }
+    if (gecko && !mac && !handled && code == 46 && e.shiftKey && !e.ctrlKey && document.execCommand)
+      { document.execCommand("cut"); }
 
     // Turn mouse into crosshair when Alt is held on Mac.
     if (code == 18 && !/\bCodeMirror-crosshair\b/.test(cm.display.lineDiv.className))
@@ -7330,6 +7370,7 @@ module.exports = _interopRequireDefault;
 
   function onKeyPress(e) {
     var cm = this;
+    if (e.target && e.target != cm.display.input.getField()) { return }
     if (eventInWidget(cm.display, e) || signalDOMEvent(cm, e) || e.ctrlKey && !e.altKey || mac && e.metaKey) { return }
     var keyCode = e.keyCode, charCode = e.charCode;
     if (presto && keyCode == lastStoppedKey) {lastStoppedKey = null; e_preventDefault(e); return}
@@ -7393,7 +7434,7 @@ module.exports = _interopRequireDefault;
     }
     if (clickInGutter(cm, e)) { return }
     var pos = posFromMouse(cm, e), button = e_button(e), repeat = pos ? clickRepeat(pos, button) : "single";
-    window.focus();
+    win(cm).focus();
 
     // #3261: make sure, that we're not starting a second selection
     if (button == 1 && cm.state.selectingText)
@@ -7448,7 +7489,7 @@ module.exports = _interopRequireDefault;
 
   function leftButtonDown(cm, pos, repeat, event) {
     if (ie) { setTimeout(bind(ensureFocus, cm), 0); }
-    else { cm.curOp.focus = activeElt(); }
+    else { cm.curOp.focus = activeElt(doc(cm)); }
 
     var behavior = configureMouse(cm, repeat, event);
 
@@ -7469,6 +7510,10 @@ module.exports = _interopRequireDefault;
     var dragEnd = operation(cm, function (e) {
       if (webkit) { display.scroller.draggable = false; }
       cm.state.draggingText = false;
+      if (cm.state.delayingBlurEvent) {
+        if (cm.hasFocus()) { cm.state.delayingBlurEvent = false; }
+        else { delayBlurEvent(cm); }
+      }
       off(display.wrapper.ownerDocument, "mouseup", dragEnd);
       off(display.wrapper.ownerDocument, "mousemove", mouseMove);
       off(display.scroller, "dragstart", dragStart);
@@ -7478,8 +7523,8 @@ module.exports = _interopRequireDefault;
         if (!behavior.addNew)
           { extendSelection(cm.doc, pos, null, null, behavior.extend); }
         // Work around unexplainable focus problem in IE9 (#2127) and Chrome (#3081)
-        if (webkit || ie && ie_version == 9)
-          { setTimeout(function () {display.wrapper.ownerDocument.body.focus(); display.input.focus();}, 20); }
+        if ((webkit && !safari) || ie && ie_version == 9)
+          { setTimeout(function () {display.wrapper.ownerDocument.body.focus({preventScroll: true}); display.input.focus();}, 20); }
         else
           { display.input.focus(); }
       }
@@ -7492,15 +7537,15 @@ module.exports = _interopRequireDefault;
     if (webkit) { display.scroller.draggable = true; }
     cm.state.draggingText = dragEnd;
     dragEnd.copy = !behavior.moveOnDrag;
-    // IE's approach to draggable
-    if (display.scroller.dragDrop) { display.scroller.dragDrop(); }
     on(display.wrapper.ownerDocument, "mouseup", dragEnd);
     on(display.wrapper.ownerDocument, "mousemove", mouseMove);
     on(display.scroller, "dragstart", dragStart);
     on(display.scroller, "drop", dragEnd);
 
-    delayBlurEvent(cm);
+    cm.state.delayingBlurEvent = true;
     setTimeout(function () { return display.input.focus(); }, 20);
+    // IE's approach to draggable
+    if (display.scroller.dragDrop) { display.scroller.dragDrop(); }
   }
 
   function rangeForUnit(cm, pos, unit) {
@@ -7513,19 +7558,20 @@ module.exports = _interopRequireDefault;
 
   // Normal selection, as opposed to text dragging.
   function leftButtonSelect(cm, event, start, behavior) {
-    var display = cm.display, doc = cm.doc;
+    if (ie) { delayBlurEvent(cm); }
+    var display = cm.display, doc$1 = cm.doc;
     e_preventDefault(event);
 
-    var ourRange, ourIndex, startSel = doc.sel, ranges = startSel.ranges;
+    var ourRange, ourIndex, startSel = doc$1.sel, ranges = startSel.ranges;
     if (behavior.addNew && !behavior.extend) {
-      ourIndex = doc.sel.contains(start);
+      ourIndex = doc$1.sel.contains(start);
       if (ourIndex > -1)
         { ourRange = ranges[ourIndex]; }
       else
         { ourRange = new Range(start, start); }
     } else {
-      ourRange = doc.sel.primary();
-      ourIndex = doc.sel.primIndex;
+      ourRange = doc$1.sel.primary();
+      ourIndex = doc$1.sel.primIndex;
     }
 
     if (behavior.unit == "rectangle") {
@@ -7533,27 +7579,27 @@ module.exports = _interopRequireDefault;
       start = posFromMouse(cm, event, true, true);
       ourIndex = -1;
     } else {
-      var range$$1 = rangeForUnit(cm, start, behavior.unit);
+      var range = rangeForUnit(cm, start, behavior.unit);
       if (behavior.extend)
-        { ourRange = extendRange(ourRange, range$$1.anchor, range$$1.head, behavior.extend); }
+        { ourRange = extendRange(ourRange, range.anchor, range.head, behavior.extend); }
       else
-        { ourRange = range$$1; }
+        { ourRange = range; }
     }
 
     if (!behavior.addNew) {
       ourIndex = 0;
-      setSelection(doc, new Selection([ourRange], 0), sel_mouse);
-      startSel = doc.sel;
+      setSelection(doc$1, new Selection([ourRange], 0), sel_mouse);
+      startSel = doc$1.sel;
     } else if (ourIndex == -1) {
       ourIndex = ranges.length;
-      setSelection(doc, normalizeSelection(cm, ranges.concat([ourRange]), ourIndex),
+      setSelection(doc$1, normalizeSelection(cm, ranges.concat([ourRange]), ourIndex),
                    {scroll: false, origin: "*mouse"});
     } else if (ranges.length > 1 && ranges[ourIndex].empty() && behavior.unit == "char" && !behavior.extend) {
-      setSelection(doc, normalizeSelection(cm, ranges.slice(0, ourIndex).concat(ranges.slice(ourIndex + 1)), 0),
+      setSelection(doc$1, normalizeSelection(cm, ranges.slice(0, ourIndex).concat(ranges.slice(ourIndex + 1)), 0),
                    {scroll: false, origin: "*mouse"});
-      startSel = doc.sel;
+      startSel = doc$1.sel;
     } else {
-      replaceOneSelection(doc, ourIndex, ourRange, sel_mouse);
+      replaceOneSelection(doc$1, ourIndex, ourRange, sel_mouse);
     }
 
     var lastPos = start;
@@ -7563,35 +7609,35 @@ module.exports = _interopRequireDefault;
 
       if (behavior.unit == "rectangle") {
         var ranges = [], tabSize = cm.options.tabSize;
-        var startCol = countColumn(getLine(doc, start.line).text, start.ch, tabSize);
-        var posCol = countColumn(getLine(doc, pos.line).text, pos.ch, tabSize);
+        var startCol = countColumn(getLine(doc$1, start.line).text, start.ch, tabSize);
+        var posCol = countColumn(getLine(doc$1, pos.line).text, pos.ch, tabSize);
         var left = Math.min(startCol, posCol), right = Math.max(startCol, posCol);
         for (var line = Math.min(start.line, pos.line), end = Math.min(cm.lastLine(), Math.max(start.line, pos.line));
              line <= end; line++) {
-          var text = getLine(doc, line).text, leftPos = findColumn(text, left, tabSize);
+          var text = getLine(doc$1, line).text, leftPos = findColumn(text, left, tabSize);
           if (left == right)
             { ranges.push(new Range(Pos(line, leftPos), Pos(line, leftPos))); }
           else if (text.length > leftPos)
             { ranges.push(new Range(Pos(line, leftPos), Pos(line, findColumn(text, right, tabSize)))); }
         }
         if (!ranges.length) { ranges.push(new Range(start, start)); }
-        setSelection(doc, normalizeSelection(cm, startSel.ranges.slice(0, ourIndex).concat(ranges), ourIndex),
+        setSelection(doc$1, normalizeSelection(cm, startSel.ranges.slice(0, ourIndex).concat(ranges), ourIndex),
                      {origin: "*mouse", scroll: false});
         cm.scrollIntoView(pos);
       } else {
         var oldRange = ourRange;
-        var range$$1 = rangeForUnit(cm, pos, behavior.unit);
+        var range = rangeForUnit(cm, pos, behavior.unit);
         var anchor = oldRange.anchor, head;
-        if (cmp(range$$1.anchor, anchor) > 0) {
-          head = range$$1.head;
-          anchor = minPos(oldRange.from(), range$$1.anchor);
+        if (cmp(range.anchor, anchor) > 0) {
+          head = range.head;
+          anchor = minPos(oldRange.from(), range.anchor);
         } else {
-          head = range$$1.anchor;
-          anchor = maxPos(oldRange.to(), range$$1.head);
+          head = range.anchor;
+          anchor = maxPos(oldRange.to(), range.head);
         }
         var ranges$1 = startSel.ranges.slice(0);
-        ranges$1[ourIndex] = bidiSimplify(cm, new Range(clipPos(doc, anchor), head));
-        setSelection(doc, normalizeSelection(cm, ranges$1, ourIndex), sel_mouse);
+        ranges$1[ourIndex] = bidiSimplify(cm, new Range(clipPos(doc$1, anchor), head));
+        setSelection(doc$1, normalizeSelection(cm, ranges$1, ourIndex), sel_mouse);
       }
     }
 
@@ -7607,9 +7653,9 @@ module.exports = _interopRequireDefault;
       var cur = posFromMouse(cm, e, true, behavior.unit == "rectangle");
       if (!cur) { return }
       if (cmp(cur, lastPos) != 0) {
-        cm.curOp.focus = activeElt();
+        cm.curOp.focus = activeElt(doc(cm));
         extendTo(cur);
-        var visible = visibleLines(display, doc);
+        var visible = visibleLines(display, doc$1);
         if (cur.line >= visible.to || cur.line < visible.from)
           { setTimeout(operation(cm, function () {if (counter == curCount) { extend(e); }}), 150); }
       } else {
@@ -7634,7 +7680,7 @@ module.exports = _interopRequireDefault;
       }
       off(display.wrapper.ownerDocument, "mousemove", move);
       off(display.wrapper.ownerDocument, "mouseup", up);
-      doc.history.lastSelOrigin = null;
+      doc$1.history.lastSelOrigin = null;
     }
 
     var move = operation(cm, function (e) {
@@ -7649,17 +7695,17 @@ module.exports = _interopRequireDefault;
 
   // Used when mouse-selecting to adjust the anchor to the proper side
   // of a bidi jump depending on the visual position of the head.
-  function bidiSimplify(cm, range$$1) {
-    var anchor = range$$1.anchor;
-    var head = range$$1.head;
+  function bidiSimplify(cm, range) {
+    var anchor = range.anchor;
+    var head = range.head;
     var anchorLine = getLine(cm.doc, anchor.line);
-    if (cmp(anchor, head) == 0 && anchor.sticky == head.sticky) { return range$$1 }
+    if (cmp(anchor, head) == 0 && anchor.sticky == head.sticky) { return range }
     var order = getOrder(anchorLine);
-    if (!order) { return range$$1 }
+    if (!order) { return range }
     var index = getBidiPartAt(order, anchor.ch, anchor.sticky), part = order[index];
-    if (part.from != anchor.ch && part.to != anchor.ch) { return range$$1 }
+    if (part.from != anchor.ch && part.to != anchor.ch) { return range }
     var boundary = index + ((part.from == anchor.ch) == (part.level != 1) ? 0 : 1);
-    if (boundary == 0 || boundary == order.length) { return range$$1 }
+    if (boundary == 0 || boundary == order.length) { return range }
 
     // Compute the relative visual position of the head compared to the
     // anchor (<0 is to the left, >0 to the right)
@@ -7678,7 +7724,7 @@ module.exports = _interopRequireDefault;
     var usePart = order[boundary + (leftSide ? -1 : 0)];
     var from = leftSide == (usePart.level == 1);
     var ch = from ? usePart.from : usePart.to, sticky = from ? "after" : "before";
-    return anchor.ch == ch && anchor.sticky == sticky ? range$$1 : new Range(new Pos(anchor.line, ch, sticky), head)
+    return anchor.ch == ch && anchor.sticky == sticky ? range : new Range(new Pos(anchor.line, ch, sticky), head)
   }
 
 
@@ -7691,7 +7737,7 @@ module.exports = _interopRequireDefault;
       mY = e.touches[0].clientY;
     } else {
       try { mX = e.clientX; mY = e.clientY; }
-      catch(e) { return false }
+      catch(e$1) { return false }
     }
     if (mX >= Math.floor(cm.display.gutters.getBoundingClientRect().right)) { return false }
     if (prevent) { e_preventDefault(e); }
@@ -7791,7 +7837,7 @@ module.exports = _interopRequireDefault;
       for (var i = newBreaks.length - 1; i >= 0; i--)
         { replaceRange(cm.doc, val, newBreaks[i], Pos(newBreaks[i].line, newBreaks[i].ch + val.length)); }
     });
-    option("specialChars", /[\u0000-\u001f\u007f-\u009f\u00ad\u061c\u200b-\u200f\u2028\u2029\ufeff\ufff9-\ufffc]/g, function (cm, val, old) {
+    option("specialChars", /[\u0000-\u001f\u007f-\u009f\u00ad\u061c\u200b\u200e\u200f\u2028\u2029\u202d\u202e\u2066\u2067\u2069\ufeff\ufff9-\ufffc]/g, function (cm, val, old) {
       cm.state.specialChars = new RegExp(val.source + (val.test("\t") ? "" : "|\t"), "g");
       if (old != Init) { cm.refresh(); }
     });
@@ -7855,6 +7901,12 @@ module.exports = _interopRequireDefault;
       }
       cm.display.input.readOnlyChanged(val);
     });
+
+    option("screenReaderLabel", null, function (cm, val) {
+      val = (val === '') ? null : val;
+      cm.display.input.screenReaderLabelChanged(val);
+    });
+
     option("disableInput", false, function (cm, val) {if (!val) { cm.display.input.reset(); }}, true);
     option("dragDrop", true, dragDropChanged);
     option("allowDropFileTypes", null);
@@ -7965,15 +8017,17 @@ module.exports = _interopRequireDefault;
     attachDoc(this, doc);
 
     if ((options.autofocus && !mobile) || this.hasFocus())
-      { setTimeout(bind(onFocus, this), 20); }
+      { setTimeout(function () {
+        if (this$1.hasFocus() && !this$1.state.focused) { onFocus(this$1); }
+      }, 20); }
     else
       { onBlur(this); }
 
     for (var opt in optionHandlers) { if (optionHandlers.hasOwnProperty(opt))
-      { optionHandlers[opt](this$1, options[opt], Init); } }
+      { optionHandlers[opt](this, options[opt], Init); } }
     maybeUpdateLineNumberWidth(this);
     if (options.finishInit) { options.finishInit(this); }
-    for (var i = 0; i < initHooks.length; ++i) { initHooks[i](this$1); }
+    for (var i = 0; i < initHooks.length; ++i) { initHooks[i](this); }
     endOperation(this);
     // Suppress optimizelegibility in Webkit, since it breaks text
     // measuring on line wrapping boundaries.
@@ -8007,6 +8061,9 @@ module.exports = _interopRequireDefault;
     // which point we can't mess with it anymore. Context menu is
     // handled in onMouseDown for these browsers.
     on(d.scroller, "contextmenu", function (e) { return onContextMenu(cm, e); });
+    on(d.input.getField(), "contextmenu", function (e) {
+      if (!d.scroller.contains(e.target)) { onContextMenu(cm, e); }
+    });
 
     // Used to suppress mouse event handling when a touch happens
     var touchFinished, prevTouch = {end: 0};
@@ -8195,14 +8252,14 @@ module.exports = _interopRequireDefault;
     var updateInput = cm.curOp.updateInput;
     // Normal behavior is to insert the new text into every selection
     for (var i$1 = sel.ranges.length - 1; i$1 >= 0; i$1--) {
-      var range$$1 = sel.ranges[i$1];
-      var from = range$$1.from(), to = range$$1.to();
-      if (range$$1.empty()) {
+      var range = sel.ranges[i$1];
+      var from = range.from(), to = range.to();
+      if (range.empty()) {
         if (deleted && deleted > 0) // Handle deletion
           { from = Pos(from.line, from.ch - deleted); }
         else if (cm.state.overwrite && !paste) // Handle overwrite
           { to = Pos(to.line, Math.min(getLine(doc, to.line).text.length, to.ch + lst(textLines).length)); }
-        else if (paste && lastCopied && lastCopied.lineWise && lastCopied.text.join("\n") == inserted)
+        else if (paste && lastCopied && lastCopied.lineWise && lastCopied.text.join("\n") == textLines.join("\n"))
           { from = to = Pos(from.line, 0); }
       }
       var changeEvent = {from: from, to: to, text: multiPaste ? multiPaste[i$1 % multiPaste.length] : textLines,
@@ -8223,7 +8280,7 @@ module.exports = _interopRequireDefault;
     var pasted = e.clipboardData && e.clipboardData.getData("Text");
     if (pasted) {
       e.preventDefault();
-      if (!cm.isReadOnly() && !cm.options.disableInput)
+      if (!cm.isReadOnly() && !cm.options.disableInput && cm.hasFocus())
         { runInOp(cm, function () { return applyTextInput(cm, pasted, 0, null, "paste"); }); }
       return true
     }
@@ -8235,21 +8292,21 @@ module.exports = _interopRequireDefault;
     var sel = cm.doc.sel;
 
     for (var i = sel.ranges.length - 1; i >= 0; i--) {
-      var range$$1 = sel.ranges[i];
-      if (range$$1.head.ch > 100 || (i && sel.ranges[i - 1].head.line == range$$1.head.line)) { continue }
-      var mode = cm.getModeAt(range$$1.head);
+      var range = sel.ranges[i];
+      if (range.head.ch > 100 || (i && sel.ranges[i - 1].head.line == range.head.line)) { continue }
+      var mode = cm.getModeAt(range.head);
       var indented = false;
       if (mode.electricChars) {
         for (var j = 0; j < mode.electricChars.length; j++)
           { if (inserted.indexOf(mode.electricChars.charAt(j)) > -1) {
-            indented = indentLine(cm, range$$1.head.line, "smart");
+            indented = indentLine(cm, range.head.line, "smart");
             break
           } }
       } else if (mode.electricInput) {
-        if (mode.electricInput.test(getLine(cm.doc, range$$1.head.line).text.slice(0, range$$1.head.ch)))
-          { indented = indentLine(cm, range$$1.head.line, "smart"); }
+        if (mode.electricInput.test(getLine(cm.doc, range.head.line).text.slice(0, range.head.ch)))
+          { indented = indentLine(cm, range.head.line, "smart"); }
       }
-      if (indented) { signalLater(cm, "electricInput", cm, range$$1.head.line); }
+      if (indented) { signalLater(cm, "electricInput", cm, range.head.line); }
     }
   }
 
@@ -8265,13 +8322,13 @@ module.exports = _interopRequireDefault;
   }
 
   function disableBrowserMagic(field, spellcheck, autocorrect, autocapitalize) {
-    field.setAttribute("autocorrect", autocorrect ? "" : "off");
-    field.setAttribute("autocapitalize", autocapitalize ? "" : "off");
+    field.setAttribute("autocorrect", autocorrect ? "on" : "off");
+    field.setAttribute("autocapitalize", autocapitalize ? "on" : "off");
     field.setAttribute("spellcheck", !!spellcheck);
   }
 
   function hiddenTextarea() {
-    var te = elt("textarea", null, null, "position: absolute; bottom: -1em; padding: 0; width: 1px; height: 1em; outline: none");
+    var te = elt("textarea", null, null, "position: absolute; bottom: -1em; padding: 0; width: 1px; height: 1em; min-height: 1em; outline: none");
     var div = elt("div", [te], null, "overflow: hidden; position: relative; width: 3px; height: 0px;");
     // The textarea is kept positioned near the cursor to prevent the
     // fact that it'll be scrolled into view on input from scrolling
@@ -8281,7 +8338,6 @@ module.exports = _interopRequireDefault;
     else { te.setAttribute("wrap", "off"); }
     // If border: 0; -- iOS fails to open keyboard (issue #1287)
     if (ios) { te.style.border = "1px solid black"; }
-    disableBrowserMagic(te);
     return div
   }
 
@@ -8300,7 +8356,7 @@ module.exports = _interopRequireDefault;
 
     CodeMirror.prototype = {
       constructor: CodeMirror,
-      focus: function(){window.focus(); this.display.input.focus();},
+      focus: function(){win(this).focus(); this.display.input.focus();},
 
       setOption: function(option, value) {
         var options = this.options, old = options[option];
@@ -8314,13 +8370,13 @@ module.exports = _interopRequireDefault;
       getOption: function(option) {return this.options[option]},
       getDoc: function() {return this.doc},
 
-      addKeyMap: function(map$$1, bottom) {
-        this.state.keyMaps[bottom ? "push" : "unshift"](getKeyMap(map$$1));
+      addKeyMap: function(map, bottom) {
+        this.state.keyMaps[bottom ? "push" : "unshift"](getKeyMap(map));
       },
-      removeKeyMap: function(map$$1) {
+      removeKeyMap: function(map) {
         var maps = this.state.keyMaps;
         for (var i = 0; i < maps.length; ++i)
-          { if (maps[i] == map$$1 || maps[i].name == map$$1) {
+          { if (maps[i] == map || maps[i].name == map) {
             maps.splice(i, 1);
             return true
           } }
@@ -8337,15 +8393,13 @@ module.exports = _interopRequireDefault;
         regChange(this);
       }),
       removeOverlay: methodOp(function(spec) {
-        var this$1 = this;
-
         var overlays = this.state.overlays;
         for (var i = 0; i < overlays.length; ++i) {
           var cur = overlays[i].modeSpec;
           if (cur == spec || typeof spec == "string" && cur.name == spec) {
             overlays.splice(i, 1);
-            this$1.state.modeGen++;
-            regChange(this$1);
+            this.state.modeGen++;
+            regChange(this);
             return
           }
         }
@@ -8359,24 +8413,22 @@ module.exports = _interopRequireDefault;
         if (isLine(this.doc, n)) { indentLine(this, n, dir, aggressive); }
       }),
       indentSelection: methodOp(function(how) {
-        var this$1 = this;
-
         var ranges = this.doc.sel.ranges, end = -1;
         for (var i = 0; i < ranges.length; i++) {
-          var range$$1 = ranges[i];
-          if (!range$$1.empty()) {
-            var from = range$$1.from(), to = range$$1.to();
+          var range = ranges[i];
+          if (!range.empty()) {
+            var from = range.from(), to = range.to();
             var start = Math.max(end, from.line);
-            end = Math.min(this$1.lastLine(), to.line - (to.ch ? 0 : 1)) + 1;
+            end = Math.min(this.lastLine(), to.line - (to.ch ? 0 : 1)) + 1;
             for (var j = start; j < end; ++j)
-              { indentLine(this$1, j, how); }
-            var newRanges = this$1.doc.sel.ranges;
+              { indentLine(this, j, how); }
+            var newRanges = this.doc.sel.ranges;
             if (from.ch == 0 && ranges.length == newRanges.length && newRanges[i].from().ch > 0)
-              { replaceOneSelection(this$1.doc, i, new Range(from, newRanges[i].to()), sel_dontScroll); }
-          } else if (range$$1.head.line > end) {
-            indentLine(this$1, range$$1.head.line, how, true);
-            end = range$$1.head.line;
-            if (i == this$1.doc.sel.primIndex) { ensureCursorVisible(this$1); }
+              { replaceOneSelection(this.doc, i, new Range(from, newRanges[i].to()), sel_dontScroll); }
+          } else if (range.head.line > end) {
+            indentLine(this, range.head.line, how, true);
+            end = range.head.line;
+            if (i == this.doc.sel.primIndex) { ensureCursorVisible(this); }
           }
         }
       }),
@@ -8418,8 +8470,6 @@ module.exports = _interopRequireDefault;
       },
 
       getHelpers: function(pos, type) {
-        var this$1 = this;
-
         var found = [];
         if (!helpers.hasOwnProperty(type)) { return found }
         var help = helpers[type], mode = this.getModeAt(pos);
@@ -8437,7 +8487,7 @@ module.exports = _interopRequireDefault;
         }
         for (var i$1 = 0; i$1 < help._global.length; i$1++) {
           var cur = help._global[i$1];
-          if (cur.pred(mode, this$1) && indexOf(found, cur.val) == -1)
+          if (cur.pred(mode, this) && indexOf(found, cur.val) == -1)
             { found.push(cur.val); }
         }
         return found
@@ -8450,10 +8500,10 @@ module.exports = _interopRequireDefault;
       },
 
       cursorCoords: function(start, mode) {
-        var pos, range$$1 = this.doc.sel.primary();
-        if (start == null) { pos = range$$1.head; }
+        var pos, range = this.doc.sel.primary();
+        if (start == null) { pos = range.head; }
         else if (typeof start == "object") { pos = clipPos(this.doc, start); }
-        else { pos = start ? range$$1.from() : range$$1.to(); }
+        else { pos = start ? range.from() : range.to(); }
         return cursorCoords(this, pos, mode || "page")
       },
 
@@ -8537,13 +8587,11 @@ module.exports = _interopRequireDefault;
       triggerElectric: methodOp(function(text) { triggerElectric(this, text); }),
 
       findPosH: function(from, amount, unit, visually) {
-        var this$1 = this;
-
         var dir = 1;
         if (amount < 0) { dir = -1; amount = -amount; }
         var cur = clipPos(this.doc, from);
         for (var i = 0; i < amount; ++i) {
-          cur = findPosH(this$1.doc, cur, dir, unit, visually);
+          cur = findPosH(this.doc, cur, dir, unit, visually);
           if (cur.hitSide) { break }
         }
         return cur
@@ -8552,11 +8600,11 @@ module.exports = _interopRequireDefault;
       moveH: methodOp(function(dir, unit) {
         var this$1 = this;
 
-        this.extendSelectionsBy(function (range$$1) {
-          if (this$1.display.shift || this$1.doc.extend || range$$1.empty())
-            { return findPosH(this$1.doc, range$$1.head, dir, unit, this$1.options.rtlMoveVisually) }
+        this.extendSelectionsBy(function (range) {
+          if (this$1.display.shift || this$1.doc.extend || range.empty())
+            { return findPosH(this$1.doc, range.head, dir, unit, this$1.options.rtlMoveVisually) }
           else
-            { return dir < 0 ? range$$1.from() : range$$1.to() }
+            { return dir < 0 ? range.from() : range.to() }
         }, sel_move);
       }),
 
@@ -8565,23 +8613,21 @@ module.exports = _interopRequireDefault;
         if (sel.somethingSelected())
           { doc.replaceSelection("", null, "+delete"); }
         else
-          { deleteNearSelection(this, function (range$$1) {
-            var other = findPosH(doc, range$$1.head, dir, unit, false);
-            return dir < 0 ? {from: other, to: range$$1.head} : {from: range$$1.head, to: other}
+          { deleteNearSelection(this, function (range) {
+            var other = findPosH(doc, range.head, dir, unit, false);
+            return dir < 0 ? {from: other, to: range.head} : {from: range.head, to: other}
           }); }
       }),
 
       findPosV: function(from, amount, unit, goalColumn) {
-        var this$1 = this;
-
         var dir = 1, x = goalColumn;
         if (amount < 0) { dir = -1; amount = -amount; }
         var cur = clipPos(this.doc, from);
         for (var i = 0; i < amount; ++i) {
-          var coords = cursorCoords(this$1, cur, "div");
+          var coords = cursorCoords(this, cur, "div");
           if (x == null) { x = coords.left; }
           else { coords.left = x; }
-          cur = findPosV(this$1, coords, dir, unit);
+          cur = findPosV(this, coords, dir, unit);
           if (cur.hitSide) { break }
         }
         return cur
@@ -8592,14 +8638,14 @@ module.exports = _interopRequireDefault;
 
         var doc = this.doc, goals = [];
         var collapse = !this.display.shift && !doc.extend && doc.sel.somethingSelected();
-        doc.extendSelectionsBy(function (range$$1) {
+        doc.extendSelectionsBy(function (range) {
           if (collapse)
-            { return dir < 0 ? range$$1.from() : range$$1.to() }
-          var headPos = cursorCoords(this$1, range$$1.head, "div");
-          if (range$$1.goalColumn != null) { headPos.left = range$$1.goalColumn; }
+            { return dir < 0 ? range.from() : range.to() }
+          var headPos = cursorCoords(this$1, range.head, "div");
+          if (range.goalColumn != null) { headPos.left = range.goalColumn; }
           goals.push(headPos.left);
           var pos = findPosV(this$1, headPos, dir, unit);
-          if (unit == "page" && range$$1 == doc.sel.primary())
+          if (unit == "page" && range == doc.sel.primary())
             { addToScrollTop(this$1, charCoords(this$1, pos, "div").top - headPos.top); }
           return pos
         }, sel_move);
@@ -8634,7 +8680,7 @@ module.exports = _interopRequireDefault;
 
         signal(this, "overwriteToggle", this, this.state.overwrite);
       },
-      hasFocus: function() { return this.display.input.getField() == activeElt() },
+      hasFocus: function() { return this.display.input.getField() == activeElt(doc(this)) },
       isReadOnly: function() { return !!(this.options.readOnly || this.doc.cantEdit) },
 
       scrollTo: methodOp(function (x, y) { scrollToCoords(this, x, y); }),
@@ -8646,22 +8692,22 @@ module.exports = _interopRequireDefault;
                 clientHeight: displayHeight(this), clientWidth: displayWidth(this)}
       },
 
-      scrollIntoView: methodOp(function(range$$1, margin) {
-        if (range$$1 == null) {
-          range$$1 = {from: this.doc.sel.primary().head, to: null};
+      scrollIntoView: methodOp(function(range, margin) {
+        if (range == null) {
+          range = {from: this.doc.sel.primary().head, to: null};
           if (margin == null) { margin = this.options.cursorScrollMargin; }
-        } else if (typeof range$$1 == "number") {
-          range$$1 = {from: Pos(range$$1, 0), to: null};
-        } else if (range$$1.from == null) {
-          range$$1 = {from: range$$1, to: null};
+        } else if (typeof range == "number") {
+          range = {from: Pos(range, 0), to: null};
+        } else if (range.from == null) {
+          range = {from: range, to: null};
         }
-        if (!range$$1.to) { range$$1.to = range$$1.from; }
-        range$$1.margin = margin || 0;
+        if (!range.to) { range.to = range.from; }
+        range.margin = margin || 0;
 
-        if (range$$1.from.line != null) {
-          scrollToRange(this, range$$1);
+        if (range.from.line != null) {
+          scrollToRange(this, range);
         } else {
-          scrollToCoordsRange(this, range$$1.from, range$$1.to, range$$1.margin);
+          scrollToCoordsRange(this, range.from, range.to, range.margin);
         }
       }),
 
@@ -8672,11 +8718,11 @@ module.exports = _interopRequireDefault;
         if (width != null) { this.display.wrapper.style.width = interpret(width); }
         if (height != null) { this.display.wrapper.style.height = interpret(height); }
         if (this.options.lineWrapping) { clearLineMeasurementCache(this); }
-        var lineNo$$1 = this.display.viewFrom;
-        this.doc.iter(lineNo$$1, this.display.viewTo, function (line) {
+        var lineNo = this.display.viewFrom;
+        this.doc.iter(lineNo, this.display.viewTo, function (line) {
           if (line.widgets) { for (var i = 0; i < line.widgets.length; i++)
-            { if (line.widgets[i].noHScroll) { regLineChange(this$1, lineNo$$1, "widget"); break } } }
-          ++lineNo$$1;
+            { if (line.widgets[i].noHScroll) { regLineChange(this$1, lineNo, "widget"); break } } }
+          ++lineNo;
         });
         this.curOp.forceUpdate = true;
         signal(this, "refresh", this);
@@ -8693,7 +8739,7 @@ module.exports = _interopRequireDefault;
         clearCaches(this);
         scrollToCoords(this, this.doc.scrollLeft, this.doc.scrollTop);
         updateGutterSpace(this.display);
-        if (oldHeight == null || Math.abs(oldHeight - textHeight(this.display)) > .5)
+        if (oldHeight == null || Math.abs(oldHeight - textHeight(this.display)) > .5 || this.options.lineWrapping)
           { estimateLineHeights(this); }
         signal(this, "refresh", this);
       }),
@@ -8735,34 +8781,43 @@ module.exports = _interopRequireDefault;
   }
 
   // Used for horizontal relative motion. Dir is -1 or 1 (left or
-  // right), unit can be "char", "column" (like char, but doesn't
-  // cross line boundaries), "word" (across next word), or "group" (to
-  // the start of next group of word or non-word-non-whitespace
-  // chars). The visually param controls whether, in right-to-left
-  // text, direction 1 means to move towards the next index in the
-  // string, or towards the character to the right of the current
-  // position. The resulting position will have a hitSide=true
-  // property if it reached the end of the document.
+  // right), unit can be "codepoint", "char", "column" (like char, but
+  // doesn't cross line boundaries), "word" (across next word), or
+  // "group" (to the start of next group of word or
+  // non-word-non-whitespace chars). The visually param controls
+  // whether, in right-to-left text, direction 1 means to move towards
+  // the next index in the string, or towards the character to the right
+  // of the current position. The resulting position will have a
+  // hitSide=true property if it reached the end of the document.
   function findPosH(doc, pos, dir, unit, visually) {
     var oldPos = pos;
     var origDir = dir;
     var lineObj = getLine(doc, pos.line);
+    var lineDir = visually && doc.direction == "rtl" ? -dir : dir;
     function findNextLine() {
-      var l = pos.line + dir;
+      var l = pos.line + lineDir;
       if (l < doc.first || l >= doc.first + doc.size) { return false }
       pos = new Pos(l, pos.ch, pos.sticky);
       return lineObj = getLine(doc, l)
     }
     function moveOnce(boundToLine) {
       var next;
-      if (visually) {
+      if (unit == "codepoint") {
+        var ch = lineObj.text.charCodeAt(pos.ch + (dir > 0 ? 0 : -1));
+        if (isNaN(ch)) {
+          next = null;
+        } else {
+          var astral = dir > 0 ? ch >= 0xD800 && ch < 0xDC00 : ch >= 0xDC00 && ch < 0xDFFF;
+          next = new Pos(pos.line, Math.max(0, Math.min(lineObj.text.length, pos.ch + dir * (astral ? 2 : 1))), -dir);
+        }
+      } else if (visually) {
         next = moveVisually(doc.cm, lineObj, pos, dir);
       } else {
         next = moveLogically(lineObj, pos, dir);
       }
       if (next == null) {
         if (!boundToLine && findNextLine())
-          { pos = endOfLine(visually, doc.cm, lineObj, pos.line, dir); }
+          { pos = endOfLine(visually, doc.cm, lineObj, pos.line, lineDir); }
         else
           { return false }
       } else {
@@ -8771,7 +8826,7 @@ module.exports = _interopRequireDefault;
       return true
     }
 
-    if (unit == "char") {
+    if (unit == "char" || unit == "codepoint") {
       moveOnce();
     } else if (unit == "column") {
       moveOnce(true);
@@ -8806,7 +8861,7 @@ module.exports = _interopRequireDefault;
   function findPosV(cm, pos, dir, unit) {
     var doc = cm.doc, x = pos.left, y;
     if (unit == "page") {
-      var pageSize = Math.min(cm.display.wrapper.clientHeight, window.innerHeight || document.documentElement.clientHeight);
+      var pageSize = Math.min(cm.display.wrapper.clientHeight, win(cm).innerHeight || doc(cm).documentElement.clientHeight);
       var moveAmount = Math.max(pageSize - .5 * textHeight(cm.display), 3);
       y = (dir > 0 ? pos.bottom : pos.top) + dir * moveAmount;
 
@@ -8839,10 +8894,19 @@ module.exports = _interopRequireDefault;
 
     var input = this, cm = input.cm;
     var div = input.div = display.lineDiv;
+    div.contentEditable = true;
     disableBrowserMagic(div, cm.options.spellcheck, cm.options.autocorrect, cm.options.autocapitalize);
 
+    function belongsToInput(e) {
+      for (var t = e.target; t; t = t.parentNode) {
+        if (t == div) { return true }
+        if (/\bCodeMirror-(?:line)?widget\b/.test(t.className)) { break }
+      }
+      return false
+    }
+
     on(div, "paste", function (e) {
-      if (signalDOMEvent(cm, e) || handlePaste(e, cm)) { return }
+      if (!belongsToInput(e) || signalDOMEvent(cm, e) || handlePaste(e, cm)) { return }
       // IE doesn't fire input events, so we schedule a read for the pasted content in this way
       if (ie_version <= 11) { setTimeout(operation(cm, function () { return this$1.updateFromDOM(); }), 20); }
     });
@@ -8867,7 +8931,7 @@ module.exports = _interopRequireDefault;
     });
 
     function onCopyCut(e) {
-      if (signalDOMEvent(cm, e)) { return }
+      if (!belongsToInput(e) || signalDOMEvent(cm, e)) { return }
       if (cm.somethingSelected()) {
         setLastCopied({lineWise: false, text: cm.getSelections()});
         if (e.type == "cut") { cm.replaceSelection("", null, "cut"); }
@@ -8895,9 +8959,10 @@ module.exports = _interopRequireDefault;
       }
       // Old-fashioned briefly-focus-a-textarea hack
       var kludge = hiddenTextarea(), te = kludge.firstChild;
+      disableBrowserMagic(te);
       cm.display.lineSpace.insertBefore(kludge, cm.display.lineSpace.firstChild);
       te.value = lastCopied.text.join("\n");
-      var hadFocus = document.activeElement;
+      var hadFocus = activeElt(div.ownerDocument);
       selectInput(te);
       setTimeout(function () {
         cm.display.lineSpace.removeChild(kludge);
@@ -8909,9 +8974,18 @@ module.exports = _interopRequireDefault;
     on(div, "cut", onCopyCut);
   };
 
+  ContentEditableInput.prototype.screenReaderLabelChanged = function (label) {
+    // Label for screenreaders, accessibility
+    if(label) {
+      this.div.setAttribute('aria-label', label);
+    } else {
+      this.div.removeAttribute('aria-label');
+    }
+  };
+
   ContentEditableInput.prototype.prepareSelection = function () {
     var result = prepareSelection(this.cm, false);
-    result.focus = this.cm.state.focused;
+    result.focus = activeElt(this.div.ownerDocument) == this.div;
     return result
   };
 
@@ -8947,8 +9021,8 @@ module.exports = _interopRequireDefault;
     var end = to.line < cm.display.viewTo && posToDOM(cm, to);
     if (!end) {
       var measure = view[view.length - 1].measure;
-      var map$$1 = measure.maps ? measure.maps[measure.maps.length - 1] : measure.map;
-      end = {node: map$$1[map$$1.length - 1], offset: map$$1[map$$1.length - 2] - map$$1[map$$1.length - 3]};
+      var map = measure.maps ? measure.maps[measure.maps.length - 1] : measure.map;
+      end = {node: map[map.length - 1], offset: map[map.length - 2] - map[map.length - 3]};
     }
 
     if (!start || !end) {
@@ -9007,7 +9081,7 @@ module.exports = _interopRequireDefault;
 
   ContentEditableInput.prototype.focus = function () {
     if (this.cm.options.readOnly != "nocursor") {
-      if (!this.selectionInEditor())
+      if (!this.selectionInEditor() || activeElt(this.div.ownerDocument) != this.div)
         { this.showSelection(this.prepareSelection(), true); }
       this.div.focus();
     }
@@ -9018,9 +9092,11 @@ module.exports = _interopRequireDefault;
   ContentEditableInput.prototype.supportsTouch = function () { return true };
 
   ContentEditableInput.prototype.receivedFocus = function () {
+      var this$1 = this;
+
     var input = this;
     if (this.selectionInEditor())
-      { this.pollSelection(); }
+      { setTimeout(function () { return this$1.pollSelection(); }, 20); }
     else
       { runInOp(this.cm, function () { return input.cm.curOp.selectionChanged = true; }); }
 
@@ -9237,11 +9313,11 @@ module.exports = _interopRequireDefault;
           addText(cmText);
           return
         }
-        var markerID = node.getAttribute("cm-marker"), range$$1;
+        var markerID = node.getAttribute("cm-marker"), range;
         if (markerID) {
           var found = cm.findMarks(Pos(fromLine, 0), Pos(toLine + 1, 0), recognizeMarker(+markerID));
-          if (found.length && (range$$1 = found[0].find(0)))
-            { addText(getBetween(cm.doc, range$$1.from, range$$1.to).join(lineSep)); }
+          if (found.length && (range = found[0].find(0)))
+            { addText(getBetween(cm.doc, range.from, range.to).join(lineSep)); }
           return
         }
         if (node.getAttribute("contenteditable") == "false") { return }
@@ -9309,13 +9385,13 @@ module.exports = _interopRequireDefault;
 
     function find(textNode, topNode, offset) {
       for (var i = -1; i < (maps ? maps.length : 0); i++) {
-        var map$$1 = i < 0 ? measure.map : maps[i];
-        for (var j = 0; j < map$$1.length; j += 3) {
-          var curNode = map$$1[j + 2];
+        var map = i < 0 ? measure.map : maps[i];
+        for (var j = 0; j < map.length; j += 3) {
+          var curNode = map[j + 2];
           if (curNode == textNode || curNode == topNode) {
             var line = lineNo(i < 0 ? lineView.line : lineView.rest[i]);
-            var ch = map$$1[j] + offset;
-            if (offset < 0 || curNode != textNode) { ch = map$$1[j + (offset ? 1 : 0)]; }
+            var ch = map[j] + offset;
+            if (offset < 0 || curNode != textNode) { ch = map[j + (offset ? 1 : 0)]; }
             return Pos(line, ch)
           }
         }
@@ -9357,6 +9433,7 @@ module.exports = _interopRequireDefault;
     // Used to work around IE issue with selection being forgotten when focus moves away from textarea
     this.hasSelection = false;
     this.composing = null;
+    this.resetting = false;
   };
 
   TextareaInput.prototype.init = function (display) {
@@ -9447,6 +9524,17 @@ module.exports = _interopRequireDefault;
     // The semihidden textarea that is focused when the editor is
     // focused, and receives input.
     this.textarea = this.wrapper.firstChild;
+    var opts = this.cm.options;
+    disableBrowserMagic(this.textarea, opts.spellcheck, opts.autocorrect, opts.autocapitalize);
+  };
+
+  TextareaInput.prototype.screenReaderLabelChanged = function (label) {
+    // Label for screenreaders, accessibility
+    if(label) {
+      this.textarea.setAttribute('aria-label', label);
+    } else {
+      this.textarea.removeAttribute('aria-label');
+    }
   };
 
   TextareaInput.prototype.prepareSelection = function () {
@@ -9480,8 +9568,9 @@ module.exports = _interopRequireDefault;
   // Reset the input to correspond to the selection (or to be empty,
   // when not typing and nothing is selected)
   TextareaInput.prototype.reset = function (typing) {
-    if (this.contextMenuPending || this.composing) { return }
+    if (this.contextMenuPending || this.composing && typing) { return }
     var cm = this.cm;
+    this.resetting = true;
     if (cm.somethingSelected()) {
       this.prevInput = "";
       var content = cm.getSelection();
@@ -9492,6 +9581,7 @@ module.exports = _interopRequireDefault;
       this.prevInput = this.textarea.value = "";
       if (ie && ie_version >= 9) { this.hasSelection = null; }
     }
+    this.resetting = false;
   };
 
   TextareaInput.prototype.getField = function () { return this.textarea };
@@ -9499,7 +9589,7 @@ module.exports = _interopRequireDefault;
   TextareaInput.prototype.supportsTouch = function () { return false };
 
   TextareaInput.prototype.focus = function () {
-    if (this.cm.options.readOnly != "nocursor" && (!mobile || activeElt() != this.textarea)) {
+    if (this.cm.options.readOnly != "nocursor" && (!mobile || activeElt(this.textarea.ownerDocument) != this.textarea)) {
       try { this.textarea.focus(); }
       catch (e) {} // IE8 will throw if the textarea is display: none or not in DOM
     }
@@ -9553,7 +9643,7 @@ module.exports = _interopRequireDefault;
     // possible when it is clear that nothing happened. hasSelection
     // will be the case when there is a lot of text in the textarea,
     // in which case reading its value would be expensive.
-    if (this.contextMenuPending || !cm.state.focused ||
+    if (this.contextMenuPending || this.resetting || !cm.state.focused ||
         (hasSelection(input) && !prevInput && !this.composing) ||
         cm.isReadOnly() || cm.options.disableInput || cm.state.keySeq)
       { return false }
@@ -9622,9 +9712,9 @@ module.exports = _interopRequireDefault;
     input.wrapper.style.cssText = "position: static";
     te.style.cssText = "position: absolute; width: 30px; height: 30px;\n      top: " + (e.clientY - wrapperBox.top - 5) + "px; left: " + (e.clientX - wrapperBox.left - 5) + "px;\n      z-index: 1000; background: " + (ie ? "rgba(255, 255, 255, .05)" : "transparent") + ";\n      outline: none; border-width: 0; outline: none; overflow: hidden; opacity: .05; filter: alpha(opacity=5);";
     var oldScrollY;
-    if (webkit) { oldScrollY = window.scrollY; } // Work around Chrome issue (#2712)
+    if (webkit) { oldScrollY = te.ownerDocument.defaultView.scrollY; } // Work around Chrome issue (#2712)
     display.input.focus();
-    if (webkit) { window.scrollTo(null, oldScrollY); }
+    if (webkit) { te.ownerDocument.defaultView.scrollTo(null, oldScrollY); }
     display.input.reset();
     // Adds "Select all" to context menu in FF
     if (!cm.somethingSelected()) { te.value = input.prevInput = " "; }
@@ -9689,6 +9779,7 @@ module.exports = _interopRequireDefault;
   TextareaInput.prototype.readOnlyChanged = function (val) {
     if (!val) { this.reset(); }
     this.textarea.disabled = val == "nocursor";
+    this.textarea.readOnly = !!val;
   };
 
   TextareaInput.prototype.setUneditable = function () {};
@@ -9705,7 +9796,7 @@ module.exports = _interopRequireDefault;
     // Set autofocus to true if this textarea is focused, or if it has
     // autofocus and no other element is focused.
     if (options.autofocus == null) {
-      var hasFocus = activeElt();
+      var hasFocus = activeElt(textarea.ownerDocument);
       options.autofocus = hasFocus == textarea ||
         textarea.getAttribute("autofocus") != null && hasFocus == document.body;
     }
@@ -9839,7 +9930,7 @@ module.exports = _interopRequireDefault;
 
   addLegacyProps(CodeMirror);
 
-  CodeMirror.version = "5.49.2";
+  CodeMirror.version = "5.65.11";
 
   return CodeMirror;
 
@@ -9847,7 +9938,7 @@ module.exports = _interopRequireDefault;
 
 },{}],4:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
-// Distributed under an MIT license: https://codemirror.net/LICENSE
+// Distributed under an MIT license: https://codemirror.net/5/LICENSE
 
 (function(mod) {
   if (typeof exports == "object" && typeof module == "object") // CommonJS
@@ -9864,6 +9955,7 @@ CodeMirror.defineMode("javascript", function(config, parserConfig) {
   var statementIndent = parserConfig.statementIndent;
   var jsonldMode = parserConfig.jsonld;
   var jsonMode = parserConfig.json || jsonldMode;
+  var trackScope = parserConfig.trackScope !== false
   var isTS = parserConfig.typescript;
   var wordRE = parserConfig.wordCharacters || /[\w$\xa1-\uffff]/;
 
@@ -9946,21 +10038,25 @@ CodeMirror.defineMode("javascript", function(config, parserConfig) {
     } else if (ch == "`") {
       state.tokenize = tokenQuasi;
       return tokenQuasi(stream, state);
-    } else if (ch == "#") {
+    } else if (ch == "#" && stream.peek() == "!") {
       stream.skipToEnd();
-      return ret("error", "error");
-    } else if (ch == "<" && stream.match("!--") || ch == "-" && stream.match("->")) {
+      return ret("meta", "meta");
+    } else if (ch == "#" && stream.eatWhile(wordRE)) {
+      return ret("variable", "property")
+    } else if (ch == "<" && stream.match("!--") ||
+               (ch == "-" && stream.match("->") && !/\S/.test(stream.string.slice(0, stream.start)))) {
       stream.skipToEnd()
       return ret("comment", "comment")
     } else if (isOperatorChar.test(ch)) {
       if (ch != ">" || !state.lexical || state.lexical.type != ">") {
         if (stream.eat("=")) {
           if (ch == "!" || ch == "=") stream.eat("=")
-        } else if (/[<>*+\-]/.test(ch)) {
+        } else if (/[<>*+\-|&?]/.test(ch)) {
           stream.eat(ch)
           if (ch == ">") stream.eat(ch)
         }
       }
+      if (ch == "?" && stream.eat(".")) return ret(".")
       return ret("operator", "operator", stream.current());
     } else if (wordRE.test(ch)) {
       stream.eatWhile(wordRE);
@@ -9970,7 +10066,7 @@ CodeMirror.defineMode("javascript", function(config, parserConfig) {
           var kw = keywords[word]
           return ret(kw.type, kw.style, word)
         }
-        if (word == "async" && stream.match(/^(\s|\/\*.*?\*\/)*[\[\(\w]/, false))
+        if (word == "async" && stream.match(/^(\s|\/\*([^*]|\*(?!\/))*?\*\/)*[\[\(\w]/, false))
           return ret("async", "keyword", word)
       }
       return ret("variable", "variable", word)
@@ -10062,7 +10158,8 @@ CodeMirror.defineMode("javascript", function(config, parserConfig) {
 
   // Parser
 
-  var atomicTypes = {"atom": true, "number": true, "variable": true, "string": true, "regexp": true, "this": true, "jsonld-keyword": true};
+  var atomicTypes = {"atom": true, "number": true, "variable": true, "string": true,
+                     "regexp": true, "this": true, "import": true, "jsonld-keyword": true};
 
   function JSLexical(indented, column, type, align, prev, info) {
     this.indented = indented;
@@ -10074,6 +10171,7 @@ CodeMirror.defineMode("javascript", function(config, parserConfig) {
   }
 
   function inScope(state, varname) {
+    if (!trackScope) return false
     for (var v = state.localVars; v; v = v.next)
       if (v.name == varname) return true;
     for (var cx = state.context; cx; cx = cx.prev) {
@@ -10120,6 +10218,7 @@ CodeMirror.defineMode("javascript", function(config, parserConfig) {
   function register(varname) {
     var state = cx.state;
     cx.marked = "def";
+    if (!trackScope) return
     if (state.context) {
       if (state.lexical.info == "var" && state.context && state.context.block) {
         // FIXME function decls are also not block scoped
@@ -10170,6 +10269,7 @@ CodeMirror.defineMode("javascript", function(config, parserConfig) {
     cx.state.context = new Context(cx.state.context, cx.state.localVars, true)
     cx.state.localVars = null
   }
+  pushcontext.lex = pushblockcontext.lex = true
   function popcontext() {
     cx.state.localVars = cx.state.context.vars
     cx.state.context = cx.state.context.prev
@@ -10219,7 +10319,7 @@ CodeMirror.defineMode("javascript", function(config, parserConfig) {
       return cont(pushlex("form"), parenExpr, statement, poplex, maybeelse);
     }
     if (type == "function") return cont(functiondef);
-    if (type == "for") return cont(pushlex("form"), forspec, statement, poplex);
+    if (type == "for") return cont(pushlex("form"), pushblockcontext, forspec, statement, popcontext, poplex);
     if (type == "class" || (isTS && value == "interface")) {
       cx.marked = "keyword"
       return cont(pushlex("form", type == "class" ? type : value), className, poplex)
@@ -10265,7 +10365,7 @@ CodeMirror.defineMode("javascript", function(config, parserConfig) {
   }
   function parenExpr(type) {
     if (type != "(") return pass()
-    return cont(pushlex(")"), expression, expect(")"), poplex)
+    return cont(pushlex(")"), maybeexpression, expect(")"), poplex)
   }
   function expressionInner(type, value, noComma) {
     if (cx.state.fatArrowAt == cx.stream.start) {
@@ -10285,7 +10385,6 @@ CodeMirror.defineMode("javascript", function(config, parserConfig) {
     if (type == "{") return contCommasep(objprop, "}", null, maybeop);
     if (type == "quasi") return pass(quasi, maybeop);
     if (type == "new") return cont(maybeTarget(noComma));
-    if (type == "import") return cont(expression);
     return cont();
   }
   function maybeexpression(type) {
@@ -10294,7 +10393,7 @@ CodeMirror.defineMode("javascript", function(config, parserConfig) {
   }
 
   function maybeoperatorComma(type, value) {
-    if (type == ",") return cont(expression);
+    if (type == ",") return cont(maybeexpression);
     return maybeoperatorNoComma(type, value, false);
   }
   function maybeoperatorNoComma(type, value, noComma) {
@@ -10303,7 +10402,7 @@ CodeMirror.defineMode("javascript", function(config, parserConfig) {
     if (type == "=>") return cont(pushcontext, noComma ? arrowBodyNoComma : arrowBody, popcontext);
     if (type == "operator") {
       if (/\+\+|--/.test(value) || isTS && value == "!") return cont(me);
-      if (isTS && value == "<" && cx.stream.match(/^([^>]|<.*?>)*>\s*\(/, false))
+      if (isTS && value == "<" && cx.stream.match(/^([^<>]|<[^<>]*>)*>\s*\(/, false))
         return cont(pushlex(">"), commasep(typeexpr, ">"), poplex, me);
       if (value == "?") return cont(expression, expect(":"), expr);
       return cont(expr);
@@ -10323,7 +10422,7 @@ CodeMirror.defineMode("javascript", function(config, parserConfig) {
   function quasi(type, value) {
     if (type != "quasi") return pass();
     if (value.slice(value.length - 2) != "${") return cont(quasi);
-    return cont(expression, continueQuasi);
+    return cont(maybeexpression, continueQuasi);
   }
   function continueQuasi(type) {
     if (type == "}") {
@@ -10449,7 +10548,7 @@ CodeMirror.defineMode("javascript", function(config, parserConfig) {
     }
   }
   function typeexpr(type, value) {
-    if (value == "keyof" || value == "typeof" || value == "infer") {
+    if (value == "keyof" || value == "typeof" || value == "infer" || value == "readonly") {
       cx.marked = "keyword"
       return cont(value == "typeof" ? expressionNoComma : typeexpr)
     }
@@ -10460,12 +10559,18 @@ CodeMirror.defineMode("javascript", function(config, parserConfig) {
     if (value == "|" || value == "&") return cont(typeexpr)
     if (type == "string" || type == "number" || type == "atom") return cont(afterType);
     if (type == "[") return cont(pushlex("]"), commasep(typeexpr, "]", ","), poplex, afterType)
-    if (type == "{") return cont(pushlex("}"), commasep(typeprop, "}", ",;"), poplex, afterType)
+    if (type == "{") return cont(pushlex("}"), typeprops, poplex, afterType)
     if (type == "(") return cont(commasep(typearg, ")"), maybeReturnType, afterType)
     if (type == "<") return cont(commasep(typeexpr, ">"), typeexpr)
+    if (type == "quasi") { return pass(quasiType, afterType); }
   }
   function maybeReturnType(type) {
     if (type == "=>") return cont(typeexpr)
+  }
+  function typeprops(type) {
+    if (type.match(/[\}\)\]]/)) return cont()
+    if (type == "," || type == ";") return cont(typeprops)
+    return pass(typeprop, typeprops)
   }
   function typeprop(type, value) {
     if (type == "variable" || cx.style == "keyword") {
@@ -10479,6 +10584,20 @@ CodeMirror.defineMode("javascript", function(config, parserConfig) {
       return cont(expect("variable"), maybetypeOrIn, expect("]"), typeprop)
     } else if (type == "(") {
       return pass(functiondecl, typeprop)
+    } else if (!type.match(/[;\}\)\],]/)) {
+      return cont()
+    }
+  }
+  function quasiType(type, value) {
+    if (type != "quasi") return pass();
+    if (value.slice(value.length - 2) != "${") return cont(quasiType);
+    return cont(typeexpr, continueQuasiType);
+  }
+  function continueQuasiType(type) {
+    if (type == "}") {
+      cx.marked = "string-2";
+      cx.state.tokenize = tokenQuasi;
+      return cont(quasiType);
     }
   }
   function typearg(type, value) {
@@ -10599,17 +10718,17 @@ CodeMirror.defineMode("javascript", function(config, parserConfig) {
     if (type == "async" ||
         (type == "variable" &&
          (value == "static" || value == "get" || value == "set" || (isTS && isModifier(value))) &&
-         cx.stream.match(/^\s+[\w$\xa1-\uffff]/, false))) {
+         cx.stream.match(/^\s+#?[\w$\xa1-\uffff]/, false))) {
       cx.marked = "keyword";
       return cont(classBody);
     }
     if (type == "variable" || cx.style == "keyword") {
       cx.marked = "property";
-      return cont(isTS ? classfield : functiondef, classBody);
+      return cont(classfield, classBody);
     }
-    if (type == "number" || type == "string") return cont(isTS ? classfield : functiondef, classBody);
+    if (type == "number" || type == "string") return cont(classfield, classBody);
     if (type == "[")
-      return cont(expression, maybetype, expect("]"), isTS ? classfield : functiondef, classBody)
+      return cont(expression, maybetype, expect("]"), classfield, classBody)
     if (value == "*") {
       cx.marked = "keyword";
       return cont(classBody);
@@ -10620,6 +10739,7 @@ CodeMirror.defineMode("javascript", function(config, parserConfig) {
     if (value == "@") return cont(expression, classBody)
   }
   function classfield(type, value) {
+    if (value == "!") return cont(classfield)
     if (value == "?") return cont(classfield)
     if (type == ":") return cont(typeexpr, maybeAssign)
     if (value == "=") return cont(expressionNoComma)
@@ -10639,6 +10759,7 @@ CodeMirror.defineMode("javascript", function(config, parserConfig) {
   function afterImport(type) {
     if (type == "string") return cont();
     if (type == "(") return pass(expression);
+    if (type == ".") return pass(maybeoperatorComma);
     return pass(importSpec, maybeMoreImports, maybeFrom);
   }
   function importSpec(type, value) {
@@ -10712,14 +10833,14 @@ CodeMirror.defineMode("javascript", function(config, parserConfig) {
     },
 
     indent: function(state, textAfter) {
-      if (state.tokenize == tokenComment) return CodeMirror.Pass;
+      if (state.tokenize == tokenComment || state.tokenize == tokenQuasi) return CodeMirror.Pass;
       if (state.tokenize != tokenBase) return 0;
       var firstChar = textAfter && textAfter.charAt(0), lexical = state.lexical, top
       // Kludge to prevent 'maybelse' from blocking lexical scope pops
       if (!/^\s*else\b/.test(textAfter)) for (var i = state.cc.length - 1; i >= 0; --i) {
         var c = state.cc[i];
         if (c == poplex) lexical = lexical.prev;
-        else if (c != maybeelse) break;
+        else if (c != maybeelse && c != popcontext) break;
       }
       while ((lexical.type == "stat" || lexical.type == "form") &&
              (firstChar == "}" || ((top = state.cc[state.cc.length - 1]) &&
@@ -10756,8 +10877,7 @@ CodeMirror.defineMode("javascript", function(config, parserConfig) {
     expressionAllowed: expressionAllowed,
 
     skipExpression: function(state) {
-      var top = state.cc[state.cc.length - 1]
-      if (top == expression || top == expressionNoComma) state.cc.pop()
+      parseJS(state, "atom", "atom", "true", new CodeMirror.StringStream("", 2, null))
     }
   };
 });
@@ -10769,9 +10889,10 @@ CodeMirror.defineMIME("text/ecmascript", "javascript");
 CodeMirror.defineMIME("application/javascript", "javascript");
 CodeMirror.defineMIME("application/x-javascript", "javascript");
 CodeMirror.defineMIME("application/ecmascript", "javascript");
-CodeMirror.defineMIME("application/json", {name: "javascript", json: true});
-CodeMirror.defineMIME("application/x-json", {name: "javascript", json: true});
-CodeMirror.defineMIME("application/ld+json", {name: "javascript", jsonld: true});
+CodeMirror.defineMIME("application/json", { name: "javascript", json: true });
+CodeMirror.defineMIME("application/x-json", { name: "javascript", json: true });
+CodeMirror.defineMIME("application/manifest+json", { name: "javascript", json: true })
+CodeMirror.defineMIME("application/ld+json", { name: "javascript", jsonld: true });
 CodeMirror.defineMIME("text/typescript", { name: "javascript", typescript: true });
 CodeMirror.defineMIME("application/typescript", { name: "javascript", typescript: true });
 
@@ -10791,12 +10912,88 @@ CodeMirror.defineMIME("application/typescript", { name: "javascript", typescript
 
 var _assign = require('object-assign');
 
-var emptyObject = require('fbjs/lib/emptyObject');
-var _invariant = require('fbjs/lib/invariant');
+// -- Inlined from fbjs --
+
+var emptyObject = {};
 
 if (process.env.NODE_ENV !== 'production') {
-  var warning = require('fbjs/lib/warning');
+  Object.freeze(emptyObject);
 }
+
+var validateFormat = function validateFormat(format) {};
+
+if (process.env.NODE_ENV !== 'production') {
+  validateFormat = function validateFormat(format) {
+    if (format === undefined) {
+      throw new Error('invariant requires an error message argument');
+    }
+  };
+}
+
+function _invariant(condition, format, a, b, c, d, e, f) {
+  validateFormat(format);
+
+  if (!condition) {
+    var error;
+    if (format === undefined) {
+      error = new Error('Minified exception occurred; use the non-minified dev environment ' + 'for the full error message and additional helpful warnings.');
+    } else {
+      var args = [a, b, c, d, e, f];
+      var argIndex = 0;
+      error = new Error(format.replace(/%s/g, function () {
+        return args[argIndex++];
+      }));
+      error.name = 'Invariant Violation';
+    }
+
+    error.framesToPop = 1; // we don't care about invariant's own frame
+    throw error;
+  }
+}
+
+var warning = function(){};
+
+if (process.env.NODE_ENV !== 'production') {
+  var printWarning = function printWarning(format) {
+    for (var _len = arguments.length, args = Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+      args[_key - 1] = arguments[_key];
+    }
+
+    var argIndex = 0;
+    var message = 'Warning: ' + format.replace(/%s/g, function () {
+      return args[argIndex++];
+    });
+    if (typeof console !== 'undefined') {
+      console.error(message);
+    }
+    try {
+      // --- Welcome to debugging React ---
+      // This error was thrown as a convenience so that you can use this stack
+      // to find the callsite that caused this warning to fire.
+      throw new Error(message);
+    } catch (x) {}
+  };
+
+  warning = function warning(condition, format) {
+    if (format === undefined) {
+      throw new Error('`warning(condition, format, ...args)` requires a warning ' + 'message argument');
+    }
+
+    if (format.indexOf('Failed Composite propType: ') === 0) {
+      return; // Ignore CompositeComponent proptype check.
+    }
+
+    if (!condition) {
+      for (var _len2 = arguments.length, args = Array(_len2 > 2 ? _len2 - 2 : 0), _key2 = 2; _key2 < _len2; _key2++) {
+        args[_key2 - 2] = arguments[_key2];
+      }
+
+      printWarning.apply(undefined, [format].concat(args));
+    }
+  };
+}
+
+// /-- Inlined from fbjs --
 
 var MIXINS_KEY = 'mixins';
 
@@ -11707,7 +11904,7 @@ function factory(ReactComponent, isValidElement, ReactNoopUpdateQueue) {
 module.exports = factory;
 
 }).call(this,require('_process'))
-},{"_process":16,"fbjs/lib/emptyObject":11,"fbjs/lib/invariant":12,"fbjs/lib/warning":14,"object-assign":15}],6:[function(require,module,exports){
+},{"_process":11,"object-assign":10}],6:[function(require,module,exports){
 /**
  * Copyright (c) 2013-present, Facebook, Inc.
  *
@@ -11737,7 +11934,7 @@ module.exports = factory(
   ReactNoopUpdateQueue
 );
 
-},{"./factory":5,"react":40}],7:[function(require,module,exports){
+},{"./factory":5,"react":35}],7:[function(require,module,exports){
 "use strict";
 
 var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
@@ -11774,250 +11971,6 @@ module.exports = function removeClass(element, className) {
   if (element.classList) element.classList.remove(className);else if (typeof element.className === 'string') element.className = replaceClassName(element.className, className);else element.setAttribute('class', replaceClassName(element.className && element.className.baseVal || '', className));
 };
 },{}],10:[function(require,module,exports){
-"use strict";
-
-/**
- * Copyright (c) 2013-present, Facebook, Inc.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- *
- * 
- */
-
-function makeEmptyFunction(arg) {
-  return function () {
-    return arg;
-  };
-}
-
-/**
- * This function accepts and discards inputs; it has no side effects. This is
- * primarily useful idiomatically for overridable function endpoints which
- * always need to be callable, since JS lacks a null-call idiom ala Cocoa.
- */
-var emptyFunction = function emptyFunction() {};
-
-emptyFunction.thatReturns = makeEmptyFunction;
-emptyFunction.thatReturnsFalse = makeEmptyFunction(false);
-emptyFunction.thatReturnsTrue = makeEmptyFunction(true);
-emptyFunction.thatReturnsNull = makeEmptyFunction(null);
-emptyFunction.thatReturnsThis = function () {
-  return this;
-};
-emptyFunction.thatReturnsArgument = function (arg) {
-  return arg;
-};
-
-module.exports = emptyFunction;
-},{}],11:[function(require,module,exports){
-(function (process){
-/**
- * Copyright (c) 2013-present, Facebook, Inc.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- *
- */
-
-'use strict';
-
-var emptyObject = {};
-
-if (process.env.NODE_ENV !== 'production') {
-  Object.freeze(emptyObject);
-}
-
-module.exports = emptyObject;
-}).call(this,require('_process'))
-},{"_process":16}],12:[function(require,module,exports){
-(function (process){
-/**
- * Copyright (c) 2013-present, Facebook, Inc.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- *
- */
-
-'use strict';
-
-/**
- * Use invariant() to assert state which your program assumes to be true.
- *
- * Provide sprintf-style format (only %s is supported) and arguments
- * to provide information about what broke and what you were
- * expecting.
- *
- * The invariant message will be stripped in production, but the invariant
- * will remain to ensure logic does not differ in production.
- */
-
-var validateFormat = function validateFormat(format) {};
-
-if (process.env.NODE_ENV !== 'production') {
-  validateFormat = function validateFormat(format) {
-    if (format === undefined) {
-      throw new Error('invariant requires an error message argument');
-    }
-  };
-}
-
-function invariant(condition, format, a, b, c, d, e, f) {
-  validateFormat(format);
-
-  if (!condition) {
-    var error;
-    if (format === undefined) {
-      error = new Error('Minified exception occurred; use the non-minified dev environment ' + 'for the full error message and additional helpful warnings.');
-    } else {
-      var args = [a, b, c, d, e, f];
-      var argIndex = 0;
-      error = new Error(format.replace(/%s/g, function () {
-        return args[argIndex++];
-      }));
-      error.name = 'Invariant Violation';
-    }
-
-    error.framesToPop = 1; // we don't care about invariant's own frame
-    throw error;
-  }
-}
-
-module.exports = invariant;
-}).call(this,require('_process'))
-},{"_process":16}],13:[function(require,module,exports){
-/**
- * Copyright (c) 2013-present, Facebook, Inc.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- *
- * @typechecks
- * 
- */
-
-/*eslint-disable no-self-compare */
-
-'use strict';
-
-var hasOwnProperty = Object.prototype.hasOwnProperty;
-
-/**
- * inlined Object.is polyfill to avoid requiring consumers ship their own
- * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/is
- */
-function is(x, y) {
-  // SameValue algorithm
-  if (x === y) {
-    // Steps 1-5, 7-10
-    // Steps 6.b-6.e: +0 != -0
-    // Added the nonzero y check to make Flow happy, but it is redundant
-    return x !== 0 || y !== 0 || 1 / x === 1 / y;
-  } else {
-    // Step 6.a: NaN == NaN
-    return x !== x && y !== y;
-  }
-}
-
-/**
- * Performs equality by iterating through keys on an object and returning false
- * when any key has values which are not strictly equal between the arguments.
- * Returns true when the values of all keys are strictly equal.
- */
-function shallowEqual(objA, objB) {
-  if (is(objA, objB)) {
-    return true;
-  }
-
-  if (typeof objA !== 'object' || objA === null || typeof objB !== 'object' || objB === null) {
-    return false;
-  }
-
-  var keysA = Object.keys(objA);
-  var keysB = Object.keys(objB);
-
-  if (keysA.length !== keysB.length) {
-    return false;
-  }
-
-  // Test for A's keys different from B.
-  for (var i = 0; i < keysA.length; i++) {
-    if (!hasOwnProperty.call(objB, keysA[i]) || !is(objA[keysA[i]], objB[keysA[i]])) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
-module.exports = shallowEqual;
-},{}],14:[function(require,module,exports){
-(function (process){
-/**
- * Copyright (c) 2014-present, Facebook, Inc.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- *
- */
-
-'use strict';
-
-var emptyFunction = require('./emptyFunction');
-
-/**
- * Similar to invariant but only logs a warning if the condition is not met.
- * This can be used to log issues in development environments in critical
- * paths. Removing the logging code for production environments will keep the
- * same logic and follow the same code paths.
- */
-
-var warning = emptyFunction;
-
-if (process.env.NODE_ENV !== 'production') {
-  var printWarning = function printWarning(format) {
-    for (var _len = arguments.length, args = Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
-      args[_key - 1] = arguments[_key];
-    }
-
-    var argIndex = 0;
-    var message = 'Warning: ' + format.replace(/%s/g, function () {
-      return args[argIndex++];
-    });
-    if (typeof console !== 'undefined') {
-      console.error(message);
-    }
-    try {
-      // --- Welcome to debugging React ---
-      // This error was thrown as a convenience so that you can use this stack
-      // to find the callsite that caused this warning to fire.
-      throw new Error(message);
-    } catch (x) {}
-  };
-
-  warning = function warning(condition, format) {
-    if (format === undefined) {
-      throw new Error('`warning(condition, format, ...args)` requires a warning ' + 'message argument');
-    }
-
-    if (format.indexOf('Failed Composite propType: ') === 0) {
-      return; // Ignore CompositeComponent proptype check.
-    }
-
-    if (!condition) {
-      for (var _len2 = arguments.length, args = Array(_len2 > 2 ? _len2 - 2 : 0), _key2 = 2; _key2 < _len2; _key2++) {
-        args[_key2 - 2] = arguments[_key2];
-      }
-
-      printWarning.apply(undefined, [format].concat(args));
-    }
-  };
-}
-
-module.exports = warning;
-}).call(this,require('_process'))
-},{"./emptyFunction":10,"_process":16}],15:[function(require,module,exports){
 /*
 object-assign
 (c) Sindre Sorhus
@@ -12109,7 +12062,7 @@ module.exports = shouldUseNative() ? Object.assign : function (target, source) {
 	return to;
 };
 
-},{}],16:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 // shim for using process in browser
 var process = module.exports = {};
 
@@ -12295,7 +12248,7 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],17:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 (function (process){
 /**
  * Copyright (c) 2013-present, Facebook, Inc.
@@ -12401,7 +12354,7 @@ checkPropTypes.resetWarningCache = function() {
 module.exports = checkPropTypes;
 
 }).call(this,require('_process'))
-},{"./lib/ReactPropTypesSecret":21,"_process":16}],18:[function(require,module,exports){
+},{"./lib/ReactPropTypesSecret":16,"_process":11}],13:[function(require,module,exports){
 /**
  * Copyright (c) 2013-present, Facebook, Inc.
  *
@@ -12467,7 +12420,7 @@ module.exports = function() {
   return ReactPropTypes;
 };
 
-},{"./lib/ReactPropTypesSecret":21}],19:[function(require,module,exports){
+},{"./lib/ReactPropTypesSecret":16}],14:[function(require,module,exports){
 (function (process){
 /**
  * Copyright (c) 2013-present, Facebook, Inc.
@@ -13062,7 +13015,7 @@ module.exports = function(isValidElement, throwOnDirectAccess) {
 };
 
 }).call(this,require('_process'))
-},{"./checkPropTypes":17,"./lib/ReactPropTypesSecret":21,"_process":16,"object-assign":15,"react-is":29}],20:[function(require,module,exports){
+},{"./checkPropTypes":12,"./lib/ReactPropTypesSecret":16,"_process":11,"object-assign":10,"react-is":24}],15:[function(require,module,exports){
 (function (process){
 /**
  * Copyright (c) 2013-present, Facebook, Inc.
@@ -13085,7 +13038,7 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 }).call(this,require('_process'))
-},{"./factoryWithThrowingShims":18,"./factoryWithTypeCheckers":19,"_process":16,"react-is":29}],21:[function(require,module,exports){
+},{"./factoryWithThrowingShims":13,"./factoryWithTypeCheckers":14,"_process":11,"react-is":24}],16:[function(require,module,exports){
 /**
  * Copyright (c) 2013-present, Facebook, Inc.
  *
@@ -13099,7 +13052,7 @@ var ReactPropTypesSecret = 'SECRET_DO_NOT_PASS_THIS_OR_YOU_WILL_BE_FIRED';
 
 module.exports = ReactPropTypesSecret;
 
-},{}],22:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 /**
  * Copyright (c) 2015-present, Facebook, Inc.
  *
@@ -13110,7 +13063,55 @@ module.exports = ReactPropTypesSecret;
 
 'use strict';
 
-var shallowEqual = require('fbjs/lib/shallowEqual');
+var hasOwnProperty = Object.prototype.hasOwnProperty;
+
+/**
+ * inlined Object.is polyfill to avoid requiring consumers ship their own
+ * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/is
+ */
+function is(x, y) {
+  // SameValue algorithm
+  if (x === y) {
+    // Steps 1-5, 7-10
+    // Steps 6.b-6.e: +0 != -0
+    // Added the nonzero y check to make Flow happy, but it is redundant
+    return x !== 0 || y !== 0 || 1 / x === 1 / y;
+  } else {
+    // Step 6.a: NaN == NaN
+    return x !== x && y !== y;
+  }
+}
+
+/**
+ * Performs equality by iterating through keys on an object and returning false
+ * when any key has values which are not strictly equal between the arguments.
+ * Returns true when the values of all keys are strictly equal.
+ */
+function shallowEqual(objA, objB) {
+  if (is(objA, objB)) {
+    return true;
+  }
+
+  if (typeof objA !== 'object' || objA === null || typeof objB !== 'object' || objB === null) {
+    return false;
+  }
+
+  var keysA = Object.keys(objA);
+  var keysB = Object.keys(objB);
+
+  if (keysA.length !== keysB.length) {
+    return false;
+  }
+
+  // Test for A's keys different from B.
+  for (var i = 0; i < keysA.length; i++) {
+    if (!hasOwnProperty.call(objB, keysA[i]) || !is(objA[keysA[i]], objB[keysA[i]])) {
+      return false;
+    }
+  }
+
+  return true;
+}
 
 module.exports = {
   shouldComponentUpdate: function(nextProps, nextState) {
@@ -13121,7 +13122,7 @@ module.exports = {
   }
 };
 
-},{"fbjs/lib/shallowEqual":13}],23:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -13756,7 +13757,7 @@ var UnControlled = function(_super) {
 }(React.Component);
 exports.UnControlled = UnControlled;
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"codemirror":3,"react":40}],24:[function(require,module,exports){
+},{"codemirror":3,"react":35}],19:[function(require,module,exports){
 (function (process){
 /** @license React v16.11.0
  * react-dom.development.js
@@ -41487,7 +41488,7 @@ module.exports = reactDom;
 }
 
 }).call(this,require('_process'))
-},{"_process":16,"object-assign":15,"prop-types/checkPropTypes":17,"react":40,"scheduler":45,"scheduler/tracing":46}],25:[function(require,module,exports){
+},{"_process":11,"object-assign":10,"prop-types/checkPropTypes":12,"react":35,"scheduler":40,"scheduler/tracing":41}],20:[function(require,module,exports){
 /** @license React v16.11.0
  * react-dom.production.min.js
  *
@@ -41779,7 +41780,7 @@ xe,ye,Ca.injectEventPluginsByName,fa,Sc,function(a){ya(a,Rc)},cb,db,Pd,Ba,Sj,{cu
 (function(a){var b=a.findFiberByHostInstance;return ok(n({},a,{overrideHookState:null,overrideProps:null,setSuspenseHandler:null,scheduleUpdate:null,currentDispatcherRef:Ea.ReactCurrentDispatcher,findHostInstanceByFiber:function(a){a=ic(a);return null===a?null:a.stateNode},findFiberByHostInstance:function(a){return b?b(a):null},findHostInstancesForRefresh:null,scheduleRefresh:null,scheduleRoot:null,setRefreshHandler:null,getCurrentFiber:null}))})({findFiberByHostInstance:Fc,bundleType:0,version:"16.11.0",
 rendererPackageName:"react-dom"});var Dk={default:Ck},Ek=Dk&&Ck||Dk;module.exports=Ek.default||Ek;
 
-},{"object-assign":15,"react":40,"scheduler":45}],26:[function(require,module,exports){
+},{"object-assign":10,"react":35,"scheduler":40}],21:[function(require,module,exports){
 (function (process){
 'use strict';
 
@@ -41821,7 +41822,7 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 }).call(this,require('_process'))
-},{"./cjs/react-dom.development.js":24,"./cjs/react-dom.production.min.js":25,"_process":16}],27:[function(require,module,exports){
+},{"./cjs/react-dom.development.js":19,"./cjs/react-dom.production.min.js":20,"_process":11}],22:[function(require,module,exports){
 (function (process){
 /** @license React v16.10.1
  * react-is.development.js
@@ -42061,7 +42062,7 @@ exports.isSuspense = isSuspense;
 }
 
 }).call(this,require('_process'))
-},{"_process":16}],28:[function(require,module,exports){
+},{"_process":11}],23:[function(require,module,exports){
 /** @license React v16.10.1
  * react-is.production.min.js
  *
@@ -42078,7 +42079,7 @@ exports.typeOf=y;exports.AsyncMode=l;exports.ConcurrentMode=m;exports.ContextCon
 exports.isValidElementType=function(a){return"string"===typeof a||"function"===typeof a||a===e||a===m||a===g||a===f||a===p||a===q||"object"===typeof a&&null!==a&&(a.$$typeof===t||a.$$typeof===r||a.$$typeof===h||a.$$typeof===k||a.$$typeof===n||a.$$typeof===v||a.$$typeof===w||a.$$typeof===x)};exports.isAsyncMode=function(a){return z(a)||y(a)===l};exports.isConcurrentMode=z;exports.isContextConsumer=function(a){return y(a)===k};exports.isContextProvider=function(a){return y(a)===h};
 exports.isElement=function(a){return"object"===typeof a&&null!==a&&a.$$typeof===c};exports.isForwardRef=function(a){return y(a)===n};exports.isFragment=function(a){return y(a)===e};exports.isLazy=function(a){return y(a)===t};exports.isMemo=function(a){return y(a)===r};exports.isPortal=function(a){return y(a)===d};exports.isProfiler=function(a){return y(a)===g};exports.isStrictMode=function(a){return y(a)===f};exports.isSuspense=function(a){return y(a)===p};
 
-},{}],29:[function(require,module,exports){
+},{}],24:[function(require,module,exports){
 (function (process){
 'use strict';
 
@@ -42089,7 +42090,7 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 }).call(this,require('_process'))
-},{"./cjs/react-is.development.js":27,"./cjs/react-is.production.min.js":28,"_process":16}],30:[function(require,module,exports){
+},{"./cjs/react-is.development.js":22,"./cjs/react-is.production.min.js":23,"_process":11}],25:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', { value: true });
@@ -42253,7 +42254,7 @@ function polyfill(Component) {
 
 exports.polyfill = polyfill;
 
-},{}],31:[function(require,module,exports){
+},{}],26:[function(require,module,exports){
 (function (process){
 "use strict";
 
@@ -42620,7 +42621,7 @@ var _default = CSSTransition;
 exports.default = _default;
 module.exports = exports["default"];
 }).call(this,require('_process'))
-},{"./Transition":33,"./utils/PropTypes":37,"_process":16,"dom-helpers/class/addClass":7,"dom-helpers/class/removeClass":9,"prop-types":20,"react":40}],32:[function(require,module,exports){
+},{"./Transition":28,"./utils/PropTypes":32,"_process":11,"dom-helpers/class/addClass":7,"dom-helpers/class/removeClass":9,"prop-types":15,"react":35}],27:[function(require,module,exports){
 (function (process){
 "use strict";
 
@@ -42773,7 +42774,7 @@ var _default = ReplaceTransition;
 exports.default = _default;
 module.exports = exports["default"];
 }).call(this,require('_process'))
-},{"./TransitionGroup":34,"_process":16,"prop-types":20,"react":40,"react-dom":26}],33:[function(require,module,exports){
+},{"./TransitionGroup":29,"_process":11,"prop-types":15,"react":35,"react-dom":21}],28:[function(require,module,exports){
 (function (process){
 "use strict";
 
@@ -43385,7 +43386,7 @@ var _default = (0, _reactLifecyclesCompat.polyfill)(Transition);
 
 exports.default = _default;
 }).call(this,require('_process'))
-},{"./utils/PropTypes":37,"_process":16,"prop-types":20,"react":40,"react-dom":26,"react-lifecycles-compat":30}],34:[function(require,module,exports){
+},{"./utils/PropTypes":32,"_process":11,"prop-types":15,"react":35,"react-dom":21,"react-lifecycles-compat":25}],29:[function(require,module,exports){
 (function (process){
 "use strict";
 
@@ -43596,7 +43597,7 @@ var _default = (0, _reactLifecyclesCompat.polyfill)(TransitionGroup);
 exports.default = _default;
 module.exports = exports["default"];
 }).call(this,require('_process'))
-},{"./utils/ChildMapping":36,"_process":16,"prop-types":20,"react":40,"react-lifecycles-compat":30}],35:[function(require,module,exports){
+},{"./utils/ChildMapping":31,"_process":11,"prop-types":15,"react":35,"react-lifecycles-compat":25}],30:[function(require,module,exports){
 "use strict";
 
 var _CSSTransition = _interopRequireDefault(require("./CSSTransition"));
@@ -43615,7 +43616,7 @@ module.exports = {
   ReplaceTransition: _ReplaceTransition.default,
   CSSTransition: _CSSTransition.default
 };
-},{"./CSSTransition":31,"./ReplaceTransition":32,"./Transition":33,"./TransitionGroup":34}],36:[function(require,module,exports){
+},{"./CSSTransition":26,"./ReplaceTransition":27,"./Transition":28,"./TransitionGroup":29}],31:[function(require,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -43766,7 +43767,7 @@ function getNextChildMapping(nextProps, prevChildMapping, onExited) {
   });
   return children;
 }
-},{"react":40}],37:[function(require,module,exports){
+},{"react":35}],32:[function(require,module,exports){
 (function (process){
 "use strict";
 
@@ -43797,7 +43798,7 @@ var classNamesShape = process.env.NODE_ENV !== 'production' ? _propTypes.default
 })]) : null;
 exports.classNamesShape = classNamesShape;
 }).call(this,require('_process'))
-},{"_process":16,"prop-types":20}],38:[function(require,module,exports){
+},{"_process":11,"prop-types":15}],33:[function(require,module,exports){
 (function (process){
 /** @license React v16.11.0
  * react.development.js
@@ -46119,7 +46120,7 @@ module.exports = react;
 }
 
 }).call(this,require('_process'))
-},{"_process":16,"object-assign":15,"prop-types/checkPropTypes":17}],39:[function(require,module,exports){
+},{"_process":11,"object-assign":10,"prop-types/checkPropTypes":12}],34:[function(require,module,exports){
 /** @license React v16.11.0
  * react.production.min.js
  *
@@ -46146,7 +46147,7 @@ b,c){return W().useImperativeHandle(a,b,c)},useDebugValue:function(){},useLayout
 if(null!=b){void 0!==b.ref&&(g=b.ref,l=J.current);void 0!==b.key&&(d=""+b.key);if(a.type&&a.type.defaultProps)var f=a.type.defaultProps;for(k in b)K.call(b,k)&&!L.hasOwnProperty(k)&&(e[k]=void 0===b[k]&&void 0!==f?f[k]:b[k])}var k=arguments.length-2;if(1===k)e.children=c;else if(1<k){f=Array(k);for(var m=0;m<k;m++)f[m]=arguments[m+2];e.children=f}return{$$typeof:p,type:a.type,key:d,ref:g,props:e,_owner:l}},createFactory:function(a){var b=M.bind(null,a);b.type=a;return b},isValidElement:N,version:"16.11.0",
 __SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED:{ReactCurrentDispatcher:I,ReactCurrentBatchConfig:{suspense:null},ReactCurrentOwner:J,IsSomeRendererActing:{current:!1},assign:h}},Y={default:X},Z=Y&&X||Y;module.exports=Z.default||Z;
 
-},{"object-assign":15}],40:[function(require,module,exports){
+},{"object-assign":10}],35:[function(require,module,exports){
 (function (process){
 'use strict';
 
@@ -46157,7 +46158,7 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 }).call(this,require('_process'))
-},{"./cjs/react.development.js":38,"./cjs/react.production.min.js":39,"_process":16}],41:[function(require,module,exports){
+},{"./cjs/react.development.js":33,"./cjs/react.production.min.js":34,"_process":11}],36:[function(require,module,exports){
 (function (process){
 /** @license React v0.17.0
  * scheduler-tracing.development.js
@@ -46582,7 +46583,7 @@ exports.unstable_unsubscribe = unstable_unsubscribe;
 }
 
 }).call(this,require('_process'))
-},{"_process":16}],42:[function(require,module,exports){
+},{"_process":11}],37:[function(require,module,exports){
 /** @license React v0.17.0
  * scheduler-tracing.production.min.js
  *
@@ -46594,7 +46595,7 @@ exports.unstable_unsubscribe = unstable_unsubscribe;
 
 'use strict';Object.defineProperty(exports,"__esModule",{value:!0});var b=0;exports.__interactionsRef=null;exports.__subscriberRef=null;exports.unstable_clear=function(a){return a()};exports.unstable_getCurrent=function(){return null};exports.unstable_getThreadID=function(){return++b};exports.unstable_trace=function(a,d,c){return c()};exports.unstable_wrap=function(a){return a};exports.unstable_subscribe=function(){};exports.unstable_unsubscribe=function(){};
 
-},{}],43:[function(require,module,exports){
+},{}],38:[function(require,module,exports){
 (function (process){
 /** @license React v0.17.0
  * scheduler.development.js
@@ -47623,7 +47624,7 @@ exports.unstable_Profiling = unstable_Profiling;
 }
 
 }).call(this,require('_process'))
-},{"_process":16}],44:[function(require,module,exports){
+},{"_process":11}],39:[function(require,module,exports){
 /** @license React v0.17.0
  * scheduler.production.min.js
  *
@@ -47647,7 +47648,7 @@ exports.unstable_scheduleCallback=function(a,b,c){var d=exports.unstable_now();i
 exports.unstable_wrapCallback=function(a){var b=S;return function(){var c=S;S=b;try{return a.apply(this,arguments)}finally{S=c}}};exports.unstable_getCurrentPriorityLevel=function(){return S};exports.unstable_shouldYield=function(){var a=exports.unstable_now();W(a);var b=M(O);return b!==R&&null!==R&&null!==b&&null!==b.callback&&b.startTime<=a&&b.expirationTime<R.expirationTime||k()};exports.unstable_requestPaint=aa;exports.unstable_continueExecution=function(){U||T||(U=!0,f(Y))};
 exports.unstable_pauseExecution=function(){};exports.unstable_getFirstCallbackNode=function(){return M(O)};exports.unstable_Profiling=null;
 
-},{}],45:[function(require,module,exports){
+},{}],40:[function(require,module,exports){
 (function (process){
 'use strict';
 
@@ -47658,7 +47659,7 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 }).call(this,require('_process'))
-},{"./cjs/scheduler.development.js":43,"./cjs/scheduler.production.min.js":44,"_process":16}],46:[function(require,module,exports){
+},{"./cjs/scheduler.development.js":38,"./cjs/scheduler.production.min.js":39,"_process":11}],41:[function(require,module,exports){
 (function (process){
 'use strict';
 
@@ -47669,482 +47670,7 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 }).call(this,require('_process'))
-},{"./cjs/scheduler-tracing.development.js":41,"./cjs/scheduler-tracing.production.min.js":42,"_process":16}],47:[function(require,module,exports){
-
-},{}],48:[function(require,module,exports){
-"use strict";
-
-var _classnames = require("classnames");
-
-var _classnames2 = _interopRequireDefault(_classnames);
-
-var _searchcorpusbox = require("./searchcorpusbox.jsx");
-
-var _searchcorpusbox2 = _interopRequireDefault(_searchcorpusbox);
-
-var _propTypes = require("prop-types");
-
-var _propTypes2 = _interopRequireDefault(_propTypes);
-
-var _createReactClass = require("create-react-class");
-
-var _createReactClass2 = _interopRequireDefault(_createReactClass);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-var PT = _propTypes2.default;
-
-var CorpusView = (0, _createReactClass2.default)({
-	displayName: "CorpusView",
-
-	//fixme! - class CorpusView extends React.Component {
-	propTypes: {
-		corpora: PT.object.isRequired,
-		languageMap: PT.object.isRequired
-	},
-
-	getInitialState: function getInitialState() {
-		return {
-			viewSelected: false // only show the selected collections
-			//showDisabled: false, // dont hide items with {visible = false} // implemented, but out commented feature...
-		};
-	},
-
-
-	toggleSelection: function toggleSelection(corpus, e) {
-		var s = !corpus.selected;
-		this.props.corpora.recurseCorpus(corpus, function (c) {
-			c.selected = s;
-		});
-		this.props.corpora.update();
-		this.stop(e);
-	},
-
-	toggleViewSelected: function toggleViewSelected(evt) {
-		this.setState(function (st) {
-			return { viewSelected: !st.viewSelected };
-		});
-	},
-	toggleShowDisabled: function toggleShowDisabled(evt) {
-		this.setState(function (st) {
-			return { showDisabled: !st.showDisabled };
-		});
-	},
-
-
-	toggleDescExpansion: function toggleDescExpansion(corpus) {
-		corpus.descExpanded = !corpus.descExpanded;
-		this.props.corpora.update();
-	},
-
-	toggleExpansion: function toggleExpansion(corpus) {
-		corpus.expanded = !corpus.expanded;
-		this.props.corpora.update();
-	},
-
-	selectAll: function selectAll(value) {
-		// select all _visible_
-		this.props.corpora.recurse(function (c) {
-			c.visible ? c.selected = value : false;
-		});
-		this.props.corpora.update();
-	},
-
-	searchCorpus: function searchCorpus(query) {
-		// sort fn: descending priority, stable sort
-		var sortFn = function sortFn(a, b) {
-			if (b.priority === a.priority) {
-				return b.index - a.index; // stable sort
-			}
-			return b.priority - a.priority;
-		};
-
-		query = query.toLowerCase();
-		if (!query) {
-			this.props.corpora.recurse(function (corpus) {
-				corpus.priority = 1;
-			});
-			this.props.corpora.update();
-			return;
-		}
-
-		// clean up all priorities
-		this.props.corpora.recurse(function (corpus) {
-			corpus.priority = 0;
-		});
-
-		// find priority for each corpus
-		var querytokens = query.split(" ").filter(function (x) {
-			return x.length > 0;
-		});
-		this.props.corpora.recurse(function (corpus) {
-			var title = corpus.title;
-			querytokens.forEach(function (qtoken) {
-				if (title && title.toLowerCase().indexOf(qtoken) >= 0) {
-					corpus.priority++;
-				}
-				if (corpus.description && corpus.description.toLowerCase().indexOf(qtoken) >= 0) {
-					corpus.priority++;
-				}
-				if (corpus.institution && corpus.institution.name && corpus.institution.name.toLowerCase().indexOf(qtoken) >= 0) {
-					corpus.priority++;
-				}
-				if (corpus.languages) {
-					corpus.languages.forEach(function (lang) {
-						if (lang.toLowerCase().indexOf(qtoken) >= 0) {
-							corpus.priority++;
-						}
-					});
-					corpus.languages.forEach(function (lang) {
-						if (this.props.languageMap[lang].toLowerCase().indexOf(qtoken) >= 0) {
-							corpus.priority++;
-						}
-					}.bind(this));
-				}
-			}.bind(this));
-		}.bind(this));
-
-		// ensure parents of visible corpora are also visible; maximum depth = 3
-		var isVisibleFn = function isVisibleFn(corpus) {
-			return corpus.priority > 0;
-		};
-		var parentBooster = function parentBooster(corpus) {
-			if (corpus.priority <= 0 && corpus.subCorpora) {
-				if (corpus.subCorpora.some(isVisibleFn)) {
-					corpus.priority = 0.5;
-				}
-			}
-		};
-		for (var i = 3; i > 0; i--) {
-			this.props.corpora.recurse(parentBooster);
-		}
-
-		this.props.corpora.recurse(function (corpus) {
-			corpus.subCorpora.sort(sortFn);
-		});
-		this.props.corpora.corpora.sort(sortFn);
-
-		// display
-		this.props.corpora.update();
-	},
-
-	stop: function stop(e) {
-		e.stopPropagation();
-	},
-
-	getMinMaxPriority: function getMinMaxPriority() {
-		var min = 1,
-		    max = 0;
-		this.props.corpora.recurse(function (c) {
-			if (c.priority < min) min = c.priority;
-			if (max < c.priority) max = c.priority;
-		});
-		return [min, max];
-	},
-
-	renderCheckbox: function renderCheckbox(corpus) {
-		return React.createElement(
-			"button",
-			{ className: "btn btn-default" },
-			corpus.selected ? React.createElement("span", { className: "glyphicon glyphicon-check", "aria-hidden": "true" }) : React.createElement("span", { className: "glyphicon glyphicon-unchecked", "aria-hidden": "true" })
-		);
-	},
-
-	renderExpansion: function renderExpansion(corpus) {
-		if (!corpus.subCorpora || corpus.subCorpora.length === 0) {
-			return false;
-		}
-		return React.createElement(
-			"div",
-			{ className: "expansion-handle", onClick: this.toggleExpansion.bind(this, corpus) },
-			React.createElement(
-				"a",
-				null,
-				corpus.expanded ? React.createElement("span", { className: "glyphicon glyphicon-minus", "aria-hidden": "true" }) : React.createElement("span", { className: "glyphicon glyphicon-plus", "aria-hidden": "true" }),
-				corpus.expanded ? " Collapse " : " Expand ",
-				" (",
-				corpus.subCorpora.length,
-				" subcollections)"
-			)
-		);
-	},
-
-	renderLanguages: function renderLanguages(languages) {
-		return languages.map(function (l) {
-			return this.props.languageMap[l];
-		}.bind(this)).sort().join(", ");
-	},
-
-	shouldShowItem: function shouldShowItem(level, corpus) {
-		if (this.state.viewSelected && !corpus.selected) {
-			return false;
-		}
-		if (!this.state.showDisabled && !corpus.visible) {
-			return false;
-		}
-		// normal search filter.
-		if (level === 0 && corpus.priority <= 0) {
-			return false;
-		}
-
-		return true;
-	},
-	renderFilteredMessage: function renderFilteredMessage() {
-		var _this = this;
-
-		var total = 0;
-		var visible = 0;
-		this.props.corpora.recurse(function (corpus) {
-			if (corpus.visible || _this.state.showDisabled) {
-				total++;
-				if (_this.shouldShowItem(0, corpus)) {
-					visible++;
-				}
-			}
-		});
-		if (visible === total) {
-			return false;
-		}
-		if (visible === 0) {
-			return false; // we do have an "empty" message anyway
-		}
-		return React.createElement(
-			"div",
-			null,
-			" Showing ",
-			visible,
-			" out of ",
-			total,
-			" (sub)collections. "
-		);
-	},
-
-
-	renderCorpus: function renderCorpus(level, minmaxp, corpus) {
-		if (!this.shouldShowItem(level, corpus)) {
-			return;
-		}
-
-		var indent = { marginLeft: level * 50 };
-		var corpusContainerClass = "corpus-container " + (corpus.priority > 0 ? "" : "dimmed");
-
-		var hue = 120 * corpus.priority / minmaxp[1];
-		var color = minmaxp[0] === minmaxp[1] ? 'transparent' : 'hsl(' + hue + ', 50%, 50%)';
-		var priorityStyle = { paddingBottom: 4, paddingLeft: 2, borderBottom: '3px solid ' + color };
-		var expansive = corpus.descExpanded ? { overflow: 'hidden' } : { whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' };
-		return React.createElement(
-			"div",
-			{ className: corpusContainerClass, key: corpus.id },
-			React.createElement(
-				"div",
-				{ className: "row corpus", onClick: this.toggleDescExpansion.bind(this, corpus) },
-				React.createElement(
-					"div",
-					{ className: "col-sm-1 vcenter" },
-					React.createElement(
-						"div",
-						{ className: "inline", style: priorityStyle, onClick: this.toggleSelection.bind(this, corpus) },
-						this.renderCheckbox(corpus)
-					)
-				),
-				React.createElement(
-					"div",
-					{ className: "col-sm-8 vcenter" },
-					React.createElement(
-						"div",
-						{ style: indent },
-						React.createElement(
-							"h3",
-							{ style: expansive },
-							corpus.title,
-							corpus.landingPage ? React.createElement(
-								"a",
-								{ href: corpus.landingPage, onClick: this.stop },
-								React.createElement(
-									"span",
-									{ style: { fontSize: 12 } },
-									" \u2013 Homepage "
-								),
-								React.createElement("i", { className: "glyphicon glyphicon-home" })
-							) : false
-						),
-						React.createElement(
-							"p",
-							{ style: expansive },
-							corpus.description
-						),
-						this.renderExpansion(corpus)
-					)
-				),
-				React.createElement(
-					"div",
-					{ className: "col-sm-3 vcenter" },
-					React.createElement(
-						"p",
-						{ style: expansive },
-						React.createElement("i", { className: "fa fa-institution" }),
-						" ",
-						corpus.institution.name
-					),
-					React.createElement(
-						"p",
-						{ style: expansive },
-						React.createElement("i", { className: "fa fa-language" }),
-						" ",
-						this.renderLanguages(corpus.languages)
-					)
-				)
-			),
-			corpus.expanded ? corpus.subCorpora.map(this.renderCorpus.bind(this, level + 1, minmaxp)) : false
-		);
-	},
-
-	renderCorpList: function renderCorpList() {
-		var _this2 = this;
-
-		var minmaxp = this.getMinMaxPriority();
-
-		var corpListRender = [];
-
-		// this is so we get a non-undefined items .length in corpListRender.
-		this.props.corpora.corpora.forEach(function (c) {
-			var rend = _this2.renderCorpus(0, minmaxp, c);
-			if (rend) corpListRender.push(rend);
-		});
-
-		return React.createElement(
-			"div",
-			{ className: "corpusview-corpora" },
-			corpListRender.length > 0 ? corpListRender : React.createElement(
-				"h3",
-				{ className: "aligncenter" },
-				this.state.viewSelected ? "No collections selected yet!" : "No collections found."
-			)
-		);
-	},
-	render: function render() {
-		var selectedCount = 0;
-		//var disabledCount = 0;
-		this.props.corpora.recurse(function (c) {
-			if (c.selected && c.visible) selectedCount++;
-			//if (c.selected) selectedCount++;
-			//if (!c.visible) disabledCount++;
-		});
-
-		return React.createElement(
-			"div",
-			{ style: { margin: "0 30px" } },
-			React.createElement(
-				"div",
-				{ className: "row" },
-				React.createElement(
-					"div",
-					{ className: "float-left inline corpusview-filter-buttons" },
-					React.createElement(
-						"div",
-						{ className: "btn-group btn-group-toggle" },
-						React.createElement(
-							"label",
-							{ className: "btn btn-light btn " + (this.state.viewSelected ? 'active' : 'inactive'), onClick: this.toggleViewSelected, title: "View selected collections" },
-							React.createElement("span", { className: this.state.viewSelected ? "glyphicon glyphicon-check" : "glyphicon glyphicon-unchecked" }),
-							" View selected (",
-							selectedCount,
-							")"
-						)
-					)
-				),
-				React.createElement(
-					"div",
-					{ className: "float-right inline" },
-					React.createElement(
-						"button",
-						{ className: "btn btn-default", style: { marginRight: 10 }, onClick: this.selectAll.bind(this, true) },
-						" Select all"
-					),
-					React.createElement(
-						"button",
-						{ className: "btn btn-default", style: { marginRight: 20 }, onClick: this.selectAll.bind(this, false) },
-						" Deselect all"
-					)
-				),
-				React.createElement(
-					"div",
-					{ className: "float-right inline" },
-					React.createElement(
-						"div",
-						{ className: "inline", style: { marginRight: 20 } },
-						React.createElement(_searchcorpusbox2.default, { search: this.searchCorpus }),
-						this.renderFilteredMessage()
-					)
-				)
-			),
-			this.renderCorpList()
-		);
-	}
-});
-
-module.exports = CorpusView;
-
-},{"./searchcorpusbox.jsx":59,"classnames":2,"create-react-class":6,"prop-types":20}],49:[function(require,module,exports){
-"use strict";
-
-var _classnames = require("classnames");
-
-var _classnames2 = _interopRequireDefault(_classnames);
-
-var _propTypes = require("prop-types");
-
-var _propTypes2 = _interopRequireDefault(_propTypes);
-
-var _createReactClass = require("create-react-class");
-
-var _createReactClass2 = _interopRequireDefault(_createReactClass);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-var PT = _propTypes2.default;
-
-var EmbeddedFooter = (0, _createReactClass2.default)({
-	displayName: "EmbeddedFooter",
-
-	//fixme! - class EmbeddedFooter extends React.Component { 
-	propTypes: {
-		URLROOT: PT.string.isRequired
-	},
-
-	render: function render() {
-		return React.createElement(
-			"div",
-			{ className: "container", style: { textAlign: 'center' } },
-			React.createElement(
-				"div",
-				{ className: "row" },
-				React.createElement(
-					"div",
-					{ style: { position: 'relative', float: 'right' } },
-					React.createElement(
-						"div",
-						{ className: "rightist", style: { position: 'absolute', right: 0, width: 170 } },
-						React.createElement(
-							"a",
-							{ href: this.props.URLROOT + "/", target: "_blank", tabIndex: "-1" },
-							React.createElement("img", { width: "28px", height: "28px", src: "img/magglass1.png" }),
-							React.createElement(
-								"header",
-								{ className: "inline float-left" },
-								" Content Search "
-							)
-						)
-					)
-				)
-			)
-		);
-	}
-});
-
-module.exports = EmbeddedFooter;
-
-},{"classnames":2,"create-react-class":6,"prop-types":20}],50:[function(require,module,exports){
+},{"./cjs/scheduler-tracing.development.js":36,"./cjs/scheduler-tracing.production.min.js":37,"_process":11}],42:[function(require,module,exports){
 "use strict";
 
 var _classnames = require("classnames");
@@ -48169,46 +47695,787 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 var PT = _propTypes2.default;
 
-var ErrorPane = (0, _createReactClass2.default)({
-	displayName: "ErrorPane",
+var AlertPane = (0, _createReactClass2.default)({
+  displayName: "AlertPane",
 
-	//fixme! - class ErrorPane extends React.Component {
-	propTypes: {
-		errorMessages: PT.array.isRequired
-	},
+  //fixme! - class AlertPane extends React.Component {
+  propTypes: {
+    alerts: PT.array.isRequired
+  },
 
-	renderErrorMessage: function renderErrorMessage(errorMessage, index) {
-		return errorMessage ? React.createElement(
-			_jqueryfade2.default,
-			{ key: index },
-			React.createElement(
-				"div",
-				{ key: index, className: "errorMessage" },
-				errorMessage
-			)
-		) : false;
-	},
+  renderAlertMessage: function renderAlertMessage(alert, index) {
+    return alert ? React.createElement(
+      _reactTransitionGroup.CSSTransition,
+      { key: alert.type + "-" + index, classNames: "fade", timeout: { enter: 200, exit: 200 } },
+      React.createElement(
+        "div",
+        { key: alert.type + "-" + index, className: "info" === alert.type ? "infoMessage" : "errorMessage" },
+        alert.msg
+      )
+    ) : false;
+  },
 
-	render: function render() {
-		return React.createElement(
-			"div",
-			{ className: "container errorDiv" },
-			React.createElement(
-				"div",
-				{ className: "row errorRow" },
-				React.createElement(
-					_reactTransitionGroup.TransitionGroup,
-					{ component: "div" },
-					this.props.errorMessages.map(this.renderErrorMessage)
-				)
-			)
-		);
-	}
+  render: function render() {
+    return React.createElement(
+      "div",
+      { className: "container alertDiv" },
+      React.createElement(
+        "div",
+        { className: "row alertRow" },
+        React.createElement(
+          _reactTransitionGroup.TransitionGroup,
+          { component: "div" },
+          this.props.alerts.map(this.renderAlertMessage)
+        )
+      )
+    );
+  }
 });
 
-module.exports = ErrorPane;
+module.exports = AlertPane;
 
-},{"./jqueryfade.jsx":52,"classnames":2,"create-react-class":6,"prop-types":20,"react-transition-group":35}],51:[function(require,module,exports){
+},{"./jqueryfade.jsx":47,"classnames":2,"create-react-class":6,"prop-types":15,"react-transition-group":30}],43:[function(require,module,exports){
+
+},{}],44:[function(require,module,exports){
+"use strict";
+
+var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
+
+var _classnames = require("classnames");
+
+var _classnames2 = _interopRequireDefault(_classnames);
+
+var _searchcorpusbox = require("./searchcorpusbox.jsx");
+
+var _searchcorpusbox2 = _interopRequireDefault(_searchcorpusbox);
+
+var _propTypes = require("prop-types");
+
+var _propTypes2 = _interopRequireDefault(_propTypes);
+
+var _createReactClass = require("create-react-class");
+
+var _createReactClass2 = _interopRequireDefault(_createReactClass);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var PT = _propTypes2.default;
+
+var CorpusView = (0, _createReactClass2.default)({
+  displayName: "CorpusView",
+
+  //fixme! - class CorpusView extends React.Component {
+  propTypes: {
+    corpora: PT.object.isRequired,
+    languageMap: PT.object.isRequired
+  },
+
+  getInitialState: function getInitialState() {
+    var corpora = this.props.corpora;
+    var corporaGroupedByInstitute = this.updateCorporaGroupedByInstitute(corpora);
+    var corporaGroupedByLanguage = this.updateCorporaGroupedByLanguage(corpora);
+
+    return {
+      viewSelected: false, // only show the selected collections
+      //showDisabled: false,  // don't hide items with {visible = false} // implemented, but out commented feature...
+      viewGroupedByInstitution: false, // group by institution, then as usual
+      viewGroupedByLanguage: false, // group by (single) language, then as usual
+      corporaGroupedByInstitute: corporaGroupedByInstitute, // group info (is-expanded, corpora list)
+      corporaGroupedByLanguage: corporaGroupedByLanguage, // group info (with language as key) (is-expanded, corpora list)
+      corpora: corpora // cached but unused, just to check for updates
+    };
+  },
+  componentWillReceiveProps: function componentWillReceiveProps(nextProps) {
+    // console.debug("componentWillReceiveProps", nextProps);
+    var corpora = nextProps.corpora;
+    if (this.props.corpora == corpora) {
+      return;
+    }
+    var corporaGroupedByInstitute = this.updateCorporaGroupedByInstitute(corpora);
+    var corporaGroupedByLanguage = this.updateCorporaGroupedByLanguage(corpora);
+    this.setState({
+      corpora: this.props.corpora,
+      corporaGroupedByInstitute: corporaGroupedByInstitute,
+      corporaGroupedByLanguage: corporaGroupedByLanguage
+    });
+  },
+
+
+  updateCorporaGroupedByInstitute: function updateCorporaGroupedByInstitute(corpora) {
+    var corporaGroupedByInstitute = {};
+    corpora.corpora.forEach(function (corpus) {
+      var institute = corpus.institution.name;
+      if (!corporaGroupedByInstitute.hasOwnProperty(institute)) {
+        corporaGroupedByInstitute[institute] = { expanded: true, corpora: [] };
+      }
+      corporaGroupedByInstitute[institute].corpora.push(corpus);
+    });
+    //console.debug(corporaGroupedByInstitute);
+    return corporaGroupedByInstitute;
+  },
+
+  updateCorporaGroupedByLanguage: function updateCorporaGroupedByLanguage(corpora) {
+    var corporaGroupedByLanguage = {};
+    corpora.corpora.forEach(function (corpus) {
+      corpus.languages.forEach(function (language) {
+        if (!corporaGroupedByLanguage.hasOwnProperty(language)) {
+          corporaGroupedByLanguage[language] = { expanded: true, corpora: [] };
+        }
+        corporaGroupedByLanguage[language].corpora.push(corpus);
+      });
+    });
+    //console.debug(corporaGroupedByLanguage);
+    return corporaGroupedByLanguage;
+  },
+
+  toggleSelection: function toggleSelection(corpus, e) {
+    var s = !corpus.selected;
+    this.props.corpora.recurseCorpus(corpus, function (c) {
+      c.selected = s;
+    });
+    this.props.corpora.update();
+    this.stop(e);
+  },
+
+  toggleViewSelected: function toggleViewSelected(evt) {
+    this.setState(function (st) {
+      return { viewSelected: !st.viewSelected };
+    });
+  },
+  toggleShowDisabled: function toggleShowDisabled(evt) {
+    this.setState(function (st) {
+      return { showDisabled: !st.showDisabled };
+    });
+  },
+  toggleViewGroupByInstitution: function toggleViewGroupByInstitution(evt) {
+    this.setState(function (st) {
+      return {
+        viewGroupedByInstitution: !st.viewGroupedByInstitution,
+        viewGroupedByLanguage: false
+      };
+    });
+  },
+  toggleViewGroupByLanguage: function toggleViewGroupByLanguage(evt) {
+    this.setState(function (st) {
+      return {
+        viewGroupedByInstitution: false,
+        viewGroupedByLanguage: !st.viewGroupedByLanguage
+      };
+    });
+  },
+
+
+  toggleDescExpansion: function toggleDescExpansion(corpus) {
+    corpus.descExpanded = !corpus.descExpanded;
+    this.props.corpora.update();
+  },
+
+  toggleExpansion: function toggleExpansion(corpus) {
+    corpus.expanded = !corpus.expanded;
+    this.props.corpora.update();
+  },
+
+  toggleExpansionGrouped: function toggleExpansionGrouped(groupedCorpora) {
+    groupedCorpora.expanded = !groupedCorpora.expanded;
+    this.setState({
+      corporaGroupedByInstitute: this.state.corporaGroupedByInstitute,
+      corporaGroupedByLanguage: this.state.corporaGroupedByLanguage
+    });
+  },
+
+  selectAll: function selectAll(value) {
+    // select all _visible_
+    this.props.corpora.recurse(function (c) {
+      c.visible ? c.selected = value : false;
+    });
+    this.props.corpora.update();
+  },
+
+  selectAllFromList: function selectAllFromList(corpora, value) {
+    // like selectAll(), just for list of corpora
+    this.props.corpora.recurseCorpora(corpora, function (c) {
+      c.visible ? c.selected = value : false;
+    });
+    this.props.corpora.update();
+  },
+
+  selectAllShown: function selectAllShown(value) {
+    // select only visible/shown corpora, i.e. corpora that are shown in dialog, possibly filtered due to query
+    this.props.corpora.recurse(function (c) {
+      c.visible && c.priority > 0 ? c.selected = value : false;
+    });
+    this.props.corpora.update();
+  },
+
+  searchCorpus: function searchCorpus(query) {
+    // sort fn: descending priority, stable sort
+    var sortFn = function sortFn(a, b) {
+      if (b.priority === a.priority) {
+        return b.index - a.index; // stable sort
+      }
+      return b.priority - a.priority;
+    };
+
+    query = query.toLowerCase();
+    if (!query) {
+      this.props.corpora.recurse(function (corpus) {
+        corpus.priority = 1;
+      });
+      this.props.corpora.update();
+      return;
+    }
+
+    // clean up all priorities
+    this.props.corpora.recurse(function (corpus) {
+      corpus.priority = 0;
+    });
+
+    // find priority for each corpus
+    var querytokens = query.split(" ").filter(function (x) {
+      return x.length > 0;
+    });
+    this.props.corpora.recurse(function (corpus) {
+      var title = corpus.title;
+      querytokens.forEach(function (qtoken) {
+        if (title && title.toLowerCase().indexOf(qtoken) >= 0) {
+          corpus.priority++;
+        }
+        if (corpus.description && corpus.description.toLowerCase().indexOf(qtoken) >= 0) {
+          corpus.priority++;
+        }
+        if (corpus.institution && corpus.institution.name && corpus.institution.name.toLowerCase().indexOf(qtoken) >= 0) {
+          corpus.priority++;
+        }
+        if (corpus.languages) {
+          corpus.languages.forEach(function (lang) {
+            if (lang.toLowerCase().indexOf(qtoken) >= 0) {
+              corpus.priority++;
+            }
+          });
+          corpus.languages.forEach(function (lang) {
+            if (this.props.languageMap[lang].toLowerCase().indexOf(qtoken) >= 0) {
+              corpus.priority++;
+            }
+          }.bind(this));
+        }
+      }.bind(this));
+    }.bind(this));
+
+    // ensure parents of visible corpora are also visible; maximum depth = 3
+    var isVisibleFn = function isVisibleFn(corpus) {
+      return corpus.priority > 0;
+    };
+    var parentBooster = function parentBooster(corpus) {
+      if (corpus.priority <= 0 && corpus.subCorpora) {
+        if (corpus.subCorpora.some(isVisibleFn)) {
+          corpus.priority = 0.5;
+        }
+      }
+    };
+    for (var i = 3; i > 0; i--) {
+      this.props.corpora.recurse(parentBooster);
+    }
+
+    this.props.corpora.recurse(function (corpus) {
+      corpus.subCorpora.sort(sortFn);
+    });
+    this.props.corpora.corpora.sort(sortFn);
+
+    // display
+    this.props.corpora.update();
+  },
+
+  stop: function stop(e) {
+    e.stopPropagation();
+  },
+
+  getMinMaxPriority: function getMinMaxPriority() {
+    var min = 1,
+        max = 0;
+    this.props.corpora.recurse(function (c) {
+      if (c.priority < min) min = c.priority;
+      if (max < c.priority) max = c.priority;
+    });
+    return [min, max];
+  },
+
+  renderCheckbox: function renderCheckbox(corpus) {
+    return React.createElement(
+      "button",
+      { className: "btn btn-default" },
+      corpus.selected ? React.createElement("span", { className: "glyphicon glyphicon-check", "aria-hidden": "true" }) : React.createElement("span", { className: "glyphicon glyphicon-unchecked", "aria-hidden": "true" })
+    );
+  },
+
+  renderExpansion: function renderExpansion(corpus) {
+    if (!corpus.subCorpora || corpus.subCorpora.length === 0) {
+      return false;
+    }
+    return React.createElement(
+      "div",
+      { className: "expansion-handle", onClick: this.toggleExpansion.bind(this, corpus) },
+      React.createElement(
+        "a",
+        null,
+        corpus.expanded ? React.createElement("span", { className: "glyphicon glyphicon-minus", "aria-hidden": "true" }) : React.createElement("span", { className: "glyphicon glyphicon-plus", "aria-hidden": "true" }),
+        corpus.expanded ? " Collapse " : " Expand ",
+        " (",
+        corpus.subCorpora.length,
+        " subcollections)"
+      )
+    );
+  },
+
+  renderExpansionGrouped: function renderExpansionGrouped(groupedCorpora) {
+    if (!groupedCorpora.corpora || groupedCorpora.corpora.length === 0) {
+      return false;
+    }
+
+    var selectedCount = 0;
+    this.props.corpora.recurseCorpora(groupedCorpora.corpora, function (c) {
+      if (c.selected && c.visible) selectedCount++;
+    });
+
+    return React.createElement(
+      "div",
+      { className: "expansion-handle", onClick: this.toggleExpansionGrouped.bind(this, groupedCorpora) },
+      React.createElement(
+        "a",
+        null,
+        groupedCorpora.expanded ? React.createElement("span", { className: "glyphicon glyphicon-minus", "aria-hidden": "true" }) : React.createElement("span", { className: "glyphicon glyphicon-plus", "aria-hidden": "true" }),
+        groupedCorpora.expanded ? " Collapse " : " Expand ",
+        " (",
+        groupedCorpora.corpora.length,
+        " root collection",
+        groupedCorpora.corpora.length != 1 ? "s" : "",
+        ", ",
+        selectedCount,
+        " (sub)collections selected)"
+      )
+    );
+  },
+
+  renderSelectionButtonsGrouped: function renderSelectionButtonsGrouped(corpora) {
+    return React.createElement(
+      "div",
+      { className: "float-right inline", style: { paddingTop: "1.5em" } },
+      React.createElement(
+        "button",
+        { className: "btn btn-default", style: { marginRight: 10 }, onClick: this.selectAllFromList.bind(this, corpora, true) },
+        " Select all"
+      ),
+      React.createElement(
+        "button",
+        { className: "btn btn-default", style: { marginRight: 20 }, onClick: this.selectAllFromList.bind(this, corpora, false) },
+        " Deselect all"
+      )
+    );
+  },
+
+  renderLanguages: function renderLanguages(languages) {
+    return languages.map(function (l) {
+      return this.props.languageMap[l];
+    }.bind(this)).sort().join(", ");
+  },
+
+  shouldShowItem: function shouldShowItem(level, corpus) {
+    if (this.state.viewSelected && !corpus.selected) {
+      return false;
+    }
+    if (!this.state.showDisabled && !corpus.visible) {
+      return false;
+    }
+    // normal search filter.
+    if (level === 0 && corpus.priority <= 0) {
+      return false;
+    }
+
+    return true;
+  },
+  renderFilteredMessage: function renderFilteredMessage() {
+    var _this = this;
+
+    var total = 0;
+    var visible = 0;
+    this.props.corpora.recurse(function (corpus) {
+      if (corpus.visible || _this.state.showDisabled) {
+        total++;
+        if (_this.shouldShowItem(0, corpus)) {
+          visible++;
+        }
+      }
+    });
+    if (visible === total) {
+      return false;
+    }
+    if (visible === 0) {
+      return false; // we do have an "empty" message anyway
+    }
+    return React.createElement(
+      "div",
+      null,
+      " Showing ",
+      visible,
+      " out of ",
+      total,
+      " (sub)collections. "
+    );
+  },
+
+
+  renderCorpus: function renderCorpus(level, minmaxp, corpus) {
+    if (!this.shouldShowItem(level, corpus)) {
+      return;
+    }
+
+    var indent = { marginLeft: level * 50 };
+    var corpusContainerClass = "corpus-container " + (corpus.priority > 0 ? "" : "dimmed");
+
+    var hue = 120 * corpus.priority / minmaxp[1];
+    var color = minmaxp[0] === minmaxp[1] ? 'transparent' : 'hsl(' + hue + ', 50%, 50%)';
+    var priorityStyle = { paddingBottom: 4, paddingLeft: 2, borderBottom: '3px solid ' + color };
+    var expansive = corpus.descExpanded ? { overflow: 'hidden' } : { whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' };
+    return React.createElement(
+      "div",
+      { className: corpusContainerClass, key: corpus.id },
+      React.createElement(
+        "div",
+        { className: "row corpus", onClick: this.toggleDescExpansion.bind(this, corpus) },
+        React.createElement(
+          "div",
+          { className: "col-sm-1 vcenter" },
+          React.createElement(
+            "div",
+            { className: "inline", style: priorityStyle, onClick: this.toggleSelection.bind(this, corpus) },
+            this.renderCheckbox(corpus)
+          )
+        ),
+        React.createElement(
+          "div",
+          { className: "col-sm-8 vcenter" },
+          React.createElement(
+            "div",
+            { style: indent },
+            React.createElement(
+              "h3",
+              { style: expansive },
+              corpus.title,
+              corpus.landingPage ? React.createElement(
+                "a",
+                { href: corpus.landingPage, onClick: this.stop },
+                React.createElement(
+                  "span",
+                  { style: { fontSize: 12 } },
+                  " \u2013 Homepage "
+                ),
+                React.createElement("i", { className: "glyphicon glyphicon-home" })
+              ) : false
+            ),
+            React.createElement(
+              "p",
+              { style: expansive },
+              corpus.description
+            ),
+            this.renderExpansion(corpus)
+          )
+        ),
+        React.createElement(
+          "div",
+          { className: "col-sm-3 vcenter" },
+          React.createElement(
+            "p",
+            { style: expansive },
+            React.createElement("i", { className: "fa fa-institution" }),
+            " ",
+            corpus.institution.name
+          ),
+          React.createElement(
+            "p",
+            { style: expansive },
+            React.createElement("i", { className: "fa fa-language" }),
+            " ",
+            this.renderLanguages(corpus.languages)
+          )
+        )
+      ),
+      corpus.expanded ? corpus.subCorpora.map(this.renderCorpus.bind(this, level + 1, minmaxp)) : false
+    );
+  },
+
+  renderCorpList: function renderCorpList() {
+    var _this2 = this;
+
+    var minmaxp = this.getMinMaxPriority();
+
+    var corpListRender = [];
+
+    // this is so we get a non-undefined items .length in corpListRender.
+    this.props.corpora.corpora.forEach(function (c) {
+      var rend = _this2.renderCorpus(0, minmaxp, c);
+      if (rend) corpListRender.push(rend);
+    });
+
+    return React.createElement(
+      "div",
+      { className: "corpusview-corpora" },
+      corpListRender.length > 0 ? corpListRender : React.createElement(
+        "h3",
+        { className: "aligncenter" },
+        this.state.viewSelected ? "No collections selected yet!" : "No collections found."
+      )
+    );
+  },
+  renderCorpListGroupedByInstitution: function renderCorpListGroupedByInstitution() {
+    var _this3 = this;
+
+    var minmaxp = this.getMinMaxPriority();
+
+    var groupedListRender = [];
+    Object.entries(this.state.corporaGroupedByInstitute).forEach(function (_ref) {
+      var _ref2 = _slicedToArray(_ref, 2),
+          institution = _ref2[0],
+          groupedCorpora = _ref2[1];
+
+      var corpListRender = [];
+      // this is so we get a non-undefined items .length in corpListRender.
+      groupedCorpora.corpora.forEach(function (c) {
+        var rend = _this3.renderCorpus(0, minmaxp, c);
+        if (rend) corpListRender.push(rend);
+      });
+      if (corpListRender.length > 0) {
+        groupedListRender.push(React.createElement(
+          "div",
+          { className: "corpusview-corpora" },
+          _this3.renderSelectionButtonsGrouped(groupedCorpora.corpora),
+          React.createElement(
+            "h3",
+            { style: { paddingTop: "0.5em" } },
+            React.createElement("i", { "class": "fa fa-institution" }),
+            " ",
+            institution
+          ),
+          _this3.renderExpansionGrouped(groupedCorpora),
+          groupedCorpora.expanded ? corpListRender : false
+        ));
+      }
+    });
+
+    return React.createElement(
+      "div",
+      { className: "corpusview-institutions" },
+      groupedListRender.length > 0 ? groupedListRender : React.createElement(
+        "h3",
+        { className: "aligncenter" },
+        this.state.viewSelected ? "No collections selected yet!" : "No collections found."
+      )
+    );
+  },
+  renderCorpListGroupedByLanguage: function renderCorpListGroupedByLanguage() {
+    var _this4 = this;
+
+    var minmaxp = this.getMinMaxPriority();
+
+    var groupedListRender = [];
+    Object.entries(this.state.corporaGroupedByLanguage).forEach(function (_ref3) {
+      var _ref4 = _slicedToArray(_ref3, 2),
+          language = _ref4[0],
+          groupedCorpora = _ref4[1];
+
+      var corpListRender = [];
+      // this is so we get a non-undefined items .length in corpListRender.
+      groupedCorpora.corpora.forEach(function (c) {
+        var rend = _this4.renderCorpus(0, minmaxp, c);
+        if (rend) corpListRender.push(rend);
+      });
+      if (corpListRender.length > 0) {
+        groupedListRender.push(React.createElement(
+          "div",
+          { className: "corpusview-corpora" },
+          _this4.renderSelectionButtonsGrouped(groupedCorpora.corpora),
+          React.createElement(
+            "h3",
+            { style: { paddingTop: "0.5em" } },
+            React.createElement("i", { "class": "fa fa-language" }),
+            " ",
+            _this4.props.languageMap[language],
+            " [",
+            language,
+            "]"
+          ),
+          _this4.renderExpansionGrouped(groupedCorpora),
+          groupedCorpora.expanded ? corpListRender : false
+        ));
+      }
+    });
+
+    return React.createElement(
+      "div",
+      { className: "corpusview-languages" },
+      groupedListRender.length > 0 ? groupedListRender : React.createElement(
+        "h3",
+        { className: "aligncenter" },
+        this.state.viewSelected ? "No collections selected yet!" : "No collections found."
+      )
+    );
+  },
+  render: function render() {
+    var selectedCount = 0;
+    //var disabledCount = 0;
+    this.props.corpora.recurse(function (c) {
+      if (c.selected && c.visible) selectedCount++;
+      //if (c.selected) selectedCount++;
+      //if (!c.visible) disabledCount++;
+    });
+
+    var renderCorporaFn = null;
+    if (this.state.viewGroupedByInstitution) {
+      renderCorporaFn = this.renderCorpListGroupedByInstitution;
+    } else if (this.state.viewGroupedByLanguage) {
+      renderCorporaFn = this.renderCorpListGroupedByLanguage;
+    } else {
+      renderCorporaFn = this.renderCorpList;
+    }
+
+    return React.createElement(
+      "div",
+      { style: { margin: "0 30px" } },
+      React.createElement(
+        "div",
+        { className: "row" },
+        React.createElement(
+          "div",
+          { className: "float-left inline corpusview-filter-buttons" },
+          React.createElement(
+            "div",
+            { className: "btn-group btn-group-toggle" },
+            React.createElement(
+              "label",
+              { className: "btn btn-light btn " + (this.state.viewSelected ? 'active' : 'inactive'), onClick: this.toggleViewSelected, title: "View selected collections" },
+              React.createElement("span", { className: this.state.viewSelected ? "glyphicon glyphicon-check" : "glyphicon glyphicon-unchecked" }),
+              " View selected (",
+              selectedCount,
+              ")"
+            ),
+            React.createElement(
+              "label",
+              { className: "btn btn-light btn", style: { paddingRight: "0ex", pointerEvents: "none" } },
+              "Group by "
+            ),
+            React.createElement(
+              "label",
+              { className: "btn btn-light btn " + (this.state.viewGroupedByInstitution ? 'active' : 'inactive'), style: { paddingRight: "0.5ex", paddingLeft: "0.5ex" }, onClick: this.toggleViewGroupByInstitution, title: "Group collections by institution" },
+              React.createElement("span", { className: this.state.viewGroupedByInstitution ? "glyphicon glyphicon-check" : "glyphicon glyphicon-unchecked" }),
+              " Institution"
+            ),
+            React.createElement(
+              "label",
+              { className: "btn btn-light btn " + (this.state.viewGroupedByLanguage ? 'active' : 'inactive'), style: { paddingLeft: "0.5ex" }, onClick: this.toggleViewGroupByLanguage, title: "Group collections by language" },
+              React.createElement("span", { className: this.state.viewGroupedByLanguage ? "glyphicon glyphicon-check" : "glyphicon glyphicon-unchecked" }),
+              " Language"
+            )
+          )
+        ),
+        React.createElement(
+          "div",
+          { className: "float-right inline" },
+          React.createElement(
+            "button",
+            { className: "btn btn-default", style: { marginRight: 10 }, onClick: this.selectAll.bind(this, true) },
+            " Select all"
+          ),
+          React.createElement(
+            "button",
+            { className: "btn btn-default", style: { marginRight: 10 }, onClick: this.selectAllShown.bind(this, true) },
+            " Select visible"
+          ),
+          React.createElement(
+            "button",
+            { className: "btn btn-default", style: { marginRight: 20 }, onClick: this.selectAll.bind(this, false) },
+            " Deselect all"
+          )
+        ),
+        React.createElement(
+          "div",
+          { className: "float-right inline" },
+          React.createElement(
+            "div",
+            { className: "inline", style: { marginRight: 20 } },
+            React.createElement(_searchcorpusbox2.default, { search: this.searchCorpus })
+          )
+        )
+      ),
+      React.createElement(
+        "div",
+        { className: "row", style: { marginBottom: 15 } },
+        this.renderFilteredMessage()
+      ),
+      renderCorporaFn()
+    );
+  }
+});
+
+module.exports = CorpusView;
+
+},{"./searchcorpusbox.jsx":54,"classnames":2,"create-react-class":6,"prop-types":15}],45:[function(require,module,exports){
+"use strict";
+
+var _classnames = require("classnames");
+
+var _classnames2 = _interopRequireDefault(_classnames);
+
+var _propTypes = require("prop-types");
+
+var _propTypes2 = _interopRequireDefault(_propTypes);
+
+var _createReactClass = require("create-react-class");
+
+var _createReactClass2 = _interopRequireDefault(_createReactClass);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var PT = _propTypes2.default;
+
+var EmbeddedFooter = (0, _createReactClass2.default)({
+  displayName: "EmbeddedFooter",
+
+  //fixme! - class EmbeddedFooter extends React.Component { 
+  propTypes: {
+    URLROOT: PT.string.isRequired
+  },
+
+  render: function render() {
+    return React.createElement(
+      "div",
+      { className: "container", style: { textAlign: 'center' } },
+      React.createElement(
+        "div",
+        { className: "row" },
+        React.createElement(
+          "div",
+          { style: { position: 'relative', float: 'right' } },
+          React.createElement(
+            "div",
+            { className: "rightist", style: { position: 'absolute', right: 0, width: 170 } },
+            React.createElement(
+              "a",
+              { href: this.props.URLROOT + "/", target: "_blank", tabIndex: "-1" },
+              React.createElement("img", { width: "28px", height: "28px", src: "img/magglass1.png" }),
+              React.createElement(
+                "header",
+                { className: "inline float-left" },
+                " Content Search "
+              )
+            )
+          )
+        )
+      )
+    );
+  }
+});
+
+module.exports = EmbeddedFooter;
+
+},{"classnames":2,"create-react-class":6,"prop-types":15}],46:[function(require,module,exports){
 "use strict";
 
 var _classnames = require("classnames");
@@ -48228,75 +48495,75 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 var PT = _propTypes2.default;
 
 var Footer = (0, _createReactClass2.default)({
-			displayName: "Footer",
+  displayName: "Footer",
 
-			//fixme! - class Footer extends React.Component {
-			propTypes: {
-						VERSION: PT.string.isRequired,
-						toAbout: PT.func.isRequired
-			},
+  //fixme! - class Footer extends React.Component {
+  propTypes: {
+    VERSION: PT.string.isRequired,
+    toAbout: PT.func.isRequired
+  },
 
-			toAbout: function toAbout(e) {
-						this.props.toAbout(true);
-						e.preventDefault();
-						e.stopPropagation();
-			},
+  toAbout: function toAbout(e) {
+    this.props.toAbout(true);
+    e.preventDefault();
+    e.stopPropagation();
+  },
 
-			render: function render() {
-						return React.createElement(
-									"div",
-									{ className: "container", style: { textAlign: 'center' } },
-									React.createElement(
-												"div",
-												{ className: "row" },
-												React.createElement(
-															"div",
-															{ style: { position: 'relative', float: 'left' } },
-															React.createElement(
-																		"div",
-																		{ className: "leftist", style: { position: 'absolute' } },
-																		React.createElement(
-																					"div",
-																					null,
-																					React.createElement(
-																								"a",
-																								{ title: "about", href: "about", onClick: this.toAbout },
-																								"About"
-																					)
-																		),
-																		React.createElement(
-																					"div",
-																					{ style: { color: '#777' } },
-																					this.props.VERSION
-																		)
-															)
-												),
-												React.createElement(
-															"a",
-															{ title: "CLARIN ERIC", href: "https://www.clarin.eu/" },
-															React.createElement("img", { src: "img/clarindLogo.png", alt: "CLARIN ERIC logo", style: { height: 60 } })
-												),
-												React.createElement(
-															"div",
-															{ style: { position: 'relative', float: 'right' } },
-															React.createElement(
-																		"div",
-																		{ className: "rightist", style: { position: 'absolute', right: '0' } },
-																		React.createElement(
-																					"a",
-																					{ title: "contact", href: "mailto:fcs@clarin.eu" },
-																					"Contact"
-																		)
-															)
-												)
-									)
-						);
-			}
+  render: function render() {
+    return React.createElement(
+      "div",
+      { className: "container", style: { textAlign: 'center' } },
+      React.createElement(
+        "div",
+        { className: "row" },
+        React.createElement(
+          "div",
+          { style: { position: 'relative', float: 'left' } },
+          React.createElement(
+            "div",
+            { className: "leftist", style: { position: 'absolute' } },
+            React.createElement(
+              "div",
+              null,
+              React.createElement(
+                "a",
+                { title: "about", href: "about", onClick: this.toAbout },
+                "About"
+              )
+            ),
+            React.createElement(
+              "div",
+              { style: { color: '#777' } },
+              this.props.VERSION
+            )
+          )
+        ),
+        React.createElement(
+          "a",
+          { title: "CLARIN ERIC", href: "https://www.clarin.eu/" },
+          React.createElement("img", { src: "img/clarindLogo.png", alt: "CLARIN ERIC logo", style: { height: 60 } })
+        ),
+        React.createElement(
+          "div",
+          { style: { position: 'relative', float: 'right' } },
+          React.createElement(
+            "div",
+            { className: "rightist", style: { position: 'absolute', right: '0' } },
+            React.createElement(
+              "a",
+              { title: "contact", href: "mailto:fcs@clarin.eu" },
+              "Contact"
+            )
+          )
+        )
+      )
+    );
+  }
 });
 
 module.exports = Footer;
 
-},{"classnames":2,"create-react-class":6,"prop-types":20}],52:[function(require,module,exports){
+},{"classnames":2,"create-react-class":6,"prop-types":15}],47:[function(require,module,exports){
 "use strict";
 
 var _classnames = require("classnames");
@@ -48316,25 +48583,25 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 var PT = _propTypes2.default;
 
 var JQueryFade = (0, _createReactClass2.default)({
-	displayName: "JQueryFade",
+  displayName: "JQueryFade",
 
-	//fixme! - class JQueryFade extends React.Component {
-	componentWillEnter: function componentWillEnter(callback) {
-		var el = jQuery(ReactDOM.findDOMNode(this));
-		el.css("display", "none");
-		el.fadeIn(500, callback);
-	},
-	componentWillLeave: function componentWillLeave(callback) {
-		jQuery(ReactDOM.findDOMNode(this)).fadeOut(500, callback);
-	},
-	render: function render() {
-		return this.props.children;
-	}
+  //fixme! - class JQueryFade extends React.Component {
+  componentWillEnter: function componentWillEnter(callback) {
+    var el = jQuery(ReactDOM.findDOMNode(this));
+    el.css("display", "none");
+    el.fadeIn(500, callback);
+  },
+  componentWillLeave: function componentWillLeave(callback) {
+    jQuery(ReactDOM.findDOMNode(this)).fadeOut(500, callback);
+  },
+  render: function render() {
+    return this.props.children;
+  }
 });
 
 module.exports = JQueryFade;
 
-},{"classnames":2,"create-react-class":6,"prop-types":20}],53:[function(require,module,exports){
+},{"classnames":2,"create-react-class":6,"prop-types":15}],48:[function(require,module,exports){
 "use strict";
 
 var _classnames = require("classnames");
@@ -48354,131 +48621,131 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 var PT = _propTypes2.default;
 
 var LanguageSelector = (0, _createReactClass2.default)({
-	displayName: "LanguageSelector",
+  displayName: "LanguageSelector",
 
-	propTypes: {
-		anyLanguage: PT.array.isRequired,
-		languageMap: PT.object.isRequired,
-		selectedLanguage: PT.array.isRequired,
-		languageFilter: PT.string.isRequired,
-		languageChangeHandler: PT.func.isRequired
-	},
+  propTypes: {
+    anyLanguage: PT.array.isRequired,
+    languageMap: PT.object.isRequired,
+    selectedLanguage: PT.array.isRequired,
+    languageFilter: PT.string.isRequired,
+    languageChangeHandler: PT.func.isRequired
+  },
 
-	selectLang: function selectLang(language) {
-		this.props.languageChangeHandler(language, this.props.languageFilter);
-	},
+  selectLang: function selectLang(language) {
+    this.props.languageChangeHandler(language, this.props.languageFilter);
+  },
 
-	setFilter: function setFilter(filter) {
-		this.props.languageChangeHandler(this.props.selectedLanguage, filter);
-	},
+  setFilter: function setFilter(filter) {
+    this.props.languageChangeHandler(this.props.selectedLanguage, filter);
+  },
 
-	renderLanguageObject: function renderLanguageObject(lang) {
-		var desc = lang[1] + " [" + lang[0] + "]";
-		var style = {
-			whiteSpace: "nowrap",
-			fontWeight: lang[0] === this.props.selectedLanguage[0] ? "bold" : "normal"
-		};
-		return React.createElement(
-			"div",
-			{ key: lang[0] },
-			React.createElement(
-				"a",
-				{ tabIndex: "-1", href: "#", style: style, onClick: this.selectLang.bind(this, lang) },
-				desc
-			)
-		);
-	},
+  renderLanguageObject: function renderLanguageObject(lang) {
+    var desc = lang[1] + " [" + lang[0] + "]";
+    var style = {
+      whiteSpace: "nowrap",
+      fontWeight: lang[0] === this.props.selectedLanguage[0] ? "bold" : "normal"
+    };
+    return React.createElement(
+      "div",
+      { key: lang[0] },
+      React.createElement(
+        "a",
+        { tabIndex: "-1", href: "#", style: style, onClick: this.selectLang.bind(this, lang) },
+        desc
+      )
+    );
+  },
 
-	renderRadio: function renderRadio(option) {
-		return this.props.languageFilter === option ? React.createElement("input", { type: "radio", name: "filterOpts", value: option, checked: true, onChange: this.setFilter.bind(this, option) }) : React.createElement("input", { type: "radio", name: "filterOpts", value: option, onChange: this.setFilter.bind(this, option) });
-	},
+  renderRadio: function renderRadio(option) {
+    return this.props.languageFilter === option ? React.createElement("input", { type: "radio", name: "filterOpts", value: option, checked: true, onChange: this.setFilter.bind(this, option) }) : React.createElement("input", { type: "radio", name: "filterOpts", value: option, onChange: this.setFilter.bind(this, option) });
+  },
 
-	render: function render() {
-		var languages = _.pairs(this.props.languageMap).sort(function (l1, l2) {
-			return l1[1].localeCompare(l2[1]);
-		});
-		languages.unshift(this.props.anyLanguage);
-		languages = languages.map(this.renderLanguageObject);
-		var third = Math.round(languages.length / 3);
-		var l1 = languages.slice(0, third);
-		var l2 = languages.slice(third, 2 * third);
-		var l3 = languages.slice(2 * third, languages.length);
+  render: function render() {
+    var languages = _.pairs(this.props.languageMap).sort(function (l1, l2) {
+      return l1[1].localeCompare(l2[1]);
+    });
+    languages.unshift(this.props.anyLanguage);
+    languages = languages.map(this.renderLanguageObject);
+    var third = Math.round(languages.length / 3);
+    var l1 = languages.slice(0, third);
+    var l2 = languages.slice(third, 2 * third);
+    var l3 = languages.slice(2 * third, languages.length);
 
-		return React.createElement(
-			"div",
-			null,
-			React.createElement(
-				"div",
-				{ className: "row" },
-				React.createElement(
-					"div",
-					{ className: "col-sm-4" },
-					l1
-				),
-				React.createElement(
-					"div",
-					{ className: "col-sm-4" },
-					l2
-				),
-				React.createElement(
-					"div",
-					{ className: "col-sm-4" },
-					l3
-				),
-				React.createElement("div", { className: "col-sm-12", style: { marginTop: 10, marginBottom: 10, borderBottom: "1px solid #eee" } })
-			),
-			React.createElement(
-				"form",
-				{ className: "form", role: "form" },
-				React.createElement(
-					"div",
-					{ className: "input-group" },
-					React.createElement(
-						"div",
-						null,
-						React.createElement(
-							"label",
-							{ style: { color: 'black' } },
-							this.renderRadio('byMeta'),
-							" ",
-							"Use the collections",
-							"'",
-							" specified language to filter results"
-						)
-					),
-					React.createElement(
-						"div",
-						null,
-						React.createElement(
-							"label",
-							{ style: { color: 'black' } },
-							this.renderRadio('byGuess'),
-							" ",
-							"Filter results by using a language detector"
-						)
-					),
-					React.createElement(
-						"div",
-						null,
-						React.createElement(
-							"label",
-							{ style: { color: 'black' } },
-							this.renderRadio('byMetaAndGuess'),
-							" ",
-							"First use the collections",
-							"'",
-							" specified language then also use a language detector"
-						)
-					)
-				)
-			)
-		);
-	}
+    return React.createElement(
+      "div",
+      null,
+      React.createElement(
+        "div",
+        { className: "row" },
+        React.createElement(
+          "div",
+          { className: "col-sm-4" },
+          l1
+        ),
+        React.createElement(
+          "div",
+          { className: "col-sm-4" },
+          l2
+        ),
+        React.createElement(
+          "div",
+          { className: "col-sm-4" },
+          l3
+        ),
+        React.createElement("div", { className: "col-sm-12", style: { marginTop: 10, marginBottom: 10, borderBottom: "1px solid #eee" } })
+      ),
+      React.createElement(
+        "form",
+        { className: "form", role: "form" },
+        React.createElement(
+          "div",
+          { className: "input-group" },
+          React.createElement(
+            "div",
+            null,
+            React.createElement(
+              "label",
+              { style: { color: 'black' } },
+              this.renderRadio('byMeta'),
+              " ",
+              "Use the collections",
+              "'",
+              " specified language to filter results"
+            )
+          ),
+          React.createElement(
+            "div",
+            null,
+            React.createElement(
+              "label",
+              { style: { color: 'black' } },
+              this.renderRadio('byGuess'),
+              " ",
+              "Filter results by using a language detector"
+            )
+          ),
+          React.createElement(
+            "div",
+            null,
+            React.createElement(
+              "label",
+              { style: { color: 'black' } },
+              this.renderRadio('byMetaAndGuess'),
+              " ",
+              "First use the collections",
+              "'",
+              " specified language then also use a language detector"
+            )
+          )
+        )
+      )
+    );
+  }
 });
 
 module.exports = LanguageSelector;
 
-},{"classnames":2,"create-react-class":6,"prop-types":20}],54:[function(require,module,exports){
+},{"classnames":2,"create-react-class":6,"prop-types":15}],49:[function(require,module,exports){
 "use strict";
 
 var _classnames = require("classnames");
@@ -48498,77 +48765,77 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 var PT = _propTypes2.default;
 
 var Modal = (0, _createReactClass2.default)({
-	displayName: "Modal",
+  displayName: "Modal",
 
-	//fixme! - class Modal extends React.Component {
-	propTypes: {
-		title: PT.object.isRequired
-	},
-	componentDidMount: function componentDidMount() {
-		$(ReactDOM.findDOMNode(this)).modal({ background: true, keyboard: true, show: false });
-	},
-	componentWillUnmount: function componentWillUnmount() {
-		$(ReactDOM.findDOMNode(this)).off('hidden');
-	},
-	handleClick: function handleClick(e) {
-		e.stopPropagation();
-	},
-	render: function render() {
-		return React.createElement(
-			"div",
-			{ onClick: this.handleClick, className: "modal fade", role: "dialog", "aria-hidden": "true" },
-			React.createElement(
-				"div",
-				{ className: "modal-dialog" },
-				React.createElement(
-					"div",
-					{ className: "modal-content" },
-					React.createElement(
-						"div",
-						{ className: "modal-header" },
-						React.createElement(
-							"button",
-							{ type: "button", className: "close", "data-dismiss": "modal" },
-							React.createElement(
-								"span",
-								{ "aria-hidden": "true" },
-								"\xD7"
-							),
-							React.createElement(
-								"span",
-								{ className: "sr-only" },
-								"Close"
-							)
-						),
-						React.createElement(
-							"h2",
-							{ className: "modal-title" },
-							this.props.title
-						)
-					),
-					React.createElement(
-						"div",
-						{ className: "modal-body" },
-						this.props.children
-					),
-					React.createElement(
-						"div",
-						{ className: "modal-footer" },
-						React.createElement(
-							"button",
-							{ type: "button", className: "btn btn-default", "data-dismiss": "modal" },
-							"Close"
-						)
-					)
-				)
-			)
-		);
-	}
+  //fixme! - class Modal extends React.Component {
+  propTypes: {
+    title: PT.object.isRequired
+  },
+  componentDidMount: function componentDidMount() {
+    $(ReactDOM.findDOMNode(this)).modal({ background: true, keyboard: true, show: false });
+  },
+  componentWillUnmount: function componentWillUnmount() {
+    $(ReactDOM.findDOMNode(this)).off('hidden');
+  },
+  handleClick: function handleClick(e) {
+    e.stopPropagation();
+  },
+  render: function render() {
+    return React.createElement(
+      "div",
+      { onClick: this.handleClick, className: "modal fade", role: "dialog", "aria-hidden": "true" },
+      React.createElement(
+        "div",
+        { className: "modal-dialog" },
+        React.createElement(
+          "div",
+          { className: "modal-content" },
+          React.createElement(
+            "div",
+            { className: "modal-header" },
+            React.createElement(
+              "button",
+              { type: "button", className: "close", "data-dismiss": "modal" },
+              React.createElement(
+                "span",
+                { "aria-hidden": "true" },
+                "\xD7"
+              ),
+              React.createElement(
+                "span",
+                { className: "sr-only" },
+                "Close"
+              )
+            ),
+            React.createElement(
+              "h2",
+              { className: "modal-title" },
+              this.props.title
+            )
+          ),
+          React.createElement(
+            "div",
+            { className: "modal-body" },
+            this.props.children
+          ),
+          React.createElement(
+            "div",
+            { className: "modal-footer" },
+            React.createElement(
+              "button",
+              { type: "button", className: "btn btn-default", "data-dismiss": "modal" },
+              "Close"
+            )
+          )
+        )
+      )
+    );
+  }
 });
 
 module.exports = Modal;
 
-},{"classnames":2,"create-react-class":6,"prop-types":20}],55:[function(require,module,exports){
+},{"classnames":2,"create-react-class":6,"prop-types":15}],50:[function(require,module,exports){
 "use strict";
 
 var _classnames = require("classnames");
@@ -48588,61 +48855,61 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 var PT = _propTypes2.default;
 
 var Panel = (0, _createReactClass2.default)({
-	displayName: "Panel",
+  displayName: "Panel",
 
-	//fixme! - class Panel extends React.Component {
-	propTypes: {
-		title: PT.object.isRequired,
-		info: PT.object.isRequired
-	},
+  //fixme! - class Panel extends React.Component {
+  propTypes: {
+    title: PT.object.isRequired,
+    info: PT.object.isRequired
+  },
 
-	getInitialState: function getInitialState() {
-		return {
-			open: true
-		};
-	},
+  getInitialState: function getInitialState() {
+    return {
+      open: true
+    };
+  },
 
-	toggleState: function toggleState(e) {
-		this.setState({ open: !this.state.open });
-	},
+  toggleState: function toggleState(e) {
+    this.setState({ open: !this.state.open });
+  },
 
-	render: function render() {
-		var chevron = "glyphicon glyphicon-chevron-" + (this.state.open ? "down" : "right");
-		return React.createElement(
-			"div",
-			{ className: "bs-callout bs-callout-info" },
-			React.createElement(
-				"div",
-				{ className: "panel" },
-				React.createElement(
-					"div",
-					{ className: "panel-heading unselectable row", onClick: this.toggleState },
-					React.createElement(
-						"div",
-						{ className: "panel-title unselectable col-sm-11" },
-						React.createElement("span", { className: chevron, style: { fontSize: 12 } }),
-						"\xA0",
-						this.props.title
-					),
-					React.createElement(
-						"div",
-						{ className: "float-right" },
-						this.props.info
-					)
-				),
-				this.state.open ? React.createElement(
-					"div",
-					{ className: "panel-body" },
-					this.props.children
-				) : false
-			)
-		);
-	}
+  render: function render() {
+    var chevron = "glyphicon glyphicon-chevron-" + (this.state.open ? "down" : "right");
+    return React.createElement(
+      "div",
+      { className: "bs-callout bs-callout-info" },
+      React.createElement(
+        "div",
+        { className: "panel" },
+        React.createElement(
+          "div",
+          { className: "panel-heading unselectable row", onClick: this.toggleState },
+          React.createElement(
+            "div",
+            { className: "panel-title unselectable col-sm-11" },
+            React.createElement("span", { className: chevron, style: { fontSize: 12 } }),
+            "\xA0",
+            this.props.title
+          ),
+          React.createElement(
+            "div",
+            { className: "float-right" },
+            this.props.info
+          )
+        ),
+        this.state.open ? React.createElement(
+          "div",
+          { className: "panel-body" },
+          this.props.children
+        ) : false
+      )
+    );
+  }
 });
 
 module.exports = Panel;
 
-},{"classnames":2,"create-react-class":6,"prop-types":20}],56:[function(require,module,exports){
+},{"classnames":2,"create-react-class":6,"prop-types":15}],51:[function(require,module,exports){
 "use strict";
 
 var _classnames = require("classnames");
@@ -48673,877 +48940,877 @@ require('codemirror/mode/javascript/javascript');
 var PT = _propTypes2.default;
 
 function nextId() {
-    return nextId.id++;
+  return nextId.id++;
 }
 nextId.id = 0;
 
 var QueryInput = (0, _createReactClass2.default)({
-    displayName: "QueryInput",
+  displayName: "QueryInput",
 
-    //fixme! - class QueryInput extends React.Component {
-    propTypes: {
-        searchedLanguage: PT.array,
-        queryTypeId: PT.string.isRequired,
-        query: PT.string,
-        embedded: PT.bool.isRequired,
-        placeholder: PT.string,
-        onQueryChange: PT.func.isRequired,
-        onKeyDown: PT.func.isRequired
-    },
+  //fixme! - class QueryInput extends React.Component {
+  propTypes: {
+    searchedLanguage: PT.array,
+    queryTypeId: PT.string.isRequired,
+    query: PT.string,
+    embedded: PT.bool.isRequired,
+    placeholder: PT.string,
+    onQueryChange: PT.func.isRequired,
+    onKeyDown: PT.func.isRequired
+  },
 
-    render: function render() {
-        var _this = this;
+  render: function render() {
+    var _this = this;
 
-        if (this.props.queryTypeId == "cql") {
-            return React.createElement("input", { className: "form-control input-lg search",
-                id: "query-cql", name: "query-cql", type: "text",
-                value: this.props.query, placeholder: this.props.placeholder,
-                tabIndex: "1", onChange: function onChange(evt) {
-                    return _this.props.onQueryChange(evt.target.value);
-                }
-                //onQuery={this.props.onQuery}
-                , onKeyDown: this.props.onKeyDown,
-                ref: "cqlOrEmbeddedQuery" })
-            /*
-            //		     <CodeMirror
-            //		         value={this.props.placeholder || this.props.query}
-            //		         options={{
-            //		             mode: 'fcs-ql',
-            //		             theme: 'default',
-            //		             lineNumbers: false,
-            //		             matchBrackets: true,
-            //		             viewportMargin: 1
-            //		         }}
-            //		         className="form-control input-lg search"
-            //		         onBeforeChange={(editor, data, value) => {
-            //		             this.setState({value});
-            //		         }}
-            //		         onChange={(editor, data, value) => {
-            //		             this.props.onChange(value);
-            //		         }}
-            //		         onQuery={this.props.onQuery}
-            //		         onKeyDown={(editor, event) => {
-            //		             this.props.onKeyDown(editor, event)
-            //		         }}
-            //		         ref="cqlOrEmbeddedQuery"
-            //		         >
-            //		      </CodeMirror>
-                  */
-            ;
-        } else if (this.props.embedded && this.props.queryTypeId == "fcs") {
-            return React.createElement("textarea", { className: "form-control input-lg search",
-                id: "query-fcs", name: "query-fcs",
-                type: "text", rows: "1",
-                value: this.props.query, placeholder: this.props.placeholder,
-                tabIndex: "1", onChange: function onChange(evt) {
-                    return _this.props.onQueryChange(evt.target.value);
-                }
-                //onQuery={this.props.onQuery}
-                , onKeyDown: this.props.onKeyDown,
-                ref: "fcsOrEmbeddedQuery" });
+    if (this.props.queryTypeId == "cql") {
+      return React.createElement("input", { className: "form-control input-lg search",
+        id: "query-cql", name: "query-cql", type: "text",
+        value: this.props.query, placeholder: this.props.placeholder,
+        tabIndex: "1", onChange: function onChange(evt) {
+          return _this.props.onQueryChange(evt.target.value);
         }
-        return React.createElement(
-            "div",
-            { id: "adv_query_input_group" },
-            React.createElement(ADVTokens, {
-                query: this.props.query,
-                ref: "fcsGQB",
-                onQueryChange: this.props.onQueryChange
-            })
-        );
+        //onQuery={this.props.onQuery}
+        , onKeyDown: this.props.onKeyDown,
+        ref: "cqlOrEmbeddedQuery" })
+      /*
+      //		     <CodeMirror
+      //		         value={this.props.placeholder || this.props.query}
+      //		         options={{
+      //		             mode: 'fcs-ql',
+      //		             theme: 'default',
+      //		             lineNumbers: false,
+      //		             matchBrackets: true,
+      //		             viewportMargin: 1
+      //		         }}
+      //		         className="form-control input-lg search"
+      //		         onBeforeChange={(editor, data, value) => {
+      //		             this.setState({value});
+      //		         }}
+      //		         onChange={(editor, data, value) => {
+      //		             this.props.onChange(value);
+      //		         }}
+      //		         onQuery={this.props.onQuery}
+      //		         onKeyDown={(editor, event) => {
+      //		             this.props.onKeyDown(editor, event)
+      //		         }}
+      //		         ref="cqlOrEmbeddedQuery"
+      //		         >
+      //		      </CodeMirror>
+      */
+      ;
+    } else if (this.props.embedded && this.props.queryTypeId == "fcs") {
+      return React.createElement("textarea", { className: "form-control input-lg search",
+        id: "query-fcs", name: "query-fcs",
+        type: "text", rows: "1",
+        value: this.props.query, placeholder: this.props.placeholder,
+        tabIndex: "1", onChange: function onChange(evt) {
+          return _this.props.onQueryChange(evt.target.value);
+        }
+        //onQuery={this.props.onQuery}
+        , onKeyDown: this.props.onKeyDown,
+        ref: "fcsOrEmbeddedQuery" });
     }
+    return React.createElement(
+      "div",
+      { id: "adv_query_input_group" },
+      React.createElement(ADVTokens, {
+        query: this.props.query,
+        ref: "fcsGQB",
+        onQueryChange: this.props.onQueryChange
+      })
+    );
+  }
 });
 
 var ADVTokens = (0, _createReactClass2.default)({
-    displayName: "ADVTokens",
+  displayName: "ADVTokens",
 
 
-    propTypes: {
-        query: PT.string, // initial state query. If you want to set a new one, change the 'key' prop on ADVTokens.
-        onQueryChange: PT.func.isRequired
-    },
+  propTypes: {
+    query: PT.string, // initial state query. If you want to set a new one, change the 'key' prop on ADVTokens.
+    onQueryChange: PT.func.isRequired
+  },
 
-    getDefaultProps: function getDefaultProps() {
-        return {
-            query: '[ word = "Elefant" ]'
-        };
-    },
-
-
-    getInitialState: function getInitialState() {
-        var _this2 = this;
-
-        this.queryStrCache = {};
-
-        console.log('ADVTokens:', this.props.query);
-
-        var match = queryToTokens(this.props.query);
-        console.log('ADVTokens 2:', match);
-        if (match === null) {
-            return { tokens: ['token-' + nextId()] };
-        }
-
-        var tokens = [];
-        match.forEach(function (m) {
-            var id = 'token-' + nextId();
-            tokens.push(id);
-            _this2.queryStrCache[id] = m;
-        });
-
-        return { tokens: tokens };
-    },
-
-    addADVToken: function addADVToken() {
-        this.setState(function (oldSt) {
-            oldSt.tokens.push('token-' + nextId());
-            return { tokens: oldSt.tokens };
-        });
-    },
-
-    removeADVToken: function removeADVToken(id) {
-        var _this3 = this;
-
-        this.setState(function (oldSt) {
-            delete _this3.queryStrCache[id];
-            oldSt.tokens.splice(oldSt.tokens.indexOf(id), 1);
-            return { tokens: oldSt.tokens };
-        }, this.fireQueryChange);
-    },
-
-    fireQueryChange: function fireQueryChange() {
-        var _this4 = this;
-
-        var tokenParts = this.state.tokens.map(function (id) {
-            return _this4.queryStrCache[id];
-        });
-        var queryString = tokenParts.join(' ');
-        this.props.onQueryChange(queryString);
-    },
-    onQueryChange: function onQueryChange(tokenId, queryStr) {
-        this.queryStrCache[tokenId] = queryStr;
-        this.fireQueryChange();
-    },
+  getDefaultProps: function getDefaultProps() {
+    return {
+      query: '[ word = "Elefant" ]'
+    };
+  },
 
 
-    render: function render() {
-        var _this5 = this;
+  getInitialState: function getInitialState() {
+    var _this2 = this;
 
-        var i = 0;
-        var tokens = this.state.tokens.map(function (tokenId, i) {
-            return React.createElement(
-                _reactTransitionGroup.CSSTransition,
-                { key: tokenId, classNames: "token", timeout: { enter: 250, exit: 250 } },
-                React.createElement(ADVToken, {
-                    query: _this5.queryStrCache[tokenId],
-                    onQueryChange: function onQueryChange(qs) {
-                        return _this5.onQueryChange(tokenId, qs);
-                    },
-                    handleRemoveADVToken: function handleRemoveADVToken() {
-                        return _this5.removeADVToken(tokenId);
-                    } })
-            );
-        });
+    this.queryStrCache = {};
 
-        return React.createElement(
-            "div",
-            { id: "adv-tokens" },
-            React.createElement(
-                _reactTransitionGroup.TransitionGroup,
-                null,
-                tokens
-            ),
-            React.createElement(
-                "button",
-                { className: "btn btn-xs btn-default image_button insert_token", type: "button", onClick: this.addADVToken },
-                React.createElement("i", { className: "glyphicon glyphicon-plus" })
-            )
-        );
+    console.log('ADVTokens:', this.props.query);
+
+    var match = queryToTokens(this.props.query);
+    console.log('ADVTokens 2:', match);
+    if (match === null) {
+      return { tokens: ['token-' + nextId()] };
     }
+
+    var tokens = [];
+    match.forEach(function (m) {
+      var id = 'token-' + nextId();
+      tokens.push(id);
+      _this2.queryStrCache[id] = m;
+    });
+
+    return { tokens: tokens };
+  },
+
+  addADVToken: function addADVToken() {
+    this.setState(function (oldSt) {
+      oldSt.tokens.push('token-' + nextId());
+      return { tokens: oldSt.tokens };
+    });
+  },
+
+  removeADVToken: function removeADVToken(id) {
+    var _this3 = this;
+
+    this.setState(function (oldSt) {
+      delete _this3.queryStrCache[id];
+      oldSt.tokens.splice(oldSt.tokens.indexOf(id), 1);
+      return { tokens: oldSt.tokens };
+    }, this.fireQueryChange);
+  },
+
+  fireQueryChange: function fireQueryChange() {
+    var _this4 = this;
+
+    var tokenParts = this.state.tokens.map(function (id) {
+      return _this4.queryStrCache[id];
+    });
+    var queryString = tokenParts.join(' ');
+    this.props.onQueryChange(queryString);
+  },
+  onQueryChange: function onQueryChange(tokenId, queryStr) {
+    this.queryStrCache[tokenId] = queryStr;
+    this.fireQueryChange();
+  },
+
+
+  render: function render() {
+    var _this5 = this;
+
+    var i = 0;
+    var tokens = this.state.tokens.map(function (tokenId, i) {
+      return React.createElement(
+        _reactTransitionGroup.CSSTransition,
+        { key: tokenId, classNames: "token", timeout: { enter: 250, exit: 250 } },
+        React.createElement(ADVToken, {
+          query: _this5.queryStrCache[tokenId],
+          onQueryChange: function onQueryChange(qs) {
+            return _this5.onQueryChange(tokenId, qs);
+          },
+          handleRemoveADVToken: function handleRemoveADVToken() {
+            return _this5.removeADVToken(tokenId);
+          } })
+      );
+    });
+
+    return React.createElement(
+      "div",
+      { id: "adv-tokens" },
+      React.createElement(
+        _reactTransitionGroup.TransitionGroup,
+        null,
+        tokens
+      ),
+      React.createElement(
+        "button",
+        { className: "btn btn-xs btn-default image_button insert_token", type: "button", onClick: this.addADVToken },
+        React.createElement("i", { className: "glyphicon glyphicon-plus" })
+      )
+    );
+  }
 });
 
 var ADVToken = (0, _createReactClass2.default)({
-    displayName: "ADVToken",
+  displayName: "ADVToken",
 
-    propTypes: {
-        query: PT.string,
-        onQueryChange: PT.func.isRequired,
-        handleRemoveADVToken: PT.func.isRequired
-    },
+  propTypes: {
+    query: PT.string,
+    onQueryChange: PT.func.isRequired,
+    handleRemoveADVToken: PT.func.isRequired
+  },
 
-    render: function render() {
-        return React.createElement(
-            "div",
-            { className: "token query_token inline btn-group", style: { display: "inline-block" } },
-            React.createElement(
-                "div",
-                { className: "token_header" },
-                React.createElement(
-                    "span",
-                    { className: "image_button close_btn", type: "button", onClick: this.props.handleRemoveADVToken, ref: "removeToken" },
-                    React.createElement("i", { className: "glyphicon glyphicon-remove-circle" })
-                ),
-                React.createElement("div", { style: { clear: "both" } })
-            ),
-            React.createElement(
-                "div",
-                { className: "args" },
-                React.createElement(ANDQueryArgs, { onQueryChange: this.props.onQueryChange, query: this.props.query }),
-                React.createElement("div", { className: "lower_footer" })
-            )
-        );
-    }
+  render: function render() {
+    return React.createElement(
+      "div",
+      { className: "token query_token inline btn-group", style: { display: "inline-block" } },
+      React.createElement(
+        "div",
+        { className: "token_header" },
+        React.createElement(
+          "span",
+          { className: "image_button close_btn", type: "button", onClick: this.props.handleRemoveADVToken, ref: "removeToken" },
+          React.createElement("i", { className: "glyphicon glyphicon-remove-circle" })
+        ),
+        React.createElement("div", { style: { clear: "both" } })
+      ),
+      React.createElement(
+        "div",
+        { className: "args" },
+        React.createElement(ANDQueryArgs, { onQueryChange: this.props.onQueryChange, query: this.props.query }),
+        React.createElement("div", { className: "lower_footer" })
+      )
+    );
+  }
 });
 
 var ADVTokenMenu = (0, _createReactClass2.default)({
-    displayName: "ADVTokenMenu",
+  displayName: "ADVTokenMenu",
 
-    mixins: [_reactAddonsPureRenderMixin2.default],
+  mixins: [_reactAddonsPureRenderMixin2.default],
 
-    propTypes: {
-        onChange: PT.func.isRequired,
-        repeat1: PT.string,
-        repeat2: PT.string
-    },
+  propTypes: {
+    onChange: PT.func.isRequired,
+    repeat1: PT.string,
+    repeat2: PT.string
+  },
 
-    getInitialState: function getInitialState() {
-        var repeat1 = this.props.repeat1 || '';
-        var repeat2 = this.props.repeat2 || '';
-        return {
-            repeat1: repeat1,
-            repeat2: repeat2,
-            hideMenu: repeat1 || repeat2 ? false : true,
-            isStart: false,
-            isEnd: false
-        };
-    },
+  getInitialState: function getInitialState() {
+    var repeat1 = this.props.repeat1 || '';
+    var repeat2 = this.props.repeat2 || '';
+    return {
+      repeat1: repeat1,
+      repeat2: repeat2,
+      hideMenu: repeat1 || repeat2 ? false : true,
+      isStart: false,
+      isEnd: false
+    };
+  },
 
-    getMenuState: function getMenuState() {
-        if (this.state.hideMenu) {
-            return {};
-        } else {
-            return $.extend({}, this.state); // copy of state
-        }
-    },
-
-
-    toggleRepeatMenu: function toggleRepeatMenu(e) {
-        this.setState(function (st) {
-            return { hideMenu: !st.hideMenu };
-        });
-    },
-    toggleStart: function toggleStart(e) {
-        this.setState(function (st) {
-            return { isStart: !st.isStart };
-        });
-    },
-    toggleEnd: function toggleEnd(e) {
-        this.setState(function (st) {
-            return { isEnd: !st.isEnd };
-        });
-    },
-    componentDidMount: function componentDidMount() {
-        // make this compoent controlled too so that this awkward ref.getMenuState() stuff can be removed
-        this.props.onChange(this.getMenuState());
-    },
-    componentDidUpdate: function componentDidUpdate() {
-        // safe because of pure-render-mixin: will only update on state change.
-        this.props.onChange(this.getMenuState());
-    },
-
-
-    render: function render() {
-        var _this6 = this;
-
-        return React.createElement(
-            "div",
-            { id: "ADVtokenMenu" },
-            React.createElement(
-                "button",
-                { className: "btn btn-xs btn-default image_button repeat_menu", onClick: this.toggleRepeatMenu, ref: "repeatMenu" },
-                React.createElement("i", { className: "fa fa-cog" })
-            ),
-            React.createElement(
-                "div",
-                { id: "ADVtokenMenu-items", className: "hide-" + this.state.hideMenu },
-                React.createElement(
-                    "div",
-                    { id: "repeatMenu", className: "repeat" },
-                    React.createElement(
-                        "span",
-                        null,
-                        "Repeat"
-                    ),
-                    React.createElement("input", { type: "text", id: "repeat1", value: this.state.repeat1, onChange: function onChange(evt) {
-                            return _this6.setState({ repeat1: evt.target.value });
-                        }, ref: "repeat1" }),
-                    React.createElement(
-                        "span",
-                        null,
-                        "to"
-                    ),
-                    React.createElement("input", { type: "text", id: "repeat2", value: this.state.repeat2, onChange: function onChange(evt) {
-                            return _this6.setState({ repeat2: evt.target.value });
-                        }, ref: "repeat2" }),
-                    React.createElement(
-                        "span",
-                        null,
-                        "times"
-                    )
-                ),
-                React.createElement(
-                    "div",
-                    { id: "start-end-menu" },
-                    React.createElement(
-                        "div",
-                        null,
-                        React.createElement(
-                            "label",
-                            null,
-                            React.createElement("input", { type: "checkbox", checked: this.state.isStart, onChange: this.toggleStart }),
-                            " Sentence start"
-                        )
-                    ),
-                    React.createElement(
-                        "div",
-                        null,
-                        React.createElement(
-                            "label",
-                            null,
-                            React.createElement("input", { type: "checkbox", checked: this.state.isEnd, onChange: this.toggleEnd }),
-                            " Sentence end"
-                        )
-                    )
-                )
-            )
-        );
+  getMenuState: function getMenuState() {
+    if (this.state.hideMenu) {
+      return {};
+    } else {
+      return $.extend({}, this.state); // copy of state
     }
+  },
+
+
+  toggleRepeatMenu: function toggleRepeatMenu(e) {
+    this.setState(function (st) {
+      return { hideMenu: !st.hideMenu };
+    });
+  },
+  toggleStart: function toggleStart(e) {
+    this.setState(function (st) {
+      return { isStart: !st.isStart };
+    });
+  },
+  toggleEnd: function toggleEnd(e) {
+    this.setState(function (st) {
+      return { isEnd: !st.isEnd };
+    });
+  },
+  componentDidMount: function componentDidMount() {
+    // make this compoent controlled too so that this awkward ref.getMenuState() stuff can be removed
+    this.props.onChange(this.getMenuState());
+  },
+  componentDidUpdate: function componentDidUpdate() {
+    // safe because of pure-render-mixin: will only update on state change.
+    this.props.onChange(this.getMenuState());
+  },
+
+
+  render: function render() {
+    var _this6 = this;
+
+    return React.createElement(
+      "div",
+      { id: "ADVtokenMenu" },
+      React.createElement(
+        "button",
+        { className: "btn btn-xs btn-default image_button repeat_menu", onClick: this.toggleRepeatMenu, ref: "repeatMenu" },
+        React.createElement("i", { className: "fa fa-cog" })
+      ),
+      React.createElement(
+        "div",
+        { id: "ADVtokenMenu-items", className: "hide-" + this.state.hideMenu },
+        React.createElement(
+          "div",
+          { id: "repeatMenu", className: "repeat" },
+          React.createElement(
+            "span",
+            null,
+            "Repeat"
+          ),
+          React.createElement("input", { type: "text", id: "repeat1", value: this.state.repeat1, onChange: function onChange(evt) {
+              return _this6.setState({ repeat1: evt.target.value });
+            }, ref: "repeat1" }),
+          React.createElement(
+            "span",
+            null,
+            "to"
+          ),
+          React.createElement("input", { type: "text", id: "repeat2", value: this.state.repeat2, onChange: function onChange(evt) {
+              return _this6.setState({ repeat2: evt.target.value });
+            }, ref: "repeat2" }),
+          React.createElement(
+            "span",
+            null,
+            "times"
+          )
+        ),
+        React.createElement(
+          "div",
+          { id: "start-end-menu" },
+          React.createElement(
+            "div",
+            null,
+            React.createElement(
+              "label",
+              null,
+              React.createElement("input", { type: "checkbox", checked: this.state.isStart, onChange: this.toggleStart }),
+              " Sentence start"
+            )
+          ),
+          React.createElement(
+            "div",
+            null,
+            React.createElement(
+              "label",
+              null,
+              React.createElement("input", { type: "checkbox", checked: this.state.isEnd, onChange: this.toggleEnd }),
+              " Sentence end"
+            )
+          )
+        )
+      )
+    );
+  }
 });
 
 var ANDQueryArgs = (0, _createReactClass2.default)({
-    displayName: "ANDQueryArgs",
+  displayName: "ANDQueryArgs",
 
-    propTypes: {
-        query: PT.string,
-        onQueryChange: PT.func.isRequired
-    },
+  propTypes: {
+    query: PT.string,
+    onQueryChange: PT.func.isRequired
+  },
 
-    getInitialState: function getInitialState() {
-        var _this7 = this;
+  getInitialState: function getInitialState() {
+    var _this7 = this;
 
-        this.queryStrCache = {};
+    this.queryStrCache = {};
 
-        console.log('ANDQueryArgs:', this.props.query);
+    console.log('ANDQueryArgs:', this.props.query);
 
-        var repeat1, repeat2;
-        var qlean = this.props.query;
-        if (qlean) {
-            var repeatMatch = qlean.match(/{ *(\d)* *(?:, *(\d)*)? *} *$/);
+    var repeat1, repeat2;
+    var qlean = this.props.query;
+    if (qlean) {
+      var repeatMatch = qlean.match(/{ *(\d)* *(?:, *(\d)*)? *} *$/);
 
-            if (repeatMatch !== null) {
-                repeat1 = repeatMatch[1];
-                repeat2 = repeatMatch[2] || repeat1;
-                qlean = qlean.substring(0, qlean.length - repeatMatch[0].length);
-            }
+      if (repeatMatch !== null) {
+        repeat1 = repeatMatch[1];
+        repeat2 = repeatMatch[2] || repeat1;
+        qlean = qlean.substring(0, qlean.length - repeatMatch[0].length);
+      }
 
-            // replace token's [ and ]
-            qlean = qlean.replace(/^\s*\[\s*/, '').replace(/\s*\]\s*$/, '');
-        }
-
-        var match = queryToANDArgs(qlean);
-        console.log('ANDQueryArgs 2:', match);
-        if (match === null) {
-            return {
-                ands: ["and-" + nextId()]
-            };
-        }
-
-        var ands = [];
-        match.forEach(function (m) {
-            var id = 'and-' + nextId();
-            ands.push(id);
-            _this7.queryStrCache[id] = m;
-        });
-
-        return {
-            ands: ands,
-            repeat1: repeat1,
-            repeat2: repeat2
-        };
-    },
-
-    addADVAnd: function addADVAnd() {
-        var _this8 = this;
-
-        this.setState(function (oldSt) {
-            oldSt.ands.push('and-' + nextId());
-            return { ands: _this8.state.ands };
-        });
-    },
-
-    removeADVAnd: function removeADVAnd(id) {
-        var _this9 = this;
-
-        this.setState(function (oldSt) {
-            delete _this9.queryStrCache[id];
-            oldSt.ands.splice(oldSt.ands.indexOf(id), 1);
-            return { ands: oldSt.ands };
-        }, this.fireQueryChange);
-    },
-
-    onMenuChange: function onMenuChange(menust) {
-        var _this10 = this;
-
-        this.setState({
-            menuState_isStart: menust.isStart,
-            menuState_isEnd: menust.isEnd,
-            menuState_repeat1: menust.repeat1,
-            menuState_repeat2: menust.repeat2
-        }, function () {
-            return _this10.fireQueryChange();
-        });
-    },
-    fireQueryChange: function fireQueryChange() {
-        var _this11 = this;
-
-        var andParts = this.state.ands.map(function (id) {
-            return _this11.queryStrCache[id];
-        });
-
-        if (this.state.menuState_isStart) {
-            andParts.push('lbound(sentence)');
-        }
-        if (this.state.menuState_isEnd) {
-            andParts.push('rbound(sentence)');
-        }
-
-        var queryString = andParts.length >= 2 ? andParts.join(' & ') : andParts[0];
-        queryString = "[ " + queryString + " ]";
-
-        if (this.state.menuState_repeat1 || this.state.menuState_repeat2) {
-            queryString = queryString + '{' + (this.state.menuState_repeat1 || this.state.menuState_repeat2) + ',' + (this.state.menuState_repeat2 || this.state.menuState_repeat1) + '}';
-        }
-
-        this.props.onQueryChange(queryString);
-    },
-    onQueryChange: function onQueryChange(andId, queryStr) {
-        this.queryStrCache[andId] = queryStr;
-        this.fireQueryChange();
-    },
-
-
-    renderANDTokenFooter: function renderANDTokenFooter() {
-        var _this12 = this;
-
-        return React.createElement(
-            "div",
-            { className: "token_footer" },
-            React.createElement(
-                "button",
-                { className: "btn btn-xs btn-default image_button insert_arg", onClick: this.addADVAnd, ref: "addAndButton" },
-                React.createElement("i", { className: "glyphicon glyphicon-plus" })
-            ),
-            React.createElement(ADVTokenMenu, { ref: function ref(_ref) {
-                    return _this12.menuRef = _ref;
-                }, onChange: this.onMenuChange, repeat1: this.state.repeat1, repeat2: this.state.repeat2 }),
-            React.createElement("div", { style: { clear: "both" } })
-        );
-    },
-
-    render: function render() {
-        var _this13 = this;
-
-        var andQueryArgs = this.state.ands.map(function (andId) {
-            return React.createElement(
-                _reactTransitionGroup.CSSTransition,
-                { key: andId, classNames: "fade", timeout: { enter: 200, exit: 200 } },
-                React.createElement(
-                    "div",
-                    { className: "and query_arg" },
-                    React.createElement(
-                        "span",
-                        { className: "hidden" },
-                        "and"
-                    ),
-                    React.createElement(ANDQueryORArgs, {
-                        query: _this13.queryStrCache[andId],
-                        onQueryChange: function onQueryChange(qs) {
-                            return _this13.onQueryChange(andId, qs);
-                        },
-                        handleRemoveADVAnd: function handleRemoveADVAnd() {
-                            return _this13.removeADVAnd(andId);
-                        }
-                    })
-                )
-            );
-        });
-        return React.createElement(
-            "div",
-            null,
-            React.createElement(
-                _reactTransitionGroup.TransitionGroup,
-                null,
-                andQueryArgs
-            ),
-            this.renderANDTokenFooter()
-        );
+      // replace token's [ and ]
+      qlean = qlean.replace(/^\s*\[\s*/, '').replace(/\s*\]\s*$/, '');
     }
+
+    var match = queryToANDArgs(qlean);
+    console.log('ANDQueryArgs 2:', match);
+    if (match === null) {
+      return {
+        ands: ["and-" + nextId()]
+      };
+    }
+
+    var ands = [];
+    match.forEach(function (m) {
+      var id = 'and-' + nextId();
+      ands.push(id);
+      _this7.queryStrCache[id] = m;
+    });
+
+    return {
+      ands: ands,
+      repeat1: repeat1,
+      repeat2: repeat2
+    };
+  },
+
+  addADVAnd: function addADVAnd() {
+    var _this8 = this;
+
+    this.setState(function (oldSt) {
+      oldSt.ands.push('and-' + nextId());
+      return { ands: _this8.state.ands };
+    });
+  },
+
+  removeADVAnd: function removeADVAnd(id) {
+    var _this9 = this;
+
+    this.setState(function (oldSt) {
+      delete _this9.queryStrCache[id];
+      oldSt.ands.splice(oldSt.ands.indexOf(id), 1);
+      return { ands: oldSt.ands };
+    }, this.fireQueryChange);
+  },
+
+  onMenuChange: function onMenuChange(menust) {
+    var _this10 = this;
+
+    this.setState({
+      menuState_isStart: menust.isStart,
+      menuState_isEnd: menust.isEnd,
+      menuState_repeat1: menust.repeat1,
+      menuState_repeat2: menust.repeat2
+    }, function () {
+      return _this10.fireQueryChange();
+    });
+  },
+  fireQueryChange: function fireQueryChange() {
+    var _this11 = this;
+
+    var andParts = this.state.ands.map(function (id) {
+      return _this11.queryStrCache[id];
+    });
+
+    if (this.state.menuState_isStart) {
+      andParts.push('lbound(sentence)');
+    }
+    if (this.state.menuState_isEnd) {
+      andParts.push('rbound(sentence)');
+    }
+
+    var queryString = andParts.length >= 2 ? andParts.join(' & ') : andParts[0];
+    queryString = "[ " + queryString + " ]";
+
+    if (this.state.menuState_repeat1 || this.state.menuState_repeat2) {
+      queryString = queryString + '{' + (this.state.menuState_repeat1 || this.state.menuState_repeat2) + ',' + (this.state.menuState_repeat2 || this.state.menuState_repeat1) + '}';
+    }
+
+    this.props.onQueryChange(queryString);
+  },
+  onQueryChange: function onQueryChange(andId, queryStr) {
+    this.queryStrCache[andId] = queryStr;
+    this.fireQueryChange();
+  },
+
+
+  renderANDTokenFooter: function renderANDTokenFooter() {
+    var _this12 = this;
+
+    return React.createElement(
+      "div",
+      { className: "token_footer" },
+      React.createElement(
+        "button",
+        { className: "btn btn-xs btn-default image_button insert_arg", onClick: this.addADVAnd, ref: "addAndButton" },
+        React.createElement("i", { className: "glyphicon glyphicon-plus" })
+      ),
+      React.createElement(ADVTokenMenu, { ref: function ref(_ref) {
+          return _this12.menuRef = _ref;
+        }, onChange: this.onMenuChange, repeat1: this.state.repeat1, repeat2: this.state.repeat2 }),
+      React.createElement("div", { style: { clear: "both" } })
+    );
+  },
+
+  render: function render() {
+    var _this13 = this;
+
+    var andQueryArgs = this.state.ands.map(function (andId) {
+      return React.createElement(
+        _reactTransitionGroup.CSSTransition,
+        { key: andId, classNames: "fade", timeout: { enter: 200, exit: 200 } },
+        React.createElement(
+          "div",
+          { className: "and query_arg" },
+          React.createElement(
+            "span",
+            { className: "hidden" },
+            "and"
+          ),
+          React.createElement(ANDQueryORArgs, {
+            query: _this13.queryStrCache[andId],
+            onQueryChange: function onQueryChange(qs) {
+              return _this13.onQueryChange(andId, qs);
+            },
+            handleRemoveADVAnd: function handleRemoveADVAnd() {
+              return _this13.removeADVAnd(andId);
+            }
+          })
+        )
+      );
+    });
+    return React.createElement(
+      "div",
+      null,
+      React.createElement(
+        _reactTransitionGroup.TransitionGroup,
+        null,
+        andQueryArgs
+      ),
+      this.renderANDTokenFooter()
+    );
+  }
 });
 
 var ANDQueryORArgs = (0, _createReactClass2.default)({
-    displayName: "ANDQueryORArgs",
+  displayName: "ANDQueryORArgs",
 
-    propTypes: {
-        query: PT.string,
-        onQueryChange: PT.func.isRequired,
-        handleRemoveADVAnd: PT.func.isRequired
-    },
+  propTypes: {
+    query: PT.string,
+    onQueryChange: PT.func.isRequired,
+    handleRemoveADVAnd: PT.func.isRequired
+  },
 
-    getInitialState: function getInitialState() {
-        var _this14 = this;
+  getInitialState: function getInitialState() {
+    var _this14 = this;
 
-        this.queryStrCache = {};
+    this.queryStrCache = {};
 
-        console.log('ANDQueryORArgs:', this.props.query);
-        var match = queryToORArgs(this.props.query);
-        console.log('ANDQueryORArgs 2:', match);
+    console.log('ANDQueryORArgs:', this.props.query);
+    var match = queryToORArgs(this.props.query);
+    console.log('ANDQueryORArgs 2:', match);
 
-        if (match === null) {
-            return {
-                ors: ["or-" + nextId()]
-            };
-        }
-
-        var ors = [];
-        match.forEach(function (m) {
-            var id = 'or-' + nextId();
-            ors.push(id);
-            _this14.queryStrCache[id] = m;
-        });
-
-        return {
-            ors: ors
-        };
-    },
-
-    validateADV: function validateADV(value) {
-        //fixme! - disable SearchButton if not atleast 1 token is in the query filter
-        return;
-    },
-
-    fireQueryChange: function fireQueryChange() {
-        var _this15 = this;
-
-        var orParts = this.state.ors.map(function (id) {
-            return _this15.queryStrCache[id];
-        });
-        var queryString = orParts.length >= 2 ? '( ' + orParts.join(' | ') + ' )' : orParts[0];
-        this.props.onQueryChange(queryString);
-    },
-
-
-    addADVOr: function addADVOr(e) {
-        var _this16 = this;
-
-        this.setState(function (oldSt) {
-            oldSt.ors.push('or-' + nextId());
-            return { ors: _this16.state.ors };
-        });
-    },
-
-    removeADVOr: function removeADVOr(id) {
-        var _this17 = this;
-
-        this.setState(function (oldSt) {
-            delete _this17.queryStrCache[id];
-            oldSt.ors.splice(oldSt.ors.indexOf(id), 1);
-            return { ors: oldSt.ors };
-        }, function () {
-            if (_this17.state.ors.length === 0) {
-                _this17.props.handleRemoveADVAnd();
-            } else {
-                _this17.fireQueryChange();
-            }
-        });
-    },
-
-    onQueryChange: function onQueryChange(orId, queryStr) {
-        this.queryStrCache[orId] = queryStr;
-        this.fireQueryChange();
-    },
-    render: function render() {
-        var _this18 = this;
-
-        var orArgs = this.state.ors.map(function (orId) {
-            return React.createElement(
-                _reactTransitionGroup.CSSTransition,
-                { key: orId, classNames: "fade", timeout: { enter: 200, exit: 200 } },
-                React.createElement(ORArg, {
-                    query: _this18.queryStrCache[orId],
-                    handleRemoveADVOr: function handleRemoveADVOr() {
-                        return _this18.removeADVOr(orId);
-                    },
-                    handleValidateADV: function handleValidateADV() {
-                        return true;
-                    },
-                    onQueryChange: function onQueryChange(qs) {
-                        return _this18.onQueryChange(orId, qs);
-                    }
-                })
-            );
-        });
-        return React.createElement(
-            "div",
-            null,
-            React.createElement(
-                "div",
-                { className: "or_container" },
-                React.createElement(
-                    _reactTransitionGroup.TransitionGroup,
-                    null,
-                    orArgs
-                )
-            ),
-            React.createElement(
-                "div",
-                { className: "arg_footer" },
-                React.createElement(
-                    "span",
-                    { className: "link", onClick: this.addADVOr },
-                    "or"
-                ),
-                React.createElement("div", { style: { clear: "both" } })
-            )
-        );
+    if (match === null) {
+      return {
+        ors: ["or-" + nextId()]
+      };
     }
+
+    var ors = [];
+    match.forEach(function (m) {
+      var id = 'or-' + nextId();
+      ors.push(id);
+      _this14.queryStrCache[id] = m;
+    });
+
+    return {
+      ors: ors
+    };
+  },
+
+  validateADV: function validateADV(value) {
+    //fixme! - disable SearchButton if not atleast 1 token is in the query filter
+    return;
+  },
+
+  fireQueryChange: function fireQueryChange() {
+    var _this15 = this;
+
+    var orParts = this.state.ors.map(function (id) {
+      return _this15.queryStrCache[id];
+    });
+    var queryString = orParts.length >= 2 ? '( ' + orParts.join(' | ') + ' )' : orParts[0];
+    this.props.onQueryChange(queryString);
+  },
+
+
+  addADVOr: function addADVOr(e) {
+    var _this16 = this;
+
+    this.setState(function (oldSt) {
+      oldSt.ors.push('or-' + nextId());
+      return { ors: _this16.state.ors };
+    });
+  },
+
+  removeADVOr: function removeADVOr(id) {
+    var _this17 = this;
+
+    this.setState(function (oldSt) {
+      delete _this17.queryStrCache[id];
+      oldSt.ors.splice(oldSt.ors.indexOf(id), 1);
+      return { ors: oldSt.ors };
+    }, function () {
+      if (_this17.state.ors.length === 0) {
+        _this17.props.handleRemoveADVAnd();
+      } else {
+        _this17.fireQueryChange();
+      }
+    });
+  },
+
+  onQueryChange: function onQueryChange(orId, queryStr) {
+    this.queryStrCache[orId] = queryStr;
+    this.fireQueryChange();
+  },
+  render: function render() {
+    var _this18 = this;
+
+    var orArgs = this.state.ors.map(function (orId) {
+      return React.createElement(
+        _reactTransitionGroup.CSSTransition,
+        { key: orId, classNames: "fade", timeout: { enter: 200, exit: 200 } },
+        React.createElement(ORArg, {
+          query: _this18.queryStrCache[orId],
+          handleRemoveADVOr: function handleRemoveADVOr() {
+            return _this18.removeADVOr(orId);
+          },
+          handleValidateADV: function handleValidateADV() {
+            return true;
+          },
+          onQueryChange: function onQueryChange(qs) {
+            return _this18.onQueryChange(orId, qs);
+          }
+        })
+      );
+    });
+    return React.createElement(
+      "div",
+      null,
+      React.createElement(
+        "div",
+        { className: "or_container" },
+        React.createElement(
+          _reactTransitionGroup.TransitionGroup,
+          null,
+          orArgs
+        )
+      ),
+      React.createElement(
+        "div",
+        { className: "arg_footer" },
+        React.createElement(
+          "span",
+          { className: "link", onClick: this.addADVOr },
+          "or"
+        ),
+        React.createElement("div", { style: { clear: "both" } })
+      )
+    );
+  }
 });
 
 var ORArg = (0, _createReactClass2.default)({
-    displayName: "ORArg",
+  displayName: "ORArg",
 
-    mixins: [_reactAddonsPureRenderMixin2.default],
+  mixins: [_reactAddonsPureRenderMixin2.default],
 
-    propTypes: {
-        query: PT.string,
-        handleValidateADV: PT.func.isRequired,
-        handleRemoveADVOr: PT.func.isRequired,
-        onQueryChange: PT.func.isRequired
-    },
+  propTypes: {
+    query: PT.string,
+    handleValidateADV: PT.func.isRequired,
+    handleRemoveADVOr: PT.func.isRequired,
+    onQueryChange: PT.func.isRequired
+  },
 
-    getInitialState: function getInitialState() {
-        console.log('ORArg:', this.props.query);
-        var qp = queryParse(this.props.query);
-        console.log('ORArg 2:', qp);
+  getInitialState: function getInitialState() {
+    console.log('ORArg:', this.props.query);
+    var qp = queryParse(this.props.query);
+    console.log('ORArg 2:', qp);
 
-        if (qp !== null) {
-            var layer = qp.layer;
-            var op = qp.op;
-            var val = qp.val;
-        }
-        return {
-            layer: layer || 'word',
-            argOpt: op || 'is',
-            argValue: val || '',
-
-            editingText: false
-        };
-    },
-    fireQueryChange: function fireQueryChange() {
-        var queryString = layerToQueryString(this.state.layer, this.state.argOpt, this.state.argValue);
-        this.props.onQueryChange(queryString);
-    },
-    onlayerChange: function onlayerChange(evt) {
-        var layer = evt.target.value;
-        this.setState(function (st) {
-            var argOpt = getLayerArgOpts(layer)[0].value;
-            var lvo = getLayerValueOptions(layer, argOpt, st.argValue);
-            var argValue = '';
-            if (lvo === undefined) argValue = '';else argValue = lvo[0].value;
-
-            return {
-                layer: layer,
-                argOpt: argOpt,
-                argValue: argValue
-            };
-        });
-    },
-    onArgOptChange: function onArgOptChange(evt) {
-        var argOpt = evt.target.value;
-        this.setState({ argOpt: argOpt });
-    },
-    onArgValueChange: function onArgValueChange(evt) {
-        var value = evt.target.value;
-        //console.log("picked arg value", value);
-
-        this.setState({ argValue: value });
-    },
-    componentDidMount: function componentDidMount() {
-        this.fireQueryChange();
-    },
-    componentDidUpdate: function componentDidUpdate(prevProps, prevState) {
-        // after state update.
-        if (prevState.layer !== this.state.layer || prevState.argOpt !== this.state.argOpt || prevState.argValue !== this.state.argValue
-        /*|| (!this.state.editingText && prevState.argValue !== this.state.argValue) // only update text-value input on field blur 
-        || (prevState.editingText !== this.state.editingText && prevState.editingText) // stopped editing text field.
-        */
-        ) {
-                this.fireQueryChange();
-            }
-    },
-    renderInput: function renderInput() {
-        var _this19 = this;
-
-        var valueOptions = getLayerValueOptions(this.state.layer, this.state.argOpt, this.state.argValue);
-
-        if (valueOptions === undefined) {
-            return React.createElement("input", { type: "text", className: "form-control",
-                value: this.state.argValue,
-                onChange: this.onArgValueChange,
-                onFocus: function onFocus() {
-                    return _this19.setState({ editingText: true });
-                },
-                onBlur: function onBlur() {
-                    return _this19.setState({ editingText: false });
-                }
-            });
-        } else {
-            return React.createElement(
-                "select",
-                { className: "form-control", value: this.state.argValue, onChange: this.onArgValueChange, onFocus: function onFocus() {
-                        return _this19.setState({ editingText: true });
-                    }, onBlur: function onBlur() {
-                        return _this19.setState({ editingText: false });
-                    } },
-                valueOptions.map(function (valOpt) {
-                    return React.createElement(
-                        "option",
-                        { value: valOpt.value },
-                        valOpt.label
-                    );
-                })
-            );
-        }
-    },
-
-
-    render: function render() {
-        return React.createElement(
-            "div",
-            { className: "or or_arg" },
-            React.createElement(
-                "div",
-                { className: "left_col" },
-                React.createElement(
-                    "button",
-                    { className: "btn btn-xs btn-default image_button remove_arg", onClick: this.props.handleRemoveADVOr },
-                    React.createElement("i", { className: "glyphicon glyphicon-minus" })
-                )
-            ),
-            React.createElement(
-                "div",
-                { className: "right_col inline_block", style: { display: "inline-block" } },
-                " ",
-                React.createElement(
-                    "div",
-                    { className: "arg_selects form-inline" },
-                    React.createElement(
-                        "select",
-                        { className: "arg_type form-control", value: this.state.layer, onChange: this.onlayerChange },
-                        layerCategories.map(function (cat) {
-                            return React.createElement(
-                                "optgroup",
-                                { label: cat.label },
-                                cat.layers.map(function (layer) {
-                                    return React.createElement(
-                                        "option",
-                                        { value: layer },
-                                        getLayerLabel(layer)
-                                    );
-                                })
-                            );
-                        })
-                    ),
-                    React.createElement(
-                        "select",
-                        { className: "arg_opts form-control", value: this.state.argOpt, onChange: this.onArgOptChange },
-                        getLayerArgOpts(this.state.layer).map(function (argOpt) {
-                            return React.createElement(
-                                "option",
-                                { value: argOpt.value },
-                                argOpt.label
-                            );
-                        })
-                    )
-                ),
-                React.createElement(
-                    "div",
-                    { className: "arg_val_container" },
-                    this.renderInput()
-                )
-            )
-        );
+    if (qp !== null) {
+      var layer = qp.layer;
+      var op = qp.op;
+      var val = qp.val;
     }
+    return {
+      layer: layer || 'word',
+      argOpt: op || 'is',
+      argValue: val || '',
+
+      editingText: false
+    };
+  },
+  fireQueryChange: function fireQueryChange() {
+    var queryString = layerToQueryString(this.state.layer, this.state.argOpt, this.state.argValue);
+    this.props.onQueryChange(queryString);
+  },
+  onlayerChange: function onlayerChange(evt) {
+    var layer = evt.target.value;
+    this.setState(function (st) {
+      var argOpt = getLayerArgOpts(layer)[0].value;
+      var lvo = getLayerValueOptions(layer, argOpt, st.argValue);
+      var argValue = '';
+      if (lvo === undefined) argValue = '';else argValue = lvo[0].value;
+
+      return {
+        layer: layer,
+        argOpt: argOpt,
+        argValue: argValue
+      };
+    });
+  },
+  onArgOptChange: function onArgOptChange(evt) {
+    var argOpt = evt.target.value;
+    this.setState({ argOpt: argOpt });
+  },
+  onArgValueChange: function onArgValueChange(evt) {
+    var value = evt.target.value;
+    //console.log("picked arg value", value);
+
+    this.setState({ argValue: value });
+  },
+  componentDidMount: function componentDidMount() {
+    this.fireQueryChange();
+  },
+  componentDidUpdate: function componentDidUpdate(prevProps, prevState) {
+    // after state update.
+    if (prevState.layer !== this.state.layer || prevState.argOpt !== this.state.argOpt || prevState.argValue !== this.state.argValue
+    /*|| (!this.state.editingText && prevState.argValue !== this.state.argValue) // only update text-value input on field blur 
+    || (prevState.editingText !== this.state.editingText && prevState.editingText) // stopped editing text field.
+    */
+    ) {
+        this.fireQueryChange();
+      }
+  },
+  renderInput: function renderInput() {
+    var _this19 = this;
+
+    var valueOptions = getLayerValueOptions(this.state.layer, this.state.argOpt, this.state.argValue);
+
+    if (valueOptions === undefined) {
+      return React.createElement("input", { type: "text", className: "form-control",
+        value: this.state.argValue,
+        onChange: this.onArgValueChange,
+        onFocus: function onFocus() {
+          return _this19.setState({ editingText: true });
+        },
+        onBlur: function onBlur() {
+          return _this19.setState({ editingText: false });
+        }
+      });
+    } else {
+      return React.createElement(
+        "select",
+        { className: "form-control", value: this.state.argValue, onChange: this.onArgValueChange, onFocus: function onFocus() {
+            return _this19.setState({ editingText: true });
+          }, onBlur: function onBlur() {
+            return _this19.setState({ editingText: false });
+          } },
+        valueOptions.map(function (valOpt) {
+          return React.createElement(
+            "option",
+            { value: valOpt.value },
+            valOpt.label
+          );
+        })
+      );
+    }
+  },
+
+
+  render: function render() {
+    return React.createElement(
+      "div",
+      { className: "or or_arg" },
+      React.createElement(
+        "div",
+        { className: "left_col" },
+        React.createElement(
+          "button",
+          { className: "btn btn-xs btn-default image_button remove_arg", onClick: this.props.handleRemoveADVOr },
+          React.createElement("i", { className: "glyphicon glyphicon-minus" })
+        )
+      ),
+      React.createElement(
+        "div",
+        { className: "right_col inline_block", style: { display: "inline-block" } },
+        " ",
+        React.createElement(
+          "div",
+          { className: "arg_selects form-inline" },
+          React.createElement(
+            "select",
+            { className: "arg_type form-control", value: this.state.layer, onChange: this.onlayerChange },
+            layerCategories.map(function (cat) {
+              return React.createElement(
+                "optgroup",
+                { label: cat.label },
+                cat.layers.map(function (layer) {
+                  return React.createElement(
+                    "option",
+                    { value: layer },
+                    getLayerLabel(layer)
+                  );
+                })
+              );
+            })
+          ),
+          React.createElement(
+            "select",
+            { className: "arg_opts form-control", value: this.state.argOpt, onChange: this.onArgOptChange },
+            getLayerArgOpts(this.state.layer).map(function (argOpt) {
+              return React.createElement(
+                "option",
+                { value: argOpt.value },
+                argOpt.label
+              );
+            })
+          )
+        ),
+        React.createElement(
+          "div",
+          { className: "arg_val_container" },
+          this.renderInput()
+        )
+      )
+    );
+  }
 });
 
 function getLayers() {
-    var layers_arr = [];
-    for (var l in layers) {
-        layers_arr.push(l);
-    }
-    return layers_arr;
+  var layers_arr = [];
+  for (var l in layers) {
+    layers_arr.push(l);
+  }
+  return layers_arr;
 }
 
 function getLayerArgOpts(layer) {
-    return layers[layer].argOpts;
+  return layers[layer].argOpts;
 }
 
 function isValidLayerOperator(layer, operator) {
-    return !!layers[layer].argOpts.find(function (e) {
-        return e.value === operator;
-    });
+  return !!layers[layer].argOpts.find(function (e) {
+    return e.value === operator;
+  });
 }
 function isValidLayerValue(layer, operator, value) {
-    var valopts = getLayerValueOptions(layer);
-    if (!valopts) {
-        return true;
-    }
-    return valopts.indexOf(value) !== -1;
+  var valopts = getLayerValueOptions(layer);
+  if (!valopts) {
+    return true;
+  }
+  return valopts.indexOf(value) !== -1;
 }
 
 function layerToQueryString(layer, operator, value) {
-    var toStr = layers[layer].toQueryString;
-    if (!toStr) {
-        toStr = getLayerArgOpts(layer).defaultToStr;
-    }
-    if (!toStr) {
-        toStr = wordOptions.defaultToStr;
-        console.warn("layerToQueryString: couldnt find a toQueryString method!");
-    }
-    var qstr = toStr(layer, operator, value);
-    if (qstr === undefined) {
-        console.warn("layerToQueryString: qstr undefined!");
-        return 'undefined';
-    }
-    return qstr;
+  var toStr = layers[layer].toQueryString;
+  if (!toStr) {
+    toStr = getLayerArgOpts(layer).defaultToStr;
+  }
+  if (!toStr) {
+    toStr = wordOptions.defaultToStr;
+    console.warn("layerToQueryString: couldnt find a toQueryString method!");
+  }
+  var qstr = toStr(layer, operator, value);
+  if (qstr === undefined) {
+    console.warn("layerToQueryString: qstr undefined!");
+    return 'undefined';
+  }
+  return qstr;
 }
 
 function getLayerLabel(layer) {
-    return layers[layer].label;
+  return layers[layer].label;
 }
 
 function getOperatorLabel(layer, operator) {
-    return layers[layer].argOpts[operator].label;
+  return layers[layer].argOpts[operator].label;
 }
 
 function getLayerValueOptions(layer, operator, value) {
-    var valopts = layers[layer].valueOptions;
-    if (!valopts) {
-        return;
-    }
-    if (typeof valopts === 'function') {
-        return valopts(layer, operator, value);
-    } else if (valopts.length) {
-        return valopts; // array
-    }
+  var valopts = layers[layer].valueOptions;
+  if (!valopts) {
+    return;
+  }
+  if (typeof valopts === 'function') {
+    return valopts(layer, operator, value);
+  } else if (valopts.length) {
+    return valopts; // array
+  }
 }
 
 // a RE string matching a "double-quote"d string
@@ -49552,67 +49819,67 @@ var quotedStringRE = /(?:"(?:\\"|[^"])*")/.source;
 // in: 'word = "zebra" '
 // out: ['word', '=', 'zebra']
 function queryParse(q) {
-    if (!q) return null;
-    var match = q.match(/^\s*(\w+) *(=|!=) *"((?:\\"|.)*?)"/);
-    if (match === null) {
-        return null;
-    }
+  if (!q) return null;
+  var match = q.match(/^\s*(\w+) *(=|!=) *"((?:\\"|.)*?)"/);
+  if (match === null) {
+    return null;
+  }
 
-    var layer = match[1];
-    var op = match[2];
-    var value = match[3];
+  var layer = match[1];
+  var op = match[2];
+  var value = match[3];
 
-    var fromStr = getLayerArgOpts(layer).fromQueryString;
-    if (!fromStr) {
-        fromStr = getLayerArgOpts(layer).defaultFromString;
-    }
-    if (!fromStr) {
-        fromStr = wordOptions.defaultFromStr;
-        log.error("queryParse: couldnt find a fromQueryString method!");
-    }
+  var fromStr = getLayerArgOpts(layer).fromQueryString;
+  if (!fromStr) {
+    fromStr = getLayerArgOpts(layer).defaultFromString;
+  }
+  if (!fromStr) {
+    fromStr = wordOptions.defaultFromStr;
+    log.error("queryParse: couldnt find a fromQueryString method!");
+  }
 
-    return fromStr(layer, op, value);
+  return fromStr(layer, op, value);
 }
 
 // in: '(word = "zebra" | word = "zoo" ...)'
 // out: ['word = "zebra" ', ' (word = "zoo" ...)']
 function queryToORArgs(q) {
-    if (!q) return null;
-    var match = q.trim().match(queryToORArgs.re);
-    return match;
+  if (!q) return null;
+  var match = q.trim().match(queryToORArgs.re);
+  return match;
 }
 queryToORArgs.re = RegExp('(?:' + quotedStringRE + '|[^()|])+', 'g');
 
 // in: '[word = "zebra" & (word = "zoo" ...)]'
 // out: ['word = "zebra" ', ' (word = "zoo" ...)']
 function queryToANDArgs(q) {
-    if (!q) return null;
+  if (!q) return null;
 
-    var match = q.trim().match(queryToANDArgs.re);
-    return match;
+  var match = q.trim().match(queryToANDArgs.re);
+  return match;
 }
 queryToANDArgs.re = RegExp('(?:' + quotedStringRE + '|[^&])+', 'g');
 
 // in: '[word = "zebra"] [word = "zoo"]'
 // out: ['[word = "zebra"]', '[word = "zoo"]']
 function queryToTokens(q) {
-    if (!q) return null;
-    var match = q.match(queryToTokens.re);
-    return match;
+  if (!q) return null;
+  var match = q.match(queryToTokens.re);
+  return match;
 }
 queryToTokens.re = RegExp('\\[(?:' + quotedStringRE + '|.)*?\\] *(?:\\{.*?\\})?', 'g');
 
 /*To simplify matching regex filter out words within "quotemarks". This help to not stumble on any special characters that can occur there. */
 function filterWords(s, f) {
-    var filteredString = s.replace(/("(?:\\"|[^"])*")/g, function (m) {
-        filteredWords.push(m);
-        return '""';
-    });
-    var ret = f(filteredString);
-    // restore words
+  var filteredString = s.replace(/("(?:\\"|[^"])*")/g, function (m) {
+    filteredWords.push(m);
+    return '""';
+  });
+  var ret = f(filteredString);
+  // restore words
 
-    // return return value
-    return ret;
+  // return return value
+  return ret;
 }
 
 var wordOptions = [{ value: 'is', label: 'is' }, { value: 'is_not', label: 'is not' }, { value: 'contains', label: 'contains' }, { value: 'starts_with', label: 'starts with' }, { value: 'ends_with', label: 'ends with' }, { value: 'regex', label: 'regex' }, { value: 'not_regex', label: 'not regex' }];
@@ -49621,124 +49888,124 @@ var setOptions = [{ value: "is", label: "is" }, { value: "is_not", label: "is no
 var probabilitySetOptions = [{ value: "is", label: "highest_rank" }, { value: "is_not", label: "not_highest_rank" }, { value: "contains", label: "rank_contains" }, { value: "contains_not", label: "not_rank_contains" }];
 
 setOptions.defaultToStr = function (layer, op, val) {
-    switch (op) {
-        case 'is':
-            return layer + " = \"" + val + "\"";
-        case 'is_not':
-            return layer + " != \"" + val + "\"";
-    }
+  switch (op) {
+    case 'is':
+      return layer + " = \"" + val + "\"";
+    case 'is_not':
+      return layer + " != \"" + val + "\"";
+  }
 };
 setOptions.defaultFromString = function (layer, op, val) {
-    return { layer: layer, op: op === '!=' ? 'is_not' : 'is', val: val };
+  return { layer: layer, op: op === '!=' ? 'is_not' : 'is', val: val };
 };
 
 wordOptions.defaultToStr = function (layer, op, val) {
-    var unescVal = val;
-    var val = escapeRegExp(val);
-    switch (op) {
-        case 'is':
-            return layer + " = \"" + val + "\"";
-        case 'is_not':
-            return layer + " != \"" + val + "\"";
-        case 'contains':
-            return layer + " = \".*" + val + ".*\"";
-        case 'starts_with':
-            return layer + " = \"" + val + ".*\"";
-        case 'ends_with':
-            return layer + " = \".*" + val + "\"";
-        case 'regex':
-            return layer + " = \"" + unescVal + "\"";
-        case 'not_regex':
-            return layer + " != \"" + unescVal + "\"";
-    }
+  var unescVal = val;
+  var val = escapeRegExp(val);
+  switch (op) {
+    case 'is':
+      return layer + " = \"" + val + "\"";
+    case 'is_not':
+      return layer + " != \"" + val + "\"";
+    case 'contains':
+      return layer + " = \".*" + val + ".*\"";
+    case 'starts_with':
+      return layer + " = \"" + val + ".*\"";
+    case 'ends_with':
+      return layer + " = \".*" + val + "\"";
+    case 'regex':
+      return layer + " = \"" + unescVal + "\"";
+    case 'not_regex':
+      return layer + " != \"" + unescVal + "\"";
+  }
 };
 wordOptions.defaultFromString = function (layer, op, val) {
-    // layer should be good. Now figure out op, and if val is escaped or not
-    if (op === '=') {
-        var strippedOfSemiRE = val.replace(/^\.\*/, '').replace(/\.\*$/, '');
-        if (strippedOfSemiRE.length !== val.length) {
-            // could be one of: startswith, contains, endswith.
-            if (!guessIfRegexp(strippedOfSemiRE)) {
-                // Ok, it is one of: startswith, contains, endswith.
-                if (val.startsWith('.*') && val.endsWith('.*')) {
-                    var op2 = 'contains';
-                } else if (val.startsWith('.*')) {
-                    op2 = 'starts_with';
-                } else if (val.endsWith('.*')) {
-                    op2 = 'ends_with';
-                } else {
-                    console.error("parsing query failed due to coding error");
-                    return null;
-                }
-                return {
-                    layer: layer,
-                    op: op2,
-                    val: unescapeRegExp(strippedOfSemiRE)
-                };
-            }
-            // its regexp.
+  // layer should be good. Now figure out op, and if val is escaped or not
+  if (op === '=') {
+    var strippedOfSemiRE = val.replace(/^\.\*/, '').replace(/\.\*$/, '');
+    if (strippedOfSemiRE.length !== val.length) {
+      // could be one of: startswith, contains, endswith.
+      if (!guessIfRegexp(strippedOfSemiRE)) {
+        // Ok, it is one of: startswith, contains, endswith.
+        if (val.startsWith('.*') && val.endsWith('.*')) {
+          var op2 = 'contains';
+        } else if (val.startsWith('.*')) {
+          op2 = 'starts_with';
+        } else if (val.endsWith('.*')) {
+          op2 = 'ends_with';
+        } else {
+          console.error("parsing query failed due to coding error");
+          return null;
         }
+        return {
+          layer: layer,
+          op: op2,
+          val: unescapeRegExp(strippedOfSemiRE)
+        };
+      }
+      // its regexp.
     }
+  }
 
-    if (guessIfRegexp(val)) {
-        // its regexp
-        return { layer: layer, op: op === '=' ? 'regex' : 'not_regex', val: val };
-    }
+  if (guessIfRegexp(val)) {
+    // its regexp
+    return { layer: layer, op: op === '=' ? 'regex' : 'not_regex', val: val };
+  }
 
-    // its not regexp
-    return { layer: layer, op: op === '=' ? 'is' : 'is_not', val: unescapeRegExp(val) };
+  // its not regexp
+  return { layer: layer, op: op === '=' ? 'is' : 'is_not', val: unescapeRegExp(val) };
 };
 function guessIfRegexp(s) {
-    return !!s.match(/[^\\][-[\]{}()*+\\?.,^$|#]/); // find if it contains any unescaped regex characters
+  return !!s.match(/[^\\][-[\]{}()*+\\?.,^$|#]/); // find if it contains any unescaped regex characters
 }
 function unescapeRegExp(text) {
-    return text.replace(/\\([-[\]{}()*+?.,\\^$|#])/g, '$1');
+  return text.replace(/\\([-[\]{}()*+?.,\\^$|#])/g, '$1');
 }
 function escapeRegExp(text) {
-    return text.replace(/[-[\]{}()*+?.,\\^$|#]/g, '\\$&');
+  return text.replace(/[-[\]{}()*+?.,\\^$|#]/g, '\\$&');
 }
 
 var layers = {
-    'word': {
-        label: 'word',
-        argOpts: wordOptions
-    },
-    'pos': {
-        label: 'part-of-speech UD v2.0 tagset',
-        argOpts: setOptions,
-        valueOptions: [{ value: "ADJ", label: "Adjective" }, { value: "ADV", label: "Adverb" }, { value: "INTJ", label: "Interjection" }, { value: "NOUN", label: "Noun" }, { value: "PROPN", label: "Proper noun" }, { value: "VERB", label: "Verb" }, { value: "ADP", label: "Adposition" }, { value: "AUX", label: "Auxiliary" }, { value: "CCONJ", label: "Coordinating conjunction" }, { value: "DET", label: "Determiner" }, { value: "NUM", label: "Numeral" }, { value: "PART", label: "Particle" }, { value: "PRON", label: "Pronoun" }, { value: "SCONJ", label: "Subordinating conjunction" }, { value: "PUNCT", label: "Punctuation" }, { value: "SYM", label: "Symbol" }, { value: "X", label: "Other" }]
-    },
-    'lemma': {
-        label: 'lemmatization of tokens',
-        argOpts: wordOptions
-    },
-    'orth': {
-        label: 'orthographic transcription',
-        argOpts: wordOptions
-    },
-    'norm': {
-        label: 'orthographic normalization',
-        argOpts: wordOptions
-    },
-    'phonetic': {
-        label: 'phonetic transcription SAMPA',
-        argOpts: wordOptions // TODO special toString/parse? (probably due to regex character handling)
-    },
-    'text': {
-        label: 'Layer only for Basic Search',
-        argOpts: wordOptions
-    },
-    '_.text_language': {
-        label: 'language',
-        argOpts: wordOptions
-    }
+  'word': {
+    label: 'word',
+    argOpts: wordOptions
+  },
+  'pos': {
+    label: 'part-of-speech UD v2.0 tagset',
+    argOpts: setOptions,
+    valueOptions: [{ value: "ADJ", label: "Adjective" }, { value: "ADV", label: "Adverb" }, { value: "INTJ", label: "Interjection" }, { value: "NOUN", label: "Noun" }, { value: "PROPN", label: "Proper noun" }, { value: "VERB", label: "Verb" }, { value: "ADP", label: "Adposition" }, { value: "AUX", label: "Auxiliary" }, { value: "CCONJ", label: "Coordinating conjunction" }, { value: "DET", label: "Determiner" }, { value: "NUM", label: "Numeral" }, { value: "PART", label: "Particle" }, { value: "PRON", label: "Pronoun" }, { value: "SCONJ", label: "Subordinating conjunction" }, { value: "PUNCT", label: "Punctuation" }, { value: "SYM", label: "Symbol" }, { value: "X", label: "Other" }]
+  },
+  'lemma': {
+    label: 'lemmatization of tokens',
+    argOpts: wordOptions
+  },
+  'orth': {
+    label: 'orthographic transcription',
+    argOpts: wordOptions
+  },
+  'norm': {
+    label: 'orthographic normalization',
+    argOpts: wordOptions
+  },
+  'phonetic': {
+    label: 'phonetic transcription SAMPA',
+    argOpts: wordOptions // TODO special toString/parse? (probably due to regex character handling)
+  },
+  'text': {
+    label: 'Layer only for Basic Search',
+    argOpts: wordOptions
+  },
+  '_.text_language': {
+    label: 'language',
+    argOpts: wordOptions
+  }
 };
 
 var layerCategories = [{ cat: 'word', label: 'Word', layers: ['word'] }, { cat: 'wordAttribute', label: 'Word attribute', layers: ['pos', 'lemma', 'orth', 'norm', 'phonetic', 'text'] }, { cat: 'textAttribute', label: 'Text attribute', layers: ['_.text_language'] }];
 
 module.exports = QueryInput;
 
-},{"./codemirror/mode/fcs-ql/fcs-ql":47,"classnames":2,"codemirror/mode/javascript/javascript":4,"create-react-class":6,"prop-types":20,"react-addons-pure-render-mixin":22,"react-codemirror2":23,"react-transition-group":35}],57:[function(require,module,exports){
+},{"./codemirror/mode/fcs-ql/fcs-ql":43,"classnames":2,"codemirror/mode/javascript/javascript":4,"create-react-class":6,"prop-types":15,"react-addons-pure-render-mixin":17,"react-codemirror2":18,"react-transition-group":30}],52:[function(require,module,exports){
 "use strict";
 
 var _classnames = require("classnames");
@@ -49751,361 +50018,393 @@ var _propTypes2 = _interopRequireDefault(_propTypes);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
+
 var PT = _propTypes2.default;
 
 window.MyAggregator = window.MyAggragtor || {};
 var NO_MORE_RECORDS_DIAGNOSTIC_URI = window.MyAggregator.NO_MORE_RECORDS_DIAGNOSTIC_URI = "info:srw/diagnostic/1/61";
 
 var ResultMixin = {
-	// getDefaultProps: function(){
-	// 	return {hasPopover: true};
-	// },
+  // getDefaultProps: function(){
+  // 	return {hasPopover: true};
+  // },
 
-	getInitialState: function getInitialState() {
-		return {
-			displayKwic: false,
-			displayADV: false
-		};
-	},
+  getInitialState: function getInitialState() {
+    return {
+      displayKwic: false,
+      displayADV: false
+    };
+  },
 
-	toggleKwic: function toggleKwic() {
-		this.setState({ displayKwic: !this.state.displayKwic });
-	},
+  toggleKwic: function toggleKwic() {
+    this.setState({ displayKwic: !this.state.displayKwic });
+  },
 
-	toggleADV: function toggleADV() {
-		this.setState({ displayADV: !this.state.displayADV });
-	},
+  toggleADV: function toggleADV() {
+    this.setState({ displayADV: !this.state.displayADV });
+  },
 
-	renderPanelTitle: function renderPanelTitle(corpus) {
-		return React.createElement(
-			"div",
-			{ className: "inline" },
-			React.createElement(
-				"span",
-				{ className: "corpusName" },
-				" ",
-				corpus.title
-			),
-			React.createElement(
-				"span",
-				{ className: "institutionName" },
-				" \u2014 ",
-				corpus.institution.name
-			)
-		);
-	},
+  renderPanelTitle: function renderPanelTitle(corpus) {
+    return React.createElement(
+      "div",
+      { className: "inline" },
+      React.createElement(
+        "span",
+        { className: "corpusName" },
+        " ",
+        corpus.title
+      ),
+      React.createElement(
+        "span",
+        { className: "institutionName" },
+        " \u2014 ",
+        corpus.institution.name
+      )
+    );
+  },
 
-	renderRowLanguage: function renderRowLanguage(hit) {
-		return false; //<span style={{fontFace:"Courier",color:"black"}}>{hit.language} </span> ;
-	},
+  renderRowLanguage: function renderRowLanguage(hit) {
+    return false; //<span style={{fontFace:"Courier",color:"black"}}>{hit.language} </span> ;
+  },
 
-	renderRowsAsHits: function renderRowsAsHits(hit, i) {
-		function renderTextFragments(tf, idx) {
-			return React.createElement(
-				"span",
-				{ key: idx, className: tf.hit ? "keyword" : "" },
-				tf.text
-			);
-		}
-		return React.createElement(
-			"p",
-			{ key: i, className: "hitrow" },
-			this.renderRowLanguage(hit),
-			hit.fragments.map(renderTextFragments)
-		);
-	},
+  renderRefLink: function renderRefLink(hit) {
+    if (!hit.reference) {
+      return false;
+    }
+    return React.createElement(
+      "a",
+      { href: hit.reference, target: "_blank", title: "Go to resource hit" },
+      React.createElement("span", { "class": "glyphicon glyphicon-link", style: { marginRight: ".5em" }, "aria-hidden": "true" })
+    );
+  },
 
-	renderRowsAsKwic: function renderRowsAsKwic(hit, i) {
-		var sleft = { textAlign: "left", verticalAlign: "top", width: "50%" };
-		var scenter = { textAlign: "center", verticalAlign: "top", maxWidth: "50%" };
-		var sright = { textAlign: "right", verticalAlign: "top", maxWidth: "50%" };
-		return React.createElement(
-			"tr",
-			{ key: i, className: "hitrow" },
-			React.createElement(
-				"td",
-				null,
-				this.renderRowLanguage(hit)
-			),
-			React.createElement(
-				"td",
-				{ style: sright },
-				hit.left
-			),
-			React.createElement(
-				"td",
-				{ style: scenter, className: "keyword" },
-				hit.keyword
-			),
-			React.createElement(
-				"td",
-				{ style: sleft },
-				hit.right
-			)
-		);
-	},
+  renderRowsAsHits: function renderRowsAsHits(hit, i) {
+    function renderTextFragments(tf, idx) {
+      return React.createElement(
+        "span",
+        { key: idx, className: tf.hit ? "keyword" : "" },
+        tf.text
+      );
+    }
+    return React.createElement(
+      "p",
+      { key: i, className: "hitrow" },
+      this.renderRowLanguage(hit),
+      this.renderRefLink(hit),
+      hit.fragments.map(renderTextFragments)
+    );
+  },
 
-	renderRowsAsADV: function renderRowsAsADV(hit, i) {
-		var sleft = { textAlign: "left", verticalAlign: "top", width: "50%" };
-		var scenter = { textAlign: "center", verticalAlign: "top", maxWidth: "50%" };
-		var sright = { textAlign: "right", verticalAlign: "top", maxWidth: "50%" };
+  renderRowsAsKwic: function renderRowsAsKwic(hit, i) {
+    var sleft = { textAlign: "left", verticalAlign: "top", width: "50%" };
+    var scenter = { textAlign: "center", verticalAlign: "top", maxWidth: "50%" };
+    var sright = { textAlign: "right", verticalAlign: "top", maxWidth: "50%" };
+    return React.createElement(
+      "tr",
+      { key: i, className: "hitrow" },
+      React.createElement(
+        "td",
+        null,
+        this.renderRowLanguage(hit)
+      ),
+      React.createElement(
+        "td",
+        { style: sright },
+        hit.left
+      ),
+      React.createElement(
+        "td",
+        { style: scenter, className: "keyword" },
+        hit.keyword
+      ),
+      React.createElement(
+        "td",
+        { style: sleft },
+        hit.right
+      )
+    );
+  },
 
-		function renderSpans(span, idx) {
-			return React.createElement(
-				"td",
-				{ key: idx, className: span.hit ? "keyword" : "" },
-				span.text
-			);
-		}
-		return React.createElement(
-			"tr",
-			{ key: i, className: "hitrow" },
-			this.renderRowLanguage(hit),
-			React.createElement(
-				"td",
-				{ style: sleft },
-				hit.pid
-			),
-			React.createElement(
-				"td",
-				{ style: sleft },
-				hit.reference
-			),
-			hit.spans.map(renderSpans)
-		);
-	},
+  renderRowsAsADV: function renderRowsAsADV(hit, i) {
+    var sleft = { textAlign: "left", verticalAlign: "top", width: "50%" };
+    var scenter = { textAlign: "center", verticalAlign: "top", maxWidth: "50%" };
+    var sright = { textAlign: "right", verticalAlign: "top", maxWidth: "50%" };
 
-	renderDiagnostic: function renderDiagnostic(d, key) {
-		if (d.uri === window.MyAggregator.NO_MORE_RECORDS_DIAGNOSTIC_URI) {
-			return false;
-		}
-		return React.createElement(
-			"div",
-			{ className: "alert alert-warning", key: key },
-			React.createElement(
-				"div",
-				null,
-				d.message
-			)
-		);
-	},
+    function renderSpans(span, idx) {
+      return React.createElement(
+        "td",
+        { key: idx, className: span.hit ? "keyword" : "" },
+        span.text
+      );
+    }
+    return React.createElement(
+      "tr",
+      { key: i, className: "hitrow" },
+      this.renderRowLanguage(hit),
+      React.createElement(
+        "td",
+        { style: sleft },
+        hit.pid
+      ),
+      React.createElement(
+        "td",
+        { style: sleft },
+        hit.reference
+      ),
+      hit.spans.map(renderSpans)
+    );
+  },
 
-	renderDiagnostics: function renderDiagnostics(corpusHit) {
-		if (!corpusHit.diagnostics || corpusHit.diagnostics.length === 0) {
-			return false;
-		}
-		return corpusHit.diagnostics.map(this.renderDiagnostic);
-	},
+  renderRowsAsADVGrouped: function renderRowsAsADVGrouped(corpusHit) {
+    function renderWithSeperators(layers, i) {
+      var pre = i != 0 ? [React.createElement(
+        "tr",
+        { "class": "hitrow-sep" },
+        React.createElement("td", { colspan: "100%" })
+      )] : [];
+      return pre.concat(layers.map(this.renderRowsAsADV));
+    }
+    function renderPlainList(layers, i) {
+      return layers.map(this.renderRowsAsADV);
+    }
+    var needsSeparators = Math.min.apply(Math, _toConsumableArray(corpusHit.advancedLayers.map(function (x) {
+      return x.length;
+    }))) > 1;
+    return corpusHit.advancedLayers.map((needsSeparators ? renderWithSeperators : renderPlainList).bind(this));
+  },
 
-	renderErrors: function renderErrors(corpusHit) {
-		var xc = corpusHit.exception;
-		if (!xc) {
-			return false;
-		}
-		return React.createElement(
-			"div",
-			{ className: "alert alert-danger", role: "alert" },
-			React.createElement(
-				"div",
-				null,
-				"Exception: ",
-				xc.message
-			),
-			xc.cause ? React.createElement(
-				"div",
-				null,
-				"Caused by: ",
-				xc.cause
-			) : false
-		);
-	},
+  renderDiagnostic: function renderDiagnostic(d, key) {
+    if (d.uri === window.MyAggregator.NO_MORE_RECORDS_DIAGNOSTIC_URI) {
+      return false;
+    }
+    return React.createElement(
+      "div",
+      { className: "alert alert-warning", key: key },
+      React.createElement(
+        "div",
+        null,
+        d.message
+      )
+    );
+  },
 
-	renderPanelBody: function renderPanelBody(corpusHit) {
-		var fulllength = { width: "100%" };
+  renderDiagnostics: function renderDiagnostics(corpusHit) {
+    if (!corpusHit.diagnostics || corpusHit.diagnostics.length === 0) {
+      return false;
+    }
+    return corpusHit.diagnostics.map(this.renderDiagnostic);
+  },
 
-		if (this.state.displayADV) {
-			return React.createElement(
-				"div",
-				null,
-				this.renderErrors(corpusHit),
-				this.renderDiagnostics(corpusHit),
-				React.createElement(
-					"table",
-					{ className: "table table-condensed table-hover", style: fulllength },
-					React.createElement(
-						"tbody",
-						null,
-						corpusHit.advancedLayers.map(this.renderRowsAsADV)
-					)
-				)
-			);
-		} else if (this.state.displayKwic) {
-			return React.createElement(
-				"div",
-				null,
-				this.renderErrors(corpusHit),
-				this.renderDiagnostics(corpusHit),
-				React.createElement(
-					"table",
-					{ className: "table table-condensed table-hover", style: fulllength },
-					React.createElement(
-						"tbody",
-						null,
-						corpusHit.kwics.map(this.renderRowsAsKwic)
-					)
-				)
-			);
-		} else {
-			return React.createElement(
-				"div",
-				null,
-				this.renderErrors(corpusHit),
-				this.renderDiagnostics(corpusHit),
-				corpusHit.kwics.map(this.renderRowsAsHits)
-			);
-		}
-	},
+  renderErrors: function renderErrors(corpusHit) {
+    var xc = corpusHit.exception;
+    if (!xc) {
+      return false;
+    }
+    return React.createElement(
+      "div",
+      { className: "alert alert-danger", role: "alert" },
+      React.createElement(
+        "div",
+        null,
+        "Exception: ",
+        xc.message
+      ),
+      xc.cause ? React.createElement(
+        "div",
+        null,
+        "Caused by: ",
+        xc.cause
+      ) : false
+    );
+  },
 
-	renderDisplayKWIC: function renderDisplayKWIC() {
-		return React.createElement(
-			"div",
-			{ className: "inline btn-group", style: { display: "inline-block" } },
-			React.createElement(
-				"label",
-				{ htmlFor: "inputKwic", className: "btn btn-flat" },
-				this.state.displayKwic ? React.createElement("input", { id: "inputKwic", type: "checkbox", value: "kwic", checked: true, onChange: this.toggleKwic }) : React.createElement("input", { id: "inputKwic", type: "checkbox", value: "kwic", onChange: this.toggleKwic }),
-				"\xA0 Display as Key Word In Context"
-			)
-		);
-	},
+  renderPanelBody: function renderPanelBody(corpusHit) {
+    var fulllength = { width: "100%" };
 
-	renderDisplayADV: function renderDisplayADV() {
-		return React.createElement(
-			"div",
-			{ className: "inline btn-group", style: { display: "inline-block" } },
-			React.createElement(
-				"label",
-				{ htmlFor: "inputADV", className: "btn btn-flat" },
-				this.state.displayADV ? React.createElement("input", { id: "inputADV", type: "checkbox", value: "adv", checked: true, onChange: this.toggleADV }) : React.createElement("input", { id: "inputADV", type: "checkbox", value: "adv", onChange: this.toggleADV }),
-				"\xA0 Display as AdvancedDataView (ADV)"
-			)
-		);
-	},
+    if (this.state.displayADV) {
+      return React.createElement(
+        "div",
+        { className: "corpusResultsADV" },
+        this.renderErrors(corpusHit),
+        this.renderDiagnostics(corpusHit),
+        React.createElement(
+          "table",
+          { className: "table table-condensed table-hover advanced-layers", style: fulllength },
+          React.createElement(
+            "tbody",
+            null,
+            this.renderRowsAsADVGrouped(corpusHit)
+          )
+        )
+      );
+    } else if (this.state.displayKwic) {
+      return React.createElement(
+        "div",
+        null,
+        this.renderErrors(corpusHit),
+        this.renderDiagnostics(corpusHit),
+        React.createElement(
+          "table",
+          { className: "table table-condensed table-hover kwic", style: fulllength },
+          React.createElement(
+            "tbody",
+            null,
+            corpusHit.kwics.map(this.renderRowsAsKwic)
+          )
+        )
+      );
+    } else {
+      return React.createElement(
+        "div",
+        null,
+        this.renderErrors(corpusHit),
+        this.renderDiagnostics(corpusHit),
+        corpusHit.kwics.map(this.renderRowsAsHits)
+      );
+    }
+  },
 
-	renderDownloadLinks: function renderDownloadLinks(corpusId) {
-		return React.createElement(
-			"div",
-			{ className: "dropdown" },
-			React.createElement(
-				"button",
-				{ className: "btn btn-flat", "aria-expanded": "false", "data-toggle": "dropdown" },
-				React.createElement("span", { className: "glyphicon glyphicon-download-alt", "aria-hidden": "true" }),
-				" ",
-				" Download ",
-				" ",
-				React.createElement("span", { className: "caret" })
-			),
-			React.createElement(
-				"ul",
-				{ className: "dropdown-menu" },
-				React.createElement(
-					"li",
-					null,
-					" ",
-					React.createElement(
-						"a",
-						{ href: this.props.getDownloadLink(corpusId, "csv") },
-						" ",
-						" As CSV file"
-					)
-				),
-				React.createElement(
-					"li",
-					null,
-					" ",
-					React.createElement(
-						"a",
-						{ href: this.props.getDownloadLink(corpusId, "ods") },
-						" ",
-						" As ODS file"
-					)
-				),
-				React.createElement(
-					"li",
-					null,
-					" ",
-					React.createElement(
-						"a",
-						{ href: this.props.getDownloadLink(corpusId, "excel") },
-						" ",
-						" As Excel file"
-					)
-				),
-				React.createElement(
-					"li",
-					null,
-					" ",
-					React.createElement(
-						"a",
-						{ href: this.props.getDownloadLink(corpusId, "tcf") },
-						" ",
-						" As TCF file"
-					)
-				),
-				React.createElement(
-					"li",
-					null,
-					" ",
-					React.createElement(
-						"a",
-						{ href: this.props.getDownloadLink(corpusId, "text") },
-						" ",
-						" As Plain Text file"
-					)
-				)
-			)
-		);
-	},
+  renderDisplayKWIC: function renderDisplayKWIC() {
+    return React.createElement(
+      "div",
+      { className: "inline btn-group", style: { display: "inline-block" } },
+      React.createElement(
+        "label",
+        { htmlFor: "inputKwic", className: "btn btn-flat" },
+        this.state.displayKwic ? React.createElement("input", { id: "inputKwic", type: "checkbox", value: "kwic", checked: true, onChange: this.toggleKwic }) : React.createElement("input", { id: "inputKwic", type: "checkbox", value: "kwic", onChange: this.toggleKwic }),
+        "\xA0 Display as Key Word In Context"
+      )
+    );
+  },
 
-	renderToWeblichtLinks: function renderToWeblichtLinks(corpusId, forceLanguage, error) {
-		return React.createElement(
-			"div",
-			{ className: "dropdown" },
-			React.createElement(
-				"button",
-				{ className: "btn btn-flat", "aria-expanded": "false", "data-toggle": "dropdown" },
-				React.createElement("span", { className: "glyphicon glyphicon-export", "aria-hidden": "true" }),
-				" ",
-				" Use Weblicht ",
-				" ",
-				React.createElement("span", { className: "caret" })
-			),
-			React.createElement(
-				"ul",
-				{ className: "dropdown-menu" },
-				React.createElement(
-					"li",
-					null,
-					error ? React.createElement(
-						"div",
-						{ className: "alert alert-danger", style: { margin: 10, width: 200 } },
-						error
-					) : React.createElement(
-						"a",
-						{ href: this.props.getToWeblichtLink(corpusId, forceLanguage), target: "_blank" },
-						" ",
-						"Send to Weblicht"
-					)
-				)
-			)
-		);
-	}
+  renderDisplayADV: function renderDisplayADV() {
+    return React.createElement(
+      "div",
+      { className: "inline btn-group", style: { display: "inline-block" } },
+      React.createElement(
+        "label",
+        { htmlFor: "inputADV", className: "btn btn-flat" },
+        this.state.displayADV ? React.createElement("input", { id: "inputADV", type: "checkbox", value: "adv", checked: true, onChange: this.toggleADV }) : React.createElement("input", { id: "inputADV", type: "checkbox", value: "adv", onChange: this.toggleADV }),
+        "\xA0 Display as AdvancedDataView (ADV)"
+      )
+    );
+  },
+
+  renderDownloadLinks: function renderDownloadLinks(corpusId) {
+    return React.createElement(
+      "div",
+      { className: "dropdown" },
+      React.createElement(
+        "button",
+        { className: "btn btn-flat", "aria-expanded": "false", "data-toggle": "dropdown" },
+        React.createElement("span", { className: "glyphicon glyphicon-download-alt", "aria-hidden": "true" }),
+        " ",
+        " Download ",
+        " ",
+        React.createElement("span", { className: "caret" })
+      ),
+      React.createElement(
+        "ul",
+        { className: "dropdown-menu" },
+        React.createElement(
+          "li",
+          null,
+          " ",
+          React.createElement(
+            "a",
+            { href: this.props.getDownloadLink(corpusId, "csv") },
+            " ",
+            " As CSV file"
+          )
+        ),
+        React.createElement(
+          "li",
+          null,
+          " ",
+          React.createElement(
+            "a",
+            { href: this.props.getDownloadLink(corpusId, "ods") },
+            " ",
+            " As ODS file"
+          )
+        ),
+        React.createElement(
+          "li",
+          null,
+          " ",
+          React.createElement(
+            "a",
+            { href: this.props.getDownloadLink(corpusId, "excel") },
+            " ",
+            " As Excel file"
+          )
+        ),
+        React.createElement(
+          "li",
+          null,
+          " ",
+          React.createElement(
+            "a",
+            { href: this.props.getDownloadLink(corpusId, "tcf") },
+            " ",
+            " As TCF file"
+          )
+        ),
+        React.createElement(
+          "li",
+          null,
+          " ",
+          React.createElement(
+            "a",
+            { href: this.props.getDownloadLink(corpusId, "text") },
+            " ",
+            " As Plain Text file"
+          )
+        )
+      )
+    );
+  },
+
+  renderToWeblichtLinks: function renderToWeblichtLinks(corpusId, forceLanguage, error) {
+    return React.createElement(
+      "div",
+      { className: "dropdown" },
+      React.createElement(
+        "button",
+        { className: "btn btn-flat", "aria-expanded": "false", "data-toggle": "dropdown" },
+        React.createElement("span", { className: "glyphicon glyphicon-export", "aria-hidden": "true" }),
+        " ",
+        " Use Weblicht ",
+        " ",
+        React.createElement("span", { className: "caret" })
+      ),
+      React.createElement(
+        "ul",
+        { className: "dropdown-menu" },
+        React.createElement(
+          "li",
+          null,
+          error ? React.createElement(
+            "div",
+            { className: "alert alert-danger", style: { margin: 10, width: 200 } },
+            error
+          ) : React.createElement(
+            "a",
+            { href: this.props.getToWeblichtLink(corpusId, forceLanguage), target: "_blank" },
+            " ",
+            "Send to Weblicht"
+          )
+        )
+      )
+    );
+  }
 
 };
 
 module.exports = ResultMixin;
 
-},{"classnames":2,"prop-types":20}],58:[function(require,module,exports){
+},{"classnames":2,"prop-types":15}],53:[function(require,module,exports){
 "use strict";
 
 var _classnames = require("classnames");
@@ -50135,178 +50434,231 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 var PT = _propTypes2.default;
 
 var Results = (0, _createReactClass2.default)({
-	displayName: "Results",
+  displayName: "Results",
 
-	propTypes: {
-		collhits: PT.object.isRequired,
-		searchedLanguage: PT.array.isRequired,
-		toggleResultModal: PT.func.isRequired,
-		getDownloadLink: PT.func.isRequired,
-		getToWeblichtLink: PT.func.isRequired,
-		queryTypeId: PT.string.isRequired
-	},
-	mixins: [_resultmixin2.default],
+  propTypes: {
+    collhits: PT.object.isRequired,
+    searchedLanguage: PT.array.isRequired,
+    toggleResultModal: PT.func.isRequired,
+    getDownloadLink: PT.func.isRequired,
+    getToWeblichtLink: PT.func.isRequired,
+    queryTypeId: PT.string.isRequired
+  },
+  mixins: [_resultmixin2.default],
 
-	renderPanelInfo: function renderPanelInfo(corpusHit) {
-		var corpus = corpusHit.corpus;
-		var inline = { display: "inline-block" };
-		return React.createElement(
-			"div",
-			null,
-			" ",
-			React.createElement(
-				"div",
-				{ style: inline },
-				React.createElement(
-					"button",
-					{ className: "btn btn-default zoomResultButton",
-						onClick: function (e) {
-							this.props.toggleResultModal(e, corpusHit);
-						}.bind(this) },
-					React.createElement("span", { className: "glyphicon glyphicon-eye-open" }),
-					" View"
-				)
-			)
-		);
-	},
+  getInitialState: function getInitialState() {
+    return {
+      displayDiagnosticsForEmptyResults: false
+    };
+  },
 
-	renderResultPanel: function renderResultPanel(corpusHit) {
-		if (corpusHit.kwics.length === 0 && !corpusHit.exception && corpusHit.diagnostics.length === 0) {
-			return false;
-		}
-		return React.createElement(
-			_reactTransitionGroup.CSSTransition,
-			{ key: corpusHit.corpus.id, classNames: "fade", timeout: { enter: 200, exit: 200 } },
-			React.createElement(
-				_panel2.default,
-				{ key: corpusHit.corpus.id,
-					title: this.renderPanelTitle(corpusHit.corpus),
-					info: this.renderPanelInfo(corpusHit) },
-				this.renderPanelBody(corpusHit)
-			)
-		);
-	},
+  toggleDiagnosticsForEmptyResults: function toggleDiagnosticsForEmptyResults() {
+    this.setState({ displayDiagnosticsForEmptyResults: !this.state.displayDiagnosticsForEmptyResults });
+  },
 
-	renderProgressMessage: function renderProgressMessage() {
-		var collhits = this.props.collhits;
-		var done = collhits.results.length - collhits.inProgress;
-		var msg = collhits.hits + " matching collections found in " + done + " searched collections";
-		var percents = Math.round(100 * collhits.hits / collhits.results.length);
-		var styleperc = { width: percents + "%" };
-		return React.createElement(
-			"div",
-			{ style: { marginTop: 10 } },
-			React.createElement(
-				"div",
-				null,
-				msg
-			),
-			collhits.inProgress > 0 ? React.createElement(
-				"div",
-				{ className: "progress", style: { marginBottom: 10 } },
-				React.createElement("div", { className: "progress-bar progress-bar-striped active", role: "progressbar",
-					"aria-valuenow": percents, "aria-valuemin": "0", "aria-valuemax": "100", style: styleperc }),
-				percents > 2 ? false : React.createElement("div", { className: "progress-bar progress-bar-striped active", role: "progressbar",
-					"aria-valuenow": "100", "aria-valuemin": "0", "aria-valuemax": "100",
-					style: { width: '100%', backgroundColor: '#888' } })
-			) : false
-		);
-	},
+  renderDisplayDiagnosticsForEmptyResults: function renderDisplayDiagnosticsForEmptyResults() {
+    var collhits = this.props.collhits;
+    if (!collhits.results) {
+      return false;
+    }
+    var numExceptions = collhits.results.filter(function (x) {
+      return !!x.exception;
+    }).length;
+    var numDiagnostics = collhits.results.filter(function (x) {
+      return x.diagnostics.length > 0;
+    }).length;
+    if (numExceptions <= 0 && numDiagnostics <= 0) {
+      return false;
+    }
 
-	render: function render() {
-		var collhits = this.props.collhits;
-		if (!collhits.results) {
-			return false;
-		}
-		var showprogress = collhits.inProgress > 0;
+    return React.createElement(
+      "div",
+      { className: "inline btn-group", style: { display: "inline-block" } },
+      React.createElement(
+        "label",
+        { htmlFor: "inputDiagnosticsForEmptyResults", className: "btn btn-flat" },
+        this.state.displayDiagnosticsForEmptyResults ? React.createElement("input", { id: "inputDiagnosticsForEmptyResults", type: "checkbox", value: "kwic", checked: true, onChange: this.toggleDiagnosticsForEmptyResults }) : React.createElement("input", { id: "inputDiagnosticsForEmptyResults", type: "checkbox", value: "kwic", onChange: this.toggleDiagnosticsForEmptyResults }),
+        "\xA0 Show ",
+        numDiagnostics ? "warnings" : false,
+        numExceptions > 0 && numDiagnostics > 0 ? " and " : false,
+        numExceptions ? "errors" : false
+      )
+    );
+  },
 
-		return React.createElement(
-			"div",
-			null,
-			showprogress ? this.renderProgressMessage() : React.createElement("div", { style: { height: 20 } }),
-			React.createElement(
-				"div",
-				{ style: { marginBottom: 2 } },
-				showprogress ? false : React.createElement(
-					"div",
-					{ className: "float-left" },
-					" ",
-					collhits.hits + " matching collections found",
-					" "
-				),
-				collhits.hits === 0 ? false : React.createElement(
-					"div",
-					{ className: "float-right" },
-					React.createElement(
-						"div",
-						null,
-						this.renderDisplayKWIC(),
-						this.props.queryTypeId !== "fcs" ? "" : this.renderDisplayADV(),
-						collhits.inProgress === 0 ? React.createElement(
-							"div",
-							{ className: "inline" },
-							" ",
-							this.renderDownloadLinks(),
-							" "
-						) : false
-					)
-				),
-				React.createElement("div", { style: { clear: 'both' } })
-			),
-			React.createElement(
-				_reactTransitionGroup.TransitionGroup,
-				null,
-				collhits.results.map(this.renderResultPanel)
-			)
-		);
-	}
+  renderPanelInfo: function renderPanelInfo(corpusHit) {
+    var corpus = corpusHit.corpus;
+    var inline = { display: "inline-block" };
+    return React.createElement(
+      "div",
+      null,
+      " ",
+      React.createElement(
+        "div",
+        { style: inline },
+        React.createElement(
+          "button",
+          { className: "btn btn-default zoomResultButton",
+            onClick: function (e) {
+              this.props.toggleResultModal(e, corpusHit);
+            }.bind(this) },
+          React.createElement("span", { className: "glyphicon glyphicon-eye-open" }),
+          " View"
+        )
+      )
+    );
+  },
+
+  renderResultPanel: function renderResultPanel(corpusHit) {
+    if (corpusHit.kwics.length === 0 && !corpusHit.exception && corpusHit.diagnostics.length === 0) {
+      return false;
+    }
+    if (!this.state.displayDiagnosticsForEmptyResults && corpusHit.kwics.length === 0) {
+      return false;
+    }
+    return React.createElement(
+      _reactTransitionGroup.CSSTransition,
+      { key: corpusHit.corpus.id, classNames: "fade", timeout: { enter: 200, exit: 200 } },
+      React.createElement(
+        _panel2.default,
+        { key: corpusHit.corpus.id,
+          title: this.renderPanelTitle(corpusHit.corpus),
+          info: this.renderPanelInfo(corpusHit) },
+        this.renderPanelBody(corpusHit)
+      )
+    );
+  },
+
+  renderProgressMessage: function renderProgressMessage() {
+    var collhits = this.props.collhits;
+    var done = collhits.results.length - collhits.inProgress;
+    var msg = collhits.hits + " matching collections found in " + done + " searched collections";
+    var percents = Math.round(100 * collhits.hits / collhits.results.length);
+    var styleperc = { width: percents + "%" };
+    return React.createElement(
+      "div",
+      { style: { marginTop: 10 } },
+      React.createElement(
+        "div",
+        null,
+        msg
+      ),
+      collhits.inProgress > 0 ? React.createElement(
+        "div",
+        { className: "progress", style: { marginBottom: 10 } },
+        React.createElement("div", { className: "progress-bar progress-bar-striped active", role: "progressbar",
+          "aria-valuenow": percents, "aria-valuemin": "0", "aria-valuemax": "100", style: styleperc }),
+        percents > 2 ? false : React.createElement("div", { className: "progress-bar progress-bar-striped active", role: "progressbar",
+          "aria-valuenow": "100", "aria-valuemin": "0", "aria-valuemax": "100",
+          style: { width: '100%', backgroundColor: '#888' } })
+      ) : false
+    );
+  },
+
+  render: function render() {
+    var collhits = this.props.collhits;
+    if (!collhits.results) {
+      return false;
+    }
+    var showprogress = collhits.inProgress > 0;
+
+    var numExceptions = collhits.results.filter(function (x) {
+      return !!x.exception;
+    }).length;
+    var numDiagnostics = collhits.results.filter(function (x) {
+      return x.diagnostics.length > 0;
+    }).length;
+
+    return React.createElement(
+      "div",
+      null,
+      showprogress ? this.renderProgressMessage() : React.createElement("div", { style: { height: 20 } }),
+      React.createElement(
+        "div",
+        { style: { marginBottom: 5 } },
+        showprogress ? false : React.createElement(
+          "div",
+          { className: "float-left", style: { marginRight: "2ex" } },
+          collhits.hits + " matching collections found",
+          React.createElement("br", null),
+          collhits.results.length + " collections searched",
+          numExceptions ? ", " + numExceptions + " exceptions" : false,
+          numDiagnostics ? ", " + numDiagnostics + " warnings" : false
+        ),
+        this.renderDisplayDiagnosticsForEmptyResults(),
+        collhits.hits === 0 ? false : React.createElement(
+          "div",
+          { className: "float-right" },
+          React.createElement(
+            "div",
+            null,
+            this.renderDisplayKWIC(),
+            this.props.queryTypeId !== "fcs" ? "" : this.renderDisplayADV(),
+            collhits.inProgress === 0 ? React.createElement(
+              "div",
+              { className: "inline" },
+              " ",
+              this.renderDownloadLinks(),
+              " "
+            ) : false
+          )
+        ),
+        React.createElement("div", { style: { clear: 'both' } })
+      ),
+      React.createElement(
+        _reactTransitionGroup.TransitionGroup,
+        null,
+        collhits.results.map(this.renderResultPanel)
+      )
+    );
+  }
 });
 
 var _ = window._ = window._ || {
-	keys: function keys() {
-		var ret = [];
-		for (var x in o) {
-			if (o.hasOwnProperty(x)) {
-				ret.push(x);
-			}
-		}
-		return ret;
-	},
+  keys: function keys() {
+    var ret = [];
+    for (var x in o) {
+      if (o.hasOwnProperty(x)) {
+        ret.push(x);
+      }
+    }
+    return ret;
+  },
 
-	pairs: function pairs(o) {
-		var ret = [];
-		for (var x in o) {
-			if (o.hasOwnProperty(x)) {
-				ret.push([x, o[x]]);
-			}
-		}
-		return ret;
-	},
+  pairs: function pairs(o) {
+    var ret = [];
+    for (var x in o) {
+      if (o.hasOwnProperty(x)) {
+        ret.push([x, o[x]]);
+      }
+    }
+    return ret;
+  },
 
-	values: function values(o) {
-		var ret = [];
-		for (var x in o) {
-			if (o.hasOwnProperty(x)) {
-				ret.push(o[x]);
-			}
-		}
-		return ret;
-	},
+  values: function values(o) {
+    var ret = [];
+    for (var x in o) {
+      if (o.hasOwnProperty(x)) {
+        ret.push(o[x]);
+      }
+    }
+    return ret;
+  },
 
-	uniq: function uniq(a) {
-		var r = [];
-		for (var i = 0; i < a.length; i++) {
-			if (r.indexOf(a[i]) < 0) {
-				r.push(a[i]);
-			}
-		}
-		return r;
-	}
+  uniq: function uniq(a) {
+    var r = [];
+    for (var i = 0; i < a.length; i++) {
+      if (r.indexOf(a[i]) < 0) {
+        r.push(a[i]);
+      }
+    }
+    return r;
+  }
 };
 
 module.exports = Results;
 
-},{"./panel.jsx":55,"./resultmixin.jsx":57,"classnames":2,"create-react-class":6,"prop-types":20,"react-transition-group":35}],59:[function(require,module,exports){
+},{"./panel.jsx":50,"./resultmixin.jsx":52,"classnames":2,"create-react-class":6,"prop-types":15,"react-transition-group":30}],54:[function(require,module,exports){
 "use strict";
 
 var _classnames = require("classnames");
@@ -50326,49 +50678,49 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 var PT = _propTypes2.default;
 
 var SearchCorpusBox = (0, _createReactClass2.default)({
-	displayName: "SearchCorpusBox",
+  displayName: "SearchCorpusBox",
 
-	//fixme! - class SearchCorpusBox extends React.Component {
-	propTypes: {
-		search: PT.func.isRequired
-	},
+  //fixme! - class SearchCorpusBox extends React.Component {
+  propTypes: {
+    search: PT.func.isRequired
+  },
 
-	getInitialState: function getInitialState() {
-		return {
-			query: ""
-		};
-	},
+  getInitialState: function getInitialState() {
+    return {
+      query: ""
+    };
+  },
 
-	handleChange: function handleChange(event) {
-		var query = event.target.value;
-		this.setState({ query: query });
+  handleChange: function handleChange(event) {
+    var query = event.target.value;
+    this.setState({ query: query });
 
-		if (query.length === 0 || 2 <= query.length) {
-			this.props.search(query);
-		}
-		event.stopPropagation();
-	},
+    if (query.length === 0 || 2 <= query.length) {
+      this.props.search(query);
+    }
+    event.stopPropagation();
+  },
 
-	handleKey: function handleKey(event) {
-		if (event.keyCode == 13) {
-			this.props.search(event.target.value);
-		}
-	},
+  handleKey: function handleKey(event) {
+    if (event.keyCode == 13) {
+      this.props.search(event.target.value);
+    }
+  },
 
-	render: function render() {
-		return React.createElement(
-			"div",
-			{ className: "form-group" },
-			React.createElement("input", { className: "form-control search search-collection", type: "text",
-				value: this.state.query, placeholder: "Search for collection",
-				onChange: this.handleChange })
-		);
-	}
+  render: function render() {
+    return React.createElement(
+      "div",
+      { className: "form-group" },
+      React.createElement("input", { className: "form-control search search-collection", type: "text",
+        value: this.state.query, placeholder: "Search for collection",
+        onChange: this.handleChange })
+    );
+  }
 });
 
 module.exports = SearchCorpusBox;
 
-},{"classnames":2,"create-react-class":6,"prop-types":20}],60:[function(require,module,exports){
+},{"classnames":2,"create-react-class":6,"prop-types":15}],55:[function(require,module,exports){
 "use strict";
 
 var _classnames = require("classnames");
@@ -50394,182 +50746,182 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 var PT = _propTypes2.default;
 
 var ZoomedResult = (0, _createReactClass2.default)({
-	displayName: "ZoomedResult",
+  displayName: "ZoomedResult",
 
-	propTypes: {
-		corpusHit: PT.object,
-		nextResults: PT.func.isRequired,
-		languageMap: PT.object.isRequired,
-		weblichtLanguages: PT.array.isRequired,
-		searchedLanguage: PT.array.isRequired,
-		getDownloadLink: PT.func.isRequired,
-		getToWeblichtLink: PT.func.isRequired,
-		queryTypeId: PT.string.isRequired
-	},
-	mixins: [_resultmixin2.default],
+  propTypes: {
+    corpusHit: PT.object,
+    nextResults: PT.func.isRequired,
+    languageMap: PT.object.isRequired,
+    weblichtLanguages: PT.array.isRequired,
+    searchedLanguage: PT.array.isRequired,
+    getDownloadLink: PT.func.isRequired,
+    getToWeblichtLink: PT.func.isRequired,
+    queryTypeId: PT.string.isRequired
+  },
+  mixins: [_resultmixin2.default],
 
-	getInitialState: function getInitialState() {
-		return {
-			forceUpdate: 1 // hack to force an update, used when searching for next results
-		};
-	},
+  getInitialState: function getInitialState() {
+    return {
+      forceUpdate: 1 // hack to force an update, used when searching for next results
+    };
+  },
 
-	nextResults: function nextResults(e) {
-		this.props.corpusHit.inProgress = true;
-		this.setState({ forceUpdate: this.state.forceUpdate + 1 });
-		this.props.nextResults(this.props.corpusHit.corpus.id);
-	},
+  nextResults: function nextResults(e) {
+    this.props.corpusHit.inProgress = true;
+    this.setState({ forceUpdate: this.state.forceUpdate + 1 });
+    this.props.nextResults(this.props.corpusHit.corpus.id);
+  },
 
-	renderLanguages: function renderLanguages(languages) {
-		return languages.map(function (l) {
-			return this.props.languageMap[l];
-		}.bind(this)).sort().join(", ");
-	},
+  renderLanguages: function renderLanguages(languages) {
+    return languages.map(function (l) {
+      return this.props.languageMap[l];
+    }.bind(this)).sort().join(", ");
+  },
 
-	renderMoreResults: function renderMoreResults() {
-		if (this.props.corpusHit.inProgress) return React.createElement(
-			"span",
-			{ style: { fontStyle: 'italic' } },
-			"Retrieving results, please wait..."
-		);
+  renderMoreResults: function renderMoreResults() {
+    if (this.props.corpusHit.inProgress) return React.createElement(
+      "span",
+      { style: { fontStyle: 'italic' } },
+      "Retrieving results, please wait..."
+    );
 
-		var moreResults = true;
-		for (var i = 0; i < this.props.corpusHit.diagnostics.length; i++) {
-			var d = this.props.corpusHit.diagnostics[i];
-			if (d.uri === window.MyAggregator.NO_MORE_RECORDS_DIAGNOSTIC_URI) {
-				moreResults = false;
-				break;
-			}
-		}
-		if (!moreResults) return React.createElement(
-			"span",
-			{ style: { fontStyle: 'italic' } },
-			"No other results available for this query"
-		);
-		return React.createElement(
-			"button",
-			{ className: "btn btn-default", onClick: this.nextResults },
-			React.createElement("span", { className: "glyphicon glyphicon-option-horizontal", "aria-hidden": "true" }),
-			" More Results"
-		);
-	},
+    var moreResults = true;
+    for (var i = 0; i < this.props.corpusHit.diagnostics.length; i++) {
+      var d = this.props.corpusHit.diagnostics[i];
+      if (d.uri === window.MyAggregator.NO_MORE_RECORDS_DIAGNOSTIC_URI) {
+        moreResults = false;
+        break;
+      }
+    }
+    if (!moreResults) return React.createElement(
+      "span",
+      { style: { fontStyle: 'italic' } },
+      "No other results available for this query"
+    );
+    return React.createElement(
+      "button",
+      { className: "btn btn-default", onClick: this.nextResults },
+      React.createElement("span", { className: "glyphicon glyphicon-option-horizontal", "aria-hidden": "true" }),
+      " More Results"
+    );
+  },
 
-	render: function render() {
-		var corpusHit = this.props.corpusHit;
-		if (!corpusHit) {
-			return false;
-		}
+  render: function render() {
+    var corpusHit = this.props.corpusHit;
+    if (!corpusHit) {
+      return false;
+    }
 
-		var forceLanguage = null,
-		    wlerror = null;
-		if (this.props.weblichtLanguages.indexOf(this.props.searchedLanguage[0]) < 0) {
-			// the search language is either AnyLanguage or unsupported
-			if (this.props.searchedLanguage[0] === window.MyAggregator.multipleLanguageCode) {
-				if (corpusHit.corpus.languages && corpusHit.corpus.languages.length === 1) {
-					forceLanguage = corpusHit.corpus.languages[0];
-				} else {
-					var langs = corpusHit.kwics.map(function (kwic) {
-						return kwic.language;
-					});
-					langs = _.uniq(langs.filter(function (l) {
-						return l !== null;
-					}));
-					if (langs.length === 1) {
-						forceLanguage = langs[0];
-					}
-				}
-			}
-			if (!forceLanguage) {
-				wlerror = "Cannot use WebLicht: unsupported language (" + this.props.searchedLanguage[1] + ")";
-			}
-		}
-		var corpus = corpusHit.corpus;
-		return React.createElement(
-			"div",
-			null,
-			React.createElement(
-				"div",
-				{ className: "corpusDescription" },
-				React.createElement(
-					"p",
-					null,
-					React.createElement("i", { className: "fa fa-institution" }),
-					" ",
-					corpus.institution.name
-				),
-				corpus.description ? React.createElement(
-					"p",
-					null,
-					React.createElement("i", { className: "glyphicon glyphicon-info-sign" }),
-					" ",
-					corpus.description
-				) : false,
-				React.createElement(
-					"p",
-					null,
-					React.createElement("i", { className: "fa fa-language" }),
-					" ",
-					this.renderLanguages(corpus.languages)
-				)
-			),
-			React.createElement(
-				"div",
-				{ style: { marginBottom: 2 } },
-				React.createElement(
-					"div",
-					{ className: "float-right" },
-					React.createElement(
-						"div",
-						null,
-						this.renderDisplayKWIC(),
-						this.props.queryTypeId !== "fcs" ? "" : this.renderDisplayADV(),
-						React.createElement(
-							"div",
-							{ className: "inline" },
-							" ",
-							this.renderDownloadLinks(corpusHit.corpus.id),
-							" "
-						),
-						React.createElement(
-							"div",
-							{ className: "inline" },
-							" ",
-							this.renderToWeblichtLinks(corpus.id, forceLanguage, wlerror),
-							" "
-						)
-					)
-				),
-				React.createElement("div", { style: { clear: 'both' } })
-			),
-			React.createElement(
-				_reactTransitionGroup.TransitionGroup,
-				null,
-				React.createElement(
-					_reactTransitionGroup.CSSTransition,
-					{ classNames: "fade", timeout: { enter: 200, exit: 200 } },
-					React.createElement(
-						"div",
-						{ className: "panel" },
-						React.createElement(
-							"div",
-							{ className: "panel-body corpusResults" },
-							this.renderPanelBody(corpusHit)
-						)
-					)
-				)
-			),
-			React.createElement(
-				"div",
-				{ style: { textAlign: 'center', marginTop: 10 } },
-				this.renderMoreResults()
-			)
-		);
-	}
+    var forceLanguage = null,
+        wlerror = null;
+    if (this.props.weblichtLanguages.indexOf(this.props.searchedLanguage[0]) < 0) {
+      // the search language is either AnyLanguage or unsupported
+      if (this.props.searchedLanguage[0] === window.MyAggregator.multipleLanguageCode) {
+        if (corpusHit.corpus.languages && corpusHit.corpus.languages.length === 1) {
+          forceLanguage = corpusHit.corpus.languages[0];
+        } else {
+          var langs = corpusHit.kwics.map(function (kwic) {
+            return kwic.language;
+          });
+          langs = _.uniq(langs.filter(function (l) {
+            return l !== null;
+          }));
+          if (langs.length === 1) {
+            forceLanguage = langs[0];
+          }
+        }
+      }
+      if (!forceLanguage) {
+        wlerror = "Cannot use WebLicht: unsupported language (" + this.props.searchedLanguage[1] + ")";
+      }
+    }
+    var corpus = corpusHit.corpus;
+    return React.createElement(
+      "div",
+      null,
+      React.createElement(
+        "div",
+        { className: "corpusDescription" },
+        React.createElement(
+          "p",
+          null,
+          React.createElement("i", { className: "fa fa-institution" }),
+          " ",
+          corpus.institution.name
+        ),
+        corpus.description ? React.createElement(
+          "p",
+          null,
+          React.createElement("i", { className: "glyphicon glyphicon-info-sign" }),
+          " ",
+          corpus.description
+        ) : false,
+        React.createElement(
+          "p",
+          null,
+          React.createElement("i", { className: "fa fa-language" }),
+          " ",
+          this.renderLanguages(corpus.languages)
+        )
+      ),
+      React.createElement(
+        "div",
+        { style: { marginBottom: 2 } },
+        React.createElement(
+          "div",
+          { className: "float-right" },
+          React.createElement(
+            "div",
+            null,
+            this.renderDisplayKWIC(),
+            this.props.queryTypeId !== "fcs" ? "" : this.renderDisplayADV(),
+            React.createElement(
+              "div",
+              { className: "inline" },
+              " ",
+              this.renderDownloadLinks(corpusHit.corpus.id),
+              " "
+            ),
+            React.createElement(
+              "div",
+              { className: "inline" },
+              " ",
+              this.renderToWeblichtLinks(corpus.id, forceLanguage, wlerror),
+              " "
+            )
+          )
+        ),
+        React.createElement("div", { style: { clear: 'both' } })
+      ),
+      React.createElement(
+        _reactTransitionGroup.TransitionGroup,
+        null,
+        React.createElement(
+          _reactTransitionGroup.CSSTransition,
+          { classNames: "fade", timeout: { enter: 200, exit: 200 } },
+          React.createElement(
+            "div",
+            { className: "panel" },
+            React.createElement(
+              "div",
+              { className: "panel-body corpusResults" },
+              this.renderPanelBody(corpusHit)
+            )
+          )
+        )
+      ),
+      React.createElement(
+        "div",
+        { style: { textAlign: 'center', marginTop: 10 } },
+        this.renderMoreResults()
+      )
+    );
+  }
 });
 
 module.exports = ZoomedResult;
 
-},{"./resultmixin.jsx":57,"classnames":2,"create-react-class":6,"prop-types":20,"react-transition-group":35}],61:[function(require,module,exports){
+},{"./resultmixin.jsx":52,"classnames":2,"create-react-class":6,"prop-types":15,"react-transition-group":30}],56:[function(require,module,exports){
 "use strict";
 
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
@@ -50590,9 +50942,9 @@ var _statisticspage = require("./pages/statisticspage.jsx");
 
 var _statisticspage2 = _interopRequireDefault(_statisticspage);
 
-var _errorpane = require("./components/errorpane.jsx");
+var _alertpane = require("./components/alertpane.jsx");
 
-var _errorpane2 = _interopRequireDefault(_errorpane);
+var _alertpane2 = _interopRequireDefault(_alertpane);
 
 var _footer = require("./components/footer.jsx");
 
@@ -50613,336 +50965,353 @@ var _createReactClass2 = _interopRequireDefault(_createReactClass);
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 (function () {
-	"use strict";
+  "use strict";
 
-	window.MyAggregator = window.MyAggregator || {};
+  window.MyAggregator = window.MyAggregator || {};
 
-	var VERSION = window.MyAggregator.VERSION = "v.3.0.2-67";
+  var VERSION = window.MyAggregator.VERSION = "v.3.6.0";
 
-	var URLROOT = window.MyAggregator.URLROOT = window.location.pathname.substring(0, window.location.pathname.indexOf("/", 2)) ||
-	//window.location.pathname ||
-	//"/ws/fcs/2.0/aggregator";
-	"/Aggregator";
+  // TODO: set this via environment variables at build time (envify)
+  var URLROOT = window.MyAggregator.URLROOT = "";
+  var APIROOT = window.MyAggregator.APIROOT = "rest/";
 
-	var PT = _propTypes2.default;
+  var PT = _propTypes2.default;
 
-	/**
- The FCS Aggregator UI is based on reactjs.
- - index.html: describes the general page structure, with a push-down footer;
-   on that structure the Main and Footer components are plugged.
- - main.jsx: composes the simple top components (Main, AggregatorPage, HelpPage, 
-   AboutPage, StatisticsPage) in pages/
- - pages/aggregatorpage.jsx: defines
- 	- the Corpora store of collections
- 	- the AggregatorPage component which deals with search and displays the search results
- - components/corpusview.jsx: defines the CorpusView, rendered when the user views the available collections
- - plus in components/: various general usage React components
- 
- The top-most component, Main, tracks of the window's location URL and, depending on the value,
-   renders various components inside its frame:
- 	- AggregatorPage is the view corresponding to the normal search UI (search bar and all)
- 	  This is the most complex component.
- 	- HelpPage renders the help page
- 	- AboutPage renders the about page
- 	- StatisticsPage renders the stats page
- 	- another URL, /Aggregator/embed, determines Main and AggregatorPage to render just the search bar.
- 	  The embedded view is supposed to work like a YouTube embedded clip.
- */
+  /**
+  The FCS Aggregator UI is based on reactjs.
+  - index.html: describes the general page structure, with a push-down footer;
+    on that structure the Main and Footer components are plugged.
+  - main.jsx: composes the simple top components (Main, AggregatorPage, HelpPage, 
+    AboutPage, StatisticsPage) in pages/
+  - pages/aggregatorpage.jsx: defines
+      - the Corpora store of collections
+      - the AggregatorPage component which deals with search and displays the search results
+  - components/corpusview.jsx: defines the CorpusView, rendered when the user views the available collections
+  - plus in components/: various general usage React components
+  
+  The top-most component, Main, tracks of the window's location URL and, depending on the value,
+    renders various components inside its frame:
+      - AggregatorPage is the view corresponding to the normal search UI (search bar and all)
+        This is the most complex component.
+      - HelpPage renders the help page
+      - AboutPage renders the about page
+      - StatisticsPage renders the stats page
+      - another URL, /Aggregator/embed, determines Main and AggregatorPage to render just the search bar.
+        The embedded view is supposed to work like a YouTube embedded clip.
+  */
 
-	var Main = (0, _createReactClass2.default)({
-		displayName: "Main",
+  var Main = (0, _createReactClass2.default)({
+    displayName: "Main",
 
-		// fixme! - class Main extends React.Component {
-		componentWillMount: function componentWillMount() {
-			routeFromLocation.bind(this)();
-		},
+    // fixme! - class Main extends React.Component {
+    componentWillMount: function componentWillMount() {
+      routeFromLocation.bind(this)();
+    },
 
-		getInitialState: function getInitialState() {
-			return {
-				navbarCollapse: false,
-				navbarPageFn: this.renderAggregator,
-				errorMessages: []
-			};
-		},
+    getInitialState: function getInitialState() {
+      return {
+        navbarCollapse: false,
+        navbarPageFn: this.renderAggregator,
+        alerts: [], // messages (info/error)
+        initialSearchId: null // search id extracted from URL
+      };
+    },
 
-		error: function error(errObj) {
-			var err = "";
-			if (typeof errObj === 'string' || errObj instanceof String) {
-				err = errObj;
-			} else if ((typeof errObj === "undefined" ? "undefined" : _typeof(errObj)) === 'object' && errObj.statusText) {
-				console.log("ERROR: jqXHR = ", errObj);
-				err = errObj.statusText;
-			} else {
-				return;
-			}
+    error: function error(errObj) {
+      var err = "";
+      if (typeof errObj === 'string' || errObj instanceof String) {
+        err = errObj;
+      } else if ((typeof errObj === "undefined" ? "undefined" : _typeof(errObj)) === 'object' && errObj.statusText) {
+        console.log("ERROR: jqXHR = ", errObj);
+        err = errObj.statusText;
+      } else {
+        return;
+      }
+      this.alert(err, "error");
+    },
 
-			var that = this;
-			var errs = this.state.errorMessages.slice();
-			errs.push(err);
-			this.setState({ errorMessages: errs });
+    info: function info(msgObj) {
+      var msg = "";
+      if (typeof msgObj === 'string' || msgObj instanceof String) {
+        msg = msgObj;
+      } else if ((typeof msgObj === "undefined" ? "undefined" : _typeof(msgObj)) === 'object') {
+        console.log("INFO: obj = ", msgObj);
+        msg = JSON.stringify(msgObj);
+      } else {
+        return;
+      }
+      this.alert(msg, "info");
+    },
 
-			setTimeout(function () {
-				var errs = that.state.errorMessages.slice();
-				errs.shift();
-				that.setState({ errorMessages: errs });
-			}, 10000);
-		},
+    alert: function alert(message, type) {
+      var that = this;
+      var alerts = this.state.alerts.slice();
+      alerts.push({ msg: message, type: type });
+      this.setState({ alerts: alerts });
 
-		ajax: function ajax(ajaxObject) {
-			var that = this;
-			if (!ajaxObject.error) {
-				ajaxObject.error = function (jqXHR, textStatus, error) {
-					if (jqXHR.readyState === 0) {
-						that.error("Network error, please check your internet connection");
-					} else if (jqXHR.responseText) {
-						that.error(jqXHR.responseText + " (" + error + ")");
-					} else {
-						that.error(error + " (" + textStatus + ")");
-					}
-					console.log("ajax error, jqXHR: ", jqXHR);
-				};
-			}
-			// console.log("ajax", ajaxObject);
-			jQuery.ajax(ajaxObject);
-		},
+      setTimeout(function () {
+        var alerts = that.state.alerts.slice();
+        alerts.shift();
+        that.setState({ alerts: alerts });
+      }, 10000);
+    },
 
-		toggleCollapse: function toggleCollapse() {
-			this.setState({ navbarCollapse: !this.state.navbarCollapse });
-		},
+    ajax: function ajax(ajaxObject) {
+      var that = this;
+      if (!ajaxObject.error) {
+        ajaxObject.error = function (jqXHR, textStatus, error) {
+          if (jqXHR.readyState === 0) {
+            that.error("Network error, please check your internet connection");
+          } else if (jqXHR.responseText) {
+            that.error(jqXHR.responseText + " (" + error + ")");
+          } else {
+            that.error(error + " (" + textStatus + ")");
+          }
+          console.log("ajax error, jqXHR: ", jqXHR);
+        };
+      }
+      // console.log("ajax", ajaxObject);
+      jQuery.ajax(ajaxObject);
+    },
 
-		renderAggregator: function renderAggregator() {
-			return React.createElement(_aggregatorpage2.default, { ajax: this.ajax, error: this.error, embedded: false });
-		},
+    toggleCollapse: function toggleCollapse() {
+      this.setState({ navbarCollapse: !this.state.navbarCollapse });
+    },
 
-		renderHelp: function renderHelp() {
-			return React.createElement(_helppage2.default, null);
-		},
+    renderAggregator: function renderAggregator() {
+      return React.createElement(_aggregatorpage2.default, { APIROOT: APIROOT, ajax: this.ajax, error: this.error, info: this.info, embedded: false, searchId: this.state.initialSearchId });
+    },
 
-		renderAbout: function renderAbout() {
-			return React.createElement(_aboutpage2.default, { toStatistics: this.toStatistics });
-		},
+    renderHelp: function renderHelp() {
+      return React.createElement(_helppage2.default, null);
+    },
 
-		renderStatistics: function renderStatistics() {
-			return React.createElement(_statisticspage2.default, { ajax: this.ajax });
-		},
+    renderAbout: function renderAbout() {
+      return React.createElement(_aboutpage2.default, { toStatistics: this.toStatistics });
+    },
 
-		renderEmbedded: function renderEmbedded() {
-			return React.createElement(_aggregatorpage2.default, { ajax: this.ajax, error: this.error, embedded: true });
-		},
+    renderStatistics: function renderStatistics() {
+      return React.createElement(_statisticspage2.default, { APIROOT: APIROOT, ajax: this.ajax });
+    },
 
-		getPageFns: function getPageFns() {
-			return {
-				'': this.renderAggregator,
-				'help': this.renderHelp,
-				'about': this.renderAbout,
-				'stats': this.renderStatistics,
-				'embed': this.renderEmbedded
-			};
-		},
+    renderEmbedded: function renderEmbedded() {
+      return React.createElement(_aggregatorpage2.default, { APIROOT: APIROOT, ajax: this.ajax, error: this.error, embedded: true });
+    },
 
-		gotoPage: function gotoPage(doPushHistory, pageFnName) {
-			var pageFn = this.getPageFns()[pageFnName];
-			if (this.state.navbarPageFn !== pageFn) {
-				if (doPushHistory) {
-					window.history.pushState({ page: pageFnName }, '', URLROOT + "/" + pageFnName);
-				}
-				this.setState({ navbarPageFn: pageFn });
-				console.log("new page: " + document.location + ", name: " + pageFnName);
-			}
-		},
+    getPageFns: function getPageFns() {
+      return {
+        '': this.renderAggregator,
+        'help': this.renderHelp,
+        'about': this.renderAbout,
+        'stats': this.renderStatistics,
+        'embed': this.renderEmbedded
+      };
+    },
 
-		toAggregator: function toAggregator(doPushHistory) {
-			this.gotoPage(doPushHistory, '');
-		},
-		toHelp: function toHelp(doPushHistory) {
-			this.gotoPage(doPushHistory, 'help');
-		},
-		toAbout: function toAbout(doPushHistory) {
-			this.gotoPage(doPushHistory, 'about');
-		},
-		toStatistics: function toStatistics(doPushHistory) {
-			this.gotoPage(doPushHistory, 'stats');
-		},
-		toEmbedded: function toEmbedded(doPushHistory) {
-			this.gotoPage(doPushHistory, 'embed');
-		},
+    gotoPage: function gotoPage(doPushHistory, pageFnName) {
+      var pageFn = this.getPageFns()[pageFnName];
+      if (this.state.navbarPageFn !== pageFn) {
+        if (doPushHistory) {
+          window.history.pushState({ page: pageFnName }, '', URLROOT + "/" + pageFnName);
+        }
+        this.setState({ navbarPageFn: pageFn });
+        console.log("new page: " + document.location + ", name: " + pageFnName);
+      }
+    },
 
-		renderLogin: function renderLogin() {
-			return false;
-			// return  <li className="unauthenticated">
-			// 			<a href="login" tabIndex="-1"><span className="glyphicon glyphicon-log-in"></span> LOGIN</a>
-			// 		</li>;
-		},
+    toAggregator: function toAggregator(doPushHistory) {
+      this.gotoPage(doPushHistory, '');
+    },
+    toHelp: function toHelp(doPushHistory) {
+      this.gotoPage(doPushHistory, 'help');
+    },
+    toAbout: function toAbout(doPushHistory) {
+      this.gotoPage(doPushHistory, 'about');
+    },
+    toStatistics: function toStatistics(doPushHistory) {
+      this.gotoPage(doPushHistory, 'stats');
+    },
+    toEmbedded: function toEmbedded(doPushHistory) {
+      this.gotoPage(doPushHistory, 'embed');
+    },
 
-		renderCollapsible: function renderCollapsible() {
-			var classname = "navbar-collapse collapse " + (this.state.navbarCollapse ? "in" : "");
-			return React.createElement(
-				"div",
-				{ className: classname },
-				React.createElement(
-					"ul",
-					{ className: "nav navbar-nav" },
-					React.createElement(
-						"li",
-						{ className: this.state.navbarPageFn === this.renderAggregator ? "active" : "" },
-						React.createElement(
-							"a",
-							{ className: "link", tabIndex: "-1", onClick: this.toAggregator.bind(this, true) },
-							"Aggregator"
-						)
-					),
-					React.createElement(
-						"li",
-						{ className: this.state.navbarPageFn === this.renderHelp ? "active" : "" },
-						React.createElement(
-							"a",
-							{ className: "link", tabIndex: "-1", onClick: this.toHelp.bind(this, true) },
-							"Help"
-						)
-					)
-				),
-				React.createElement(
-					"ul",
-					{ className: "nav navbar-nav navbar-right" },
-					React.createElement(
-						"li",
-						null,
-						" ",
-						React.createElement("div", { id: "clarinservices", style: { padding: 4 } }),
-						" "
-					),
-					this.renderLogin()
-				)
-			);
-		},
+    renderLogin: function renderLogin() {
+      return false;
+      // return  <li className="unauthenticated">
+      // 			<a href="login" tabIndex="-1"><span className="glyphicon glyphicon-log-in"></span> LOGIN</a>
+      // 		</li>;
+    },
 
-		renderTop: function renderTop() {
-			if (this.state.navbarPageFn === this.renderEmbedded) {
-				return false;
-			}
-			return React.createElement(
-				"div",
-				null,
-				React.createElement(
-					"div",
-					{ className: "navbar navbar-default navbar-static-top", role: "navigation" },
-					React.createElement(
-						"div",
-						{ className: "container" },
-						React.createElement(
-							"div",
-							{ className: "navbar-header" },
-							React.createElement(
-								"button",
-								{ type: "button", className: "navbar-toggle", onClick: this.toggleCollapse },
-								React.createElement(
-									"span",
-									{ className: "sr-only" },
-									"Toggle navigation"
-								),
-								React.createElement("span", { className: "icon-bar" }),
-								React.createElement("span", { className: "icon-bar" }),
-								React.createElement("span", { className: "icon-bar" })
-							),
-							React.createElement(
-								"a",
-								{ className: "navbar-brand", href: URLROOT + "/", tabIndex: "-1" },
-								React.createElement("img", { width: "28px", height: "28px", src: "img/magglass1.png" }),
-								React.createElement(
-									"header",
-									{ className: "inline" },
-									" Content Search "
-								)
-							)
-						),
-						this.renderCollapsible()
-					)
-				),
-				React.createElement(_errorpane2.default, { errorMessages: this.state.errorMessages })
-			);
-		},
+    renderCollapsible: function renderCollapsible() {
+      var classname = "navbar-collapse collapse " + (this.state.navbarCollapse ? "in" : "");
+      return React.createElement(
+        "div",
+        { className: classname },
+        React.createElement(
+          "ul",
+          { className: "nav navbar-nav" },
+          React.createElement(
+            "li",
+            { className: this.state.navbarPageFn === this.renderAggregator ? "active" : "" },
+            React.createElement(
+              "a",
+              { className: "link", tabIndex: "-1", onClick: this.toAggregator.bind(this, true) },
+              "Aggregator"
+            )
+          ),
+          React.createElement(
+            "li",
+            { className: this.state.navbarPageFn === this.renderHelp ? "active" : "" },
+            React.createElement(
+              "a",
+              { className: "link", tabIndex: "-1", onClick: this.toHelp.bind(this, true) },
+              "Help"
+            )
+          )
+        ),
+        React.createElement(
+          "ul",
+          { className: "nav navbar-nav navbar-right" },
+          React.createElement(
+            "li",
+            null,
+            " ",
+            React.createElement("div", { id: "clarinservices", style: { padding: 4, paddingTop: 8 } }),
+            " "
+          ),
+          this.renderLogin()
+        )
+      );
+    },
 
-		render: function render() {
-			return React.createElement(
-				"div",
-				null,
-				React.createElement(
-					"div",
-					null,
-					" ",
-					this.renderTop(),
-					" "
-				),
-				React.createElement(
-					"div",
-					{ id: "push" },
-					React.createElement(
-						"div",
-						{ className: "container" },
-						this.state.navbarPageFn()
-					),
-					React.createElement("div", { className: "top-gap" })
-				)
-			);
-		}
-	});
+    renderTop: function renderTop() {
+      if (this.state.navbarPageFn === this.renderEmbedded) {
+        return false;
+      }
+      return React.createElement(
+        "div",
+        null,
+        React.createElement(
+          "div",
+          { className: "navbar navbar-default navbar-static-top", role: "navigation" },
+          React.createElement(
+            "div",
+            { className: "container" },
+            React.createElement(
+              "div",
+              { className: "navbar-header" },
+              React.createElement(
+                "button",
+                { type: "button", className: "navbar-toggle", onClick: this.toggleCollapse },
+                React.createElement(
+                  "span",
+                  { className: "sr-only" },
+                  "Toggle navigation"
+                ),
+                React.createElement("span", { className: "icon-bar" }),
+                React.createElement("span", { className: "icon-bar" }),
+                React.createElement("span", { className: "icon-bar" })
+              ),
+              React.createElement(
+                "a",
+                { className: "navbar-brand", href: URLROOT + "/", tabIndex: "-1" },
+                React.createElement("img", { width: "28px", height: "28px", src: "img/magglass1.png" }),
+                React.createElement(
+                  "header",
+                  { className: "inline" },
+                  " Content Search "
+                )
+              )
+            ),
+            this.renderCollapsible()
+          )
+        ),
+        React.createElement(_alertpane2.default, { alerts: this.state.alerts })
+      );
+    },
 
-	// StatisticsPage
+    render: function render() {
+      return React.createElement(
+        "div",
+        null,
+        React.createElement(
+          "div",
+          null,
+          " ",
+          this.renderTop(),
+          " "
+        ),
+        React.createElement(
+          "div",
+          { id: "push" },
+          React.createElement(
+            "div",
+            { className: "container" },
+            this.state.navbarPageFn()
+          ),
+          React.createElement("div", { className: "top-gap" })
+        )
+      );
+    }
+  });
 
-	// HelpPage
+  // StatisticsPage
 
-	// AboutPage
+  // HelpPage
 
-	// Footer
+  // AboutPage
 
-	// EmbeddedFooter
+  // Footer
 
-	function isEmbeddedView() {
-		var path = window.location.pathname.split('/');
-		return path.length >= 3 && path[path.length - 1] === 'embed';
-	}
+  // EmbeddedFooter
 
-	function endsWith(str, suffix) {
-		return str.indexOf(suffix, str.length - suffix.length) !== -1;
-	}
+  function isEmbeddedView() {
+    var path = window.location.pathname.split('/');
+    return path.length >= 3 && path[path.length - 1] === 'embed';
+  }
 
-	var routeFromLocation = function routeFromLocation() {
-		console.log("routeFromLocation: " + document.location);
-		if (!this) throw "routeFromLocation must be bound to main";
-		var path = window.location.pathname.split('/');
-		console.log("path: " + path);
-		if (path.length >= 3) {
-			var p = path[path.length - 1];
-			if (p === 'help') {
-				this.toHelp(false);
-			} else if (p === 'about') {
-				this.toAbout(false);
-			} else if (p === 'stats') {
-				this.toStatistics(false);
-			} else if (p === 'embed') {
-				this.toEmbedded(false);
-			} else {
-				this.toAggregator(false);
-			}
-		} else {
-			this.toAggregator(false);
-		}
-	};
+  function endsWith(str, suffix) {
+    return str.indexOf(suffix, str.length - suffix.length) !== -1;
+  }
 
-	var main = ReactDOM.render(React.createElement(Main, null), document.getElementById('body'));
-	if (!isEmbeddedView()) {
-		ReactDOM.render(React.createElement(_footer2.default, { VERSION: VERSION, toAbout: main.toAbout }), document.getElementById('footer'));
-	} else {
-		ReactDOM.render(React.createElement(_embeddedfooter2.default, { URLROOT: URLROOT }), document.getElementById('footer'));
-		if (jQuery) {
-			jQuery('body, #footer').addClass('embedded');
-		}
-	}
+  var routeFromLocation = function routeFromLocation() {
+    console.log("routeFromLocation: " + document.location);
+    if (!this) throw "routeFromLocation must be bound to main";
+    var path = window.location.pathname.slice(URLROOT.length).split('/').slice(1);
+    console.log("path: " + path);
+    var pageFnName = window.location.pathname.slice(URLROOT.length).replace(/^\/+/, "");
+    console.log("pageFnName: " + pageFnName);
+    if (pageFnName === 'help') {
+      this.toHelp(false);
+    } else if (pageFnName === 'about') {
+      this.toAbout(false);
+    } else if (pageFnName === 'stats') {
+      this.toStatistics(false);
+    } else if (pageFnName === 'embed') {
+      this.toEmbedded(false);
+    } else if (pageFnName.startsWith("search-")) {
+      var searchId = Number.parseInt(pageFnName.substring(7));
+      this.setState({ initialSearchId: searchId });
+      this.toAggregator(false);
+    } else {
+      this.toAggregator(false);
+    }
+  };
 
-	window.onpopstate = routeFromLocation.bind(main);
+  var main = ReactDOM.render(React.createElement(Main, null), document.getElementById('body'));
+  if (!isEmbeddedView()) {
+    ReactDOM.render(React.createElement(_footer2.default, { VERSION: VERSION, toAbout: main.toAbout }), document.getElementById('footer'));
+  } else {
+    ReactDOM.render(React.createElement(_embeddedfooter2.default, { URLROOT: URLROOT }), document.getElementById('footer'));
+    if (jQuery) {
+      jQuery('body, #footer').addClass('embedded');
+    }
+  }
+
+  window.onpopstate = routeFromLocation.bind(main);
 })();
 
-},{"./components/embeddedfooter.jsx":49,"./components/errorpane.jsx":50,"./components/footer.jsx":51,"./pages/aboutpage.jsx":62,"./pages/aggregatorpage.jsx":63,"./pages/helppage.jsx":64,"./pages/statisticspage.jsx":65,"create-react-class":6,"prop-types":20}],62:[function(require,module,exports){
+},{"./components/alertpane.jsx":42,"./components/embeddedfooter.jsx":45,"./components/footer.jsx":46,"./pages/aboutpage.jsx":57,"./pages/aggregatorpage.jsx":58,"./pages/helppage.jsx":59,"./pages/statisticspage.jsx":60,"create-react-class":6,"prop-types":15}],57:[function(require,module,exports){
 "use strict";
 
 var _classnames = require("classnames");
@@ -50962,346 +51331,351 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 var PT = _propTypes2.default;
 
 var AboutPage = (0, _createReactClass2.default)({
-						displayName: "AboutPage",
+  displayName: "AboutPage",
 
-						//fixme! - class AboutPage extends React.Component { 
-						propTypes: {
-												toStatistics: PT.func.isRequired
-						},
+  //fixme! - class AboutPage extends React.Component { 
+  propTypes: {
+    toStatistics: PT.func.isRequired
+  },
 
-						toStatistics: function toStatistics(e) {
-												this.props.toStatistics(true);
-												e.preventDefault();
-												e.stopPropagation();
-						},
+  toStatistics: function toStatistics(e) {
+    this.props.toStatistics(true);
+    e.preventDefault();
+    e.stopPropagation();
+  },
 
-						render: function render() {
-												return React.createElement(
-																		"div",
-																		null,
-																		React.createElement(
-																								"div",
-																								{ className: "top-gap" },
-																								React.createElement(
-																														"h1",
-																														{ style: { padding: 15 } },
-																														"About"
-																								),
-																								React.createElement(
-																														"div",
-																														{ className: "col-md-6" },
-																														React.createElement(
-																																				"h3",
-																																				null,
-																																				"People"
-																														),
-																														React.createElement(
-																																				"ul",
-																																				null,
-																																				React.createElement(
-																																										"li",
-																																										null,
-																																										"Emanuel Dima"
-																																				),
-																																				React.createElement(
-																																										"li",
-																																										null,
-																																										"Leif-J\xF6ran Olsson"
-																																				),
-																																				React.createElement(
-																																										"li",
-																																										null,
-																																										"Yana Panchenko"
-																																				),
-																																				React.createElement(
-																																										"li",
-																																										null,
-																																										"Oliver Schonefeld"
-																																				),
-																																				React.createElement(
-																																										"li",
-																																										null,
-																																										"Dieter Van Uytvanck"
-																																				)
-																														),
-																														React.createElement(
-																																				"h3",
-																																				null,
-																																				"Statistics"
-																														),
-																														React.createElement(
-																																				"button",
-																																				{ type: "button", className: "btn btn-default btn-lg", onClick: this.toStatistics },
-																																				React.createElement(
-																																										"span",
-																																										{ className: "glyphicon glyphicon-cog", "aria-hidden": "true" },
-																																										" "
-																																				),
-																																				"View server log"
-																														)
-																								),
-																								React.createElement(
-																														"div",
-																														{ className: "col-md-6" },
-																														React.createElement(
-																																				"h3",
-																																				null,
-																																				"Technology"
-																														),
-																														React.createElement(
-																																				"p",
-																																				null,
-																																				"The Aggregator uses the following software components:"
-																														),
-																														React.createElement(
-																																				"ul",
-																																				null,
-																																				React.createElement(
-																																										"li",
-																																										null,
-																																										React.createElement(
-																																																"a",
-																																																{ href: "http://dropwizard.io/" },
-																																																"Dropwizard"
-																																										),
-																																										" ",
-																																										"(",
-																																										React.createElement(
-																																																"a",
-																																																{ href: "http://www.apache.org/licenses/LICENSE-2.0" },
-																																																"Apache License 2.0"
-																																										),
-																																										")"
-																																				),
-																																				React.createElement(
-																																										"li",
-																																										null,
-																																										React.createElement(
-																																																"a",
-																																																{ href: "http://eclipse.org/jetty/" },
-																																																"Jetty"
-																																										),
-																																										" ",
-																																										"(",
-																																										React.createElement(
-																																																"a",
-																																																{ href: "http://www.apache.org/licenses/LICENSE-2.0" },
-																																																"Apache License 2.0"
-																																										),
-																																										")"
-																																				),
-																																				React.createElement(
-																																										"li",
-																																										null,
-																																										React.createElement(
-																																																"a",
-																																																{ href: "http://jackson.codehaus.org/" },
-																																																"Jackson"
-																																										),
-																																										" ",
-																																										"(",
-																																										React.createElement(
-																																																"a",
-																																																{ href: "http://www.apache.org/licenses/LICENSE-2.0" },
-																																																"Apache License 2.0"
-																																										),
-																																										")"
-																																				),
-																																				React.createElement(
-																																										"li",
-																																										null,
-																																										React.createElement(
-																																																"a",
-																																																{ href: "https://jersey.java.net/" },
-																																																"Jersey"
-																																										),
-																																										" ",
-																																										"(",
-																																										React.createElement(
-																																																"a",
-																																																{ href: "https://jersey.java.net/license.html#/cddl" },
-																																																"CCDL 1.1"
-																																										),
-																																										")"
-																																				),
-																																				React.createElement(
-																																										"li",
-																																										null,
-																																										React.createElement(
-																																																"a",
-																																																{ href: "https://github.com/optimaize/language-detector" },
-																																																"Optimaize Language Detector"
-																																										),
-																																										" ",
-																																										"(",
-																																										React.createElement(
-																																																"a",
-																																																{ href: "http://www.apache.org/licenses/LICENSE-2.0" },
-																																																"Apache License 2.0"
-																																										),
-																																										")"
-																																				),
-																																				React.createElement(
-																																										"li",
-																																										null,
-																																										React.createElement(
-																																																"a",
-																																																{ href: "http://poi.apache.org/" },
-																																																"Apache POI"
-																																										),
-																																										" ",
-																																										"(",
-																																										React.createElement(
-																																																"a",
-																																																{ href: "http://www.apache.org/licenses/LICENSE-2.0" },
-																																																"Apache License 2.0"
-																																										),
-																																										")"
-																																				),
-																																				React.createElement(
-																																										"li",
-																																										null,
-																																										React.createElement(
-																																																"a",
-																																																{ href: "http://jopendocument.org/" },
-																																																"jOpenDocument"
-																																										),
-																																										" ",
-																																										"(",
-																																										React.createElement(
-																																																"a",
-																																																{ href: "http://www.gnu.org/licenses/gpl-3.0.txt" },
-																																																"GPL 3.0"
-																																										),
-																																										")"
-																																				)
-																														),
-																														React.createElement(
-																																				"ul",
-																																				null,
-																																				React.createElement(
-																																										"li",
-																																										null,
-																																										React.createElement(
-																																																"a",
-																																																{ href: "http://facebook.github.io/react/" },
-																																																"React"
-																																										),
-																																										" ",
-																																										"(",
-																																										React.createElement(
-																																																"a",
-																																																{ href: "https://github.com/facebook/react/blob/master/LICENSE" },
-																																																"MIT license"
-																																										),
-																																										")"
-																																				),
-																																				React.createElement(
-																																										"li",
-																																										null,
-																																										React.createElement(
-																																																"a",
-																																																{ href: "http://getbootstrap.com/" },
-																																																"Bootstrap"
-																																										),
-																																										" ",
-																																										"(",
-																																										React.createElement(
-																																																"a",
-																																																{ href: "http://opensource.org/licenses/mit-license.html" },
-																																																"MIT license"
-																																										),
-																																										")"
-																																				),
-																																				React.createElement(
-																																										"li",
-																																										null,
-																																										React.createElement(
-																																																"a",
-																																																{ href: "http://jquery.com/" },
-																																																"jQuery"
-																																										),
-																																										" ",
-																																										"(",
-																																										React.createElement(
-																																																"a",
-																																																{ href: "http://opensource.org/licenses/mit-license.html" },
-																																																"MIT license"
-																																										),
-																																										")"
-																																				),
-																																				React.createElement(
-																																										"li",
-																																										null,
-																																										React.createElement(
-																																																"a",
-																																																{ href: "http://glyphicons.com/" },
-																																																"GLYPHICONS free"
-																																										),
-																																										" ",
-																																										"(",
-																																										React.createElement(
-																																																"a",
-																																																{ href: "https://creativecommons.org/licenses/by/3.0/" },
-																																																"CC-BY 3.0"
-																																										),
-																																										")"
-																																				),
-																																				React.createElement(
-																																										"li",
-																																										null,
-																																										React.createElement(
-																																																"a",
-																																																{ href: "http://fortawesome.github.io/Font-Awesome/" },
-																																																"FontAwesome"
-																																										),
-																																										" ",
-																																										"(",
-																																										React.createElement(
-																																																"a",
-																																																{ href: "http://opensource.org/licenses/mit-license.html" },
-																																																"MIT"
-																																										),
-																																										", ",
-																																										React.createElement(
-																																																"a",
-																																																{ href: "http://scripts.sil.org/OFL" },
-																																																"SIL Open Font License"
-																																										),
-																																										")"
-																																				)
-																														),
-																														React.createElement(
-																																				"p",
-																																				null,
-																																				"The federated content search icon is made by",
-																																				React.createElement(
-																																										"a",
-																																										{ href: "http://www.freepik.com", title: "Freepik" },
-																																										" Freepik "
-																																				),
-																																				"from",
-																																				React.createElement(
-																																										"a",
-																																										{ href: "http://www.flaticon.com", title: "Flaticon" },
-																																										" www.flaticon.com "
-																																				),
-																																				"and licensed under",
-																																				React.createElement(
-																																										"a",
-																																										{ href: "http://creativecommons.org/licenses/by/3.0/", title: "Creative Commons BY 3.0" },
-																																										" CC BY 3.0 "
-																																				)
-																														)
-																								)
-																		)
-												);
-						}
+  render: function render() {
+    return React.createElement(
+      "div",
+      null,
+      React.createElement(
+        "div",
+        { className: "top-gap" },
+        React.createElement(
+          "h1",
+          { style: { padding: 15 } },
+          "About"
+        ),
+        React.createElement(
+          "div",
+          { className: "col-md-6" },
+          React.createElement(
+            "h3",
+            null,
+            "People"
+          ),
+          React.createElement(
+            "ul",
+            null,
+            React.createElement(
+              "li",
+              null,
+              "Emanuel Dima"
+            ),
+            React.createElement(
+              "li",
+              null,
+              "Erik K\xF6rner"
+            ),
+            React.createElement(
+              "li",
+              null,
+              "Leif-J\xF6ran Olsson"
+            ),
+            React.createElement(
+              "li",
+              null,
+              "Yana Panchenko"
+            ),
+            React.createElement(
+              "li",
+              null,
+              "Oliver Schonefeld"
+            ),
+            React.createElement(
+              "li",
+              null,
+              "Dieter Van Uytvanck"
+            )
+          ),
+          React.createElement(
+            "h3",
+            null,
+            "Statistics"
+          ),
+          React.createElement(
+            "button",
+            { type: "button", className: "btn btn-default btn-lg", onClick: this.toStatistics },
+            React.createElement(
+              "span",
+              { className: "glyphicon glyphicon-cog", "aria-hidden": "true" },
+              " "
+            ),
+            "View server log"
+          )
+        ),
+        React.createElement(
+          "div",
+          { className: "col-md-6" },
+          React.createElement(
+            "h3",
+            null,
+            "Technology"
+          ),
+          React.createElement(
+            "p",
+            null,
+            "The Aggregator uses the following software components:"
+          ),
+          React.createElement(
+            "ul",
+            null,
+            React.createElement(
+              "li",
+              null,
+              React.createElement(
+                "a",
+                { href: "http://dropwizard.io/" },
+                "Dropwizard"
+              ),
+              " ",
+              "(",
+              React.createElement(
+                "a",
+                { href: "http://www.apache.org/licenses/LICENSE-2.0" },
+                "Apache License 2.0"
+              ),
+              ")"
+            ),
+            React.createElement(
+              "li",
+              null,
+              React.createElement(
+                "a",
+                { href: "http://eclipse.org/jetty/" },
+                "Jetty"
+              ),
+              " ",
+              "(",
+              React.createElement(
+                "a",
+                { href: "http://www.apache.org/licenses/LICENSE-2.0" },
+                "Apache License 2.0"
+              ),
+              ")"
+            ),
+            React.createElement(
+              "li",
+              null,
+              React.createElement(
+                "a",
+                { href: "http://jackson.codehaus.org/" },
+                "Jackson"
+              ),
+              " ",
+              "(",
+              React.createElement(
+                "a",
+                { href: "http://www.apache.org/licenses/LICENSE-2.0" },
+                "Apache License 2.0"
+              ),
+              ")"
+            ),
+            React.createElement(
+              "li",
+              null,
+              React.createElement(
+                "a",
+                { href: "https://jersey.java.net/" },
+                "Jersey"
+              ),
+              " ",
+              "(",
+              React.createElement(
+                "a",
+                { href: "https://jersey.java.net/license.html#/cddl" },
+                "CCDL 1.1"
+              ),
+              ")"
+            ),
+            React.createElement(
+              "li",
+              null,
+              React.createElement(
+                "a",
+                { href: "https://github.com/optimaize/language-detector" },
+                "Optimaize Language Detector"
+              ),
+              " ",
+              "(",
+              React.createElement(
+                "a",
+                { href: "http://www.apache.org/licenses/LICENSE-2.0" },
+                "Apache License 2.0"
+              ),
+              ")"
+            ),
+            React.createElement(
+              "li",
+              null,
+              React.createElement(
+                "a",
+                { href: "http://poi.apache.org/" },
+                "Apache POI"
+              ),
+              " ",
+              "(",
+              React.createElement(
+                "a",
+                { href: "http://www.apache.org/licenses/LICENSE-2.0" },
+                "Apache License 2.0"
+              ),
+              ")"
+            ),
+            React.createElement(
+              "li",
+              null,
+              React.createElement(
+                "a",
+                { href: "http://jopendocument.org/" },
+                "jOpenDocument"
+              ),
+              " ",
+              "(",
+              React.createElement(
+                "a",
+                { href: "http://www.gnu.org/licenses/gpl-3.0.txt" },
+                "GPL 3.0"
+              ),
+              ")"
+            )
+          ),
+          React.createElement(
+            "ul",
+            null,
+            React.createElement(
+              "li",
+              null,
+              React.createElement(
+                "a",
+                { href: "http://facebook.github.io/react/" },
+                "React"
+              ),
+              " ",
+              "(",
+              React.createElement(
+                "a",
+                { href: "https://github.com/facebook/react/blob/master/LICENSE" },
+                "MIT license"
+              ),
+              ")"
+            ),
+            React.createElement(
+              "li",
+              null,
+              React.createElement(
+                "a",
+                { href: "http://getbootstrap.com/" },
+                "Bootstrap"
+              ),
+              " ",
+              "(",
+              React.createElement(
+                "a",
+                { href: "http://opensource.org/licenses/mit-license.html" },
+                "MIT license"
+              ),
+              ")"
+            ),
+            React.createElement(
+              "li",
+              null,
+              React.createElement(
+                "a",
+                { href: "http://jquery.com/" },
+                "jQuery"
+              ),
+              " ",
+              "(",
+              React.createElement(
+                "a",
+                { href: "http://opensource.org/licenses/mit-license.html" },
+                "MIT license"
+              ),
+              ")"
+            ),
+            React.createElement(
+              "li",
+              null,
+              React.createElement(
+                "a",
+                { href: "http://glyphicons.com/" },
+                "GLYPHICONS free"
+              ),
+              " ",
+              "(",
+              React.createElement(
+                "a",
+                { href: "https://creativecommons.org/licenses/by/3.0/" },
+                "CC-BY 3.0"
+              ),
+              ")"
+            ),
+            React.createElement(
+              "li",
+              null,
+              React.createElement(
+                "a",
+                { href: "http://fortawesome.github.io/Font-Awesome/" },
+                "FontAwesome"
+              ),
+              " ",
+              "(",
+              React.createElement(
+                "a",
+                { href: "http://opensource.org/licenses/mit-license.html" },
+                "MIT"
+              ),
+              ", ",
+              React.createElement(
+                "a",
+                { href: "http://scripts.sil.org/OFL" },
+                "SIL Open Font License"
+              ),
+              ")"
+            )
+          ),
+          React.createElement(
+            "p",
+            null,
+            "The federated content search icon is made by",
+            React.createElement(
+              "a",
+              { href: "http://www.freepik.com", title: "Freepik" },
+              " Freepik "
+            ),
+            "from",
+            React.createElement(
+              "a",
+              { href: "http://www.flaticon.com", title: "Flaticon" },
+              " www.flaticon.com "
+            ),
+            "and licensed under",
+            React.createElement(
+              "a",
+              { href: "http://creativecommons.org/licenses/by/3.0/", title: "Creative Commons BY 3.0" },
+              " CC BY 3.0 "
+            )
+          )
+        )
+      )
+    );
+  }
 });
 
 module.exports = AboutPage;
 
-},{"classnames":2,"create-react-class":6,"prop-types":20}],63:[function(require,module,exports){
+},{"classnames":2,"create-react-class":6,"prop-types":15}],58:[function(require,module,exports){
 "use strict";
 
 var _classnames = require("classnames");
@@ -51348,924 +51722,1000 @@ window.MyAggregator = window.MyAggregator || {};
 var multipleLanguageCode = window.MyAggregator.multipleLanguageCode = "mul"; // see ISO-693-3
 
 var AggregatorPage = (0, _createReactClass2.default)({
-	displayName: "AggregatorPage",
+  displayName: "AggregatorPage",
 
-	// fixme! - class AggregatorPage extends React.Component {
-	propTypes: {
-		ajax: PT.func.isRequired,
-		error: PT.func.isRequired,
-		embedded: PT.bool.isRequired
-	},
+  // fixme! - class AggregatorPage extends React.Component {
+  propTypes: {
+    APIROOT: PT.string.isRequired,
+    ajax: PT.func.isRequired,
+    error: PT.func.isRequired,
+    info: PT.func.isRequired,
+    embedded: PT.bool.isRequired,
+    searchId: PT.number
+  },
 
-	nohits: {
-		results: null
-	},
-	anyLanguage: [multipleLanguageCode, "Any Language"],
+  nohits: {
+    results: null
+  },
+  anyLanguage: [multipleLanguageCode, "Any Language"],
 
-	getInitialState: function getInitialState() {
-		var aggrContext = getQueryVariable('x-aggregation-context');
-		aggrContext = aggrContext && JSON.parse(aggrContext);
+  getInitialState: function getInitialState() {
+    var aggrContext = getQueryVariable('x-aggregation-context');
+    aggrContext = aggrContext && JSON.parse(aggrContext);
 
-		return {
-			corpora: new Corpora([], this.updateCorpora),
-			languageMap: {},
-			weblichtLanguages: [],
-			queryTypeId: getQueryVariable('queryType') || 'cql',
-			cqlQuery: (getQueryVariable('queryType') || 'cql') === 'cql' && getQueryVariable('query') || '',
-			fcsQuery: (getQueryVariable('queryType') || 'cql') === 'fcs' && getQueryVariable('query') || '',
-			aggregationContext: aggrContext || null,
-			language: this.anyLanguage,
-			languageFilter: 'byMeta',
-			numberOfResults: 10,
+    return {
+      corpora: new Corpora([], this.updateCorpora),
+      languageMap: {},
+      weblichtLanguages: [],
+      queryTypeId: getQueryVariable('queryType') || 'cql',
+      cqlQuery: (getQueryVariable('queryType') || 'cql') === 'cql' && getQueryVariable('query') || '',
+      fcsQuery: (getQueryVariable('queryType') || 'cql') === 'fcs' && getQueryVariable('query') || '',
+      aggregationContext: aggrContext || null,
+      language: this.anyLanguage,
+      languageFilter: 'byMeta',
+      numberOfResults: 10,
 
-			searchId: null,
-			timeout: 0,
-			hits: this.nohits,
+      searchId: this.props.searchId,
+      timeout: 0,
+      hits: this.nohits,
 
-			zoomedCorpusHit: null
-		};
-	},
+      zoomedCorpusHit: null
+    };
+  },
 
-	componentDidMount: function componentDidMount() {
-		this._isMounted = true;
+  componentDidMount: function componentDidMount() {
+    this._isMounted = true;
 
-		this.props.ajax({
-			url: 'rest/init',
-			success: function (json, textStatus, jqXHR) {
-				if (this._isMounted) {
-					var corpora = new Corpora(json.corpora, this.updateCorpora);
+    this.props.ajax({
+      url: this.props.APIROOT + 'init',
+      success: function (json, textStatus, jqXHR) {
+        if (this._isMounted) {
+          var corpora = new Corpora(json.corpora, this.updateCorpora);
 
-					// // for testing aggregation context
-					// json['x-aggregation-context'] = {
-					// 	'EKUT': ["http://hdl.handle.net/11858/00-1778-0000-0001-DDAF-D"]
-					// };
+          // // for testing aggregation context
+          // json['x-aggregation-context'] = {
+          // 	'EKUT': ["http://hdl.handle.net/11858/00-1778-0000-0001-DDAF-D"]
+          // };
 
-					var aggregationContext = json['x-aggregation-context'] || this.state.aggregationContext;
+          var aggregationContext = json['x-aggregation-context'] || this.state.aggregationContext;
 
-					window.MyAggregator.mode = getQueryVariable('mode') || json.mode;
-					window.MyAggregator.corpora = json.corpora;
-					window.MyAggregator.xAggregationContext = aggregationContext;
+          window.MyAggregator.mode = getQueryVariable('mode') || json.mode;
+          window.MyAggregator.corpora = json.corpora;
+          window.MyAggregator.xAggregationContext = aggregationContext;
 
-					// Setting visibility, e.g. only corpora 
-					// from v2.0 endpoints for fcs v2.0
-					corpora.setVisibility(this.state.queryTypeId, this.state.language[0]);
+          // Setting visibility, e.g. only corpora 
+          // from v2.0 endpoints for fcs v2.0
+          corpora.setVisibility(this.state.queryTypeId, this.state.language[0]);
 
-					if (aggregationContext) {
-						var contextCorporaInfo = corpora.setAggregationContext(aggregationContext);
-						var unavailableCorporaHandles = contextCorporaInfo.unavailable; // list of unavailable aggregationContext
-						if (unavailableCorporaHandles.length > 0) {
-							this.props.error("Could not find requested collection handles:\n" + unavailableCorporaHandles.join('\n'));
-						}
+          if (aggregationContext) {
+            var contextCorporaInfo = corpora.setAggregationContext(aggregationContext);
+            var unavailableCorporaHandles = contextCorporaInfo.unavailable; // list of unavailable aggregationContext
+            if (unavailableCorporaHandles.length > 0) {
+              this.props.error("Could not find requested collection handles:\n" + unavailableCorporaHandles.join('\n'));
+            }
 
-						var actuallySelectedCorpora = corpora.getSelectedIds();
+            var actuallySelectedCorpora = corpora.getSelectedIds();
 
-						if (contextCorporaInfo.selected.length !== actuallySelectedCorpora.length) {
-							if (actuallySelectedCorpora.length === 0) {
-								this.props.error("This search does not support the required collection(s), will search all collections instead"); // TODO give detailed reason its not supported.
-								corpora.recurse(function (corpus) {
-									corpus.selected = true;
-								});
-							} else {
-								var err = "Some required context collections are not supported for this search:\n";
-								err = err + contextCorpora.filter(function (c) {
-									if (actuallySelectedCorpora.indexOf(c) === -1) {
-										console.warn("Requested corpus but not available for selection", c);
-										return true;
-									}
-									return false;
-								}).map(function (c) {
-									return c.title;
-								}).join('\n');
-								this.props.error(err);
-							}
-						}
-					} else {
-						// no context set all visibl to selected as default.
-						console.log("no context set, selecting all available");
-						corpora.recurse(function (c) {
-							c.visible ? c.selected = true : null;
-						});
-					}
+            if (contextCorporaInfo.selected.length !== actuallySelectedCorpora.length) {
+              if (actuallySelectedCorpora.length === 0) {
+                this.props.error("This search does not support the required collection(s), will search all collections instead"); // TODO give detailed reason its not supported.
+                corpora.recurse(function (corpus) {
+                  corpus.selected = true;
+                });
+              } else {
+                var err = "Some required context collections are not supported for this search:\n";
+                err = err + contextCorpora.filter(function (c) {
+                  if (actuallySelectedCorpora.indexOf(c) === -1) {
+                    console.warn("Requested corpus but not available for selection", c);
+                    return true;
+                  }
+                  return false;
+                }).map(function (c) {
+                  return c.title;
+                }).join('\n');
+                this.props.error(err);
+              }
+            } else if (contextCorporaInfo.selected.length > 0) {
+              this.props.info("Pre-selected " + contextCorporaInfo.selected.length + " collection(s):\n" + contextCorporaInfo.selected.map(function (x) {
+                return x.title + " (" + x.handle + ")";
+              }).join('\n'));
+            }
+          } else {
+            // no context set all visibl to selected as default.
+            console.log("no context set, selecting all available");
+            corpora.recurse(function (c) {
+              c.visible ? c.selected = true : null;
+            });
+          }
 
-					this.setState({
-						corpora: corpora,
-						languageMap: json.languages,
-						weblichtLanguages: json.weblichtLanguages,
-						aggregationContext: aggregationContext
-					}, this.postInit);
-				} else {
-					console.warn("Got Aggregator init response, but not mounted!");
-				}
-			}.bind(this)
-		});
-	},
+          this.setState({
+            corpora: corpora,
+            languageMap: json.languages,
+            weblichtLanguages: json.weblichtLanguages,
+            aggregationContext: aggregationContext
+          }, this.postInit);
+        } else {
+          console.warn("Got Aggregator init response, but not mounted!");
+        }
 
-	postInit: function postInit() {
-		if (window.MyAggregator.mode === 'search') {
-			this.search();
-		}
-	},
+        // load old search state if provided and possible
+        if (this.state.searchId != null) {
+          console.log("Try loading exiting search, from searchId provided from URL:", this.state.searchId);
+          this.refreshSearchResults();
+        }
+      }.bind(this)
+    });
+  },
 
-
-	updateCorpora: function updateCorpora(corpora) {
-		this.setState({ corpora: corpora });
-	},
-
-	getCurrentQuery: function getCurrentQuery() {
-		return this.state.queryTypeId === 'fcs' ? this.state.fcsQuery : this.state.cqlQuery;
-	},
-	search: function search() {
-		var query = this.getCurrentQuery();
-		var queryTypeId = this.state.queryTypeId;
-		if (!query || this.props.embedded && window.MyAggregator.mode !== 'search') {
-			this.setState({ hits: this.nohits, searchId: null });
-			return;
-		}
-		var selectedIds = this.state.corpora.getSelectedIds();
-		if (!selectedIds.length) {
-			this.props.error("Please select a collection to search into");
-			return;
-		}
-
-		// console.log("searching in the following corpora:", selectedIds);
-		// console.log("searching with queryType:", queryTypeId);
-		this.props.ajax({
-			url: 'rest/search',
-			type: "POST",
-			data: {
-				query: query,
-				queryType: queryTypeId,
-				language: this.state.language[0],
-				numberOfResults: this.state.numberOfResults,
-				corporaIds: selectedIds
-			},
-			success: function (searchId, textStatus, jqXHR) {
-				// console.log("search ["+query+"] ok: ", searchId, jqXHR);
-				//Piwik.getAsyncTracker().trackSiteSearch(query, queryTypeId);
-				// automatic inclusion of piwik in prod
-				//console.log("location.hostname: " + location.hostname);
-				if (location.hostname !== "localhost") {
-					//console.log("location.host: " + location.host);
-					_paq.push(['trackSiteSearch', query, queryTypeId, false]);
-				}
-
-				var timeout = 250;
-				setTimeout(this.refreshSearchResults, timeout);
-				this.setState({ searchId: searchId, timeout: timeout });
-			}.bind(this)
-		});
-	},
+  postInit: function postInit() {
+    if (window.MyAggregator.mode === 'search') {
+      this.search();
+    }
+  },
 
 
-	nextResults: function nextResults(corpusId) {
-		// console.log("searching next results in corpus:", corpusId);
-		this.props.ajax({
-			url: 'rest/search/' + this.state.searchId,
-			type: "POST",
-			data: {
-				corpusId: corpusId,
-				numberOfResults: this.state.numberOfResults
-			},
-			success: function (searchId, textStatus, jqXHR) {
-				// console.log("search ["+query+"] ok: ", searchId, jqXHR);
-				var timeout = 250;
-				setTimeout(this.refreshSearchResults, timeout);
-				this.setState({ searchId: searchId, timeout: timeout });
-			}.bind(this)
-		});
-	},
+  updateCorpora: function updateCorpora(corpora) {
+    this.setState({ corpora: corpora });
+  },
 
-	refreshSearchResults: function refreshSearchResults() {
-		if (!this.state.searchId || !this._isMounted) {
-			return;
-		}
-		this.props.ajax({
-			url: 'rest/search/' + this.state.searchId,
-			success: function (json, textStatus, jqXHR) {
-				var timeout = this.state.timeout;
-				if (json.inProgress) {
-					if (timeout < 10000) {
-						timeout = 1.5 * timeout;
-					}
-					setTimeout(this.refreshSearchResults, timeout);
-					// console.log("new search in: " + this.timeout + "ms");
-				} else {
-					console.log("search ended; hits:", json);
-				}
-				var corpusHit = this.state.zoomedCorpusHit;
-				if (corpusHit) {
-					for (var resi = 0; resi < json.results.length; resi++) {
-						var res = json.results[resi];
-						if (res.corpus.id === corpusHit.corpus.id) {
-							corpusHit = res;
-							break;
-						}
-					}
-				}
-				this.setState({ hits: json, timeout: timeout, zoomedCorpusHit: corpusHit });
-			}.bind(this)
-		});
-	},
-
-	getExportParams: function getExportParams(corpusId, format, filterLanguage) {
-		var params = corpusId ? { corpusId: corpusId } : {};
-		if (format) params.format = format;
-		if (filterLanguage) {
-			params.filterLanguage = filterLanguage;
-		} else if (this.state.languageFilter === 'byGuess' || this.state.languageFilter === 'byMetaAndGuess') {
-			params.filterLanguage = this.state.language[0];
-		}
-		return encodeQueryData(params);
-	},
-
-	getDownloadLink: function getDownloadLink(corpusId, format) {
-		return 'rest/search/' + this.state.searchId + '/download?' + this.getExportParams(corpusId, format);
-	},
-
-	getToWeblichtLink: function getToWeblichtLink(corpusId, forceLanguage) {
-		return 'rest/search/' + this.state.searchId + '/toWeblicht?' + this.getExportParams(corpusId, null, forceLanguage);
-	},
-
-	setLanguageAndFilter: function setLanguageAndFilter(languageObj, languageFilter) {
-		this.state.corpora.setVisibility(this.state.queryTypeId, languageFilter === 'byGuess' ? multipleLanguageCode : languageObj[0]);
-		this.setState({
-			language: languageObj,
-			languageFilter: languageFilter,
-			corpora: this.state.corpora // === this.state.corpora.update();
-		});
-	},
-
-	setQueryType: function setQueryType(queryTypeId) {
-		this.state.corpora.setVisibility(queryTypeId, this.state.language[0]);
-		setQueryVariable('queryType', queryTypeId);
-		setQueryVariable('query', queryTypeId === 'cql' ? this.state.cqlQuery : this.state.fcsQuery);
-		this.setState({
-			queryTypeId: queryTypeId,
-			hits: this.nohits,
-			searchId: null
-		});
-	},
-
-	setNumberOfResults: function setNumberOfResults(e) {
-		var n = e.target.value;
-		if (n < 10) n = 10;
-		if (n > 250) n = 250;
-		this.setState({ numberOfResults: n });
-		e.preventDefault();
-		e.stopPropagation();
-	},
-
-	stop: function stop(e) {
-		e.stopPropagation();
-	},
-
-	filterResults: function filterResults() {
-		var noLangFiltering = this.state.languageFilter === 'byMeta';
-		var langCode = this.state.language[0];
-		var results = null,
-		    inProgress = 0,
-		    hits = 0;
-		if (this.state.hits.results) {
-			results = this.state.hits.results.map(function (corpusHit) {
-				return {
-					corpus: corpusHit.corpus,
-					inProgress: corpusHit.inProgress,
-					exception: corpusHit.exception,
-					diagnostics: corpusHit.diagnostics,
-					kwics: noLangFiltering ? corpusHit.kwics : corpusHit.kwics.filter(function (kwic) {
-						return kwic.language === langCode || langCode === multipleLanguageCode || langCode === null;
-					}),
-					advancedLayers: noLangFiltering ? corpusHit.advancedLayers : corpusHit.advancedLayers.filter(function (layer) {
-						return layer.language === langCode || langCode === multipleLanguageCode || langCode === null;
-					})
-				};
-			});
-			for (var i = 0; i < results.length; i++) {
-				var result = results[i];
-				if (result.inProgress) {
-					inProgress++;
-				}
-				if (result.kwics.length > 0) {
-					hits++;
-				}
-			}
-		}
-		return {
-			results: results,
-			hits: hits,
-			inProgress: inProgress
-		};
-	},
-
-	toggleLanguageSelection: function toggleLanguageSelection(e) {
-		$(ReactDOM.findDOMNode(this.refs.languageModal)).modal();
-		e.preventDefault();
-		e.stopPropagation();
-	},
-
-	toggleCorpusSelection: function toggleCorpusSelection(e) {
-		$(ReactDOM.findDOMNode(this.refs.corporaModal)).modal();
-		e.preventDefault();
-		e.stopPropagation();
-	},
-
-	toggleResultModal: function toggleResultModal(e, corpusHit) {
-		$(ReactDOM.findDOMNode(this.refs.resultModal)).modal();
-		this.setState({ zoomedCorpusHit: corpusHit });
-		e.preventDefault();
-		e.stopPropagation();
-	},
-
-	onQueryChange: function onQueryChange(queryStr) {
-		if (this.state.queryTypeId === 'cql') {
-			this.setState({
-				cqlQuery: queryStr || ''
-			});
-		} else {
-			this.setState({
-				fcsQuery: queryStr || ''
-			});
-		}
-		setQueryVariable('query', queryStr);
-	},
-
-	handleKey: function handleKey(event) {
-		if (event.keyCode == 13) {
-			this.search();
-		}
-	},
-
-	renderZoomedResultTitle: function renderZoomedResultTitle(corpusHit) {
-		if (!corpusHit) return React.createElement("span", null);
-		var corpus = corpusHit.corpus;
-		return React.createElement(
-			"h3",
-			{ style: { fontSize: '1em' } },
-			corpus.title,
-			corpus.landingPage ? React.createElement(
-				"a",
-				{ href: corpus.landingPage, onClick: this.stop, style: { fontSize: 12 } },
-				React.createElement(
-					"span",
-					null,
-					" \u2013 Homepage "
-				),
-				React.createElement("i", { className: "glyphicon glyphicon-home" })
-			) : false
-		);
-	},
-
-	renderSearchButtonOrLink: function renderSearchButtonOrLink() {
-		if (this.props.embedded) {
-			var query = this.getCurrentQuery();
-			var queryTypeId = this.state.queryTypeId;
-			var btnClass = (0, _classnames2.default)({
-				'btn': true,
-				'btn-default': queryTypeId === 'cql',
-				'btn-primary': true,
-				'input-lg': true
-			});
-			var newurl = !query ? "#" : window.MyAggregator.URLROOT + (this.props.embedded ? "/embed" : "/") + "?" + encodeQueryData({ queryType: queryTypeId, query: query, mode: 'search' });
-			return React.createElement(
-				"a",
-				{ className: btnClass, style: { paddingTop: 13 },
-					type: "button", target: "_blank", href: newurl },
-				React.createElement("i", { className: "glyphicon glyphicon-search" })
-			);
-		}
-		return React.createElement(
-			"button",
-			{ className: "btn btn-default input-lg image_button", type: "button", onClick: this.search },
-			React.createElement("i", { className: "glyphicon glyphicon-search" })
-		);
-	},
-
-	renderQueryInput: function renderQueryInput() {
-		var queryType = queryTypeMap[this.state.queryTypeId];
-		return React.createElement(_queryinput2.default, {
-			searchedLanguages: this.state.searchedLanguages || [multipleLanguageCode],
-			corpora: this.props.corpora,
-			queryTypeId: this.state.queryTypeId,
-			query: this.getCurrentQuery() === undefined ? queryType.searchPlaceholder : this.getCurrentQuery(),
-			embedded: this.props.embedded,
-			placeholder: queryType.searchPlaceholder,
-			onQueryChange: this.onQueryChange,
-			onKeyDown: this.handleKey });
-	},
-	renderEmbed: function renderEmbed() {
-		var queryType = queryTypeMap[this.state.queryTypeId];
-
-		return React.createElement(
-			"div",
-			{ className: "aligncenter", style: { marginLeft: 16, marginRight: 16 } },
-			React.createElement(
-				"div",
-				{ className: "input-group" },
-				React.createElement(
-					"span",
-					{ className: "input-group-addon", style: { backgroundColor: queryType.searchLabelBkColor } },
-					queryType.searchLabel
-				),
-				this.renderQueryInput(),
-				React.createElement(
-					"div",
-					{ className: "input-group-btn" },
-					this.renderSearchButtonOrLink()
-				)
-			)
-		);
-	},
-	renderGQB: function renderGQB() {
-		var queryType = queryTypeMap[this.state.queryTypeId];
-
-		return React.createElement(
-			"div",
-			{ style: { marginLeft: 16, marginRight: 16 } },
-			React.createElement(
-				"div",
-				{ className: "panel panel-default" },
-				React.createElement(
-					"div",
-					{ className: "panel-heading", style: { backgroundColor: queryType.searchLabelBkColor, fontSize: "120%" } },
-					queryType.searchLabel
-				),
-				React.createElement(
-					"div",
-					{ className: "panel-body" },
-					this.renderQueryInput()
-				),
-				React.createElement(
-					"div",
-					{ className: "panel-footer" },
-					React.createElement(
-						"div",
-						{ className: "input-group" },
-						React.createElement(
-							"pre",
-							{ className: "adv-query-preview aligncenter input-control input-lg" },
-							this.getCurrentQuery()
-						),
-						React.createElement(
-							"div",
-							{ className: "input-group-btn" },
-							this.renderSearchButtonOrLink()
-						)
-					)
-				)
-			)
-		);
-	},
-	renderUnavailableCorporaMessage: function renderUnavailableCorporaMessage() {
-		if (!this.state.corpora) {
-			return;
-		}
-		var unavailable = [];
-		this.state.corpora.recurse(function (c) {
-			if (c.selected && !c.visible) {
-				unavailable.push(c);
-			}
-			if (c.selected) {
-				// apparently a selected corpus 
-			}
-		});
-
-		if (unavailable.length) {
-			return React.createElement(
-				"div",
-				{ id: "unavailable-corpora-message", className: "text-muted" },
-				React.createElement(
-					"div",
-					{ id: "unavailable-corpora-message-message" },
-					React.createElement(
-						"a",
-						{ role: "button", "data-toggle": "dropdown" },
-						unavailable.length,
-						" selected collection",
-						unavailable.length > 1 ? 's are' : ' is',
-						" disabled in this search mode."
-					)
-				),
-				React.createElement(
-					"ul",
-					{ id: "unavailable-corpora-message-list", className: "dropdown-menu" },
-					unavailable.map(function (c) {
-						return React.createElement(
-							"li",
-							{ className: "unavailable-corpora-message-item" },
-							c.name
-						);
-					})
-				)
-			);
-		}
-	},
+  getCurrentQuery: function getCurrentQuery() {
+    return this.getCurrentQueryByQueryTypeId(this.state.queryTypeId);
+  },
 
 
-	render: function render() {
+  getCurrentQueryByQueryTypeId: function getCurrentQueryByQueryTypeId(queryTypeId) {
+    if (queryTypeId === 'fcs') {
+      return this.state.fcsQuery;
+    } else {
+      return this.state.cqlQuery;
+    }
+  },
 
-		var queryType = queryTypeMap[this.state.queryTypeId];
-		return React.createElement(
-			"div",
-			{ className: "top-gap" },
-			React.createElement(
-				"div",
-				{ className: "row" },
-				!this.props.embedded && this.state.queryTypeId == "fcs" ? this.renderGQB() : this.renderEmbed()
-			),
-			React.createElement(
-				"div",
-				{ className: "well", style: { marginTop: 20 } },
-				React.createElement(
-					"div",
-					{ className: "aligncenter" },
-					React.createElement(
-						"form",
-						{ className: "form-inline", role: "form" },
-						React.createElement(
-							"div",
-							{ className: "input-group" },
-							React.createElement(
-								"span",
-								{ className: "input-group-addon nobkg" },
-								"Search for"
-							),
-							React.createElement(
-								"div",
-								{ className: "input-group-btn" },
-								React.createElement(
-									"button",
-									{ className: "form-control btn btn-default",
-										onClick: this.toggleLanguageSelection },
-									this.state.language[1],
-									" ",
-									React.createElement("span", { className: "caret" })
-								),
-								React.createElement("span", null)
-							),
-							React.createElement(
-								"div",
-								{ className: "input-group-btn hidden-xxs" },
-								React.createElement(
-									"ul",
-									{ ref: "queryTypeDropdownMenu", className: "dropdown-menu" },
-									queryTypes.map(function (l) {
-										var cls = l.disabled ? 'disabled' : '';
-										var handler = function () {
-											if (!l.disabled) this.setQueryType(l.id);
-										}.bind(this);
-										return React.createElement(
-											"li",
-											{ key: l.id, className: cls },
-											" ",
-											React.createElement(
-												"a",
-												{ tabIndex: "-1", href: "#",
-													onClick: handler },
-												" ",
-												l.name,
-												" "
-											)
-										);
-									}.bind(this))
-								),
-								React.createElement(
-									"button",
-									{ className: "form-control btn btn-default",
-										"aria-expanded": "false", "data-toggle": "dropdown" },
-									queryType.name,
-									" ",
-									React.createElement("span", { className: "caret" })
-								)
-							)
-						),
-						React.createElement(
-							"div",
-							{ className: "input-group hidden-xs" },
-							React.createElement(
-								"span",
-								{ className: "input-group-addon nobkg" },
-								"in"
-							),
-							React.createElement(
-								"button",
-								{ type: "button", className: "btn btn-default", onClick: this.toggleCorpusSelection },
-								this.state.corpora.getSelectedMessage(),
-								" ",
-								React.createElement("span", { className: "caret" })
-							)
-						),
-						React.createElement(
-							"div",
-							{ className: "input-group hidden-xs hidden-sm" },
-							React.createElement(
-								"span",
-								{ className: "input-group-addon nobkg" },
-								"and show up to"
-							),
-							React.createElement(
-								"div",
-								{ className: "input-group-btn" },
-								React.createElement("input", { type: "number", className: "form-control input", min: "10", max: "250",
-									style: { width: 60 },
-									onChange: this.setNumberOfResults, value: this.state.numberOfResults,
-									onKeyPress: this.stop })
-							),
-							React.createElement(
-								"span",
-								{ className: "input-group-addon nobkg" },
-								"hits per endpoint"
-							)
-						)
-					)
-				)
-			),
-			React.createElement(
-				_modal2.default,
-				{ ref: "corporaModal", title: React.createElement(
-						"span",
-						null,
-						"Collections ",
-						React.createElement(
-							"small",
-							{ className: "text-muted" },
-							this.props.corpora && this.props.corpora.getSelectedMessage()
-						)
-					) },
-				React.createElement(_corpusview2.default, { corpora: this.state.corpora, languageMap: this.state.languageMap })
-			),
-			React.createElement(
-				_modal2.default,
-				{ ref: "languageModal", title: React.createElement(
-						"span",
-						null,
-						"Select Language"
-					) },
-				React.createElement(_languageselector2.default, { anyLanguage: this.anyLanguage,
-					languageMap: this.state.languageMap,
-					selectedLanguage: this.state.language,
-					languageFilter: this.state.languageFilter,
-					languageChangeHandler: this.setLanguageAndFilter })
-			),
-			React.createElement(
-				_modal2.default,
-				{ ref: "resultModal", title: this.renderZoomedResultTitle(this.state.zoomedCorpusHit) },
-				React.createElement(_zoomedresult2.default, { corpusHit: this.state.zoomedCorpusHit,
-					nextResults: this.nextResults,
-					getDownloadLink: this.getDownloadLink,
-					getToWeblichtLink: this.getToWeblichtLink,
-					searchedLanguage: this.state.language,
-					weblichtLanguages: this.state.weblichtLanguages,
-					languageMap: this.state.languageMap,
-					queryTypeId: this.state.queryTypeId })
-			),
-			React.createElement(
-				"div",
-				{ className: "top-gap" },
-				React.createElement(_results2.default, { collhits: this.filterResults(),
-					toggleResultModal: this.toggleResultModal,
-					getDownloadLink: this.getDownloadLink,
-					getToWeblichtLink: this.getToWeblichtLink,
-					searchedLanguage: this.state.language,
-					queryTypeId: this.state.queryTypeId })
-			)
-		);
-	}
+  search: function search() {
+    var query = this.getCurrentQuery();
+    var queryTypeId = this.state.queryTypeId;
+    if (!query || this.props.embedded && window.MyAggregator.mode !== 'search') {
+      this.setState({ hits: this.nohits, searchId: null });
+      return;
+    }
+    var selectedIds = this.state.corpora.getSelectedIds();
+    if (!selectedIds.length) {
+      this.props.error("Please select a collection to search into");
+      return;
+    }
+
+    // console.log("searching in the following corpora:", selectedIds);
+    // console.log("searching with queryType:", queryTypeId);
+    this.props.ajax({
+      url: this.props.APIROOT + 'search',
+      type: "POST",
+      data: {
+        query: query,
+        queryType: queryTypeId,
+        language: this.state.language[0],
+        numberOfResults: this.state.numberOfResults,
+        corporaIds: selectedIds
+      },
+      success: function (searchId, textStatus, jqXHR) {
+        // console.log("search ["+query+"] ok: ", searchId, jqXHR);
+        //Piwik.getAsyncTracker().trackSiteSearch(query, queryTypeId);
+        // automatic inclusion of piwik in prod
+        //console.log("location.hostname: " + location.hostname);
+        if (location.hostname !== "localhost") {
+          //console.log("location.host: " + location.host);
+          _paq.push(['trackSiteSearch', query, queryTypeId, false]);
+        }
+
+        var timeout = 250;
+        setTimeout(this.refreshSearchResults, timeout);
+        this.setState({ searchId: searchId, timeout: timeout });
+      }.bind(this)
+    });
+  },
+
+
+  nextResults: function nextResults(corpusId) {
+    // console.log("searching next results in corpus:", corpusId);
+    this.props.ajax({
+      url: this.props.APIROOT + 'search/' + this.state.searchId,
+      type: "POST",
+      data: {
+        corpusId: corpusId,
+        numberOfResults: this.state.numberOfResults
+      },
+      success: function (searchId, textStatus, jqXHR) {
+        // console.log("search ["+query+"] ok: ", searchId, jqXHR);
+        var timeout = 250;
+        setTimeout(this.refreshSearchResults, timeout);
+        this.setState({ searchId: searchId, timeout: timeout });
+      }.bind(this)
+    });
+  },
+
+  refreshSearchResults: function refreshSearchResults() {
+    if (!this.state.searchId || !this._isMounted) {
+      return;
+    }
+    this.props.ajax({
+      url: this.props.APIROOT + 'search/' + this.state.searchId,
+      success: function (json, textStatus, jqXHR) {
+        var timeout = this.state.timeout;
+        if (json.inProgress) {
+          if (timeout < 10000) {
+            timeout = 1.5 * timeout;
+          }
+          setTimeout(this.refreshSearchResults, timeout);
+          // console.log("new search in: " + this.timeout + "ms");
+        } else {
+          console.log("search ended; hits:", json);
+        }
+        var corpusHit = this.state.zoomedCorpusHit;
+        if (corpusHit) {
+          for (var resi = 0; resi < json.results.length; resi++) {
+            var res = json.results[resi];
+            if (res.corpus.id === corpusHit.corpus.id) {
+              corpusHit = res;
+              break;
+            }
+          }
+        }
+        this.setState({ hits: json, timeout: timeout, zoomedCorpusHit: corpusHit });
+      }.bind(this)
+    });
+  },
+
+  getExportParams: function getExportParams(corpusId, format, filterLanguage) {
+    var params = corpusId ? { corpusId: corpusId } : {};
+    if (format) params.format = format;
+    if (filterLanguage) {
+      params.filterLanguage = filterLanguage;
+    } else if (this.state.languageFilter === 'byGuess' || this.state.languageFilter === 'byMetaAndGuess') {
+      params.filterLanguage = this.state.language[0];
+    }
+    return encodeQueryData(params);
+  },
+
+  getDownloadLink: function getDownloadLink(corpusId, format) {
+    return this.props.APIROOT + 'search/' + this.state.searchId + '/download?' + this.getExportParams(corpusId, format);
+  },
+
+  getToWeblichtLink: function getToWeblichtLink(corpusId, forceLanguage) {
+    return this.props.APIROOT + 'search/' + this.state.searchId + '/toWeblicht?' + this.getExportParams(corpusId, null, forceLanguage);
+  },
+
+  setLanguageAndFilter: function setLanguageAndFilter(languageObj, languageFilter) {
+    this.state.corpora.setVisibility(this.state.queryTypeId, languageFilter === 'byGuess' ? multipleLanguageCode : languageObj[0]);
+    this.setState({
+      language: languageObj,
+      languageFilter: languageFilter,
+      corpora: this.state.corpora // === this.state.corpora.update();
+    });
+  },
+
+  setQueryType: function setQueryType(queryTypeId) {
+    this.state.corpora.setVisibility(queryTypeId, this.state.language[0]);
+    setQueryVariable('queryType', queryTypeId);
+    setQueryVariable('query', this.getCurrentQueryByQueryTypeId(queryTypeId));
+    this.setState({
+      queryTypeId: queryTypeId,
+      hits: this.nohits,
+      searchId: null
+    });
+  },
+
+  setNumberOfResults: function setNumberOfResults(e) {
+    var n = e.target.value;
+    if (n < 10) n = 10;
+    if (n > 250) n = 250;
+    this.setState({ numberOfResults: n });
+    e.preventDefault();
+    e.stopPropagation();
+  },
+
+  stop: function stop(e) {
+    e.stopPropagation();
+  },
+
+  filterResults: function filterResults() {
+    var noLangFiltering = this.state.languageFilter === 'byMeta';
+    var langCode = this.state.language[0];
+    var results = null,
+        inProgress = 0,
+        hits = 0;
+    if (this.state.hits.results) {
+      results = this.state.hits.results.map(function (corpusHit) {
+        return {
+          corpus: corpusHit.corpus,
+          inProgress: corpusHit.inProgress,
+          exception: corpusHit.exception,
+          diagnostics: corpusHit.diagnostics,
+          kwics: noLangFiltering ? corpusHit.kwics : corpusHit.kwics.filter(function (kwic) {
+            return kwic.language === langCode || langCode === multipleLanguageCode || langCode === null;
+          }),
+          advancedLayers: noLangFiltering ? corpusHit.advancedLayers : corpusHit.advancedLayers.filter(function (layers) {
+            return layers.every(function (layer) {
+              return layer.language === langCode || langCode === multipleLanguageCode || langCode === null;
+            });
+          })
+        };
+      });
+      for (var i = 0; i < results.length; i++) {
+        var result = results[i];
+        if (result.inProgress) {
+          inProgress++;
+        }
+        if (result.kwics.length > 0) {
+          hits++;
+        }
+      }
+    }
+    return {
+      results: results,
+      hits: hits,
+      inProgress: inProgress
+    };
+  },
+
+  toggleLanguageSelection: function toggleLanguageSelection(e) {
+    $(ReactDOM.findDOMNode(this.refs.languageModal)).modal();
+    e.preventDefault();
+    e.stopPropagation();
+  },
+
+  toggleCorpusSelection: function toggleCorpusSelection(e) {
+    $(ReactDOM.findDOMNode(this.refs.corporaModal)).modal();
+    e.preventDefault();
+    e.stopPropagation();
+  },
+
+  toggleResultModal: function toggleResultModal(e, corpusHit) {
+    $(ReactDOM.findDOMNode(this.refs.resultModal)).modal();
+    this.setState({ zoomedCorpusHit: corpusHit });
+    e.preventDefault();
+    e.stopPropagation();
+  },
+
+  onQueryChange: function onQueryChange(queryStr) {
+    if (this.state.queryTypeId === 'cql') {
+      this.setState({
+        cqlQuery: queryStr || ''
+      });
+    } else {
+      this.setState({
+        fcsQuery: queryStr || ''
+      });
+    }
+    setQueryVariable('query', queryStr);
+  },
+
+  handleKey: function handleKey(event) {
+    if (event.keyCode == 13) {
+      this.search();
+    }
+  },
+
+  copyToClipboard: function copyToClipboard(text) {
+    if (!navigator.clipboard) {
+      console.warn("Failed to copy to clipboard!");
+      return;
+    }
+    navigator.clipboard.writeText(text).then(function () {
+      console.log("Async: Copying to clipboard was successful!");
+    }, function (err) {
+      console.error("Async: Could not copy text: ", err);
+    });
+  },
+
+  renderZoomedResultTitle: function renderZoomedResultTitle(corpusHit) {
+    if (!corpusHit) return React.createElement("span", null);
+    var corpus = corpusHit.corpus;
+    return React.createElement(
+      "h3",
+      { style: { fontSize: '1em' } },
+      corpus.title,
+      corpus.landingPage ? React.createElement(
+        "a",
+        { href: corpus.landingPage, onClick: this.stop, style: { fontSize: 12 } },
+        React.createElement(
+          "span",
+          null,
+          " \u2013 Homepage "
+        ),
+        React.createElement("i", { className: "glyphicon glyphicon-home" })
+      ) : false
+    );
+  },
+
+  getSearchPermaLink: function getSearchPermaLink() {
+    //var query = getQueryVariable('query');
+    //var query = this.getCurrentQueryByQueryTypeId(queryTypeId)
+    var query = this.getCurrentQuery();
+    var queryTypeId = this.state.queryTypeId;
+
+    //var tempUrl = window.location.origin + window.location.pathname + "/search-" + this.state.searchId;
+    //window.history.replaceState(window.history.state, null, tempUrl);
+    //setQueryVariable('queryType', queryTypeId);
+    //setQueryVariable('query', query);        
+    //var url = window.location.toString();
+    var url = window.location.origin + '/' + (!!window.MyAggregator.URLROOT.length ? window.MyAggregator.URLROOT + '/' : '') + "search-" + this.state.searchId + '?' + encodeQueryData({ queryType: queryTypeId, query: query });
+    return url;
+  },
+
+  renderSearchPermaLink: function renderSearchPermaLink() {
+    var url = this.getSearchPermaLink();
+    return React.createElement(
+      "div",
+      { className: "input-group input-group-sm col-md-4", style: { float: "right" } },
+      React.createElement(
+        "span",
+        { className: "input-group-addon" },
+        "Perma-Link"
+      ),
+      React.createElement("input", { type: "text", readOnly: true, value: url, id: "search-perma-link", className: "form-control input-sm search" }),
+      React.createElement(
+        "div",
+        { className: "input-group-btn" },
+        React.createElement(
+          "button",
+          { className: "btn btn-default input-sm image_button", type: "button", onClick: this.copyToClipboard.bind(this, url) },
+          React.createElement("i", { className: "glyphicon glyphicon-copy" })
+        )
+      )
+    );
+  },
+
+  renderSearchButtonOrLink: function renderSearchButtonOrLink() {
+    if (this.props.embedded) {
+      var query = this.getCurrentQuery();
+      var queryTypeId = this.state.queryTypeId;
+      var btnClass = (0, _classnames2.default)({
+        'btn': true,
+        'btn-default': queryTypeId === 'cql',
+        'btn-primary': true,
+        'input-lg': true
+      });
+      var newurl = !query ? "#" : window.MyAggregator.URLROOT + (this.props.embedded ? "/embed" : "/") + "?" + encodeQueryData({ queryType: queryTypeId, query: query, mode: 'search' });
+      return React.createElement(
+        "a",
+        { className: btnClass, style: { paddingTop: 13 },
+          type: "button", target: "_blank", href: newurl },
+        React.createElement("i", { className: "glyphicon glyphicon-search" })
+      );
+    }
+    return React.createElement(
+      "button",
+      { className: "btn btn-default input-lg image_button", type: "button", onClick: this.search },
+      React.createElement("i", { className: "glyphicon glyphicon-search" })
+    );
+  },
+
+  renderQueryInput: function renderQueryInput() {
+    var queryType = queryTypeMap[this.state.queryTypeId];
+    return React.createElement(_queryinput2.default, {
+      searchedLanguages: this.state.searchedLanguages || [multipleLanguageCode],
+      corpora: this.props.corpora,
+      queryTypeId: this.state.queryTypeId,
+      query: this.getCurrentQuery() === undefined ? queryType.searchPlaceholder : this.getCurrentQuery(),
+      embedded: this.props.embedded,
+      placeholder: queryType.searchPlaceholder,
+      onQueryChange: this.onQueryChange,
+      onKeyDown: this.handleKey });
+  },
+  renderEmbed: function renderEmbed() {
+    var queryType = queryTypeMap[this.state.queryTypeId];
+
+    return React.createElement(
+      "div",
+      { className: "aligncenter", style: { marginLeft: 16, marginRight: 16 } },
+      React.createElement(
+        "div",
+        { className: "input-group" },
+        React.createElement(
+          "span",
+          { className: "input-group-addon", style: { backgroundColor: queryType.searchLabelBkColor } },
+          queryType.searchLabel
+        ),
+        this.renderQueryInput(),
+        React.createElement(
+          "div",
+          { className: "input-group-btn" },
+          this.renderSearchButtonOrLink()
+        )
+      )
+    );
+  },
+  renderGQB: function renderGQB() {
+    var queryType = queryTypeMap[this.state.queryTypeId];
+
+    return React.createElement(
+      "div",
+      { style: { marginLeft: 16, marginRight: 16 } },
+      React.createElement(
+        "div",
+        { className: "panel panel-default" },
+        React.createElement(
+          "div",
+          { className: "panel-heading", style: { backgroundColor: queryType.searchLabelBkColor, fontSize: "120%" } },
+          queryType.searchLabel
+        ),
+        React.createElement(
+          "div",
+          { className: "panel-body" },
+          this.renderQueryInput()
+        ),
+        React.createElement(
+          "div",
+          { className: "panel-footer" },
+          React.createElement(
+            "div",
+            { className: "input-group" },
+            React.createElement(
+              "pre",
+              { className: "adv-query-preview aligncenter input-control input-lg" },
+              this.getCurrentQuery()
+            ),
+            React.createElement(
+              "div",
+              { className: "input-group-btn" },
+              this.renderSearchButtonOrLink()
+            )
+          )
+        )
+      )
+    );
+  },
+  renderUnavailableCorporaMessage: function renderUnavailableCorporaMessage() {
+    if (!this.state.corpora) {
+      return;
+    }
+    var unavailable = [];
+    this.state.corpora.recurse(function (c) {
+      if (c.selected && !c.visible) {
+        unavailable.push(c);
+      }
+      if (c.selected) {
+        // apparently a selected corpus 
+      }
+    });
+
+    if (unavailable.length) {
+      return React.createElement(
+        "div",
+        { id: "unavailable-corpora-message", className: "text-muted" },
+        React.createElement(
+          "div",
+          { id: "unavailable-corpora-message-message" },
+          React.createElement(
+            "a",
+            { role: "button", "data-toggle": "dropdown" },
+            unavailable.length,
+            " selected collection",
+            unavailable.length > 1 ? 's are' : ' is',
+            " disabled in this search mode."
+          )
+        ),
+        React.createElement(
+          "ul",
+          { id: "unavailable-corpora-message-list", className: "dropdown-menu" },
+          unavailable.map(function (c) {
+            return React.createElement(
+              "li",
+              { className: "unavailable-corpora-message-item" },
+              c.name
+            );
+          })
+        )
+      );
+    }
+  },
+
+
+  render: function render() {
+    var queryType = queryTypeMap[this.state.queryTypeId];
+    return React.createElement(
+      "div",
+      { className: "top-gap" },
+      React.createElement(
+        "div",
+        { className: "row" },
+        !this.props.embedded && this.state.queryTypeId == "fcs" ? this.renderGQB() : this.renderEmbed()
+      ),
+      React.createElement(
+        "div",
+        { className: "well", style: { marginTop: 20 } },
+        React.createElement(
+          "div",
+          { className: "aligncenter" },
+          React.createElement(
+            "form",
+            { className: "form-inline", role: "form" },
+            React.createElement(
+              "div",
+              { className: "input-group" },
+              React.createElement(
+                "span",
+                { className: "input-group-addon nobkg" },
+                "Search for"
+              ),
+              React.createElement(
+                "div",
+                { className: "input-group-btn" },
+                React.createElement(
+                  "button",
+                  { className: "form-control btn btn-default",
+                    onClick: this.toggleLanguageSelection },
+                  this.state.language[1],
+                  " ",
+                  React.createElement("span", { className: "caret" })
+                ),
+                React.createElement("span", null)
+              ),
+              React.createElement(
+                "div",
+                { className: "input-group-btn hidden-xxs" },
+                React.createElement(
+                  "ul",
+                  { ref: "queryTypeDropdownMenu", className: "dropdown-menu" },
+                  queryTypes.map(function (l) {
+                    var cls = l.disabled ? 'disabled' : '';
+                    var handler = function () {
+                      if (!l.disabled) this.setQueryType(l.id);
+                    }.bind(this);
+                    return React.createElement(
+                      "li",
+                      { key: l.id, className: cls },
+                      " ",
+                      React.createElement(
+                        "a",
+                        { tabIndex: "-1", href: "#",
+                          onClick: handler },
+                        " ",
+                        l.name,
+                        " "
+                      )
+                    );
+                  }.bind(this))
+                ),
+                React.createElement(
+                  "button",
+                  { className: "form-control btn btn-default",
+                    "aria-expanded": "false", "data-toggle": "dropdown" },
+                  queryType.name,
+                  " ",
+                  React.createElement("span", { className: "caret" })
+                )
+              )
+            ),
+            React.createElement(
+              "div",
+              { className: "input-group hidden-xs" },
+              React.createElement(
+                "span",
+                { className: "input-group-addon nobkg" },
+                "in"
+              ),
+              React.createElement(
+                "button",
+                { type: "button", className: "btn btn-default", onClick: this.toggleCorpusSelection },
+                this.state.corpora.getSelectedMessage(),
+                " ",
+                React.createElement("span", { className: "caret" })
+              )
+            ),
+            React.createElement(
+              "div",
+              { className: "input-group hidden-xs hidden-sm" },
+              React.createElement(
+                "span",
+                { className: "input-group-addon nobkg" },
+                "and show up to"
+              ),
+              React.createElement(
+                "div",
+                { className: "input-group-btn" },
+                React.createElement("input", { type: "number", className: "form-control input", min: "10", max: "250",
+                  style: { width: 60 },
+                  onChange: this.setNumberOfResults, value: this.state.numberOfResults,
+                  onKeyPress: this.stop })
+              ),
+              React.createElement(
+                "span",
+                { className: "input-group-addon nobkg" },
+                "hits per endpoint"
+              )
+            )
+          )
+        )
+      ),
+      this.state.searchId !== null ? this.renderSearchPermaLink() : false,
+      React.createElement(
+        _modal2.default,
+        { ref: "corporaModal", title: React.createElement(
+            "span",
+            null,
+            "Collections ",
+            React.createElement(
+              "small",
+              { className: "text-muted" },
+              this.props.corpora && this.props.corpora.getSelectedMessage()
+            )
+          ) },
+        React.createElement(_corpusview2.default, { corpora: this.state.corpora, languageMap: this.state.languageMap })
+      ),
+      React.createElement(
+        _modal2.default,
+        { ref: "languageModal", title: React.createElement(
+            "span",
+            null,
+            "Select Language"
+          ) },
+        React.createElement(_languageselector2.default, { anyLanguage: this.anyLanguage,
+          languageMap: this.state.languageMap,
+          selectedLanguage: this.state.language,
+          languageFilter: this.state.languageFilter,
+          languageChangeHandler: this.setLanguageAndFilter })
+      ),
+      React.createElement(
+        _modal2.default,
+        { ref: "resultModal", title: this.renderZoomedResultTitle(this.state.zoomedCorpusHit) },
+        React.createElement(_zoomedresult2.default, { corpusHit: this.state.zoomedCorpusHit,
+          nextResults: this.nextResults,
+          getDownloadLink: this.getDownloadLink,
+          getToWeblichtLink: this.getToWeblichtLink,
+          searchedLanguage: this.state.language,
+          weblichtLanguages: this.state.weblichtLanguages,
+          languageMap: this.state.languageMap,
+          queryTypeId: this.state.queryTypeId })
+      ),
+      React.createElement(
+        "div",
+        { className: "top-gap" },
+        React.createElement(_results2.default, { collhits: this.filterResults(),
+          toggleResultModal: this.toggleResultModal,
+          getDownloadLink: this.getDownloadLink,
+          getToWeblichtLink: this.getToWeblichtLink,
+          searchedLanguage: this.state.language,
+          queryTypeId: this.state.queryTypeId })
+      )
+    );
+  }
 });
 
 function Corpora(corpora, updateFn) {
-	var that = this;
-	this.corpora = corpora;
-	this.update = function () {
-		updateFn(that);
-	};
+  var that = this;
+  this.corpora = corpora;
+  this.update = function () {
+    updateFn(that);
+  };
 
-	var sortFn = function sortFn(x, y) {
-		var r = x.institution.name.localeCompare(y.institution.name);
-		if (r !== 0) {
-			return r;
-		}
-		return x.title.toLowerCase().localeCompare(y.title.toLowerCase());
-	};
+  var sortFn = function sortFn(x, y) {
+    var r = x.institution.name.localeCompare(y.institution.name);
+    if (r !== 0) {
+      return r;
+    }
+    return x.title.toLowerCase().localeCompare(y.title.toLowerCase());
+  };
 
-	this.recurse(function (corpus) {
-		corpus.subCorpora.sort(sortFn);
-	});
-	this.corpora.sort(sortFn);
+  this.recurse(function (corpus) {
+    corpus.subCorpora.sort(sortFn);
+  });
+  this.corpora.sort(sortFn);
 
-	this.recurse(function (corpus, index) {
-		corpus.visible = true; // visible in the corpus view
-		corpus.selected = false; // not selected in the corpus view, assign later
-		corpus.expanded = false; // not expanded in the corpus view
-		corpus.priority = 1; // used for ordering search results in corpus view
-		corpus.index = index; // original order, used for stable sort
-	});
+  this.recurse(function (corpus, index) {
+    corpus.visible = true; // visible in the corpus view
+    corpus.selected = false; // not selected in the corpus view, assign later
+    corpus.expanded = false; // not expanded in the corpus view
+    corpus.priority = 1; // used for ordering search results in corpus view
+    corpus.index = index; // original order, used for stable sort
+  });
 }
 
 Corpora.prototype.recurseCorpus = function (corpus, fn) {
-	if (false === fn(corpus)) {
-		// no recursion
-	} else {
-		this.recurseCorpora(corpus.subCorpora, fn);
-	}
+  if (false === fn(corpus)) {
+    // no recursion
+  } else {
+    this.recurseCorpora(corpus.subCorpora, fn);
+  }
 };
 
 Corpora.prototype.recurseCorpora = function (corpora, fn) {
-	var recfn = function recfn(corpus, index) {
-		if (false === fn(corpus, index)) {
-			// no recursion
-		} else {
-			corpus.subCorpora.forEach(recfn);
-		}
-	};
-	corpora.forEach(recfn);
+  var recfn = function recfn(corpus, index) {
+    if (false === fn(corpus, index)) {
+      // no recursion
+    } else {
+      corpus.subCorpora.forEach(recfn);
+    }
+  };
+  corpora.forEach(recfn);
 };
 
 Corpora.prototype.recurse = function (fn) {
-	this.recurseCorpora(this.corpora, fn);
+  this.recurseCorpora(this.corpora, fn);
 };
 
 Corpora.prototype.getLanguageCodes = function () {
-	var languages = {};
-	this.recurse(function (corpus) {
-		corpus.languages.forEach(function (lang) {
-			languages[lang] = true;
-		});
-		return true;
-	});
-	return languages;
+  var languages = {};
+  this.recurse(function (corpus) {
+    corpus.languages.forEach(function (lang) {
+      languages[lang] = true;
+    });
+    return true;
+  });
+  return languages;
 };
 
 Corpora.prototype.isCorpusVisible = function (corpus, queryTypeId, languageCode) {
-	if (queryTypeId === "fcs" && (corpus.endpoint.protocol === "LEGACY" || corpus.endpoint.protocol === "VERSION_1")) {
-		return false;
-	}
-	// yes for any language
-	if (languageCode === multipleLanguageCode) {
-		return true;
-	}
-	// yes if the corpus is in only that language
-	if (corpus.languages && corpus.languages.length === 1 && corpus.languages[0] === languageCode) {
-		return true;
-	}
+  // check search capabilities (ignore version, just check caps)
+  if (queryTypeId === "fcs" && corpus.endpoint.searchCapabilities.indexOf("ADVANCED_SEARCH") === -1) {
+    return false;
+  }
+  // yes for any language
+  if (languageCode === multipleLanguageCode) {
+    return true;
+  }
+  // yes if the corpus is in only that language
+  if (corpus.languages && corpus.languages.length === 1 && corpus.languages[0] === languageCode) {
+    return true;
+  }
 
-	// ? yes if the corpus also contains that language
-	if (corpus.languages && corpus.languages.indexOf(languageCode) >= 0) {
-		return true;
-	}
+  // ? yes if the corpus also contains that language
+  if (corpus.languages && corpus.languages.indexOf(languageCode) >= 0) {
+    return true;
+  }
 
-	// ? yes if the corpus has no language
-	// if (!corpus.languages || corpus.languages.length === 0) {
-	// 	return true;
-	// }
-	return false;
+  // ? yes if the corpus has no language
+  // if (!corpus.languages || corpus.languages.length === 0) {
+  // 	return true;
+  // }
+  return false;
 };
 
 Corpora.prototype.setVisibility = function (queryTypeId, languageCode) {
-	// top level
-	this.corpora.forEach(function (corpus) {
-		corpus.visible = this.isCorpusVisible(corpus, queryTypeId, languageCode);
-		this.recurseCorpora(corpus.subCorpora, function (c) {
-			c.visible = corpus.visible;
-		});
-	}.bind(this));
+  // top level
+  this.corpora.forEach(function (corpus) {
+    corpus.visible = this.isCorpusVisible(corpus, queryTypeId, languageCode);
+    this.recurseCorpora(corpus.subCorpora, function (c) {
+      c.visible = corpus.visible;
+    });
+  }.bind(this));
 };
 
 Corpora.prototype.setAggregationContext = function (endpoints2handles) {
-	var _this = this;
+  var _this = this;
 
-	var selectSubTree = function selectSubTree(select, corpus) {
-		corpus.selected = select;
-		this.recurseCorpora(corpus.subCorpora, function (c) {
-			c.selected = corpus.selected;
-		});
-	};
+  var selectSubTree = function selectSubTree(select, corpus) {
+    corpus.selected = select;
+    this.recurseCorpora(corpus.subCorpora, function (c) {
+      c.selected = corpus.selected;
+    });
+  };
 
-	this.corpora.forEach(selectSubTree.bind(this, false));
+  this.corpora.forEach(selectSubTree.bind(this, false));
 
-	var handlesNotFound = [];
-	var corporaToSelect = [];
-	_.pairs(endpoints2handles).forEach(function (endp) {
-		var endpoint = endp[0];
-		var handles = endp[1];
-		console.log('setAggregationContext: endpoint', endpoint);
-		console.log('setAggregationContext: handles', handles);
-		handles.forEach(function (handle) {
-			var found = false;
-			_this.recurse(function (corpus) {
-				if (corpus.handle === handle) {
-					found = true;
-					corporaToSelect.push(corpus);
-				}
-			});
-			if (!found) {
-				console.warn("Handle not found in corpora", handle);
-				handlesNotFound.push(handle);
-			}
-		});
-	});
+  var handlesNotFound = [];
+  var corporaToSelect = [];
+  _.pairs(endpoints2handles).forEach(function (endp) {
+    var endpoint = endp[0];
+    var handles = endp[1];
+    console.log("setAggregationContext: endpoint", endpoint);
+    console.log("setAggregationContext: handles", handles);
+    handles.forEach(function (handle) {
+      var found = false;
+      _this.recurse(function (corpus) {
+        if (corpus.handle === handle) {
+          found = true;
+          corporaToSelect.push(corpus);
+        }
+      });
+      if (!found) {
+        console.warn("Handle not found in corpora", handle);
+        handlesNotFound.push(handle);
+      }
+    });
+  });
 
-	corporaToSelect.forEach(selectSubTree.bind(this, true));
-	return { 'selected': corporaToSelect, 'unavailable': handlesNotFound };
+  corporaToSelect.forEach(selectSubTree.bind(this, true));
+  return { 'selected': corporaToSelect, 'unavailable': handlesNotFound };
 };
 
 Corpora.prototype.getSelectedIds = function () {
-	var ids = [];
-	this.recurse(function (corpus) {
-		if (corpus.visible && corpus.selected) {
-			ids.push(corpus.id);
-			//eturn false; // top-most collection in tree, don't delve deeper
-			// But subcollections are also selectable on their own?...
-		}
-		return true;
-	});
+  var ids = [];
+  this.recurse(function (corpus) {
+    if (corpus.visible && corpus.selected) {
+      ids.push(corpus.id);
+      //eturn false; // top-most collection in tree, don't delve deeper
+      // But subcollections are also selectable on their own?...
+    }
+    return true;
+  });
 
-	// console.log("ids: ", ids.length, {ids:ids});
-	return ids;
+  // console.log("ids: ", ids.length, {ids:ids});
+  return ids;
 };
 
 Corpora.prototype.getSelectedMessage = function () {
-	var selected = this.getSelectedIds().length;
-	if (this.corpora.length === selected) {
-		return "All available collections (" + selected + ")";
-	} else if (selected === 1) {
-		return "1 selected collection";
-	}
-	return selected + " selected collections";
+  var selected = this.getSelectedIds().length;
+  if (this.corpora.length === selected) {
+    return "All available collections (" + selected + ")";
+  } else if (selected === 1) {
+    return "1 selected collection";
+  }
+  return selected + " selected collections";
 };
 
 function getQueryVariable(variable) {
-	var query = window.location.search.substring(1);
-	var vars = query.split('&');
-	for (var i = 0; i < vars.length; i++) {
-		var pair = vars[i].split('=');
-		if (decodeURIComponent(pair[0]) == variable) {
-			console.log("variable found: (", variable, ") = ", decodeURIComponent(pair[1]));
-			return decodeURIComponent(pair[1]);
-		}
-	}
-	return null;
+  var query = window.location.search.substring(1);
+  var vars = query.split('&');
+  for (var i = 0; i < vars.length; i++) {
+    var pair = vars[i].split('=');
+    if (decodeURIComponent(pair[0]) == variable) {
+      console.log("variable found: (", variable, ") = ", decodeURIComponent(pair[1]));
+      return decodeURIComponent(pair[1]);
+    }
+  }
+  return null;
 }
 
 /* setter opposite of getQueryVariable*/
 function setQueryVariable(qvar, value) {
-	var query = window.location.search.substring(1);
-	var vars = query.split('&');
-	var d = {};
-	d[qvar] = value;
-	var found = false;
-	for (var i = 0; i < vars.length; i++) {
-		var pair = vars[i].split('=');
-		if (decodeURIComponent(pair[0]) === qvar) {
+  var query = window.location.search.substring(1);
+  var vars = query.split('&');
+  var d = {};
+  d[qvar] = value;
+  var found = false;
+  for (var i = 0; i < vars.length; i++) {
+    var pair = vars[i].split('=');
+    if (decodeURIComponent(pair[0]) === qvar) {
 
-			vars[i] = encodeQueryData(d);
-			found = true;
-			break;
-		}
-	}
+      vars[i] = encodeQueryData(d);
+      found = true;
+      break;
+    }
+  }
 
-	if (!found) {
-		// add to end of url
-		vars.push(encodeQueryData(d));
-	}
+  if (!found) {
+    // add to end of url
+    vars.push(encodeQueryData(d));
+  }
 
-	var searchPart = vars.join('&');
-	var newUrl = window.location.origin + window.location.pathname + '?' + searchPart;
-	console.log("set url", newUrl);
-	window.history.replaceState(window.history.state, null, newUrl);
+  var searchPart = vars.join('&');
+  var newUrl = window.location.origin + window.location.pathname + '?' + searchPart;
+  console.log("set url", newUrl);
+  window.history.replaceState(window.history.state, null, newUrl);
 }
 
 function encodeQueryData(data) {
-	var ret = [];
-	for (var d in data) {
-		ret.push(encodeURIComponent(d) + "=" + encodeURIComponent(data[d]));
-	}
-	return ret.join("&");
+  var ret = [];
+  for (var d in data) {
+    ret.push(encodeURIComponent(d) + "=" + encodeURIComponent(data[d]));
+  }
+  return ret.join("&");
 }
 
 var queryTypes = [{
-	id: "cql",
-	name: "Text layer Contextual Query Language (CQL)",
-	searchPlaceholder: "Elephant",
-	searchLabel: "Text layer CQL query",
-	searchLabelBkColor: "#fed",
-	className: ''
+  id: "cql",
+  name: "Text layer Contextual Query Language (CQL)",
+  searchPlaceholder: "Elephant",
+  searchLabel: "Text layer CQL query",
+  searchLabelBkColor: "#fed",
+  className: ''
 }, {
-	id: "fcs",
-	name: "Multi-layer Federated Content Search Query Language (FCS-QL)",
-	searchPlaceholder: "[word = 'annotation'][word = 'focused']",
-	searchLabel: "Multi-layer FCS query",
-	searchLabelBkColor: "#efd",
-	disabled: false
+  id: "fcs",
+  name: "Multi-layer Federated Content Search Query Language (FCS-QL)",
+  searchPlaceholder: "[word = 'annotation'][word = 'focused']",
+  searchLabel: "Multi-layer FCS query",
+  searchLabelBkColor: "#efd",
+  disabled: false
 }];
 
 var queryTypeMap = {
-	cql: queryTypes[0],
-	fcs: queryTypes[1]
+  cql: queryTypes[0],
+  fcs: queryTypes[1]
 };
 
 module.exports = AggregatorPage;
 
-},{"../components/corpusview.jsx":48,"../components/languageselector.jsx":53,"../components/modal.jsx":54,"../components/queryinput.jsx":56,"../components/results.jsx":58,"../components/zoomedresult.jsx":60,"classnames":2,"create-react-class":6,"prop-types":20}],64:[function(require,module,exports){
+},{"../components/corpusview.jsx":44,"../components/languageselector.jsx":48,"../components/modal.jsx":49,"../components/queryinput.jsx":51,"../components/results.jsx":53,"../components/zoomedresult.jsx":55,"classnames":2,"create-react-class":6,"prop-types":15}],59:[function(require,module,exports){
 "use strict";
 
 var _classnames = require("classnames");
@@ -52285,90 +52735,90 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 var PT = _propTypes2.default;
 
 var HelpPage = (0, _createReactClass2.default)({
-	displayName: "HelpPage",
+  displayName: "HelpPage",
 
-	//fixme! - class HelpPage extends React.Component {
-	openHelpDesk: function openHelpDesk() {
-		window.open('http://support.clarin-d.de/mail/form.php?queue=Aggregator&lang=en', '_blank', 'height=560,width=370');
-	},
+  //fixme! - class HelpPage extends React.Component {
+  openHelpDesk: function openHelpDesk() {
+    window.open('http://support.clarin-d.de/mail/form.php?queue=Aggregator&lang=en', '_blank', 'height=560,width=370');
+  },
 
-	render: function render() {
-		return React.createElement(
-			"div",
-			null,
-			React.createElement(
-				"div",
-				{ className: "top-gap" },
-				React.createElement(
-					"h1",
-					null,
-					"Help"
-				),
-				React.createElement(
-					"h3",
-					null,
-					"Performing federated search in corpora"
-				),
-				React.createElement(
-					"p",
-					null,
-					"To perform a simple keyword search in all CLARIN Federated Content Search centres and their corpora, go to the search field at the top of the page or switch to Text Layer Contextual Query Language (CQL) in the dropdown list, enter your query, and click the 'search' button or press the 'Enter' key."
-				),
-				React.createElement(
-					"p",
-					null,
-					"To perform an advanced search on multiple annotation layers in CLARIN Federated Content Search centres that support this, switch to Multi-layer Federated Content Search (FCS-QL) in the dropdown list, create the query in the Graphical Query Builder, and click the 'search' button or press the 'Enter' key. Alternatively in embedded mode enter a FCS-QL query in the search field at the top of the page."
-				),
-				React.createElement(
-					"p",
-					null,
-					"When the search starts, the page will start filling in with the corpora responses. After the entire search process has ended you have the option to download the results in various formats."
-				),
-				React.createElement(
-					"p",
-					null,
-					"If you are particularly interested in the results returned by a corpus, you have the option to focus only on the results of that corpus, by clicking on the 'Watch' button. In this view mode you can also download the results of use the WebLicht processing services to further analyse the results."
-				),
-				React.createElement(
-					"h3",
-					null,
-					"Adjusting search criteria"
-				),
-				React.createElement(
-					"p",
-					null,
-					"The FCS Aggregator makes possible to select specific corpora based on their name or language and to specify the number of search results (hits) per corpus per page. The user interface controls that allows to change these options are located right below the search fiels on the main page. The current options are to filter resources based on their language, to select specific resources, and to set the maximum number of hits. In the multi-layer FCS search the supported layers filter on the supported features like, e. g. part of speech or lemma in addition to the other filter options."
-				),
-				React.createElement(
-					"h3",
-					null,
-					"More help"
-				),
-				React.createElement(
-					"p",
-					null,
-					"More detailed information on using FCS Aggregator is available at the \xA0",
-					React.createElement(
-						"a",
-						{ href: "https://www.clarin.eu/content/content-search-tutorial" },
-						"Aggregator wiki page"
-					),
-					". If you still cannot find an answer to your question, or if want to send a feedback, you can write to the ",
-					React.createElement(
-						"a",
-						{ title: "contact", href: "mailto:sb-sysadmin@svenska.gu.se" },
-						"Swe-Clarin helpdesk"
-					),
-					"."
-				)
-			)
-		);
-	}
+  render: function render() {
+    return React.createElement(
+      "div",
+      null,
+      React.createElement(
+        "div",
+        { className: "top-gap" },
+        React.createElement(
+          "h1",
+          null,
+          "Help"
+        ),
+        React.createElement(
+          "h3",
+          null,
+          "Performing federated search in corpora"
+        ),
+        React.createElement(
+          "p",
+          null,
+          "To perform a simple keyword search in all CLARIN Federated Content Search centres and their corpora, go to the search field at the top of the page or switch to Text Layer Contextual Query Language (CQL) in the dropdown list, enter your query, and click the 'search' button or press the 'Enter' key."
+        ),
+        React.createElement(
+          "p",
+          null,
+          "To perform an advanced search on multiple annotation layers in CLARIN Federated Content Search centres that support this, switch to Multi-layer Federated Content Search (FCS-QL) in the dropdown list, create the query in the Graphical Query Builder, and click the 'search' button or press the 'Enter' key. Alternatively in embedded mode enter a FCS-QL query in the search field at the top of the page."
+        ),
+        React.createElement(
+          "p",
+          null,
+          "When the search starts, the page will start filling in with the corpora responses. After the entire search process has ended you have the option to download the results in various formats."
+        ),
+        React.createElement(
+          "p",
+          null,
+          "If you are particularly interested in the results returned by a corpus, you have the option to focus only on the results of that corpus, by clicking on the 'Watch' button. In this view mode you can also download the results of use the WebLicht processing services to further analyse the results."
+        ),
+        React.createElement(
+          "h3",
+          null,
+          "Adjusting search criteria"
+        ),
+        React.createElement(
+          "p",
+          null,
+          "The FCS Aggregator makes possible to select specific corpora based on their name or language and to specify the number of search results (hits) per corpus per page. The user interface controls that allows to change these options are located right below the search fiels on the main page. The current options are to filter resources based on their language, to select specific resources, and to set the maximum number of hits. In the multi-layer FCS search the supported layers filter on the supported features like, e. g. part of speech or lemma in addition to the other filter options."
+        ),
+        React.createElement(
+          "h3",
+          null,
+          "More help"
+        ),
+        React.createElement(
+          "p",
+          null,
+          "More detailed information on using FCS Aggregator is available at the \xA0",
+          React.createElement(
+            "a",
+            { href: "https://www.clarin.eu/content/content-search-tutorial" },
+            "Aggregator wiki page"
+          ),
+          ". If you still cannot find an answer to your question, or if want to send a feedback, you can write to the ",
+          React.createElement(
+            "a",
+            { title: "contact", href: "mailto:sb-sysadmin@svenska.gu.se" },
+            "Swe-Clarin helpdesk"
+          ),
+          "."
+        )
+      )
+    );
+  }
 });
 
 module.exports = HelpPage;
 
-},{"classnames":2,"create-react-class":6,"prop-types":20}],65:[function(require,module,exports){
+},{"classnames":2,"create-react-class":6,"prop-types":15}],60:[function(require,module,exports){
 "use strict";
 
 var _classnames = require("classnames");
@@ -52388,355 +52838,387 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 var PT = _propTypes2.default;
 
 var StatisticsPage = (0, _createReactClass2.default)({
-	displayName: "StatisticsPage",
+  displayName: "StatisticsPage",
 
-	// fixme! - class StatisticsPage extends React.Component {
-	propTypes: {
-		ajax: PT.func.isRequired
-	},
+  // fixme! - class StatisticsPage extends React.Component {
+  propTypes: {
+    APIROOT: PT.string.isRequired,
+    ajax: PT.func.isRequired
+  },
 
-	getInitialState: function getInitialState() {
-		return {
-			stats: {},
-			activeTab: 0
-			// searchStats: {},
-			// lastScanStats: {},
-		};
-	},
+  getInitialState: function getInitialState() {
+    return {
+      stats: {},
+      activeTab: 0
+      // searchStats: {},
+      // lastScanStats: {},
+    };
+  },
 
-	componentDidMount: function componentDidMount() {
-		this.refreshStats();
-	},
+  componentDidMount: function componentDidMount() {
+    this.refreshStats();
+  },
 
-	refreshStats: function refreshStats() {
-		this.props.ajax({
-			url: 'rest/statistics',
-			success: function (json, textStatus, jqXHR) {
-				this.setState({ stats: json });
-				// console.log("stats:", json);
-			}.bind(this)
-		});
-	},
+  refreshStats: function refreshStats() {
+    this.props.ajax({
+      url: this.props.APIROOT + 'statistics',
+      success: function (json, textStatus, jqXHR) {
+        this.setState({ stats: json });
+        // console.log("stats:", json);
+      }.bind(this)
+    });
+  },
 
-	renderWaitTimeSecs: function renderWaitTimeSecs(t) {
-		var hue = t * 4;
-		if (hue > 120) {
-			hue = 120;
-		}
-		var a = hue / 120;
-		hue = 120 - hue;
-		var shue = "hsla(" + hue + ",100%,80%," + a + ")";
-		return React.createElement(
-			"span",
-			{ className: "badge", style: { backgroundColor: shue, color: "black" } },
-			t.toFixed(3),
-			"s"
-		);
-	},
+  renderWaitTimeSecs: function renderWaitTimeSecs(t) {
+    var hue = t * 4;
+    if (hue > 120) {
+      hue = 120;
+    }
+    var a = hue / 120;
+    hue = 120 - hue;
+    var shue = "hsla(" + hue + ",100%,80%," + a + ")";
+    return React.createElement(
+      "span",
+      { className: "badge", style: { backgroundColor: shue, color: "black" } },
+      t.toFixed(3),
+      "s"
+    );
+  },
 
-	renderCollections: function renderCollections(colls) {
-		return React.createElement(
-			"div",
-			{ style: { marginLeft: 40 } },
-			colls.length === 0 ? React.createElement(
-				"div",
-				{ style: { color: "#a94442" } },
-				"NO collections found"
-			) : React.createElement(
-				"div",
-				null,
-				colls.length,
-				" root collection(s):",
-				React.createElement(
-					"ul",
-					{ className: "list-unstyled", style: { marginLeft: 40 } },
-					colls.map(function (name, i) {
-						return React.createElement(
-							"div",
-							{ key: i },
-							name
-						);
-					})
-				)
-			)
-		);
-	},
+  renderCollections: function renderCollections(colls) {
+    return React.createElement(
+      "div",
+      { style: { marginLeft: 40 } },
+      colls.length === 0 ? React.createElement(
+        "div",
+        { style: { color: "#a94442" } },
+        "NO collections found"
+      ) : React.createElement(
+        "div",
+        null,
+        colls.length,
+        " root collection(s):",
+        React.createElement(
+          "ul",
+          { className: "list-unstyled", style: { marginLeft: 40 } },
+          colls.map(function (name, i) {
+            return React.createElement(
+              "div",
+              { key: i },
+              name
+            );
+          })
+        )
+      )
+    );
+  },
 
-	renderDiagnostic: function renderDiagnostic(d) {
-		var classes = "inline alert alert-warning " + (d.diagnostic.uri === 'LEGACY' ? "legacy" : "");
-		return React.createElement(
-			"div",
-			{ key: d.diagnostic.uri },
-			React.createElement(
-				"div",
-				{ className: classes },
-				React.createElement(
-					"div",
-					null,
-					d.counter <= 1 ? false : React.createElement(
-						"div",
-						{ className: "inline", style: { margin: "5px 5px 5px 5px" } },
-						React.createElement(
-							"span",
-							{ className: "badge", style: { backgroundColor: '#ae7241' } },
-							"x ",
-							d.counter
-						)
-					),
-					"Diagnostic: ",
-					d.diagnostic.message,
-					": ",
-					d.diagnostic.diagnostic
-				),
-				React.createElement(
-					"div",
-					null,
-					"Context: ",
-					React.createElement(
-						"a",
-						{ href: d.context },
-						d.context
-					)
-				)
-			)
-		);
-	},
+  renderDiagnostic: function renderDiagnostic(d) {
+    var classes = "inline alert alert-warning " + (d.diagnostic.uri === 'LEGACY' ? "legacy" : "");
+    return React.createElement(
+      "div",
+      { key: d.diagnostic.uri },
+      React.createElement(
+        "div",
+        { className: classes },
+        React.createElement(
+          "div",
+          null,
+          d.counter <= 1 ? false : React.createElement(
+            "div",
+            { className: "inline", style: { margin: "5px 5px 5px 5px" } },
+            React.createElement(
+              "span",
+              { className: "badge", style: { backgroundColor: '#ae7241' } },
+              "x ",
+              d.counter
+            )
+          ),
+          "Diagnostic: ",
+          d.diagnostic.message,
+          ": ",
+          d.diagnostic.diagnostic
+        ),
+        React.createElement(
+          "div",
+          null,
+          "Context: ",
+          React.createElement(
+            "a",
+            { href: d.context },
+            d.context
+          )
+        )
+      )
+    );
+  },
 
-	renderError: function renderError(e) {
-		var xc = e.exception;
-		return React.createElement(
-			"div",
-			{ key: xc.message },
-			React.createElement(
-				"div",
-				{ className: "inline alert alert-danger", role: "alert" },
-				React.createElement(
-					"div",
-					null,
-					e.counter <= 1 ? false : React.createElement(
-						"div",
-						{ className: "inline", style: { margin: "5px 5px 5px 5px" } },
-						React.createElement(
-							"span",
-							{ className: "badge", style: { backgroundColor: '#c94442' } },
-							"x ",
-							e.counter,
-							" "
-						)
-					),
-					"Exception: ",
-					xc.message
-				),
-				React.createElement(
-					"div",
-					null,
-					"Context: ",
-					React.createElement(
-						"a",
-						{ href: e.context },
-						e.context
-					)
-				),
-				xc.cause ? React.createElement(
-					"div",
-					null,
-					"Caused by: ",
-					xc.cause
-				) : false
-			)
-		);
-	},
+  renderError: function renderError(e) {
+    var xc = e.exception;
+    return React.createElement(
+      "div",
+      { key: xc.message },
+      React.createElement(
+        "div",
+        { className: "inline alert alert-danger", role: "alert" },
+        React.createElement(
+          "div",
+          null,
+          e.counter <= 1 ? false : React.createElement(
+            "div",
+            { className: "inline", style: { margin: "5px 5px 5px 5px" } },
+            React.createElement(
+              "span",
+              { className: "badge", style: { backgroundColor: '#c94442' } },
+              "x ",
+              e.counter,
+              " "
+            )
+          ),
+          "Exception: ",
+          xc.message
+        ),
+        React.createElement(
+          "div",
+          null,
+          "Context: ",
+          React.createElement(
+            "a",
+            { href: e.context },
+            e.context
+          )
+        ),
+        xc.cause ? React.createElement(
+          "div",
+          null,
+          "Caused by: ",
+          xc.cause
+        ) : false
+      )
+    );
+  },
 
-	renderEndpoint: function renderEndpoint(isScan, endpoint) {
-		var stat = endpoint[1];
-		var errors = _.values(stat.errors);
-		var diagnostics = _.values(stat.diagnostics);
-		return React.createElement(
-			"div",
-			{ style: { marginTop: 10 }, key: endpoint[0] },
-			React.createElement(
-				"ul",
-				{ className: "list-inline list-unstyled", style: { marginBottom: 0 } },
-				React.createElement(
-					"li",
-					null,
-					stat.version == "LEGACY" ? React.createElement(
-						"span",
-						{ style: { color: '#a94442' } },
-						"legacy ",
-						React.createElement("i", { className: "glyphicon glyphicon-thumbs-down" }),
-						" "
-					) : stat.version == "VERSION_1" ? React.createElement(
-						"span",
-						{ style: { color: '#a94442' } },
-						"version 1 ",
-						React.createElement("i", { className: "glyphicon glyphicon-thumbs-down" })
-					) : React.createElement(
-						"span",
-						{ style: { color: '#3c763d' } },
-						"version 2 ",
-						React.createElement("i", { className: "glyphicon glyphicon-thumbs-up" }),
-						" "
-					),
-					" " + endpoint[0]
-				)
-			),
-			React.createElement(
-				"div",
-				{ style: { marginLeft: 40 } },
-				isScan ? React.createElement(
-					"div",
-					null,
-					"Max concurrent scan requests:",
-					" ",
-					" ",
-					stat.maxConcurrentRequests,
-					" "
-				) : React.createElement(
-					"div",
-					null,
-					"Max concurrent search requests:",
-					" ",
-					" ",
-					stat.maxConcurrentRequests,
-					" "
-				)
-			),
-			React.createElement(
-				"div",
-				{ style: { marginLeft: 40 } },
-				React.createElement(
-					"span",
-					null,
-					stat.numberOfRequests
-				),
-				" request(s), average:",
-				this.renderWaitTimeSecs(stat.avgExecutionTime),
-				", max: ",
-				this.renderWaitTimeSecs(stat.maxExecutionTime)
-			),
-			isScan ? this.renderCollections(stat.rootCollections) : false,
-			errors && errors.length ? React.createElement(
-				"div",
-				{ className: "inline", style: { marginLeft: 40 } },
-				errors.map(this.renderError)
-			) : false,
-			diagnostics && diagnostics.length ? React.createElement(
-				"div",
-				{ className: "inline", style: { marginLeft: 40 } },
-				diagnostics.map(this.renderDiagnostic)
-			) : false
-		);
-	},
+  renderEndpoint: function renderEndpoint(isScan, endpoint) {
+    var stat = endpoint[1];
+    var errors = _.values(stat.errors);
+    var diagnostics = _.values(stat.diagnostics);
+    return React.createElement(
+      "div",
+      { style: { marginTop: 10 }, key: endpoint[0] },
+      React.createElement(
+        "ul",
+        { className: "list-inline list-unstyled", style: { marginBottom: 0 } },
+        React.createElement(
+          "li",
+          null,
+          stat.version == "LEGACY" ? React.createElement(
+            "span",
+            { style: { color: '#a94442' } },
+            "legacy ",
+            React.createElement("i", { className: "glyphicon glyphicon-thumbs-down" }),
+            " "
+          ) : stat.version == "VERSION_1" ? React.createElement(
+            "span",
+            { style: { color: '#a94442' } },
+            "version 1 ",
+            React.createElement("i", { className: "glyphicon glyphicon-thumbs-down" })
+          ) : React.createElement(
+            "span",
+            { style: { color: '#3c763d' } },
+            "version 2 ",
+            React.createElement("i", { className: "glyphicon glyphicon-thumbs-up" }),
+            " "
+          ),
+          " " + endpoint[0]
+        )
+      ),
+      React.createElement(
+        "div",
+        { style: { marginLeft: 40 } },
+        "Search capabilities: ",
+        stat.searchCapabilities
+        // strip "_SEARCH" suffix
+        .map(function (x) {
+          return x.substring(0, x.lastIndexOf('_'));
+        })
+        // add heart icon for ADVANCED search
+        .map(function (x) {
+          return x === "ADVANCED" ? React.createElement(
+            "span",
+            null,
+            x,
+            " ",
+            React.createElement("i", { className: "glyphicon glyphicon-heart-empty" })
+          ) : x;
+        })
+        // join
+        .map(function (x, i) {
+          return React.createElement(
+            "span",
+            null,
+            i > 0 && ", ",
+            x
+          );
+        })
+      ),
+      React.createElement(
+        "div",
+        { style: { marginLeft: 40 } },
+        isScan ? React.createElement(
+          "div",
+          null,
+          "Max concurrent scan requests:",
+          " ",
+          " ",
+          stat.maxConcurrentRequests,
+          " "
+        ) : React.createElement(
+          "div",
+          null,
+          "Max concurrent search requests:",
+          " ",
+          " ",
+          stat.maxConcurrentRequests,
+          " "
+        )
+      ),
+      React.createElement(
+        "div",
+        { style: { marginLeft: 40 } },
+        React.createElement(
+          "span",
+          null,
+          stat.numberOfRequests
+        ),
+        " request(s), average:",
+        this.renderWaitTimeSecs(stat.avgExecutionTime),
+        ", max: ",
+        this.renderWaitTimeSecs(stat.maxExecutionTime)
+      ),
+      isScan ? this.renderCollections(stat.rootCollections) : false,
+      errors && errors.length ? React.createElement(
+        "div",
+        { className: "inline", style: { marginLeft: 40 } },
+        errors.map(this.renderError)
+      ) : false,
+      diagnostics && diagnostics.length ? React.createElement(
+        "div",
+        { className: "inline", style: { marginLeft: 40 } },
+        diagnostics.map(this.renderDiagnostic)
+      ) : false
+    );
+  },
 
-	renderInstitution: function renderInstitution(isScan, inst) {
-		return React.createElement(
-			"div",
-			{ style: { marginTop: 30 }, key: inst[0] },
-			React.createElement(
-				"h4",
-				null,
-				inst[0]
-			),
-			React.createElement(
-				"div",
-				{ style: { marginLeft: 20 } },
-				" ",
-				_.pairs(inst[1]).map(this.renderEndpoint.bind(this, isScan))
-			)
-		);
-	},
+  renderInstitution: function renderInstitution(isScan, inst) {
+    return React.createElement(
+      "div",
+      { style: { marginTop: 30 }, key: inst[0] },
+      React.createElement(
+        "h4",
+        null,
+        inst[0]
+      ),
+      React.createElement(
+        "div",
+        { style: { marginLeft: 20 } },
+        " ",
+        _.pairs(inst[1]).map(this.renderEndpoint.bind(this, isScan))
+      )
+    );
+  },
 
-	renderStatistics: function renderStatistics(stats) {
-		return React.createElement(
-			"div",
-			{ className: "container statistics", style: { marginTop: 20 } },
-			React.createElement(
-				"div",
-				null,
-				React.createElement(
-					"div",
-					null,
-					"Start date: ",
-					new Date(stats.date).toLocaleString()
-				),
-				React.createElement(
-					"div",
-					null,
-					"Timeout: ",
-					" ",
-					React.createElement(
-						"kbd",
-						null,
-						stats.timeout,
-						" seconds"
-					)
-				)
-			),
-			React.createElement(
-				"div",
-				null,
-				" ",
-				_.pairs(stats.institutions).map(this.renderInstitution.bind(this, stats.isScan)),
-				" "
-			)
-		);
-	},
+  renderStatistics: function renderStatistics(stats) {
+    return React.createElement(
+      "div",
+      { className: "container statistics", style: { marginTop: 20 } },
+      React.createElement(
+        "div",
+        null,
+        React.createElement(
+          "div",
+          null,
+          "Start date: ",
+          new Date(stats.date).toLocaleString()
+        ),
+        React.createElement(
+          "div",
+          null,
+          "Timeout: ",
+          " ",
+          React.createElement(
+            "kbd",
+            null,
+            stats.timeout,
+            " seconds"
+          )
+        )
+      ),
+      React.createElement(
+        "div",
+        null,
+        " ",
+        _.pairs(stats.institutions).map(this.renderInstitution.bind(this, stats.isScan)),
+        " "
+      )
+    );
+  },
 
-	setTab: function setTab(idx) {
-		this.setState({ activeTab: idx });
-	},
+  setTab: function setTab(idx, e) {
+    this.setState({ activeTab: idx });
+    e.preventDefault();
+    e.stopPropagation();
+  },
 
-	render: function render() {
-		return React.createElement(
-			"div",
-			null,
-			React.createElement(
-				"div",
-				{ className: "top-gap" },
-				React.createElement(
-					"h1",
-					null,
-					"Statistics"
-				),
-				React.createElement("p", null),
-				React.createElement(
-					"div",
-					{ role: "tabpanel" },
-					React.createElement(
-						"ul",
-						{ className: "nav nav-tabs", role: "tablist" },
-						_.pairs(this.state.stats).map(function (st, idx) {
-							var classname = idx === this.state.activeTab ? "active" : "";
-							return React.createElement(
-								"li",
-								{ role: "presentation", className: classname, key: st[0] },
-								React.createElement(
-									"a",
-									{ href: "#", role: "tab", onClick: this.setTab.bind(this, idx) },
-									st[0]
-								)
-							);
-						}.bind(this))
-					),
-					React.createElement(
-						"div",
-						{ className: "tab-content" },
-						_.pairs(this.state.stats).map(function (st, idx) {
-							var classname = idx === this.state.activeTab ? "tab-pane active" : "tab-pane";
-							return React.createElement(
-								"div",
-								{ role: "tabpanel", className: classname, key: st[0] },
-								this.renderStatistics(st[1])
-							);
-						}.bind(this))
-					)
-				)
-			)
-		);
-	}
+  render: function render() {
+    return React.createElement(
+      "div",
+      null,
+      React.createElement(
+        "div",
+        { className: "top-gap" },
+        React.createElement(
+          "h1",
+          null,
+          "Statistics"
+        ),
+        React.createElement("p", null),
+        React.createElement(
+          "div",
+          { role: "tabpanel" },
+          React.createElement(
+            "ul",
+            { className: "nav nav-tabs", role: "tablist" },
+            _.pairs(this.state.stats).map(function (st, idx) {
+              var classname = idx === this.state.activeTab ? "active" : "";
+              return React.createElement(
+                "li",
+                { role: "presentation", className: classname, key: st[0] },
+                React.createElement(
+                  "a",
+                  { href: "#", title: st[0], role: "tab", onClick: this.setTab.bind(this, idx) },
+                  st[0]
+                )
+              );
+            }.bind(this))
+          ),
+          React.createElement(
+            "div",
+            { className: "tab-content" },
+            _.pairs(this.state.stats).map(function (st, idx) {
+              var classname = idx === this.state.activeTab ? "tab-pane active" : "tab-pane";
+              return React.createElement(
+                "div",
+                { role: "tabpanel", className: classname, key: st[0] },
+                this.renderStatistics(st[1])
+              );
+            }.bind(this))
+          )
+        )
+      )
+    );
+  }
 });
 
 module.exports = StatisticsPage;
 
-},{"classnames":2,"create-react-class":6,"prop-types":20}]},{},[61]);
+},{"classnames":2,"create-react-class":6,"prop-types":15}]},{},[56]);
