@@ -29,7 +29,7 @@ public class Statistics {
         EnumSet<FCSSearchCapabilities> searchCapabilities = EnumSet.of(FCSSearchCapabilities.BASIC_SEARCH);
 
         @JsonProperty
-        List<String> rootCollections = new ArrayList<String>();
+        List<String> rootResources = new ArrayList<String>();
 
         List<Long> queueTimes = Collections.synchronizedList(new ArrayList<Long>());
         List<Long> executionTimes = Collections.synchronizedList(new ArrayList<Long>());
@@ -182,17 +182,17 @@ public class Statistics {
         }
     }
 
-    public void addEndpointCollection(Institution institution, Endpoint endpoint, String collectionName) {
+    public void addEndpointResource(Institution institution, Endpoint endpoint, String resourceName) {
         EndpointStats stats = getEndpointStats(institution, endpoint);
         synchronized (stats.lock) {
-            stats.rootCollections.add(collectionName);
+            stats.rootResources.add(resourceName);
         }
     }
 
-    public void addEndpointCollections(Institution institution, Endpoint endpoint, List<String> collections) {
+    public void addEndpointResources(Institution institution, Endpoint endpoint, List<String> resources) {
         EndpointStats stats = getEndpointStats(institution, endpoint);
         synchronized (stats.lock) {
-            stats.rootCollections.addAll(collections);
+            stats.rootResources.addAll(resources);
         }
     }
 

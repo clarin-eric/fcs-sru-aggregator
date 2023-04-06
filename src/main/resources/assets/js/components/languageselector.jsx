@@ -61,7 +61,7 @@ var LanguageSelector = createReactClass({
           <div>
             <label style={{ color: 'black' }}>
               {this.renderRadio('byMeta')}{" "}
-              Use the collections{"'"} specified language to filter results
+              Use the resources{"'"} specified language to filter results
             </label>
           </div>
           <div>
@@ -73,7 +73,7 @@ var LanguageSelector = createReactClass({
           <div>
             <label style={{ color: 'black' }}>
               {this.renderRadio('byMetaAndGuess')}{" "}
-              First use the collections{"'"} specified language then also use a language detector
+              First use the resources{"'"} specified language then also use a language detector
             </label>
           </div>
         </div>

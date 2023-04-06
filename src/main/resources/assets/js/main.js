@@ -47776,7 +47776,7 @@ var CorpusView = (0, _createReactClass2.default)({
     var corporaGroupedByLanguage = this.updateCorporaGroupedByLanguage(corpora);
 
     return {
-      viewSelected: false, // only show the selected collections
+      viewSelected: false, // only show the selected resources
       //showDisabled: false,  // don't hide items with {visible = false} // implemented, but out commented feature...
       viewGroupedByInstitution: false, // group by institution, then as usual
       viewGroupedByLanguage: false, // group by (single) language, then as usual
@@ -48021,7 +48021,7 @@ var CorpusView = (0, _createReactClass2.default)({
         corpus.expanded ? " Collapse " : " Expand ",
         " (",
         corpus.subCorpora.length,
-        " subcollections)"
+        " subresources)"
       )
     );
   },
@@ -48046,11 +48046,13 @@ var CorpusView = (0, _createReactClass2.default)({
         groupedCorpora.expanded ? " Collapse " : " Expand ",
         " (",
         groupedCorpora.corpora.length,
-        " root collection",
+        " root resource",
         groupedCorpora.corpora.length != 1 ? "s" : "",
         ", ",
         selectedCount,
-        " (sub)collections selected)"
+        " (sub)resource",
+        selectedCount != 1 ? "s" : "",
+        " selected)"
       )
     );
   },
@@ -48118,7 +48120,9 @@ var CorpusView = (0, _createReactClass2.default)({
       visible,
       " out of ",
       total,
-      " (sub)collections. "
+      " (sub)resource",
+      total != 1 ? "s" : "",
+      ". "
     );
   },
 
@@ -48221,7 +48225,7 @@ var CorpusView = (0, _createReactClass2.default)({
       corpListRender.length > 0 ? corpListRender : React.createElement(
         "h3",
         { className: "aligncenter" },
-        this.state.viewSelected ? "No collections selected yet!" : "No collections found."
+        this.state.viewSelected ? "No resources selected yet!" : "No resources found."
       )
     );
   },
@@ -48266,7 +48270,7 @@ var CorpusView = (0, _createReactClass2.default)({
       groupedListRender.length > 0 ? groupedListRender : React.createElement(
         "h3",
         { className: "aligncenter" },
-        this.state.viewSelected ? "No collections selected yet!" : "No collections found."
+        this.state.viewSelected ? "No resources selected yet!" : "No resources found."
       )
     );
   },
@@ -48314,7 +48318,7 @@ var CorpusView = (0, _createReactClass2.default)({
       groupedListRender.length > 0 ? groupedListRender : React.createElement(
         "h3",
         { className: "aligncenter" },
-        this.state.viewSelected ? "No collections selected yet!" : "No collections found."
+        this.state.viewSelected ? "No resources selected yet!" : "No resources found."
       )
     );
   },
@@ -48350,7 +48354,7 @@ var CorpusView = (0, _createReactClass2.default)({
             { className: "btn-group btn-group-toggle" },
             React.createElement(
               "label",
-              { className: "btn btn-light btn " + (this.state.viewSelected ? 'active' : 'inactive'), onClick: this.toggleViewSelected, title: "View selected collections" },
+              { className: "btn btn-light btn " + (this.state.viewSelected ? 'active' : 'inactive'), onClick: this.toggleViewSelected, title: "View selected resources" },
               React.createElement("span", { className: this.state.viewSelected ? "glyphicon glyphicon-check" : "glyphicon glyphicon-unchecked" }),
               " View selected (",
               selectedCount,
@@ -48363,13 +48367,13 @@ var CorpusView = (0, _createReactClass2.default)({
             ),
             React.createElement(
               "label",
-              { className: "btn btn-light btn " + (this.state.viewGroupedByInstitution ? 'active' : 'inactive'), style: { paddingRight: "0.5ex", paddingLeft: "0.5ex" }, onClick: this.toggleViewGroupByInstitution, title: "Group collections by institution" },
+              { className: "btn btn-light btn " + (this.state.viewGroupedByInstitution ? 'active' : 'inactive'), style: { paddingRight: "0.5ex", paddingLeft: "0.5ex" }, onClick: this.toggleViewGroupByInstitution, title: "Group resources by institution" },
               React.createElement("span", { className: this.state.viewGroupedByInstitution ? "glyphicon glyphicon-check" : "glyphicon glyphicon-unchecked" }),
               " Institution"
             ),
             React.createElement(
               "label",
-              { className: "btn btn-light btn " + (this.state.viewGroupedByLanguage ? 'active' : 'inactive'), style: { paddingLeft: "0.5ex" }, onClick: this.toggleViewGroupByLanguage, title: "Group collections by language" },
+              { className: "btn btn-light btn " + (this.state.viewGroupedByLanguage ? 'active' : 'inactive'), style: { paddingLeft: "0.5ex" }, onClick: this.toggleViewGroupByLanguage, title: "Group resources by language" },
               React.createElement("span", { className: this.state.viewGroupedByLanguage ? "glyphicon glyphicon-check" : "glyphicon glyphicon-unchecked" }),
               " Language"
             )
@@ -48708,7 +48712,7 @@ var LanguageSelector = (0, _createReactClass2.default)({
               { style: { color: 'black' } },
               this.renderRadio('byMeta'),
               " ",
-              "Use the collections",
+              "Use the resources",
               "'",
               " specified language to filter results"
             )
@@ -48732,7 +48736,7 @@ var LanguageSelector = (0, _createReactClass2.default)({
               { style: { color: 'black' } },
               this.renderRadio('byMetaAndGuess'),
               " ",
-              "First use the collections",
+              "First use the resources",
               "'",
               " specified language then also use a language detector"
             )
@@ -50532,7 +50536,7 @@ var Results = (0, _createReactClass2.default)({
   renderProgressMessage: function renderProgressMessage() {
     var collhits = this.props.collhits;
     var done = collhits.results.length - collhits.inProgress;
-    var msg = collhits.hits + " matching collections found in " + done + " searched collections";
+    var msg = collhits.hits + " matching resource" + (collhits.hits != 1 ? "s" : "") + " found in " + done + " searched resource" + (done != 1 ? "s" : "");
     var percents = Math.round(100 * collhits.hits / collhits.results.length);
     var styleperc = { width: percents + "%" };
     return React.createElement(
@@ -50579,9 +50583,9 @@ var Results = (0, _createReactClass2.default)({
         showprogress ? false : React.createElement(
           "div",
           { className: "float-left", style: { marginRight: "1ex" } },
-          collhits.hits + " matching collections found",
+          collhits.hits + " matching resource" + (collhits.hits != 1 ? "s" : "") + " found",
           React.createElement("br", null),
-          collhits.results.length + " collections searched",
+          collhits.results.length + " resource" + (collhits.results.length != 1 ? "s" : "") + " searched",
           numExceptions ? ", " + numExceptions + " exceptions" : false,
           numDiagnostics ? ", " + numDiagnostics + " warnings" : false
         ),
@@ -50711,8 +50715,8 @@ var SearchCorpusBox = (0, _createReactClass2.default)({
     return React.createElement(
       "div",
       { className: "form-group" },
-      React.createElement("input", { className: "form-control search search-collection", type: "text",
-        value: this.state.query, placeholder: "Search for collection",
+      React.createElement("input", { className: "form-control search search-resource", type: "text",
+        value: this.state.query, placeholder: "Search for resource",
         onChange: this.handleChange })
     );
   }
@@ -50985,9 +50989,9 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
   - main.jsx: composes the simple top components (Main, AggregatorPage, HelpPage, 
     AboutPage, StatisticsPage) in pages/
   - pages/aggregatorpage.jsx: defines
-      - the Corpora store of collections
+      - the Corpora store of resources
       - the AggregatorPage component which deals with search and displays the search results
-  - components/corpusview.jsx: defines the CorpusView, rendered when the user views the available collections
+  - components/corpusview.jsx: defines the CorpusView, rendered when the user views the available resources
   - plus in components/: various general usage React components
   
   The top-most component, Main, tracks of the window's location URL and, depending on the value,
@@ -51799,19 +51803,19 @@ var AggregatorPage = (0, _createReactClass2.default)({
             var contextCorporaInfo = corpora.setAggregationContext(aggregationContext);
             var unavailableCorporaHandles = contextCorporaInfo.unavailable; // list of unavailable aggregationContext
             if (unavailableCorporaHandles.length > 0) {
-              this.props.error("Could not find requested collection handles:\n" + unavailableCorporaHandles.join('\n'));
+              this.props.error("Could not find requested resource handles:\n" + unavailableCorporaHandles.join('\n'));
             }
 
             var actuallySelectedCorpora = corpora.getSelectedIds();
 
             if (contextCorporaInfo.selected.length !== actuallySelectedCorpora.length) {
               if (actuallySelectedCorpora.length === 0) {
-                this.props.error("This search does not support the required collection(s), will search all collections instead"); // TODO give detailed reason its not supported.
+                this.props.error("This search does not support the required resource(s), will search all resources instead"); // TODO give detailed reason its not supported.
                 corpora.recurse(function (corpus) {
                   corpus.selected = true;
                 });
               } else {
-                var err = "Some required context collections are not supported for this search:\n";
+                var err = "Some required context resources are not supported for this search:\n";
                 err = err + contextCorpora.filter(function (c) {
                   if (actuallySelectedCorpora.indexOf(c) === -1) {
                     console.warn("Requested corpus but not available for selection", c);
@@ -51824,7 +51828,7 @@ var AggregatorPage = (0, _createReactClass2.default)({
                 this.props.error(err);
               }
             } else if (contextCorporaInfo.selected.length > 0) {
-              this.props.info("Pre-selected " + contextCorporaInfo.selected.length + " collection(s):\n" + contextCorporaInfo.selected.map(function (x) {
+              this.props.info("Pre-selected " + contextCorporaInfo.selected.length + " resource" + (contextCorporaInfo.selected.length != 1 ? "s" : "") + ":\n" + contextCorporaInfo.selected.map(function (x) {
                 return x.title + " (" + x.handle + ")";
               }).join('\n'));
             }
@@ -51889,7 +51893,7 @@ var AggregatorPage = (0, _createReactClass2.default)({
     }
     var selectedIds = this.state.corpora.getSelectedIds();
     if (!selectedIds.length) {
-      this.props.error("Please select a collection to search into");
+      this.props.error("Please select a resource to search into");
       return;
     }
 
@@ -52328,7 +52332,7 @@ var AggregatorPage = (0, _createReactClass2.default)({
             "a",
             { role: "button", "data-toggle": "dropdown" },
             unavailable.length,
-            " selected collection",
+            " selected resource",
             unavailable.length > 1 ? 's are' : ' is',
             " disabled in this search mode."
           )
@@ -52472,7 +52476,7 @@ var AggregatorPage = (0, _createReactClass2.default)({
         { ref: "corporaModal", title: React.createElement(
             "span",
             null,
-            "Collections ",
+            "Resources ",
             React.createElement(
               "small",
               { className: "text-muted" },
@@ -52662,8 +52666,8 @@ Corpora.prototype.getSelectedIds = function () {
   this.recurse(function (corpus) {
     if (corpus.visible && corpus.selected) {
       ids.push(corpus.id);
-      //eturn false; // top-most collection in tree, don't delve deeper
-      // But subcollections are also selectable on their own?...
+      //return false; // top-most resource in tree, don't delve deeper
+      // But subresources are also selectable on their own?...
     }
     return true;
   });
@@ -52675,11 +52679,11 @@ Corpora.prototype.getSelectedIds = function () {
 Corpora.prototype.getSelectedMessage = function () {
   var selected = this.getSelectedIds().length;
   if (this.corpora.length === selected) {
-    return "All available collections (" + selected + ")";
+    return "All available resources (" + selected + ")";
   } else if (selected === 1) {
-    return "1 selected collection";
+    return "1 selected resource";
   }
-  return selected + " selected collections";
+  return selected + " selected resources";
 };
 
 function getQueryVariable(variable) {
@@ -52924,19 +52928,21 @@ var StatisticsPage = (0, _createReactClass2.default)({
     );
   },
 
-  renderCollections: function renderCollections(colls) {
+  renderResources: function renderResources(colls) {
     return React.createElement(
       "div",
       { style: { marginLeft: 40 } },
       colls.length === 0 ? React.createElement(
         "div",
         { style: { color: "#a94442" } },
-        "NO collections found"
+        "No resources found"
       ) : React.createElement(
         "div",
         null,
         colls.length,
-        " root collection(s):",
+        " root resource",
+        colls.length != 1 ? "s" : "",
+        ":",
         React.createElement(
           "ul",
           { className: "list-unstyled", style: { marginLeft: 40 } },
@@ -53134,7 +53140,7 @@ var StatisticsPage = (0, _createReactClass2.default)({
         ", max: ",
         this.renderWaitTimeSecs(stat.maxExecutionTime)
       ),
-      isScan ? this.renderCollections(stat.rootCollections) : false,
+      isScan ? this.renderResources(stat.rootResources) : false,
       errors && errors.length ? React.createElement(
         "div",
         { className: "inline", style: { marginLeft: 40 } },

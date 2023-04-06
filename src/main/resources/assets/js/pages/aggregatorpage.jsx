@@ -82,17 +82,17 @@ var AggregatorPage = createReactClass({
             const contextCorporaInfo = corpora.setAggregationContext(aggregationContext);
             const unavailableCorporaHandles = contextCorporaInfo.unavailable; // list of unavailable aggregationContext
             if (unavailableCorporaHandles.length > 0) {
-              this.props.error("Could not find requested collection handles:\n" + unavailableCorporaHandles.join('\n'));
+              this.props.error("Could not find requested resource handles:\n" + unavailableCorporaHandles.join('\n'));
             }
 
             const actuallySelectedCorpora = corpora.getSelectedIds();
 
             if (contextCorporaInfo.selected.length !== actuallySelectedCorpora.length) {
               if (actuallySelectedCorpora.length === 0) {
-                this.props.error("This search does not support the required collection(s), will search all collections instead"); // TODO give detailed reason its not supported.
+                this.props.error("This search does not support the required resource(s), will search all resources instead"); // TODO give detailed reason its not supported.
                 corpora.recurse(function (corpus) { corpus.selected = true; });
               } else {
-                var err = "Some required context collections are not supported for this search:\n"
+                var err = "Some required context resources are not supported for this search:\n"
                 err = err + contextCorpora.filter((c) => {
                   if (actuallySelectedCorpora.indexOf(c) === -1) {
                     console.warn("Requested corpus but not available for selection", c);
@@ -103,7 +103,7 @@ var AggregatorPage = createReactClass({
                 this.props.error(err);
               }
             } else if (contextCorporaInfo.selected.length > 0) {
-              this.props.info("Pre-selected " + contextCorporaInfo.selected.length + " collection(s):\n" + contextCorporaInfo.selected.map(x => x.title + " (" + x.handle + ")").join('\n'));
+              this.props.info("Pre-selected " + contextCorporaInfo.selected.length + " resource" + (contextCorporaInfo.selected.length != 1 ? "s" : "") + ":\n" + contextCorporaInfo.selected.map(x => x.title + " (" + x.handle + ")").join('\n'));
             }
           }
           else {
@@ -164,7 +164,7 @@ var AggregatorPage = createReactClass({
     }
     var selectedIds = this.state.corpora.getSelectedIds();
     if (!selectedIds.length) {
-      this.props.error("Please select a collection to search into");
+      this.props.error("Please select a resource to search into");
       return;
     }
 
@@ -570,7 +570,7 @@ var AggregatorPage = createReactClass({
     if (unavailable.length) {
       return <div id="unavailable-corpora-message" className="text-muted">
         <div id="unavailable-corpora-message-message">
-          <a role="button" data-toggle="dropdown">{unavailable.length} selected collection{unavailable.length > 1 ? 's are' : ' is'} disabled in this search mode.</a>
+          <a role="button" data-toggle="dropdown">{unavailable.length} selected resource{unavailable.length > 1 ? 's are' : ' is'} disabled in this search mode.</a>
         </div>
         <ul id="unavailable-corpora-message-list" className="dropdown-menu">
           {
@@ -650,7 +650,7 @@ var AggregatorPage = createReactClass({
 
         {this.renderSearchPermaLink()}
 
-        <Modal ref="corporaModal" title={<span>Collections <small className="text-muted">{this.props.corpora && this.props.corpora.getSelectedMessage()}</small></span>}>
+        <Modal ref="corporaModal" title={<span>Resources <small className="text-muted">{this.props.corpora && this.props.corpora.getSelectedMessage()}</small></span>}>
           <CorpusView corpora={this.state.corpora} languageMap={this.state.languageMap} />
         </Modal>
 
@@ -820,8 +820,8 @@ Corpora.prototype.getSelectedIds = function () {
   this.recurse(function (corpus) {
     if (corpus.visible && corpus.selected) {
       ids.push(corpus.id);
-      //eturn false; // top-most collection in tree, don't delve deeper
-      // But subcollections are also selectable on their own?...
+      //return false; // top-most resource in tree, don't delve deeper
+      // But subresources are also selectable on their own?...
     }
     return true;
   });
@@ -833,11 +833,11 @@ Corpora.prototype.getSelectedIds = function () {
 Corpora.prototype.getSelectedMessage = function () {
   var selected = this.getSelectedIds().length;
   if (this.corpora.length === selected) {
-    return "All available collections (" + selected + ")";
+    return "All available resources (" + selected + ")";
   } else if (selected === 1) {
-    return "1 selected collection";
+    return "1 selected resource";
   }
-  return selected + " selected collections";
+  return selected + " selected resources";
 };
 
 function getQueryVariable(variable) {

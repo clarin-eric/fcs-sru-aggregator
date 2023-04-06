@@ -19,7 +19,7 @@ var CorpusView = createReactClass({
     const corporaGroupedByLanguage = this.updateCorporaGroupedByLanguage(corpora);
 
     return {
-      viewSelected: false,  // only show the selected collections
+      viewSelected: false,  // only show the selected resources
       //showDisabled: false,  // don't hide items with {visible = false} // implemented, but out commented feature...
       viewGroupedByInstitution: false,  // group by institution, then as usual
       viewGroupedByLanguage: false,  // group by (single) language, then as usual
@@ -239,7 +239,7 @@ var CorpusView = createReactClass({
           <span className="glyphicon glyphicon-minus" aria-hidden="true" /> :
           <span className="glyphicon glyphicon-plus" aria-hidden="true" />
         }
-        {corpus.expanded ? " Collapse " : " Expand "} ({corpus.subCorpora.length} subcollections)
+        {corpus.expanded ? " Collapse " : " Expand "} ({corpus.subCorpora.length} subresources)
       </a>
     </div>;
   },
@@ -260,7 +260,7 @@ var CorpusView = createReactClass({
           <span className="glyphicon glyphicon-minus" aria-hidden="true" /> :
           <span className="glyphicon glyphicon-plus" aria-hidden="true" />
         }
-        {groupedCorpora.expanded ? " Collapse " : " Expand "} ({groupedCorpora.corpora.length} root collection{groupedCorpora.corpora.length != 1 ? "s" : ""}, {selectedCount} (sub)collections selected)
+        {groupedCorpora.expanded ? " Collapse " : " Expand "} ({groupedCorpora.corpora.length} root resource{groupedCorpora.corpora.length != 1 ? "s" : ""}, {selectedCount} (sub)resource{selectedCount != 1 ? "s" : ""} selected)
       </a>
     </div>;
   },
@@ -313,7 +313,7 @@ var CorpusView = createReactClass({
     if (visible === 0) {
       return false; // we do have an "empty" message anyway
     }
-    return <div> Showing {visible} out of {total} (sub)collections. </div>;
+    return <div> Showing {visible} out of {total} (sub)resource{total != 1 ? "s" : ""}. </div>;
   },
 
   renderCorpus: function (level, minmaxp, corpus) {
@@ -379,7 +379,7 @@ var CorpusView = createReactClass({
     return <div className="corpusview-corpora">
       {corpListRender.length > 0 ? corpListRender :
         <h3 className="aligncenter">{
-          this.state.viewSelected ? "No collections selected yet!" : "No collections found."
+          this.state.viewSelected ? "No resources selected yet!" : "No resources found."
         }</h3>
       }
     </div>
@@ -410,7 +410,7 @@ var CorpusView = createReactClass({
     return <div className="corpusview-institutions">
       {groupedListRender.length > 0 ? groupedListRender :
         <h3 className="aligncenter">{
-          this.state.viewSelected ? "No collections selected yet!" : "No collections found."
+          this.state.viewSelected ? "No resources selected yet!" : "No resources found."
         }</h3>
       }
     </div>
@@ -440,7 +440,7 @@ var CorpusView = createReactClass({
     return <div className="corpusview-languages">
       {groupedListRender.length > 0 ? groupedListRender :
         <h3 className="aligncenter">{
-          this.state.viewSelected ? "No collections selected yet!" : "No collections found."
+          this.state.viewSelected ? "No resources selected yet!" : "No resources found."
         }</h3>
       }
     </div>
@@ -477,19 +477,19 @@ var CorpusView = createReactClass({
         <div className="float-left inline corpusview-filter-buttons">
           <div className="btn-group btn-group-toggle" >
 
-            <label className={"btn btn-light btn " + (this.state.viewSelected ? 'active' : 'inactive')} onClick={this.toggleViewSelected} title="View selected collections">
+            <label className={"btn btn-light btn " + (this.state.viewSelected ? 'active' : 'inactive')} onClick={this.toggleViewSelected} title="View selected resources">
               <span className={this.state.viewSelected ? "glyphicon glyphicon-check" : "glyphicon glyphicon-unchecked"} /> View selected ({selectedCount})
             </label>
             {/*
-            <label className={"btn btn-light btn-sm " + (this.state.showDisabled ? 'active':'inactive')} onClick={this.toggleShowDisabled} label="Toggle showing of collections disabled in this search mode">
+            <label className={"btn btn-light btn-sm " + (this.state.showDisabled ? 'active':'inactive')} onClick={this.toggleShowDisabled} label="Toggle showing of resources disabled in this search mode">
               <span className={this.state.showDisabled ? "glyphicon glyphicon-check" : "glyphicon glyphicon-unchecked"} />  Show disabled ({disabledCount})
             </label>
             */}
             <label className={"btn btn-light btn"} style={{ paddingRight: "0ex", pointerEvents: "none" }}>Group by </label>
-            <label className={"btn btn-light btn " + (this.state.viewGroupedByInstitution ? 'active' : 'inactive')} style={{ paddingRight: "0.5ex", paddingLeft: "0.5ex" }} onClick={this.toggleViewGroupByInstitution} title="Group collections by institution">
+            <label className={"btn btn-light btn " + (this.state.viewGroupedByInstitution ? 'active' : 'inactive')} style={{ paddingRight: "0.5ex", paddingLeft: "0.5ex" }} onClick={this.toggleViewGroupByInstitution} title="Group resources by institution">
               <span className={this.state.viewGroupedByInstitution ? "glyphicon glyphicon-check" : "glyphicon glyphicon-unchecked"} /> Institution
             </label>
-            <label className={"btn btn-light btn " + (this.state.viewGroupedByLanguage ? 'active' : 'inactive')} style={{ paddingLeft: "0.5ex" }} onClick={this.toggleViewGroupByLanguage} title="Group collections by language">
+            <label className={"btn btn-light btn " + (this.state.viewGroupedByLanguage ? 'active' : 'inactive')} style={{ paddingLeft: "0.5ex" }} onClick={this.toggleViewGroupByLanguage} title="Group resources by language">
               <span className={this.state.viewGroupedByLanguage ? "glyphicon glyphicon-check" : "glyphicon glyphicon-unchecked"} /> Language
             </label>
           </div>

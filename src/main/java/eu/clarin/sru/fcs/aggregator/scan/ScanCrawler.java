@@ -128,7 +128,7 @@ public class ScanCrawler {
             try {
                 statistics.addEndpointDatapoint(institution, endpoint, stats.getQueueTime(), stats.getExecutionTime());
 
-                List<String> rootCollections = new ArrayList<String>();
+                List<String> rootResources = new ArrayList<String>();
                 if (response != null && response.hasExtraResponseData()) {
                     for (SRUExtraResponseData data : response.getExtraResponseData()) {
                         if (data instanceof ClarinFCSEndpointDescription) {
@@ -145,11 +145,11 @@ public class ScanCrawler {
                             }
                             statistics.upgradeProtocolVersion(institution, endpoint);
 
-                            addCorpora(corpora, institution, endpoint, rootCollections, desc.getResources(), null);
+                            addCorpora(corpora, institution, endpoint, rootResources, desc.getResources(), null);
                         }
                     }
                 }
-                statistics.addEndpointCollections(institution, endpoint, rootCollections);
+                statistics.addEndpointResources(institution, endpoint, rootResources);
 
                 if (response != null && response.hasDiagnostics()) {
                     for (SRUDiagnostic d : response.getDiagnostics()) {
@@ -202,7 +202,7 @@ public class ScanCrawler {
 
     private static void addCorpora(Corpora corpora,
             Institution institution, Endpoint endpoint,
-            List<String> rootCollections,
+            List<String> rootResources,
             List<ResourceInfo> resources, Corpus parentCorpus) {
         if (resources == null) {
             return;
@@ -220,8 +220,8 @@ public class ScanCrawler {
             c.setAvailableLayers(ri.getAvailableLayers());
 
             if (corpora.addCorpus(c, parentCorpus)) {
-                if (rootCollections != null) {
-                    rootCollections.add(c.getTitle());
+                if (rootResources != null) {
+                    rootResources.add(c.getTitle());
                 }
                 addCorpora(corpora, institution, endpoint, null, ri.getSubResources(), c);
             } else {
@@ -322,7 +322,7 @@ public class ScanCrawler {
                             if (corpora.addCorpus(c, parentCorpus)) {
                                 new ScanTask(institution, endpoint, c, corpora, depth + 1).start();
                                 if (parentCorpus == null) {
-                                    statistics.addEndpointCollection(institution, endpoint, c.getTitle());
+                                    statistics.addEndpointResource(institution, endpoint, c.getTitle());
                                 }
                             }
                         }

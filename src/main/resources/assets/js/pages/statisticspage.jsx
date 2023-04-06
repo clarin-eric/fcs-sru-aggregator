@@ -48,13 +48,13 @@ var StatisticsPage = createReactClass({
     </span>;
   },
 
-  renderCollections: function (colls) {
+  renderResources: function (colls) {
     return <div style={{ marginLeft: 40 }}>
       {colls.length === 0 ?
-        <div style={{ color: "#a94442" }}>NO collections found</div>
+        <div style={{ color: "#a94442" }}>No resources found</div>
         :
         <div>
-          {colls.length} root collection(s):
+          {colls.length} root resource{colls.length != 1 ? "s" : ""}:
           <ul className='list-unstyled' style={{ marginLeft: 40 }}>
             {colls.map(function (name, i) { return <div key={i}>{name}</div>; })}
           </ul>
@@ -133,7 +133,7 @@ var StatisticsPage = createReactClass({
         average:{this.renderWaitTimeSecs(stat.avgExecutionTime)},
         max: {this.renderWaitTimeSecs(stat.maxExecutionTime)}
       </div>
-      {isScan ? this.renderCollections(stat.rootCollections) : false}
+      {isScan ? this.renderResources(stat.rootResources) : false}
       {(errors && errors.length) ?
         <div className='inline' style={{ marginLeft: 40 }}>
           {errors.map(this.renderError)}

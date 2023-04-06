@@ -35,8 +35,8 @@ var SearchCorpusBox = createReactClass({
 
   render: function () {
     return <div className="form-group">
-      <input className="form-control search search-collection" type="text"
-        value={this.state.query} placeholder="Search for collection"
+      <input className="form-control search search-resource" type="text"
+        value={this.state.query} placeholder="Search for resource"
         onChange={this.handleChange} />
     </div>;
   }

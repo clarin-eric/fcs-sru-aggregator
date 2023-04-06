@@ -85,7 +85,7 @@ var Results = createReactClass({
   renderProgressMessage: function () {
     var collhits = this.props.collhits;
     var done = collhits.results.length - collhits.inProgress;
-    var msg = collhits.hits + " matching collections found in " + done + " searched collections";
+    var msg = collhits.hits + " matching resource" + (collhits.hits != 1 ? "s" : "") + " found in " + done + " searched resource" + (done != 1 ? "s" : "");
     var percents = Math.round(100 * collhits.hits / collhits.results.length);
     var styleperc = { width: percents + "%" };
     return (<div style={{ marginTop: 10 }}>
@@ -119,9 +119,9 @@ var Results = createReactClass({
       <div style={{ marginBottom: 5 }}>
         {showprogress ? false :
           <div className="float-left" style={{ marginRight: "1ex" }}>
-            {collhits.hits + " matching collections found"}
+            {collhits.hits + " matching resource" + (collhits.hits != 1 ? "s" : "") + " found"}
             <br />
-            {collhits.results.length + " collections searched"}
+            {collhits.results.length + " resource" + (collhits.results.length != 1 ? "s" : "") + " searched"}
             {numExceptions ? ", " + numExceptions + " exceptions" : false}
             {numDiagnostics ? ", " + numDiagnostics + " warnings" : false}
           </div>
