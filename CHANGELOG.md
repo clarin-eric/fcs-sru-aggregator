@@ -1,5 +1,17 @@
 # Changelog
 
+# [3.6.1](https://github.com/clarin-eric/fcs-sru-aggregator/releases/tag/3.6.1) - 2023-04-06
+
+- Bug fixes:
+  - Changed spacing a bit for ADV results view to fit in a single line
+  - Added missing `/search-(\d+)` path rewrite to [`DEPLOYMENT.md`](DEPLOYMENT.md)
+  - Fixed spacing on about page for gear icon on button
+
+- General:
+  - Added section to documentation for using swagger with apache2
+  - Added section about known issue with `eclipse-temurin` image and older docker engines
+  - Improved tracking/stats collection
+
 # [3.6.0](https://github.com/clarin-eric/fcs-sru-aggregator/releases/tag/3.6.0) - 2023-03-31
 
 - Enhancements:
@@ -147,4 +159,4 @@
 
 # [3.0.2-68](https://github.com/clarin-eric/fcs-sru-aggregator/releases/tag/3.0.2-68) - CLARIN FCS prior to 2023
 
-For older changes, see commit history at https://github.com/clarin-eric/fcs-sru-aggregator/commits/master
+For older changes, see commit history at [https://github.com/clarin-eric/fcs-sru-aggregator/commits/master](https://github.com/clarin-eric/fcs-sru-aggregator/commits/master?after=7ea45464475b0df6d4d8e2b93970c803b13ffb54+0&branch=master&qualified_name=refs%2Fheads%2Fmaster)

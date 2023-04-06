@@ -13,11 +13,12 @@ import createReactClass from "create-react-class";
 
   window.MyAggregator = window.MyAggregator || {};
 
-  var VERSION = window.MyAggregator.VERSION = "v.3.6.0";
+  var VERSION = window.MyAggregator.VERSION = "v.3.6.1";
 
   // TODO: set this via environment variables at build time (envify)
   var URLROOT = window.MyAggregator.URLROOT = "";
   var APIROOT = window.MyAggregator.APIROOT = "rest/";
+  var CURURL = (document.location || window.location).href;
 
   var PT = PropTypes;
 
@@ -158,6 +159,11 @@ import createReactClass from "create-react-class";
         }
         this.setState({ navbarPageFn: pageFn });
         console.log("new page: " + document.location + ", name: " + pageFnName);
+
+        _paq.push(['setReferrerUrl', CURURL]);
+        CURURL = (document.location || window.location).pathname;
+        _paq.push(['setCustomUrl', CURURL]);
+        _paq.push(['trackPageView']);
       }
     },
 
@@ -260,11 +266,12 @@ import createReactClass from "create-react-class";
   }
 
   var routeFromLocation = function () {
-    console.log("routeFromLocation: " + document.location);
+    var url = (document.location || window.location);
+    console.log("routeFromLocation: " + url);
     if (!this) throw "routeFromLocation must be bound to main";
-    var path = window.location.pathname.slice(URLROOT.length).split('/').slice(1);
+    var path = url.pathname.slice(URLROOT.length).split('/').slice(1);
     console.log("path: " + path);
-    var pageFnName = window.location.pathname.slice(URLROOT.length).replace(/^\/+/, "");
+    var pageFnName = url.pathname.slice(URLROOT.length).replace(/^\/+/, "");
     console.log("pageFnName: " + pageFnName);
     if (pageFnName === 'help') {
       this.toHelp(false);
