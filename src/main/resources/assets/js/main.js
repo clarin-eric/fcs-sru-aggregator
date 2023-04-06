@@ -50578,7 +50578,7 @@ var Results = (0, _createReactClass2.default)({
         { style: { marginBottom: 5 } },
         showprogress ? false : React.createElement(
           "div",
-          { className: "float-left", style: { marginRight: "2ex" } },
+          { className: "float-left", style: { marginRight: "1ex" } },
           collhits.hits + " matching collections found",
           React.createElement("br", null),
           collhits.results.length + " collections searched",
@@ -50974,6 +50974,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
   // TODO: set this via environment variables at build time (envify)
   var URLROOT = window.MyAggregator.URLROOT = "";
   var APIROOT = window.MyAggregator.APIROOT = "rest/";
+  var CURURL = (document.location || window.location).href;
 
   var PT = _propTypes2.default;
 
@@ -51116,6 +51117,11 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
         }
         this.setState({ navbarPageFn: pageFn });
         console.log("new page: " + document.location + ", name: " + pageFnName);
+
+        _paq.push(['setReferrerUrl', CURURL]);
+        CURURL = (document.location || window.location).pathname;
+        _paq.push(['setCustomUrl', CURURL]);
+        _paq.push(['trackPageView']);
       }
     },
 
@@ -51275,11 +51281,12 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
   }
 
   var routeFromLocation = function routeFromLocation() {
-    console.log("routeFromLocation: " + document.location);
+    var url = document.location || window.location;
+    console.log("routeFromLocation: " + url);
     if (!this) throw "routeFromLocation must be bound to main";
-    var path = window.location.pathname.slice(URLROOT.length).split('/').slice(1);
+    var path = url.pathname.slice(URLROOT.length).split('/').slice(1);
     console.log("path: " + path);
-    var pageFnName = window.location.pathname.slice(URLROOT.length).replace(/^\/+/, "");
+    var pageFnName = url.pathname.slice(URLROOT.length).replace(/^\/+/, "");
     console.log("pageFnName: " + pageFnName);
     if (pageFnName === 'help') {
       this.toHelp(false);
@@ -51411,6 +51418,7 @@ var AboutPage = (0, _createReactClass2.default)({
               { className: "glyphicon glyphicon-cog", "aria-hidden": "true" },
               " "
             ),
+            " ",
             "View server log"
           )
         ),
@@ -51899,16 +51907,12 @@ var AggregatorPage = (0, _createReactClass2.default)({
       success: function (searchId, textStatus, jqXHR) {
         // console.log("search ["+query+"] ok: ", searchId, jqXHR);
         //Piwik.getAsyncTracker().trackSiteSearch(query, queryTypeId);
-        // automatic inclusion of piwik in prod
-        //console.log("location.hostname: " + location.hostname);
-        if (location.hostname !== "localhost") {
-          //console.log("location.host: " + location.host);
-          _paq.push(['trackSiteSearch', query, queryTypeId, false]);
-        }
+        _paq.push(['trackSiteSearch', query, queryTypeId, false]);
 
         var timeout = 250;
         setTimeout(this.refreshSearchResults, timeout);
         this.setState({ searchId: searchId, timeout: timeout });
+        // TODO: replace url with getSearchPermaLink() ?
       }.bind(this)
     });
   },
@@ -52101,9 +52105,15 @@ var AggregatorPage = (0, _createReactClass2.default)({
     }
     navigator.clipboard.writeText(text).then(function () {
       console.log("Async: Copying to clipboard was successful!");
+      _paq.push(['trackEvent', 'Search', 'CopyToClipboardClick', text]);
     }, function (err) {
       console.error("Async: Could not copy text: ", err);
     });
+  },
+
+  copyToClipboardInputHandler: function copyToClipboardInputHandler(event) {
+    var text = event.target.value;
+    _paq.push(['trackEvent', 'Search', 'CopyToClipboardMouse', text]);
   },
 
   renderZoomedResultTitle: function renderZoomedResultTitle(corpusHit) {
@@ -52145,13 +52155,13 @@ var AggregatorPage = (0, _createReactClass2.default)({
     var url = this.getSearchPermaLink();
     return React.createElement(
       "div",
-      { className: "input-group input-group-sm col-md-4", style: { float: "right" } },
+      { className: "input-group input-group-sm col-md-4", title: "NOTE: URL to search results is not permanent. This should not be used in publications or similar. It acts more like a short-term share link with limited life-span.", style: { float: "right" } },
       React.createElement(
         "span",
         { className: "input-group-addon" },
-        "Perma-Link"
+        "Search Result Link"
       ),
-      React.createElement("input", { type: "text", readOnly: true, value: url, id: "search-perma-link", className: "form-control input-sm search" }),
+      React.createElement("input", { type: "text", readOnly: true, value: url, onCopy: this.copyToClipboardInputHandler, id: "search-perma-link", className: "form-control input-sm search" }),
       React.createElement(
         "div",
         { className: "input-group-btn" },

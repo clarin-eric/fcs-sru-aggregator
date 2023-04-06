@@ -182,16 +182,12 @@ var AggregatorPage = createReactClass({
       success: function (searchId, textStatus, jqXHR) {
         // console.log("search ["+query+"] ok: ", searchId, jqXHR);
         //Piwik.getAsyncTracker().trackSiteSearch(query, queryTypeId);
-        // automatic inclusion of piwik in prod
-        //console.log("location.hostname: " + location.hostname);
-        if (location.hostname !== "localhost") {
-          //console.log("location.host: " + location.host);
-          _paq.push(['trackSiteSearch', query, queryTypeId, false]);
-        }
+        _paq.push(['trackSiteSearch', query, queryTypeId, false]);
 
         var timeout = 250;
         setTimeout(this.refreshSearchResults, timeout);
         this.setState({ searchId: searchId, timeout: timeout });
+        // TODO: replace url with getSearchPermaLink() ?
       }.bind(this),
     });
   },
@@ -390,9 +386,15 @@ var AggregatorPage = createReactClass({
     }
     navigator.clipboard.writeText(text).then(function () {
       console.log("Async: Copying to clipboard was successful!");
+      _paq.push(['trackEvent', 'Search', 'CopyToClipboardClick', text]);
     }, function (err) {
       console.error("Async: Could not copy text: ", err);
     });
+  },
+
+  copyToClipboardInputHandler: function (event) {
+    var text = event.target.value;
+    _paq.push(['trackEvent', 'Search', 'CopyToClipboardMouse', text]);
   },
 
   renderZoomedResultTitle: function (corpusHit) {
@@ -428,9 +430,9 @@ var AggregatorPage = createReactClass({
 
   renderSearchPermaLink: function () {
     var url = this.getSearchPermaLink();
-    return (<div className="input-group input-group-sm col-md-4" style={{ float: "right" }}>
-      <span className="input-group-addon">Perma-Link</span>
-      <input type="text" readOnly value={url} id="search-perma-link" className="form-control input-sm search" />
+    return (<div className="input-group input-group-sm col-md-4" title="NOTE: URL to search results is not permanent. This should not be used in publications or similar. It acts more like a short-term share link with limited life-span." style={{ float: "right" }}>
+      <span className="input-group-addon">Search Result Link</span>
+      <input type="text" readOnly value={url} onCopy={this.copyToClipboardInputHandler} id="search-perma-link" className="form-control input-sm search" />
       <div className="input-group-btn">
         <button className="btn btn-default input-sm image_button" type="button" onClick={this.copyToClipboard.bind(this, url)}>
           <i className="glyphicon glyphicon-copy" />

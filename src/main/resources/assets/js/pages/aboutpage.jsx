@@ -34,7 +34,7 @@ var AboutPage = createReactClass({
 
           <h3>Statistics</h3>
           <button type="button" className="btn btn-default btn-lg" onClick={this.toStatistics} >
-            <span className="glyphicon glyphicon-cog" aria-hidden="true"> </span>View server log</button>
+            <span className="glyphicon glyphicon-cog" aria-hidden="true"> </span>{" "}View server log</button>
         </div>
 
         <div className="col-md-6">
