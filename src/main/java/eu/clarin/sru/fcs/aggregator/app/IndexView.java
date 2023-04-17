@@ -10,10 +10,12 @@ import io.dropwizard.views.View;
  */
 public class IndexView extends View {
     final PiwikConfig piwikConfig;
+    final boolean showSearchResultLink;
 
-    protected IndexView(PiwikConfig config) {
+    protected IndexView(PiwikConfig config, boolean showSearchResultLink) {
         super("index.mustache");
         this.piwikConfig = config;
+        this.showSearchResultLink = showSearchResultLink;
     }
 
     public PiwikConfig getPiwikConfig() {

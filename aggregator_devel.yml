@@ -60,6 +60,8 @@ aggregatorParams:
     siteID: ${PIWIK_SITEID:-20}
     setDomains: ${PIWIK_SETDOMAINS:-['*.contentsearch.clarin.eu']}
 
+  searchResultLinkEnabled: ${SEARCH_RESULT_LINK_ENABLED:-true}
+
   openapiEnabled: ${SWAGGER_ENABLED:-true}
   SERVER_URL: ${SERVER_URL:-https://contentsearch.clarin.eu/}
 

@@ -219,6 +219,14 @@ public class AggregatorConfiguration extends Configuration {
         }
 
         @JsonProperty
+        boolean searchResultLinkEnabled;
+
+        @JsonIgnore
+        public boolean getSearchResultLinkEnabled() {
+            return searchResultLinkEnabled;
+        }
+
+        @JsonProperty
         boolean openapiEnabled;
 
         @JsonIgnore

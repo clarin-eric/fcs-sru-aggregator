@@ -429,6 +429,14 @@ var AggregatorPage = createReactClass({
   },
 
   renderSearchPermaLink: function () {
+    // DEBUG (only?): if not enable, do not show link
+    if (!window.MyAggregator.showSearchResultLink) {
+      return false;
+    }
+    // if no searchId then also do not show
+    if (this.state.searchId === null) {
+      return false;
+    }
     var url = this.getSearchPermaLink();
     return (<div className="input-group input-group-sm col-md-4" title="NOTE: URL to search results is not permanent. This should not be used in publications or similar. It acts more like a short-term share link with limited life-span." style={{ float: "right" }}>
       <span className="input-group-addon">Search Result Link</span>
@@ -621,7 +629,7 @@ var AggregatorPage = createReactClass({
           </div>
         </div>
 
-        {this.state.searchId !== null ? this.renderSearchPermaLink() : false}
+        {this.renderSearchPermaLink()}
 
         <Modal ref="corporaModal" title={<span>Collections <small className="text-muted">{this.props.corpora && this.props.corpora.getSelectedMessage()}</small></span>}>
           <CorpusView corpora={this.state.corpora} languageMap={this.state.languageMap} />

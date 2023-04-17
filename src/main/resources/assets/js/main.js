@@ -52152,6 +52152,14 @@ var AggregatorPage = (0, _createReactClass2.default)({
   },
 
   renderSearchPermaLink: function renderSearchPermaLink() {
+    // DEBUG (only?): if not enable, do not show link
+    if (!window.MyAggregator.showSearchResultLink) {
+      return false;
+    }
+    // if no searchId then also do not show
+    if (this.state.searchId === null) {
+      return false;
+    }
     var url = this.getSearchPermaLink();
     return React.createElement(
       "div",
@@ -52437,7 +52445,7 @@ var AggregatorPage = (0, _createReactClass2.default)({
           )
         )
       ),
-      this.state.searchId !== null ? this.renderSearchPermaLink() : false,
+      this.renderSearchPermaLink(),
       React.createElement(
         _modal2.default,
         { ref: "corporaModal", title: React.createElement(

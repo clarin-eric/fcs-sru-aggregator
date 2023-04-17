@@ -31,16 +31,18 @@ public class IndexResource {
     private static final org.slf4j.Logger log = LoggerFactory.getLogger(IndexResource.class);
 
     PiwikConfig config;
+    boolean searchResultLinkEnabled;
 
     public IndexResource() {
         config = Aggregator.getInstance().getParams().getPiwikConfig();
+        searchResultLinkEnabled = Aggregator.getInstance().getParams().getSearchResultLinkEnabled();
     }
 
     @GET
     @Produces({ MediaType.TEXT_HTML })
     @Operation(description = "Start page of \"" + Aggregator.NAME + "\".", hidden = true)
     public IndexView getIndex() {
-        return new IndexView(config);
+        return new IndexView(config, searchResultLinkEnabled);
     }
 
     @POST
@@ -69,6 +71,6 @@ public class IndexResource {
             log.info("Param {}: {}", PARAM_AGGREGATION_CONTEXT, aggregationContext);
         }
 
-        return new IndexView(config);
+        return new IndexView(config, searchResultLinkEnabled);
     }
 }
