@@ -1,5 +1,11 @@
 # Changelog
 
+# [3.6.2](https://github.com/clarin-eric/fcs-sru-aggregator/releases/tag/3.6.2) - 2023-04-17
+
+- Changes:
+  - Added `searchResultLinkEnabled` (`SEARCH_RESULT_LINK_ENABLED`) configuration
+  - Hide search-result-link by default, allow enabling it (mostly for debugging)
+
 # [3.6.1](https://github.com/clarin-eric/fcs-sru-aggregator/releases/tag/3.6.1) - 2023-04-06
 
 - Bug fixes:
