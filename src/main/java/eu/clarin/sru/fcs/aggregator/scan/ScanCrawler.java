@@ -215,6 +215,10 @@ public class ScanCrawler {
             c.setLanguages(new HashSet<String>(ri.getLanguages()));
             c.setLandingPage(ri.getLandingPageURI());
 
+            c.setSearchCapabilities(endpoint.getSearchCapabilities());
+            c.setAvailableDataViews(ri.getAvailableDataViews());
+            c.setAvailableLayers(ri.getAvailableLayers());
+
             if (corpora.addCorpus(c, parentCorpus)) {
                 if (rootCollections != null) {
                     rootCollections.add(c.getTitle());

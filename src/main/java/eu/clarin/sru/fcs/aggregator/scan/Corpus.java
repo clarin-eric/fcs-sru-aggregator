@@ -1,8 +1,11 @@
 package eu.clarin.sru.fcs.aggregator.scan;
 
+import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescription.DataView;
+import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescription.Layer;
 import eu.clarin.sru.fcs.aggregator.util.LanguagesISO693;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -23,6 +26,9 @@ public class Corpus {
     public static final String ROOT_HANDLE = "root";
     public static final Pattern HANDLE_WITH_SPECIAL_CHARS = Pattern.compile(".*[<>=/()\\s].*");
 
+    public static final String MIMETYPE_DATAVIEW_HITS = "application/x-clarin-fcs-hits+xml";
+    public static final String MIMETYPE_DATAVIEW_ADVANCED = "application/x-clarin-fcs-adv+xml";
+
     private Institution institution;
     private Endpoint endpoint;
     private String handle;
@@ -31,6 +37,9 @@ public class Corpus {
     private String landingPage;
     private String title;
     private String description;
+    private EnumSet<FCSSearchCapabilities> searchCapabilities = EnumSet.of(FCSSearchCapabilities.BASIC_SEARCH);
+    private List<DataView> availableDataViews;
+    private List<Layer> availableLayers;
     public List<Corpus> subCorpora = Collections.synchronizedList(new ArrayList<Corpus>());
 
     public Corpus() {
@@ -90,6 +99,51 @@ public class Corpus {
 
     public void setInstitution(Institution institution) {
         this.institution = institution;
+    }
+
+    public List<DataView> getAvailableDataViews() {
+        return availableDataViews;
+    }
+
+    public void setAvailableDataViews(List<DataView> availableDataViews) {
+        this.availableDataViews = availableDataViews;
+    }
+
+    public List<Layer> getAvailableLayers() {
+        return availableLayers;
+    }
+
+    public void setAvailableLayers(List<Layer> availableLayers) {
+        this.availableLayers = availableLayers;
+    }
+
+    public void setSearchCapabilities(EnumSet<FCSSearchCapabilities> searchCapabilities) {
+        this.searchCapabilities = searchCapabilities;
+    }
+
+    public EnumSet<FCSSearchCapabilities> getSearchCapabilities() {
+        return searchCapabilities;
+    }
+
+    public EnumSet<FCSSearchCapabilities> getSearchCapabilitiesResolved() {
+        EnumSet<FCSSearchCapabilities> resolvedSearchCapabilities = EnumSet.of(FCSSearchCapabilities.BASIC_SEARCH);
+
+        if (availableDataViews != null && !availableDataViews.isEmpty()) {
+            for (DataView availableDataView : availableDataViews) {
+                // if (availableDataView.getMimeType().equals(MIMETYPE_DATAVIEW_HITS)) {
+                // // NOTE: this dataview is required
+                // resolvedSearchCapabilities.add(FCSSearchCapabilities.BASIC_SEARCH);
+                // } else
+                if (availableDataView.getMimeType().equals(MIMETYPE_DATAVIEW_ADVANCED)) {
+                    resolvedSearchCapabilities.add(FCSSearchCapabilities.ADVANCED_SEARCH);
+                }
+            }
+        }
+
+        // build intersection
+        resolvedSearchCapabilities.retainAll(this.searchCapabilities);
+
+        return resolvedSearchCapabilities;
     }
 
     public Set<String> getLanguages() {
@@ -163,5 +217,4 @@ public class Corpus {
     public String toString() {
         return "Corpus{" + "endpoint=" + endpoint + ", handle=" + handle + '}';
     }
-
 }
