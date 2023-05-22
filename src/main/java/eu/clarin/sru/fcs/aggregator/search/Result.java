@@ -42,10 +42,10 @@ public final class Result {
     private final Corpus corpus;
     private AtomicBoolean inProgress = new AtomicBoolean(true);
     private AtomicInteger nextRecordPosition = new AtomicInteger(1);
+    private AtomicInteger numberOfRecords = new AtomicInteger(-1);
     private AtomicReference<JsonException> exception = new AtomicReference<JsonException>();
     private List<Diagnostic> diagnostics = Collections.synchronizedList(new ArrayList<Diagnostic>());
     private List<Kwic> kwics = Collections.synchronizedList(new ArrayList<Kwic>());
-
     private List<List<AdvancedLayer>> advLayers = Collections.synchronizedList(new ArrayList<List<AdvancedLayer>>());
 
     public List<Kwic> getKwics() {
@@ -83,6 +83,7 @@ public final class Result {
             if (response.getNextRecordPosition() > 0) {
                 nextRecordPosition.set(response.getNextRecordPosition());
             }
+            numberOfRecords.set(response.getNumberOfRecords());
         }
     }
 
@@ -167,6 +168,10 @@ public final class Result {
 
     public int getNextRecordPosition() {
         return nextRecordPosition.get();
+    }
+
+    public int getNumberOfRecords() {
+        return numberOfRecords.get();
     }
 
     public Corpus getCorpus() {
