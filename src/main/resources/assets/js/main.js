@@ -51850,6 +51850,7 @@ var AggregatorPage = (0, _createReactClass2.default)({
         if (this.state.searchId != null) {
           console.log("Try loading exiting search, from searchId provided from URL:", this.state.searchId);
           this.refreshSearchResults();
+          this.setCorpusSelectionBySearch();
         }
       }.bind(this)
     });
@@ -51964,6 +51965,26 @@ var AggregatorPage = (0, _createReactClass2.default)({
           }
         }
         this.setState({ hits: json, timeout: timeout, zoomedCorpusHit: corpusHit });
+      }.bind(this)
+    });
+  },
+
+  setCorpusSelectionBySearch: function setCorpusSelectionBySearch() {
+    if (!this.state.searchId || !this._isMounted) {
+      return;
+    }
+    this.props.ajax({
+      url: this.props.APIROOT + 'search/' + this.state.searchId,
+      success: function (json, textStatus, jqXHR) {
+        var corpusIds = [];
+        for (var resi = 0; resi < json.results.length; resi++) {
+          var res = json.results[resi];
+          corpusIds.push(res.corpus.id);
+        }
+        this.state.corpora.recurse(function (c) {
+          c.selected = corpusIds.includes(c.id);
+        });
+        this.setState({ corpora: this.state.corpora });
       }.bind(this)
     });
   },
