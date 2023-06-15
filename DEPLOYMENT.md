@@ -70,6 +70,15 @@ aggregatorParams:
       - pl
 ```
 
+### UI
+
+The UI allows to display a semi-static search result link using the current search ID. This is mostly intended for sharing an active search when testing and developing, and not for the end user as it can be misunderstood as being a permalink that may be used for citations or references. Each restart of the Aggregator clears its search cache so the search ID would then be invalid! It is therefore disabled by default in the production configuration but can be re-configured using the environment variable `SEARCH_RESULT_LINK_ENABLED`:
+
+```yaml
+aggregatorParams:
+  searchResultLinkEnabled: ${SEARCH_RESULT_LINK_ENABLED:-true}
+```
+
 ### OpenAPI/Swagger
 
 OpenAPI documentation (for Swagger etc.) is enabled by default.
