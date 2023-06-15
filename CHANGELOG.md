@@ -1,5 +1,12 @@
 # Changelog
 
+# [3.6.3](https://github.com/clarin-eric/fcs-sru-aggregator/releases/tag/3.6.3) - 2023-06-15
+
+- Changes:
+  - API: Expose corpus/resource dataviews, layers and capabilities
+  - API: Add `numberOfRecords` for resource results
+  - UI: update corpus selection when visiting page by `/search-<id>` URL
+
 # [3.6.2](https://github.com/clarin-eric/fcs-sru-aggregator/releases/tag/3.6.2) - 2023-04-17
 
 - Changes:
