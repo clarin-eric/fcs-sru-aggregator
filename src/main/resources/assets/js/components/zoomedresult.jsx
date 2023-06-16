@@ -9,7 +9,7 @@ var PT = PropTypes;
 
 var ZoomedResult = createReactClass({
   propTypes: {
-    corpusHit: PT.object,
+    resourceHit: PT.object,
     nextResults: PT.func.isRequired,
     languageMap: PT.object.isRequired,
     weblichtLanguages: PT.array.isRequired,
@@ -27,9 +27,9 @@ var ZoomedResult = createReactClass({
   },
 
   nextResults: function (e) {
-    this.props.corpusHit.inProgress = true;
+    this.props.resourceHit.inProgress = true;
     this.setState({ forceUpdate: this.state.forceUpdate + 1 });
-    this.props.nextResults(this.props.corpusHit.corpus.id);
+    this.props.nextResults(this.props.resourceHit.resource.id);
   },
 
   renderLanguages: function (languages) {
@@ -40,12 +40,12 @@ var ZoomedResult = createReactClass({
   },
 
   renderMoreResults: function () {
-    if (this.props.corpusHit.inProgress)
+    if (this.props.resourceHit.inProgress)
       return (<span style={{ fontStyle: 'italic' }}>Retrieving results, please wait...</span>);
 
     var moreResults = true;
-    for (var i = 0; i < this.props.corpusHit.diagnostics.length; i++) {
-      var d = this.props.corpusHit.diagnostics[i];
+    for (var i = 0; i < this.props.resourceHit.diagnostics.length; i++) {
+      var d = this.props.resourceHit.diagnostics[i];
       if (d.uri === window.MyAggregator.NO_MORE_RECORDS_DIAGNOSTIC_URI) {
         moreResults = false;
         break;
@@ -59,8 +59,8 @@ var ZoomedResult = createReactClass({
   },
 
   render: function () {
-    var corpusHit = this.props.corpusHit;
-    if (!corpusHit) {
+    var resourceHit = this.props.resourceHit;
+    if (!resourceHit) {
       return false;
     }
 
@@ -68,10 +68,10 @@ var ZoomedResult = createReactClass({
     if (this.props.weblichtLanguages.indexOf(this.props.searchedLanguage[0]) < 0) {
       // the search language is either AnyLanguage or unsupported
       if (this.props.searchedLanguage[0] === window.MyAggregator.multipleLanguageCode) {
-        if (corpusHit.corpus.languages && corpusHit.corpus.languages.length === 1) {
-          forceLanguage = corpusHit.corpus.languages[0];
+        if (resourceHit.resource.languages && resourceHit.resource.languages.length === 1) {
+          forceLanguage = resourceHit.resource.languages[0];
         } else {
-          var langs = corpusHit.kwics.map(function (kwic) { return kwic.language; });
+          var langs = resourceHit.kwics.map(function (kwic) { return kwic.language; });
           langs = _.uniq(langs.filter(function (l) { return l !== null; }));
           if (langs.length === 1) {
             forceLanguage = langs[0];
@@ -82,21 +82,21 @@ var ZoomedResult = createReactClass({
         wlerror = "Cannot use WebLicht: unsupported language (" + this.props.searchedLanguage[1] + ")";
       }
     }
-    var corpus = corpusHit.corpus;
+    var resource = resourceHit.resource;
     return (<div>
-      <div className='corpusDescription'>
-        <p><i className="fa fa-institution" /> {corpus.institution.name}</p>
-        {corpus.description ?
-          <p><i className="glyphicon glyphicon-info-sign" /> {corpus.description}</p> : false}
-        <p><i className="fa fa-language" /> {this.renderLanguages(corpus.languages)}</p>
+      <div className='resourceDescription'>
+        <p><i className="fa fa-institution" /> {resource.institution.name}</p>
+        {resource.description ?
+          <p><i className="glyphicon glyphicon-info-sign" /> {resource.description}</p> : false}
+        <p><i className="fa fa-language" /> {this.renderLanguages(resource.languages)}</p>
       </div>
       <div style={{ marginBottom: 2 }}>
         <div className="float-right">
           <div>
             {this.renderDisplayKWIC()}
             {this.props.queryTypeId !== "fcs" ? "" : this.renderDisplayADV()}
-            <div className="inline"> {this.renderDownloadLinks(corpusHit.corpus.id)} </div>
-            <div className="inline"> {this.renderToWeblichtLinks(corpus.id, forceLanguage, wlerror)} </div>
+            <div className="inline"> {this.renderDownloadLinks(resourceHit.resource.id)} </div>
+            <div className="inline"> {this.renderToWeblichtLinks(resource.id, forceLanguage, wlerror)} </div>
           </div>
         </div>
         <div style={{ clear: 'both' }} />
@@ -104,7 +104,7 @@ var ZoomedResult = createReactClass({
       <TransitionGroup>
         <CSSTransition classNames="fade" timeout={{ enter: 200, exit: 200 }}>
           <div className="panel">
-            <div className="panel-body corpusResults">{this.renderPanelBody(corpusHit)}</div>
+            <div className="panel-body resourceResults">{this.renderPanelBody(resourceHit)}</div>
           </div>
         </CSSTransition>
       </TransitionGroup>

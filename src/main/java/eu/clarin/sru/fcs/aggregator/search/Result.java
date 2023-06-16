@@ -6,7 +6,7 @@ package eu.clarin.sru.fcs.aggregator.search;
 
 import eu.clarin.sru.client.SRUDiagnostic;
 import eu.clarin.sru.client.SRURecord;
-import eu.clarin.sru.fcs.aggregator.scan.Corpus;
+import eu.clarin.sru.fcs.aggregator.scan.Resource;
 import eu.clarin.sru.client.SRUSearchRetrieveResponse;
 import eu.clarin.sru.client.SRUSurrogateRecordData;
 import eu.clarin.sru.client.fcs.ClarinFCSRecordData;
@@ -15,7 +15,6 @@ import eu.clarin.sru.client.fcs.DataViewAdvanced;
 import eu.clarin.sru.client.fcs.DataViewGenericDOM;
 import eu.clarin.sru.client.fcs.DataViewGenericString;
 import eu.clarin.sru.client.fcs.DataViewHits;
-import eu.clarin.sru.client.fcs.Resource;
 import eu.clarin.sru.fcs.aggregator.scan.Diagnostic;
 import eu.clarin.sru.fcs.aggregator.scan.JsonException;
 import java.util.ArrayList;
@@ -28,7 +27,7 @@ import org.w3c.dom.Node;
 import org.slf4j.LoggerFactory;
 
 /**
- * The results of a SRU search-retrieve operation for a particular corpus.
+ * The results of a SRU search-retrieve operation for a particular resource.
  * Its content is json-serialized and sent to the JS client for display.
  *
  * @author Yana Panchenko
@@ -39,7 +38,7 @@ public final class Result {
 
     private static final org.slf4j.Logger log = LoggerFactory.getLogger(Result.class);
 
-    private final Corpus corpus;
+    private final Resource resource;
     private AtomicBoolean inProgress = new AtomicBoolean(true);
     private AtomicInteger nextRecordPosition = new AtomicInteger(1);
     private AtomicInteger numberOfRecords = new AtomicInteger(-1);
@@ -56,8 +55,8 @@ public final class Result {
         return advLayers;
     }
 
-    public Result(Corpus corpus) {
-        this.corpus = corpus;
+    public Result(Resource resource) {
+        this.resource = resource;
     }
 
     public void setInProgress(boolean inProgress) {
@@ -91,7 +90,7 @@ public final class Result {
         nextRecordPosition.incrementAndGet();
         if (record.isRecordSchema(ClarinFCSRecordData.RECORD_SCHEMA)) {
             ClarinFCSRecordData rd = (ClarinFCSRecordData) record.getRecordData();
-            Resource resource = rd.getResource();
+            eu.clarin.sru.client.fcs.Resource resource = rd.getResource();
             setClarinRecord(resource);
             log.debug("Resource ref={}, pid={}, dataViews={}", resource.getRef(), resource.getPid(),
                     resource.hasDataViews());
@@ -103,7 +102,7 @@ public final class Result {
         }
     }
 
-    private void setClarinRecord(Resource resource) {
+    private void setClarinRecord(eu.clarin.sru.client.fcs.Resource resource) {
         String pid = resource.getPid();
         String reference = resource.getRef();
 
@@ -112,7 +111,7 @@ public final class Result {
         }
 
         if (resource.hasResourceFragments()) {
-            for (Resource.ResourceFragment fragment : resource.getResourceFragments()) {
+            for (eu.clarin.sru.client.fcs.Resource.ResourceFragment fragment : resource.getResourceFragments()) {
                 log.debug("ResourceFragment: ref={}, pid={}, dataViews={}", fragment.getRef(), fragment.getPid(),
                         fragment.hasDataViews());
                 if (fragment.hasDataViews()) {
@@ -174,7 +173,7 @@ public final class Result {
         return numberOfRecords.get();
     }
 
-    public Corpus getCorpus() {
-        return corpus;
+    public Resource getResource() {
+        return resource;
     }
 }

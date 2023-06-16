@@ -6,13 +6,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import eu.clarin.sru.fcs.aggregator.client.MaxConcurrentRequestsCallback;
-import eu.clarin.sru.fcs.aggregator.scan.Corpora;
+import eu.clarin.sru.fcs.aggregator.scan.Resources;
 import eu.clarin.sru.fcs.aggregator.scan.EndpointUrlFilterAllow;
 import eu.clarin.sru.fcs.aggregator.scan.ScanCrawler;
 import eu.clarin.sru.fcs.aggregator.client.ThrottledClient;
 import eu.clarin.sru.fcs.aggregator.scan.CenterRegistryLive;
 import eu.clarin.sru.fcs.aggregator.scan.ClientFactory;
-import eu.clarin.sru.fcs.aggregator.scan.Corpus;
+import eu.clarin.sru.fcs.aggregator.scan.Resource;
 import io.dropwizard.setup.Environment;
 import io.dropwizard.testing.ResourceHelpers;
 import io.dropwizard.testing.junit5.DropwizardAppExtension;
@@ -88,25 +88,25 @@ public class ScanCrawlerTest {
             ScanCrawler crawler = new ScanCrawler(
                     new CenterRegistryLive(centerRegistryUrl, filter, jerseyClient).getCQLInstitutions(),
                     sruClient, 2);
-            Corpora cache = crawler.crawl();
-            Corpus tueRootCorpus = cache.findByEndpoint("http://weblicht.sfs.uni-tuebingen.de/rws/sru/").get(0);
-            Corpus mpiRootCorpus = cache.findByEndpoint("http://cqlservlet.mpi.nl/").get(0);
+            Resources cache = crawler.crawl();
+            Resource tueRootResource = cache.findByEndpoint("http://weblicht.sfs.uni-tuebingen.de/rws/sru/").get(0);
+            Resource mpiRootResource = cache.findByEndpoint("http://cqlservlet.mpi.nl/").get(0);
             assertEquals("http://hdl.handle.net/11858/00-1778-0000-0001-DDAF-D",
-                    tueRootCorpus.getHandle());
-            Corpus mpiCorpus = cache.findByHandle("hdl:1839/00-0000-0000-0001-53A5-2@format=cmdi");
+                    tueRootResource.getHandle());
+            Resource mpiResource = cache.findByHandle("hdl:1839/00-0000-0000-0001-53A5-2@format=cmdi");
             assertEquals("hdl:1839/00-0000-0000-0003-4692-D@format=cmdi",
-                    mpiCorpus.getSubCorpora().get(0).getHandle());
-            // check if languages and other corpus data is crawled corectly...
+                    mpiResource.getSubResources().get(0).getHandle());
+            // check if languages and other resource data is crawled corectly...
             Set<String> tueLangs = new HashSet<>();
             tueLangs.add("deu");
-            assertEquals(tueLangs, tueRootCorpus.getLanguages());
+            assertEquals(tueLangs, tueRootResource.getLanguages());
             String tueDescSubstring = "Tübingen Treebank";
-            assertTrue(tueRootCorpus.getDescription().contains(tueDescSubstring), "Description problem");
+            assertTrue(tueRootResource.getDescription().contains(tueDescSubstring), "Description problem");
             String tueNameSubstring = "TuebaDDC";
-            assertTrue(tueRootCorpus.getTitle().contains(tueNameSubstring), "Name problem");
+            assertTrue(tueRootResource.getTitle().contains(tueNameSubstring), "Name problem");
             String tuePageSubstring = "sfs.uni-tuebingen.de";
-            assertTrue(tueRootCorpus.getLandingPage().contains(tuePageSubstring), "Landing page problem");
-            assertTrue(mpiRootCorpus.getNumberOfRecords() > 10, "Number of records problem");
+            assertTrue(tueRootResource.getLandingPage().contains(tuePageSubstring), "Landing page problem");
+            assertTrue(mpiRootResource.getNumberOfRecords() > 10, "Number of records problem");
 
         } finally {
             sruClient.shutdown();

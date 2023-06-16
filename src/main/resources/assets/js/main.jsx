@@ -31,7 +31,7 @@ import createReactClass from "create-react-class";
   - pages/aggregatorpage.jsx: defines
       - the Corpora store of resources
       - the AggregatorPage component which deals with search and displays the search results
-  - components/corpusview.jsx: defines the CorpusView, rendered when the user views the available resources
+  - components/resourceview.jsx: defines the ResourceView, rendered when the user views the available resources
   - plus in components/: various general usage React components
   
   The top-most component, Main, tracks of the window's location URL and, depending on the value,

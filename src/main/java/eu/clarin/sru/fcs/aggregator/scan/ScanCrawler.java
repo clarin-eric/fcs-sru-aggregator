@@ -61,8 +61,8 @@ public class ScanCrawler {
         this.latch = new CounterLatch();
     }
 
-    public Corpora crawl() {
-        Corpora cache = new Corpora();
+    public Resources crawl() {
+        Resources cache = new Resources();
         for (Institution institution : institutions) {
             cache.addInstitution(institution);
             Iterable<Endpoint> endpoints = institution.getEndpoints();
@@ -94,12 +94,12 @@ public class ScanCrawler {
 
         final Institution institution;
         final Endpoint endpoint;
-        final Corpora corpora;
+        final Resources resources;
 
-        ExplainTask(final Institution institution, final Endpoint endpoint, final Corpora corpora) {
+        ExplainTask(final Institution institution, final Endpoint endpoint, final Resources resources) {
             this.institution = institution;
             this.endpoint = endpoint;
-            this.corpora = corpora;
+            this.resources = resources;
         }
 
         void start() {
@@ -145,7 +145,7 @@ public class ScanCrawler {
                             }
                             statistics.upgradeProtocolVersion(institution, endpoint);
 
-                            addCorpora(corpora, institution, endpoint, rootResources, desc.getResources(), null);
+                            addResources(resources, institution, endpoint, rootResources, desc.getResources(), null);
                         }
                     }
                 }
@@ -171,7 +171,7 @@ public class ScanCrawler {
                         response.getRequest().getRequestedURI().toString());
             } finally {
                 if (endpoint.getProtocol().equals(FCSProtocolVersion.LEGACY)) {
-                    new ScanTask(institution, endpoint, null, corpora, 0).start();
+                    new ScanTask(institution, endpoint, null, resources, 0).start();
                     Diagnostic diag = new Diagnostic("LEGACY",
                             "Endpoint didn't return any resource on EXPLAIN, presuming legacy support", "");
                     statistics.addEndpointDiagnostic(institution, endpoint, diag,
@@ -200,38 +200,38 @@ public class ScanCrawler {
         }
     }
 
-    private static void addCorpora(Corpora corpora,
+    private static void addResources(Resources resources,
             Institution institution, Endpoint endpoint,
             List<String> rootResources,
-            List<ResourceInfo> resources, Corpus parentCorpus) {
-        if (resources == null) {
+            List<ResourceInfo> resourceInfos, Resource parentResource) {
+        if (resourceInfos == null) {
             return;
         }
-        for (ResourceInfo ri : resources) {
-            Corpus c = new Corpus(institution, endpoint);
-            c.setHandle(ri.getPid());
-            c.setTitle(getBestValueFrom(ri.getTitle()));
-            c.setDescription(getBestValueFromNullable(ri.getDescription()));
-            c.setLanguages(new HashSet<String>(ri.getLanguages()));
-            c.setLandingPage(ri.getLandingPageURI());
+        for (ResourceInfo ri : resourceInfos) {
+            Resource r = new Resource(institution, endpoint);
+            r.setHandle(ri.getPid());
+            r.setTitle(getBestValueFrom(ri.getTitle()));
+            r.setDescription(getBestValueFromNullable(ri.getDescription()));
+            r.setLanguages(new HashSet<String>(ri.getLanguages()));
+            r.setLandingPage(ri.getLandingPageURI());
 
-            c.setSearchCapabilities(endpoint.getSearchCapabilities());
-            c.setAvailableDataViews(ri.getAvailableDataViews());
-            c.setAvailableLayers(ri.getAvailableLayers());
+            r.setSearchCapabilities(endpoint.getSearchCapabilities());
+            r.setAvailableDataViews(ri.getAvailableDataViews());
+            r.setAvailableLayers(ri.getAvailableLayers());
 
-            if (corpora.addCorpus(c, parentCorpus)) {
+            if (resources.addResource(r, parentResource)) {
                 if (rootResources != null) {
-                    rootResources.add(c.getTitle());
+                    rootResources.add(r.getTitle());
                 }
-                addCorpora(corpora, institution, endpoint, null, ri.getSubResources(), c);
+                addResources(resources, institution, endpoint, null, ri.getSubResources(), r);
             } else {
-                Corpus otherCorpus = corpora.findByHandle(c.getHandle());
-                if (otherCorpus != null && endpoint.equals(otherCorpus.getEndpoint())) {
-                    log.warn("Found multiple corpora with same handle '{}' at endpoint {}", c.getHandle(),
+                Resource otherResource = resources.findByHandle(r.getHandle());
+                if (otherResource != null && endpoint.equals(otherResource.getEndpoint())) {
+                    log.warn("Found multiple resources with same handle '{}' at endpoint {}", r.getHandle(),
                             endpoint.getUrl());
                 } else {
-                    log.warn("Found existing corpus with same handle '{}' at endpoint {}. Skip for this endpoint {}.",
-                            c.getHandle(), (otherCorpus != null) ? otherCorpus.getEndpoint().getUrl() : null,
+                    log.warn("Found existing resource with same handle '{}' at endpoint {}. Skip for this endpoint {}.",
+                            r.getHandle(), (otherResource != null) ? otherResource.getEndpoint().getUrl() : null,
                             endpoint.getUrl());
                 }
             }
@@ -271,16 +271,16 @@ public class ScanCrawler {
 
         final Institution institution;
         final Endpoint endpoint;
-        final Corpus parentCorpus;
-        final Corpora corpora;
+        final Resource parentResource;
+        final Resources resources;
         final int depth;
 
         ScanTask(final Institution institution, final Endpoint endpoint,
-                final Corpus parentCorpus, final Corpora corpora, final int depth) {
+                final Resource parentResource, final Resources resources, final int depth) {
             this.institution = institution;
             this.endpoint = endpoint;
-            this.parentCorpus = parentCorpus;
-            this.corpora = corpora;
+            this.parentResource = parentResource;
+            this.resources = resources;
             this.depth = depth;
         }
 
@@ -293,7 +293,7 @@ public class ScanCrawler {
             try {
                 scanRequest = new SRUScanRequest(endpoint.getUrl());
                 scanRequest.setScanClause(SRUCQL.SCAN_RESOURCE_PARAMETER
-                        + "=" + normalizeHandle(parentCorpus));
+                        + "=" + normalizeHandle(parentResource));
                 scanRequest.setExtraRequestData(SRUCQL.SCAN_RESOURCE_INFO_PARAMETER,
                         SRUCQL.SCAN_RESOURCE_INFO_PARAMETER_DEFAULT_VALUE);
             } catch (Throwable ex) {
@@ -304,7 +304,7 @@ public class ScanCrawler {
                 return;
             }
 
-            log.info("{} Start scan: {}#{}", latch.get(), endpoint.getUrl(), normalizeHandle(parentCorpus));
+            log.info("{} Start scan: {}#{}", latch.get(), endpoint.getUrl(), normalizeHandle(parentResource));
             latch.increment();
             sruClient.scan(scanRequest, this);
         }
@@ -318,11 +318,11 @@ public class ScanCrawler {
                         if (term == null) {
                             log.warn("null term for scan at endpoint {}", endpoint.getUrl());
                         } else {
-                            Corpus c = createCorpus(institution, endpoint, term);
-                            if (corpora.addCorpus(c, parentCorpus)) {
-                                new ScanTask(institution, endpoint, c, corpora, depth + 1).start();
-                                if (parentCorpus == null) {
-                                    statistics.addEndpointResource(institution, endpoint, c.getTitle());
+                            Resource r = createResource(institution, endpoint, term);
+                            if (resources.addResource(r, parentResource)) {
+                                new ScanTask(institution, endpoint, r, resources, depth + 1).start();
+                                if (parentResource == null) {
+                                    statistics.addEndpointResource(institution, endpoint, r.getTitle());
                                 }
                             }
                         }
@@ -339,10 +339,10 @@ public class ScanCrawler {
                     }
                 }
 
-                log.info("{} Finished scan: {}#{}", latch.get(), endpoint.getUrl(), normalizeHandle(parentCorpus));
+                log.info("{} Finished scan: {}#{}", latch.get(), endpoint.getUrl(), normalizeHandle(parentResource));
             } catch (Exception xc) {
                 log.error("{} Exception in scan callback {}#{}", latch.get(), endpoint.getUrl(),
-                        normalizeHandle(parentCorpus));
+                        normalizeHandle(parentResource));
                 log.error("--> ", xc);
                 statistics.addErrorDatapoint(institution, endpoint, xc,
                         response.getRequest().getRequestedURI().toString());
@@ -355,7 +355,7 @@ public class ScanCrawler {
         public void onError(SRUScanRequest request, SRUClientException error, ThrottledClient.Stats stats) {
             try {
                 log.error("{} Error while scanning {}#{}: {}", latch.get(), endpoint.getUrl(),
-                        normalizeHandle(parentCorpus), error.getMessage());
+                        normalizeHandle(parentResource), error.getMessage());
                 statistics.addEndpointDatapoint(institution, endpoint, stats.getQueueTime(), stats.getExecutionTime());
                 statistics.addErrorDatapoint(institution, endpoint, error, request.getRequestedURI().toString());
                 if (Throw.isCausedBy(error, SocketTimeoutException.class)) {
@@ -374,34 +374,34 @@ public class ScanCrawler {
         return statistics;
     }
 
-    private static String normalizeHandle(Corpus corpus) {
-        if (corpus == null) {
-            return Corpus.ROOT_HANDLE;
+    private static String normalizeHandle(Resource resource) {
+        if (resource == null) {
+            return Resource.ROOT_HANDLE;
         }
-        String handle = corpus.getHandle();
-        if (Corpus.HANDLE_WITH_SPECIAL_CHARS.matcher(handle).matches()) {
+        String handle = resource.getHandle();
+        if (Resource.HANDLE_WITH_SPECIAL_CHARS.matcher(handle).matches()) {
             handle = "\"" + handle + "\"";
         }
         return handle;
     }
 
-    private static Corpus createCorpus(Institution institution, Endpoint endpoint, SRUTerm term) {
-        Corpus c = new Corpus(institution, endpoint);
-        c.setTitle("" + term.getDisplayTerm());
+    private static Resource createResource(Institution institution, Endpoint endpoint, SRUTerm term) {
+        Resource r = new Resource(institution, endpoint);
+        r.setTitle("" + term.getDisplayTerm());
         String handle = term.getValue();
         if (handle == null) {
-            log.error("null handle for corpus: {} : {}", endpoint, term.getDisplayTerm());
+            log.error("null handle for resource: {} : {}", endpoint, term.getDisplayTerm());
             handle = "";
         }
-        c.setHandle(handle);
+        r.setHandle(handle);
         if (term.getNumberOfRecords() > 0) {
-            c.setNumberOfRecords(term.getNumberOfRecords());
+            r.setNumberOfRecords(term.getNumberOfRecords());
         }
-        addExtraInfo(c, term);
-        return c;
+        addExtraInfo(r, term);
+        return r;
     }
 
-    private static void addExtraInfo(Corpus c, SRUTerm term) {
+    private static void addExtraInfo(Resource r, SRUTerm term) {
         DocumentFragment extraInfo = term.getExtraTermData();
         String enDescription = null, enTitle = null;
         if (extraInfo != null) {
@@ -409,7 +409,7 @@ public class ScanCrawler {
             for (int i = 0; i < infoNodes.getLength(); i++) {
                 Node infoNode = infoNodes.item(i);
                 if (infoNode.getNodeType() == Node.ELEMENT_NODE && infoNode.getLocalName().equals("LandingPageURI")) {
-                    c.setLandingPage(infoNode.getTextContent().trim());
+                    r.setLandingPage(infoNode.getTextContent().trim());
                 } else if (infoNode.getNodeType() == Node.ELEMENT_NODE && infoNode.getLocalName().equals("Languages")) {
                     NodeList languageNodes = infoNode.getChildNodes();
                     for (int j = 0; j < languageNodes.getLength(); j++) {
@@ -418,7 +418,7 @@ public class ScanCrawler {
                             Element languageNode = (Element) languageNodes.item(j);
                             String languageText = languageNode.getTextContent();
                             if (languageText != null && !languageText.trim().isEmpty()) {
-                                c.addLanguage(languageText.trim());
+                                r.addLanguage(languageText.trim());
                             }
                         }
                     }
@@ -426,7 +426,7 @@ public class ScanCrawler {
                     Element element = (Element) infoNode;
                     String x = cleanup(infoNode.getTextContent());
                     if (!x.isEmpty()) {
-                        c.setTitle(x);
+                        r.setTitle(x);
                         if ("en".equals(element.getAttribute("xml:lang"))) {
                             enTitle = x;
                         }
@@ -435,7 +435,7 @@ public class ScanCrawler {
                         && infoNode.getLocalName().equals("Description")) {
                     Element element = (Element) infoNode;
                     String x = cleanup(infoNode.getTextContent());
-                    c.setDescription(x);
+                    r.setDescription(x);
                     // String lang =
                     // element.getAttributeNS("http://clarin.eu/fcs/1.0/resource-info", "lang");
                     // System.out.println("ATTRIBUTE LANG: " + lang);
@@ -446,11 +446,11 @@ public class ScanCrawler {
             }
             // title in English has priority
             if (enTitle != null && !enTitle.isEmpty()) {
-                c.setTitle(enTitle);
+                r.setTitle(enTitle);
             }
             // description in English has priority
             if (enDescription != null && !enDescription.isEmpty()) {
-                c.setDescription(enDescription);
+                r.setDescription(enDescription);
             }
         }
     }

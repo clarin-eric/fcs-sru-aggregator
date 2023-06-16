@@ -5,8 +5,8 @@ import createReactClass from "create-react-class";
 
 var PT = PropTypes;
 
-var SearchCorpusBox = createReactClass({
-  //fixme! - class SearchCorpusBox extends React.Component {
+var SearchResourceBox = createReactClass({
+  //fixme! - class SearchResourceBox extends React.Component {
   propTypes: {
     search: PT.func.isRequired,
   },
@@ -42,4 +42,4 @@ var SearchCorpusBox = createReactClass({
   }
 });
 
-module.exports = SearchCorpusBox;
+module.exports = SearchResourceBox;

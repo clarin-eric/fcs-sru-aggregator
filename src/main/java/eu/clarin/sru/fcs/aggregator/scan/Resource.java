@@ -13,15 +13,15 @@ import java.util.regex.Pattern;
 import org.slf4j.LoggerFactory;
 
 /**
- * Represents information about corpus resource, such as corpus handle (id),
+ * Represents information about resource, such as resource handle (id),
  * institution, title, description, language(s), etc. Also store the
- * information about corpus sub-corpora.
+ * information about resource sub-resources.
  *
  * @author Yana Panchenko
  */
-public class Corpus {
+public class Resource {
 
-    private static final org.slf4j.Logger log = LoggerFactory.getLogger(Corpus.class);
+    private static final org.slf4j.Logger log = LoggerFactory.getLogger(Resource.class);
 
     public static final String ROOT_HANDLE = "root";
     public static final Pattern HANDLE_WITH_SPECIAL_CHARS = Pattern.compile(".*[<>=/()\\s].*");
@@ -40,12 +40,12 @@ public class Corpus {
     private EnumSet<FCSSearchCapabilities> searchCapabilities = EnumSet.of(FCSSearchCapabilities.BASIC_SEARCH);
     private List<DataView> availableDataViews;
     private List<Layer> availableLayers;
-    public List<Corpus> subCorpora = Collections.synchronizedList(new ArrayList<Corpus>());
+    public List<Resource> subResources = Collections.synchronizedList(new ArrayList<Resource>());
 
-    public Corpus() {
+    public Resource() {
     }
 
-    public Corpus(Institution institution, Endpoint endpoint) {
+    public Resource(Institution institution, Endpoint endpoint) {
         this.institution = institution;
         this.endpoint = endpoint;
     }
@@ -57,16 +57,16 @@ public class Corpus {
     public void setId(String id) { // dumb setter for JsonDeserialization
     }
 
-    public void addCorpus(Corpus c) {
-        subCorpora.add(c);
+    public void addResource(Resource r) {
+        subResources.add(r);
     }
 
-    public List<Corpus> getSubCorpora() {
-        return Collections.unmodifiableList(subCorpora);
+    public List<Resource> getSubResources() {
+        return Collections.unmodifiableList(subResources);
     }
 
-    public void setSubCorpora(List<Corpus> subCorpora) {
-        this.subCorpora = subCorpora;
+    public void setSubResources(List<Resource> subResources) {
+        this.subResources = subResources;
     }
 
     public String getHandle() {
@@ -203,7 +203,7 @@ public class Corpus {
         if (getClass() != obj.getClass()) {
             return false;
         }
-        final Corpus other = (Corpus) obj;
+        final Resource other = (Resource) obj;
         if ((this.endpoint == null) ? (other.endpoint != null) : !this.endpoint.equals(other.endpoint)) {
             return false;
         }
@@ -215,6 +215,6 @@ public class Corpus {
 
     @Override
     public String toString() {
-        return "Corpus{" + "endpoint=" + endpoint + ", handle=" + handle + '}';
+        return "Resource{" + "endpoint=" + endpoint + ", handle=" + handle + '}';
     }
 }

@@ -5,4 +5,6 @@
 dependency-reduced-pom.xml
 fcsAggregatorCorpora.backup.json
 fcsAggregatorCorpora.json
+fcsAggregatorResources.backup.json
+fcsAggregatorResources.json
 singleResourceSelectedFromVLO.json

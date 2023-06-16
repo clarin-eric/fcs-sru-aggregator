@@ -28,9 +28,9 @@ public class ScanCrawlTask implements Runnable {
     private final Client jerseyClient;
     private int cacheMaxDepth;
     private EndpointFilter filter;
-    private AtomicReference<Corpora> corporaAtom;
-    private File cachedCorpora;
-    private File oldCachedCorpora;
+    private AtomicReference<Resources> resourcesAtom;
+    private File cachedResources;
+    private File oldCachedResources;
     private AtomicReference<Statistics> scanStatisticsAtom;
     private AtomicReference<Statistics> searchStatisticsAtom;
     private String centerRegistryUrl;
@@ -42,8 +42,8 @@ public class ScanCrawlTask implements Runnable {
             List<AggregatorConfiguration.Params.EndpointConfig> additionalCQLEndpoints,
             List<AggregatorConfiguration.Params.EndpointConfig> additionalFCSEndpoints,
             EndpointFilter filter,
-            AtomicReference<Corpora> corporaAtom,
-            File cachedCorpora, File oldCachedCorpora,
+            AtomicReference<Resources> resourcesAtom,
+            File cachedResources, File oldCachedResources,
             AtomicReference<Statistics> scanStatisticsAtom,
             AtomicReference<Statistics> searchStatisticsAtom) {
         this.sruClient = sruClient;
@@ -53,9 +53,9 @@ public class ScanCrawlTask implements Runnable {
         this.additionalCQLEndpoints = additionalCQLEndpoints;
         this.additionalFCSEndpoints = additionalFCSEndpoints;
         this.filter = filter;
-        this.corporaAtom = corporaAtom;
-        this.cachedCorpora = cachedCorpora;
-        this.oldCachedCorpora = oldCachedCorpora;
+        this.resourcesAtom = resourcesAtom;
+        this.cachedResources = cachedResources;
+        this.oldCachedResources = oldCachedResources;
         this.scanStatisticsAtom = scanStatisticsAtom;
         this.searchStatisticsAtom = searchStatisticsAtom;
     }
@@ -126,20 +126,20 @@ public class ScanCrawlTask implements Runnable {
             ScanCrawler scanCrawler = new ScanCrawler(institutions, sruClient, cacheMaxDepth);
 
             log.info("ScanCrawlTask: Starting crawl");
-            Corpora corpora = scanCrawler.crawl();
+            Resources resources = scanCrawler.crawl();
 
             long time = System.currentTimeMillis() - time0;
-            log.info("ScanCrawlTask: crawl done in {}s, number of root corpora: {}",
-                    time / 1000., corpora.getCorpora().size());
+            log.info("ScanCrawlTask: crawl done in {}s, number of root resources: {}",
+                    time / 1000., resources.getResources().size());
 
-            if (corpora.getCorpora().isEmpty()) {
-                log.warn("ScanCrawlTask: No corpora: skipped updating stats; skipped writing to disk.");
+            if (resources.getResources().isEmpty()) {
+                log.warn("ScanCrawlTask: No resources: skipped updating stats; skipped writing to disk.");
             } else {
-                corporaAtom.set(corpora);
+                resourcesAtom.set(resources);
                 scanStatisticsAtom.set(scanCrawler.getStatistics());
                 searchStatisticsAtom.set(new Statistics()); // reset search stats
 
-                dump(corpora, cachedCorpora, oldCachedCorpora);
+                dump(resources, cachedResources, oldCachedResources);
                 log.info("ScanCrawlTask: wrote to disk, finished");
             }
         } catch (IOException xc) {
@@ -150,21 +150,21 @@ public class ScanCrawlTask implements Runnable {
         }
     }
 
-    private static void dump(Corpora corpora,
-            File cachedCorpora, File oldCachedCorpora) throws IOException {
-        if (cachedCorpora.exists()) {
+    private static void dump(Resources resources,
+            File cachedResources, File oldCachedResources) throws IOException {
+        if (cachedResources.exists()) {
             try {
-                oldCachedCorpora.delete();
+                oldCachedResources.delete();
             } catch (Throwable txc) {
                 // ignore
             }
             try {
-                cachedCorpora.renameTo(oldCachedCorpora);
+                cachedResources.renameTo(oldCachedResources);
             } catch (Throwable txc) {
                 // ignore
             }
         }
         ObjectMapper mapper = new ObjectMapper();
-        mapper.writerWithDefaultPrettyPrinter().writeValue(cachedCorpora, corpora);
+        mapper.writerWithDefaultPrettyPrinter().writeValue(cachedResources, resources);
     }
 }

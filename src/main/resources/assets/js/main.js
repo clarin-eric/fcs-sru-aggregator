@@ -47734,693 +47734,9 @@ var AlertPane = (0, _createReactClass2.default)({
 
 module.exports = AlertPane;
 
-},{"./jqueryfade.jsx":47,"classnames":2,"create-react-class":6,"prop-types":15,"react-transition-group":30}],43:[function(require,module,exports){
+},{"./jqueryfade.jsx":46,"classnames":2,"create-react-class":6,"prop-types":15,"react-transition-group":30}],43:[function(require,module,exports){
 
 },{}],44:[function(require,module,exports){
-"use strict";
-
-var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
-
-var _classnames = require("classnames");
-
-var _classnames2 = _interopRequireDefault(_classnames);
-
-var _searchcorpusbox = require("./searchcorpusbox.jsx");
-
-var _searchcorpusbox2 = _interopRequireDefault(_searchcorpusbox);
-
-var _propTypes = require("prop-types");
-
-var _propTypes2 = _interopRequireDefault(_propTypes);
-
-var _createReactClass = require("create-react-class");
-
-var _createReactClass2 = _interopRequireDefault(_createReactClass);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-var PT = _propTypes2.default;
-
-var CorpusView = (0, _createReactClass2.default)({
-  displayName: "CorpusView",
-
-  //fixme! - class CorpusView extends React.Component {
-  propTypes: {
-    corpora: PT.object.isRequired,
-    languageMap: PT.object.isRequired
-  },
-
-  getInitialState: function getInitialState() {
-    var corpora = this.props.corpora;
-    var corporaGroupedByInstitute = this.updateCorporaGroupedByInstitute(corpora);
-    var corporaGroupedByLanguage = this.updateCorporaGroupedByLanguage(corpora);
-
-    return {
-      viewSelected: false, // only show the selected resources
-      //showDisabled: false,  // don't hide items with {visible = false} // implemented, but out commented feature...
-      viewGroupedByInstitution: false, // group by institution, then as usual
-      viewGroupedByLanguage: false, // group by (single) language, then as usual
-      corporaGroupedByInstitute: corporaGroupedByInstitute, // group info (is-expanded, corpora list)
-      corporaGroupedByLanguage: corporaGroupedByLanguage, // group info (with language as key) (is-expanded, corpora list)
-      corpora: corpora // cached but unused, just to check for updates
-    };
-  },
-  componentWillReceiveProps: function componentWillReceiveProps(nextProps) {
-    // console.debug("componentWillReceiveProps", nextProps);
-    var corpora = nextProps.corpora;
-    if (this.props.corpora == corpora) {
-      return;
-    }
-    var corporaGroupedByInstitute = this.updateCorporaGroupedByInstitute(corpora);
-    var corporaGroupedByLanguage = this.updateCorporaGroupedByLanguage(corpora);
-    this.setState({
-      corpora: this.props.corpora,
-      corporaGroupedByInstitute: corporaGroupedByInstitute,
-      corporaGroupedByLanguage: corporaGroupedByLanguage
-    });
-  },
-
-
-  updateCorporaGroupedByInstitute: function updateCorporaGroupedByInstitute(corpora) {
-    var corporaGroupedByInstitute = {};
-    corpora.corpora.forEach(function (corpus) {
-      var institute = corpus.institution.name;
-      if (!corporaGroupedByInstitute.hasOwnProperty(institute)) {
-        corporaGroupedByInstitute[institute] = { expanded: true, corpora: [] };
-      }
-      corporaGroupedByInstitute[institute].corpora.push(corpus);
-    });
-    //console.debug(corporaGroupedByInstitute);
-    return corporaGroupedByInstitute;
-  },
-
-  updateCorporaGroupedByLanguage: function updateCorporaGroupedByLanguage(corpora) {
-    var corporaGroupedByLanguage = {};
-    corpora.corpora.forEach(function (corpus) {
-      corpus.languages.forEach(function (language) {
-        if (!corporaGroupedByLanguage.hasOwnProperty(language)) {
-          corporaGroupedByLanguage[language] = { expanded: true, corpora: [] };
-        }
-        corporaGroupedByLanguage[language].corpora.push(corpus);
-      });
-    });
-    //console.debug(corporaGroupedByLanguage);
-    return corporaGroupedByLanguage;
-  },
-
-  toggleSelection: function toggleSelection(corpus, e) {
-    var s = !corpus.selected;
-    this.props.corpora.recurseCorpus(corpus, function (c) {
-      c.selected = s;
-    });
-    this.props.corpora.update();
-    this.stop(e);
-  },
-
-  toggleViewSelected: function toggleViewSelected(evt) {
-    this.setState(function (st) {
-      return { viewSelected: !st.viewSelected };
-    });
-  },
-  toggleShowDisabled: function toggleShowDisabled(evt) {
-    this.setState(function (st) {
-      return { showDisabled: !st.showDisabled };
-    });
-  },
-  toggleViewGroupByInstitution: function toggleViewGroupByInstitution(evt) {
-    this.setState(function (st) {
-      return {
-        viewGroupedByInstitution: !st.viewGroupedByInstitution,
-        viewGroupedByLanguage: false
-      };
-    });
-  },
-  toggleViewGroupByLanguage: function toggleViewGroupByLanguage(evt) {
-    this.setState(function (st) {
-      return {
-        viewGroupedByInstitution: false,
-        viewGroupedByLanguage: !st.viewGroupedByLanguage
-      };
-    });
-  },
-
-
-  toggleDescExpansion: function toggleDescExpansion(corpus) {
-    corpus.descExpanded = !corpus.descExpanded;
-    this.props.corpora.update();
-  },
-
-  toggleExpansion: function toggleExpansion(corpus) {
-    corpus.expanded = !corpus.expanded;
-    this.props.corpora.update();
-  },
-
-  toggleExpansionGrouped: function toggleExpansionGrouped(groupedCorpora) {
-    groupedCorpora.expanded = !groupedCorpora.expanded;
-    this.setState({
-      corporaGroupedByInstitute: this.state.corporaGroupedByInstitute,
-      corporaGroupedByLanguage: this.state.corporaGroupedByLanguage
-    });
-  },
-
-  selectAll: function selectAll(value) {
-    // select all _visible_
-    this.props.corpora.recurse(function (c) {
-      c.visible ? c.selected = value : false;
-    });
-    this.props.corpora.update();
-  },
-
-  selectAllFromList: function selectAllFromList(corpora, value) {
-    // like selectAll(), just for list of corpora
-    this.props.corpora.recurseCorpora(corpora, function (c) {
-      c.visible ? c.selected = value : false;
-    });
-    this.props.corpora.update();
-  },
-
-  selectAllShown: function selectAllShown(value) {
-    // select only visible/shown corpora, i.e. corpora that are shown in dialog, possibly filtered due to query
-    this.props.corpora.recurse(function (c) {
-      c.visible && c.priority > 0 ? c.selected = value : false;
-    });
-    this.props.corpora.update();
-  },
-
-  searchCorpus: function searchCorpus(query) {
-    // sort fn: descending priority, stable sort
-    var sortFn = function sortFn(a, b) {
-      if (b.priority === a.priority) {
-        return b.index - a.index; // stable sort
-      }
-      return b.priority - a.priority;
-    };
-
-    query = query.toLowerCase();
-    if (!query) {
-      this.props.corpora.recurse(function (corpus) {
-        corpus.priority = 1;
-      });
-      this.props.corpora.update();
-      return;
-    }
-
-    // clean up all priorities
-    this.props.corpora.recurse(function (corpus) {
-      corpus.priority = 0;
-    });
-
-    // find priority for each corpus
-    var querytokens = query.split(" ").filter(function (x) {
-      return x.length > 0;
-    });
-    this.props.corpora.recurse(function (corpus) {
-      var title = corpus.title;
-      querytokens.forEach(function (qtoken) {
-        if (title && title.toLowerCase().indexOf(qtoken) >= 0) {
-          corpus.priority++;
-        }
-        if (corpus.description && corpus.description.toLowerCase().indexOf(qtoken) >= 0) {
-          corpus.priority++;
-        }
-        if (corpus.institution && corpus.institution.name && corpus.institution.name.toLowerCase().indexOf(qtoken) >= 0) {
-          corpus.priority++;
-        }
-        if (corpus.languages) {
-          corpus.languages.forEach(function (lang) {
-            if (lang.toLowerCase().indexOf(qtoken) >= 0) {
-              corpus.priority++;
-            }
-          });
-          corpus.languages.forEach(function (lang) {
-            if (this.props.languageMap[lang].toLowerCase().indexOf(qtoken) >= 0) {
-              corpus.priority++;
-            }
-          }.bind(this));
-        }
-      }.bind(this));
-    }.bind(this));
-
-    // ensure parents of visible corpora are also visible; maximum depth = 3
-    var isVisibleFn = function isVisibleFn(corpus) {
-      return corpus.priority > 0;
-    };
-    var parentBooster = function parentBooster(corpus) {
-      if (corpus.priority <= 0 && corpus.subCorpora) {
-        if (corpus.subCorpora.some(isVisibleFn)) {
-          corpus.priority = 0.5;
-        }
-      }
-    };
-    for (var i = 3; i > 0; i--) {
-      this.props.corpora.recurse(parentBooster);
-    }
-
-    this.props.corpora.recurse(function (corpus) {
-      corpus.subCorpora.sort(sortFn);
-    });
-    this.props.corpora.corpora.sort(sortFn);
-
-    // display
-    this.props.corpora.update();
-  },
-
-  stop: function stop(e) {
-    e.stopPropagation();
-  },
-
-  getMinMaxPriority: function getMinMaxPriority() {
-    var min = 1,
-        max = 0;
-    this.props.corpora.recurse(function (c) {
-      if (c.priority < min) min = c.priority;
-      if (max < c.priority) max = c.priority;
-    });
-    return [min, max];
-  },
-
-  renderCheckbox: function renderCheckbox(corpus) {
-    return React.createElement(
-      "button",
-      { className: "btn btn-default" },
-      corpus.selected ? React.createElement("span", { className: "glyphicon glyphicon-check", "aria-hidden": "true" }) : React.createElement("span", { className: "glyphicon glyphicon-unchecked", "aria-hidden": "true" })
-    );
-  },
-
-  renderExpansion: function renderExpansion(corpus) {
-    if (!corpus.subCorpora || corpus.subCorpora.length === 0) {
-      return false;
-    }
-    return React.createElement(
-      "div",
-      { className: "expansion-handle", onClick: this.toggleExpansion.bind(this, corpus) },
-      React.createElement(
-        "a",
-        null,
-        corpus.expanded ? React.createElement("span", { className: "glyphicon glyphicon-minus", "aria-hidden": "true" }) : React.createElement("span", { className: "glyphicon glyphicon-plus", "aria-hidden": "true" }),
-        corpus.expanded ? " Collapse " : " Expand ",
-        " (",
-        corpus.subCorpora.length,
-        " subresources)"
-      )
-    );
-  },
-
-  renderExpansionGrouped: function renderExpansionGrouped(groupedCorpora) {
-    if (!groupedCorpora.corpora || groupedCorpora.corpora.length === 0) {
-      return false;
-    }
-
-    var selectedCount = 0;
-    this.props.corpora.recurseCorpora(groupedCorpora.corpora, function (c) {
-      if (c.selected && c.visible) selectedCount++;
-    });
-
-    return React.createElement(
-      "div",
-      { className: "expansion-handle", onClick: this.toggleExpansionGrouped.bind(this, groupedCorpora) },
-      React.createElement(
-        "a",
-        null,
-        groupedCorpora.expanded ? React.createElement("span", { className: "glyphicon glyphicon-minus", "aria-hidden": "true" }) : React.createElement("span", { className: "glyphicon glyphicon-plus", "aria-hidden": "true" }),
-        groupedCorpora.expanded ? " Collapse " : " Expand ",
-        " (",
-        groupedCorpora.corpora.length,
-        " root resource",
-        groupedCorpora.corpora.length != 1 ? "s" : "",
-        ", ",
-        selectedCount,
-        " (sub)resource",
-        selectedCount != 1 ? "s" : "",
-        " selected)"
-      )
-    );
-  },
-
-  renderSelectionButtonsGrouped: function renderSelectionButtonsGrouped(corpora) {
-    return React.createElement(
-      "div",
-      { className: "float-right inline", style: { paddingTop: "1.5em" } },
-      React.createElement(
-        "button",
-        { className: "btn btn-default", style: { marginRight: 10 }, onClick: this.selectAllFromList.bind(this, corpora, true) },
-        " Select all"
-      ),
-      React.createElement(
-        "button",
-        { className: "btn btn-default", style: { marginRight: 20 }, onClick: this.selectAllFromList.bind(this, corpora, false) },
-        " Deselect all"
-      )
-    );
-  },
-
-  renderLanguages: function renderLanguages(languages) {
-    return languages.map(function (l) {
-      return this.props.languageMap[l];
-    }.bind(this)).sort().join(", ");
-  },
-
-  shouldShowItem: function shouldShowItem(level, corpus) {
-    if (this.state.viewSelected && !corpus.selected) {
-      return false;
-    }
-    if (!this.state.showDisabled && !corpus.visible) {
-      return false;
-    }
-    // normal search filter.
-    if (level === 0 && corpus.priority <= 0) {
-      return false;
-    }
-
-    return true;
-  },
-  renderFilteredMessage: function renderFilteredMessage() {
-    var _this = this;
-
-    var total = 0;
-    var visible = 0;
-    this.props.corpora.recurse(function (corpus) {
-      if (corpus.visible || _this.state.showDisabled) {
-        total++;
-        if (_this.shouldShowItem(0, corpus)) {
-          visible++;
-        }
-      }
-    });
-    if (visible === total) {
-      return false;
-    }
-    if (visible === 0) {
-      return false; // we do have an "empty" message anyway
-    }
-    return React.createElement(
-      "div",
-      null,
-      " Showing ",
-      visible,
-      " out of ",
-      total,
-      " (sub)resource",
-      total != 1 ? "s" : "",
-      ". "
-    );
-  },
-
-
-  renderCorpus: function renderCorpus(level, minmaxp, corpus) {
-    if (!this.shouldShowItem(level, corpus)) {
-      return;
-    }
-
-    var indent = { marginLeft: level * 50 };
-    var corpusContainerClass = "corpus-container " + (corpus.priority > 0 ? "" : "dimmed");
-
-    var hue = 120 * corpus.priority / minmaxp[1];
-    var color = minmaxp[0] === minmaxp[1] ? 'transparent' : 'hsl(' + hue + ', 50%, 50%)';
-    var priorityStyle = { paddingBottom: 4, paddingLeft: 2, borderBottom: '3px solid ' + color };
-    var expansive = corpus.descExpanded ? { overflow: 'hidden' } : { whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' };
-    return React.createElement(
-      "div",
-      { className: corpusContainerClass, key: corpus.id },
-      React.createElement(
-        "div",
-        { className: "row corpus", onClick: this.toggleDescExpansion.bind(this, corpus) },
-        React.createElement(
-          "div",
-          { className: "col-sm-1 vcenter" },
-          React.createElement(
-            "div",
-            { className: "inline", style: priorityStyle, onClick: this.toggleSelection.bind(this, corpus) },
-            this.renderCheckbox(corpus)
-          )
-        ),
-        React.createElement(
-          "div",
-          { className: "col-sm-8 vcenter" },
-          React.createElement(
-            "div",
-            { style: indent },
-            React.createElement(
-              "h3",
-              { style: expansive },
-              corpus.title,
-              corpus.landingPage ? React.createElement(
-                "a",
-                { href: corpus.landingPage, onClick: this.stop },
-                React.createElement(
-                  "span",
-                  { style: { fontSize: 12 } },
-                  " \u2013 Homepage "
-                ),
-                React.createElement("i", { className: "glyphicon glyphicon-home" })
-              ) : false
-            ),
-            React.createElement(
-              "p",
-              { style: expansive },
-              corpus.description
-            ),
-            this.renderExpansion(corpus)
-          )
-        ),
-        React.createElement(
-          "div",
-          { className: "col-sm-3 vcenter" },
-          React.createElement(
-            "p",
-            { style: expansive },
-            React.createElement("i", { className: "fa fa-institution" }),
-            " ",
-            corpus.institution.name
-          ),
-          React.createElement(
-            "p",
-            { style: expansive },
-            React.createElement("i", { className: "fa fa-language" }),
-            " ",
-            this.renderLanguages(corpus.languages)
-          )
-        )
-      ),
-      corpus.expanded ? corpus.subCorpora.map(this.renderCorpus.bind(this, level + 1, minmaxp)) : false
-    );
-  },
-
-  renderCorpList: function renderCorpList() {
-    var _this2 = this;
-
-    var minmaxp = this.getMinMaxPriority();
-
-    var corpListRender = [];
-
-    // this is so we get a non-undefined items .length in corpListRender.
-    this.props.corpora.corpora.forEach(function (c) {
-      var rend = _this2.renderCorpus(0, minmaxp, c);
-      if (rend) corpListRender.push(rend);
-    });
-
-    return React.createElement(
-      "div",
-      { className: "corpusview-corpora" },
-      corpListRender.length > 0 ? corpListRender : React.createElement(
-        "h3",
-        { className: "aligncenter" },
-        this.state.viewSelected ? "No resources selected yet!" : "No resources found."
-      )
-    );
-  },
-  renderCorpListGroupedByInstitution: function renderCorpListGroupedByInstitution() {
-    var _this3 = this;
-
-    var minmaxp = this.getMinMaxPriority();
-
-    var groupedListRender = [];
-    Object.entries(this.state.corporaGroupedByInstitute).forEach(function (_ref) {
-      var _ref2 = _slicedToArray(_ref, 2),
-          institution = _ref2[0],
-          groupedCorpora = _ref2[1];
-
-      var corpListRender = [];
-      // this is so we get a non-undefined items .length in corpListRender.
-      groupedCorpora.corpora.forEach(function (c) {
-        var rend = _this3.renderCorpus(0, minmaxp, c);
-        if (rend) corpListRender.push(rend);
-      });
-      if (corpListRender.length > 0) {
-        groupedListRender.push(React.createElement(
-          "div",
-          { className: "corpusview-corpora" },
-          _this3.renderSelectionButtonsGrouped(groupedCorpora.corpora),
-          React.createElement(
-            "h3",
-            { style: { paddingTop: "0.5em" } },
-            React.createElement("i", { "class": "fa fa-institution" }),
-            " ",
-            institution
-          ),
-          _this3.renderExpansionGrouped(groupedCorpora),
-          groupedCorpora.expanded ? corpListRender : false
-        ));
-      }
-    });
-
-    return React.createElement(
-      "div",
-      { className: "corpusview-institutions" },
-      groupedListRender.length > 0 ? groupedListRender : React.createElement(
-        "h3",
-        { className: "aligncenter" },
-        this.state.viewSelected ? "No resources selected yet!" : "No resources found."
-      )
-    );
-  },
-  renderCorpListGroupedByLanguage: function renderCorpListGroupedByLanguage() {
-    var _this4 = this;
-
-    var minmaxp = this.getMinMaxPriority();
-
-    var groupedListRender = [];
-    Object.entries(this.state.corporaGroupedByLanguage).forEach(function (_ref3) {
-      var _ref4 = _slicedToArray(_ref3, 2),
-          language = _ref4[0],
-          groupedCorpora = _ref4[1];
-
-      var corpListRender = [];
-      // this is so we get a non-undefined items .length in corpListRender.
-      groupedCorpora.corpora.forEach(function (c) {
-        var rend = _this4.renderCorpus(0, minmaxp, c);
-        if (rend) corpListRender.push(rend);
-      });
-      if (corpListRender.length > 0) {
-        groupedListRender.push(React.createElement(
-          "div",
-          { className: "corpusview-corpora" },
-          _this4.renderSelectionButtonsGrouped(groupedCorpora.corpora),
-          React.createElement(
-            "h3",
-            { style: { paddingTop: "0.5em" } },
-            React.createElement("i", { "class": "fa fa-language" }),
-            " ",
-            _this4.props.languageMap[language],
-            " [",
-            language,
-            "]"
-          ),
-          _this4.renderExpansionGrouped(groupedCorpora),
-          groupedCorpora.expanded ? corpListRender : false
-        ));
-      }
-    });
-
-    return React.createElement(
-      "div",
-      { className: "corpusview-languages" },
-      groupedListRender.length > 0 ? groupedListRender : React.createElement(
-        "h3",
-        { className: "aligncenter" },
-        this.state.viewSelected ? "No resources selected yet!" : "No resources found."
-      )
-    );
-  },
-  render: function render() {
-    var selectedCount = 0;
-    //var disabledCount = 0;
-    this.props.corpora.recurse(function (c) {
-      if (c.selected && c.visible) selectedCount++;
-      //if (c.selected) selectedCount++;
-      //if (!c.visible) disabledCount++;
-    });
-
-    var renderCorporaFn = null;
-    if (this.state.viewGroupedByInstitution) {
-      renderCorporaFn = this.renderCorpListGroupedByInstitution;
-    } else if (this.state.viewGroupedByLanguage) {
-      renderCorporaFn = this.renderCorpListGroupedByLanguage;
-    } else {
-      renderCorporaFn = this.renderCorpList;
-    }
-
-    return React.createElement(
-      "div",
-      { style: { margin: "0 30px" } },
-      React.createElement(
-        "div",
-        { className: "row" },
-        React.createElement(
-          "div",
-          { className: "float-left inline corpusview-filter-buttons" },
-          React.createElement(
-            "div",
-            { className: "btn-group btn-group-toggle" },
-            React.createElement(
-              "label",
-              { className: "btn btn-light btn " + (this.state.viewSelected ? 'active' : 'inactive'), onClick: this.toggleViewSelected, title: "View selected resources" },
-              React.createElement("span", { className: this.state.viewSelected ? "glyphicon glyphicon-check" : "glyphicon glyphicon-unchecked" }),
-              " View selected (",
-              selectedCount,
-              ")"
-            ),
-            React.createElement(
-              "label",
-              { className: "btn btn-light btn", style: { paddingRight: "0ex", pointerEvents: "none" } },
-              "Group by "
-            ),
-            React.createElement(
-              "label",
-              { className: "btn btn-light btn " + (this.state.viewGroupedByInstitution ? 'active' : 'inactive'), style: { paddingRight: "0.5ex", paddingLeft: "0.5ex" }, onClick: this.toggleViewGroupByInstitution, title: "Group resources by institution" },
-              React.createElement("span", { className: this.state.viewGroupedByInstitution ? "glyphicon glyphicon-check" : "glyphicon glyphicon-unchecked" }),
-              " Institution"
-            ),
-            React.createElement(
-              "label",
-              { className: "btn btn-light btn " + (this.state.viewGroupedByLanguage ? 'active' : 'inactive'), style: { paddingLeft: "0.5ex" }, onClick: this.toggleViewGroupByLanguage, title: "Group resources by language" },
-              React.createElement("span", { className: this.state.viewGroupedByLanguage ? "glyphicon glyphicon-check" : "glyphicon glyphicon-unchecked" }),
-              " Language"
-            )
-          )
-        ),
-        React.createElement(
-          "div",
-          { className: "float-right inline" },
-          React.createElement(
-            "button",
-            { className: "btn btn-default", style: { marginRight: 10 }, onClick: this.selectAll.bind(this, true) },
-            " Select all"
-          ),
-          React.createElement(
-            "button",
-            { className: "btn btn-default", style: { marginRight: 10 }, onClick: this.selectAllShown.bind(this, true) },
-            " Select visible"
-          ),
-          React.createElement(
-            "button",
-            { className: "btn btn-default", style: { marginRight: 20 }, onClick: this.selectAll.bind(this, false) },
-            " Deselect all"
-          )
-        ),
-        React.createElement(
-          "div",
-          { className: "float-right inline" },
-          React.createElement(
-            "div",
-            { className: "inline", style: { marginRight: 20 } },
-            React.createElement(_searchcorpusbox2.default, { search: this.searchCorpus })
-          )
-        )
-      ),
-      React.createElement(
-        "div",
-        { className: "row", style: { marginBottom: 15 } },
-        this.renderFilteredMessage()
-      ),
-      renderCorporaFn()
-    );
-  }
-});
-
-module.exports = CorpusView;
-
-},{"./searchcorpusbox.jsx":54,"classnames":2,"create-react-class":6,"prop-types":15}],45:[function(require,module,exports){
 "use strict";
 
 var _classnames = require("classnames");
@@ -48479,7 +47795,7 @@ var EmbeddedFooter = (0, _createReactClass2.default)({
 
 module.exports = EmbeddedFooter;
 
-},{"classnames":2,"create-react-class":6,"prop-types":15}],46:[function(require,module,exports){
+},{"classnames":2,"create-react-class":6,"prop-types":15}],45:[function(require,module,exports){
 "use strict";
 
 var _classnames = require("classnames");
@@ -48567,7 +47883,7 @@ var Footer = (0, _createReactClass2.default)({
 
 module.exports = Footer;
 
-},{"classnames":2,"create-react-class":6,"prop-types":15}],47:[function(require,module,exports){
+},{"classnames":2,"create-react-class":6,"prop-types":15}],46:[function(require,module,exports){
 "use strict";
 
 var _classnames = require("classnames");
@@ -48605,7 +47921,7 @@ var JQueryFade = (0, _createReactClass2.default)({
 
 module.exports = JQueryFade;
 
-},{"classnames":2,"create-react-class":6,"prop-types":15}],48:[function(require,module,exports){
+},{"classnames":2,"create-react-class":6,"prop-types":15}],47:[function(require,module,exports){
 "use strict";
 
 var _classnames = require("classnames");
@@ -48749,7 +48065,7 @@ var LanguageSelector = (0, _createReactClass2.default)({
 
 module.exports = LanguageSelector;
 
-},{"classnames":2,"create-react-class":6,"prop-types":15}],49:[function(require,module,exports){
+},{"classnames":2,"create-react-class":6,"prop-types":15}],48:[function(require,module,exports){
 "use strict";
 
 var _classnames = require("classnames");
@@ -48839,7 +48155,7 @@ var Modal = (0, _createReactClass2.default)({
 
 module.exports = Modal;
 
-},{"classnames":2,"create-react-class":6,"prop-types":15}],50:[function(require,module,exports){
+},{"classnames":2,"create-react-class":6,"prop-types":15}],49:[function(require,module,exports){
 "use strict";
 
 var _classnames = require("classnames");
@@ -48913,7 +48229,7 @@ var Panel = (0, _createReactClass2.default)({
 
 module.exports = Panel;
 
-},{"classnames":2,"create-react-class":6,"prop-types":15}],51:[function(require,module,exports){
+},{"classnames":2,"create-react-class":6,"prop-types":15}],50:[function(require,module,exports){
 "use strict";
 
 var _classnames = require("classnames");
@@ -50009,7 +49325,691 @@ var layerCategories = [{ cat: 'word', label: 'Word', layers: ['word'] }, { cat: 
 
 module.exports = QueryInput;
 
-},{"./codemirror/mode/fcs-ql/fcs-ql":43,"classnames":2,"codemirror/mode/javascript/javascript":4,"create-react-class":6,"prop-types":15,"react-addons-pure-render-mixin":17,"react-codemirror2":18,"react-transition-group":30}],52:[function(require,module,exports){
+},{"./codemirror/mode/fcs-ql/fcs-ql":43,"classnames":2,"codemirror/mode/javascript/javascript":4,"create-react-class":6,"prop-types":15,"react-addons-pure-render-mixin":17,"react-codemirror2":18,"react-transition-group":30}],51:[function(require,module,exports){
+"use strict";
+
+var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
+
+var _classnames = require("classnames");
+
+var _classnames2 = _interopRequireDefault(_classnames);
+
+var _searchresourcebox = require("./searchresourcebox.jsx");
+
+var _searchresourcebox2 = _interopRequireDefault(_searchresourcebox);
+
+var _propTypes = require("prop-types");
+
+var _propTypes2 = _interopRequireDefault(_propTypes);
+
+var _createReactClass = require("create-react-class");
+
+var _createReactClass2 = _interopRequireDefault(_createReactClass);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var PT = _propTypes2.default;
+
+var ResourceView = (0, _createReactClass2.default)({
+  displayName: "ResourceView",
+
+  //fixme! - class ResourceView extends React.Component {
+  propTypes: {
+    resources: PT.object.isRequired,
+    languageMap: PT.object.isRequired
+  },
+
+  getInitialState: function getInitialState() {
+    var resources = this.props.resources;
+    var resourcesGroupedByInstitute = this.updateResourcesGroupedByInstitute(resources);
+    var resourcesGroupedByLanguage = this.updateResourcesGroupedByLanguage(resources);
+
+    return {
+      viewSelected: false, // only show the selected resources
+      //showDisabled: false,  // don't hide items with {visible = false} // implemented, but out commented feature...
+      viewGroupedByInstitution: false, // group by institution, then as usual
+      viewGroupedByLanguage: false, // group by (single) language, then as usual
+      resourcesGroupedByInstitute: resourcesGroupedByInstitute, // group info (is-expanded, resources list)
+      resourcesGroupedByLanguage: resourcesGroupedByLanguage, // group info (with language as key) (is-expanded, resources list)
+      resources: resources // cached but unused, just to check for updates
+    };
+  },
+  componentWillReceiveProps: function componentWillReceiveProps(nextProps) {
+    // console.debug("componentWillReceiveProps", nextProps);
+    var resources = nextProps.resources;
+    if (this.props.resources == resources) {
+      return;
+    }
+    var resourcesGroupedByInstitute = this.updateResourcesGroupedByInstitute(resources);
+    var resourcesGroupedByLanguage = this.updateResourcesGroupedByLanguage(resources);
+    this.setState({
+      resources: this.props.resources,
+      resourcesGroupedByInstitute: resourcesGroupedByInstitute,
+      resourcesGroupedByLanguage: resourcesGroupedByLanguage
+    });
+  },
+
+
+  updateResourcesGroupedByInstitute: function updateResourcesGroupedByInstitute(resources) {
+    var resourcesGroupedByInstitute = {};
+    resources.resources.forEach(function (resource) {
+      var institute = resource.institution.name;
+      if (!resourcesGroupedByInstitute.hasOwnProperty(institute)) {
+        resourcesGroupedByInstitute[institute] = { expanded: true, resources: [] };
+      }
+      resourcesGroupedByInstitute[institute].resources.push(resource);
+    });
+    //console.debug(resourcesGroupedByInstitute);
+    return resourcesGroupedByInstitute;
+  },
+
+  updateResourcesGroupedByLanguage: function updateResourcesGroupedByLanguage(resources) {
+    var resourcesGroupedByLanguage = {};
+    resources.resources.forEach(function (resource) {
+      resource.languages.forEach(function (language) {
+        if (!resourcesGroupedByLanguage.hasOwnProperty(language)) {
+          resourcesGroupedByLanguage[language] = { expanded: true, resources: [] };
+        }
+        resourcesGroupedByLanguage[language].resources.push(resource);
+      });
+    });
+    //console.debug(resourcesGroupedByLanguage);
+    return resourcesGroupedByLanguage;
+  },
+
+  toggleSelection: function toggleSelection(resource, e) {
+    var s = !resource.selected;
+    this.props.resources.recurseResource(resource, function (r) {
+      r.selected = s;
+    });
+    this.props.resources.update();
+    this.stop(e);
+  },
+
+  toggleViewSelected: function toggleViewSelected(evt) {
+    this.setState(function (st) {
+      return { viewSelected: !st.viewSelected };
+    });
+  },
+  toggleShowDisabled: function toggleShowDisabled(evt) {
+    this.setState(function (st) {
+      return { showDisabled: !st.showDisabled };
+    });
+  },
+  toggleViewGroupByInstitution: function toggleViewGroupByInstitution(evt) {
+    this.setState(function (st) {
+      return {
+        viewGroupedByInstitution: !st.viewGroupedByInstitution,
+        viewGroupedByLanguage: false
+      };
+    });
+  },
+  toggleViewGroupByLanguage: function toggleViewGroupByLanguage(evt) {
+    this.setState(function (st) {
+      return {
+        viewGroupedByInstitution: false,
+        viewGroupedByLanguage: !st.viewGroupedByLanguage
+      };
+    });
+  },
+
+
+  toggleDescExpansion: function toggleDescExpansion(resource) {
+    resource.descExpanded = !resource.descExpanded;
+    this.props.resources.update();
+  },
+
+  toggleExpansion: function toggleExpansion(resource) {
+    resource.expanded = !resource.expanded;
+    this.props.resources.update();
+  },
+
+  toggleExpansionGrouped: function toggleExpansionGrouped(groupedResources) {
+    groupedResources.expanded = !groupedResources.expanded;
+    this.setState({
+      resourcesGroupedByInstitute: this.state.resourcesGroupedByInstitute,
+      resourcesGroupedByLanguage: this.state.resourcesGroupedByLanguage
+    });
+  },
+
+  selectAll: function selectAll(value) {
+    // select all _visible_
+    this.props.resources.recurse(function (c) {
+      c.visible ? c.selected = value : false;
+    });
+    this.props.resources.update();
+  },
+
+  selectAllFromList: function selectAllFromList(resources, value) {
+    // like selectAll(), just for list of resources
+    this.props.resources.recurseResources(resources, function (r) {
+      r.visible ? r.selected = value : false;
+    });
+    this.props.resources.update();
+  },
+
+  selectAllShown: function selectAllShown(value) {
+    // select only visible/shown resources, i.e. resources that are shown in dialog, possibly filtered due to query
+    this.props.resources.recurse(function (r) {
+      r.visible && r.priority > 0 ? r.selected = value : false;
+    });
+    this.props.resources.update();
+  },
+
+  searchResource: function searchResource(query) {
+    // sort fn: descending priority, stable sort
+    var sortFn = function sortFn(a, b) {
+      if (b.priority === a.priority) {
+        return b.index - a.index; // stable sort
+      }
+      return b.priority - a.priority;
+    };
+
+    query = query.toLowerCase();
+    if (!query) {
+      this.props.resources.recurse(function (resource) {
+        resource.priority = 1;
+      });
+      this.props.resources.update();
+      return;
+    }
+
+    // clean up all priorities
+    this.props.resources.recurse(function (resource) {
+      resource.priority = 0;
+    });
+
+    // find priority for each resource
+    var querytokens = query.split(" ").filter(function (x) {
+      return x.length > 0;
+    });
+    this.props.resources.recurse(function (resource) {
+      var title = resource.title;
+      querytokens.forEach(function (qtoken) {
+        if (title && title.toLowerCase().indexOf(qtoken) >= 0) {
+          resource.priority++;
+        }
+        if (resource.description && resource.description.toLowerCase().indexOf(qtoken) >= 0) {
+          resource.priority++;
+        }
+        if (resource.institution && resource.institution.name && resource.institution.name.toLowerCase().indexOf(qtoken) >= 0) {
+          resource.priority++;
+        }
+        if (resource.languages) {
+          resource.languages.forEach(function (lang) {
+            if (lang.toLowerCase().indexOf(qtoken) >= 0) {
+              resource.priority++;
+            }
+          });
+          resource.languages.forEach(function (lang) {
+            if (this.props.languageMap[lang].toLowerCase().indexOf(qtoken) >= 0) {
+              resource.priority++;
+            }
+          }.bind(this));
+        }
+      }.bind(this));
+    }.bind(this));
+
+    // ensure parents of visible resources are also visible; maximum depth = 3
+    var isVisibleFn = function isVisibleFn(resource) {
+      return resource.priority > 0;
+    };
+    var parentBooster = function parentBooster(resource) {
+      if (resource.priority <= 0 && resource.subResources) {
+        if (resource.subResources.some(isVisibleFn)) {
+          resource.priority = 0.5;
+        }
+      }
+    };
+    for (var i = 3; i > 0; i--) {
+      this.props.resources.recurse(parentBooster);
+    }
+
+    this.props.resources.recurse(function (resource) {
+      resource.subResources.sort(sortFn);
+    });
+    this.props.resources.resources.sort(sortFn);
+
+    // display
+    this.props.resources.update();
+  },
+
+  stop: function stop(e) {
+    e.stopPropagation();
+  },
+
+  getMinMaxPriority: function getMinMaxPriority() {
+    var min = 1,
+        max = 0;
+    this.props.resources.recurse(function (c) {
+      if (c.priority < min) min = c.priority;
+      if (max < c.priority) max = c.priority;
+    });
+    return [min, max];
+  },
+
+  renderCheckbox: function renderCheckbox(resource) {
+    return React.createElement(
+      "button",
+      { className: "btn btn-default" },
+      resource.selected ? React.createElement("span", { className: "glyphicon glyphicon-check", "aria-hidden": "true" }) : React.createElement("span", { className: "glyphicon glyphicon-unchecked", "aria-hidden": "true" })
+    );
+  },
+
+  renderExpansion: function renderExpansion(resource) {
+    if (!resource.subResources || resource.subResources.length === 0) {
+      return false;
+    }
+    return React.createElement(
+      "div",
+      { className: "expansion-handle", onClick: this.toggleExpansion.bind(this, resource) },
+      React.createElement(
+        "a",
+        null,
+        resource.expanded ? React.createElement("span", { className: "glyphicon glyphicon-minus", "aria-hidden": "true" }) : React.createElement("span", { className: "glyphicon glyphicon-plus", "aria-hidden": "true" }),
+        resource.expanded ? " Collapse " : " Expand ",
+        " (",
+        resource.subResources.length,
+        " subresources)"
+      )
+    );
+  },
+
+  renderExpansionGrouped: function renderExpansionGrouped(groupedResources) {
+    if (!groupedResources.resources || groupedResources.resources.length === 0) {
+      return false;
+    }
+
+    var selectedCount = 0;
+    this.props.resources.recurseResources(groupedResources.resources, function (c) {
+      if (c.selected && c.visible) selectedCount++;
+    });
+
+    return React.createElement(
+      "div",
+      { className: "expansion-handle", onClick: this.toggleExpansionGrouped.bind(this, groupedResources) },
+      React.createElement(
+        "a",
+        null,
+        groupedResources.expanded ? React.createElement("span", { className: "glyphicon glyphicon-minus", "aria-hidden": "true" }) : React.createElement("span", { className: "glyphicon glyphicon-plus", "aria-hidden": "true" }),
+        groupedResources.expanded ? " Collapse " : " Expand ",
+        " (",
+        groupedResources.resources.length,
+        " root resource",
+        groupedResources.resources.length != 1 ? "s" : "",
+        ", ",
+        selectedCount,
+        " (sub)resource",
+        selectedCount != 1 ? "s" : "",
+        " selected)"
+      )
+    );
+  },
+
+  renderSelectionButtonsGrouped: function renderSelectionButtonsGrouped(resources) {
+    return React.createElement(
+      "div",
+      { className: "float-right inline", style: { paddingTop: "1.5em" } },
+      React.createElement(
+        "button",
+        { className: "btn btn-default", style: { marginRight: 10 }, onClick: this.selectAllFromList.bind(this, resources, true) },
+        " Select all"
+      ),
+      React.createElement(
+        "button",
+        { className: "btn btn-default", style: { marginRight: 20 }, onClick: this.selectAllFromList.bind(this, resources, false) },
+        " Deselect all"
+      )
+    );
+  },
+
+  renderLanguages: function renderLanguages(languages) {
+    return languages.map(function (l) {
+      return this.props.languageMap[l];
+    }.bind(this)).sort().join(", ");
+  },
+
+  shouldShowItem: function shouldShowItem(level, resource) {
+    if (this.state.viewSelected && !resource.selected) {
+      return false;
+    }
+    if (!this.state.showDisabled && !resource.visible) {
+      return false;
+    }
+    // normal search filter.
+    if (level === 0 && resource.priority <= 0) {
+      return false;
+    }
+
+    return true;
+  },
+  renderFilteredMessage: function renderFilteredMessage() {
+    var _this = this;
+
+    var total = 0;
+    var visible = 0;
+    this.props.resources.recurse(function (resource) {
+      if (resource.visible || _this.state.showDisabled) {
+        total++;
+        if (_this.shouldShowItem(0, resource)) {
+          visible++;
+        }
+      }
+    });
+    if (visible === total) {
+      return false;
+    }
+    if (visible === 0) {
+      return false; // we do have an "empty" message anyway
+    }
+    return React.createElement(
+      "div",
+      null,
+      " Showing ",
+      visible,
+      " out of ",
+      total,
+      " (sub)resource",
+      total != 1 ? "s" : "",
+      ". "
+    );
+  },
+
+
+  renderResource: function renderResource(level, minmaxp, resource) {
+    if (!this.shouldShowItem(level, resource)) {
+      return;
+    }
+
+    var indent = { marginLeft: level * 50 };
+    var resourceContainerClass = "resource-container " + (resource.priority > 0 ? "" : "dimmed");
+
+    var hue = 120 * resource.priority / minmaxp[1];
+    var color = minmaxp[0] === minmaxp[1] ? 'transparent' : 'hsl(' + hue + ', 50%, 50%)';
+    var priorityStyle = { paddingBottom: 4, paddingLeft: 2, borderBottom: '3px solid ' + color };
+    var expansive = resource.descExpanded ? { overflow: 'hidden' } : { whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' };
+    return React.createElement(
+      "div",
+      { className: resourceContainerClass, key: resource.id },
+      React.createElement(
+        "div",
+        { className: "row resource", onClick: this.toggleDescExpansion.bind(this, resource) },
+        React.createElement(
+          "div",
+          { className: "col-sm-1 vcenter" },
+          React.createElement(
+            "div",
+            { className: "inline", style: priorityStyle, onClick: this.toggleSelection.bind(this, resource) },
+            this.renderCheckbox(resource)
+          )
+        ),
+        React.createElement(
+          "div",
+          { className: "col-sm-8 vcenter" },
+          React.createElement(
+            "div",
+            { style: indent },
+            React.createElement(
+              "h3",
+              { style: expansive },
+              resource.title,
+              resource.landingPage ? React.createElement(
+                "a",
+                { href: resource.landingPage, onClick: this.stop },
+                React.createElement(
+                  "span",
+                  { style: { fontSize: 12 } },
+                  " \u2013 Homepage "
+                ),
+                React.createElement("i", { className: "glyphicon glyphicon-home" })
+              ) : false
+            ),
+            React.createElement(
+              "p",
+              { style: expansive },
+              resource.description
+            ),
+            this.renderExpansion(resource)
+          )
+        ),
+        React.createElement(
+          "div",
+          { className: "col-sm-3 vcenter" },
+          React.createElement(
+            "p",
+            { style: expansive },
+            React.createElement("i", { className: "fa fa-institution" }),
+            " ",
+            resource.institution.name
+          ),
+          React.createElement(
+            "p",
+            { style: expansive },
+            React.createElement("i", { className: "fa fa-language" }),
+            " ",
+            this.renderLanguages(resource.languages)
+          )
+        )
+      ),
+      resource.expanded ? resource.subResources.map(this.renderResource.bind(this, level + 1, minmaxp)) : false
+    );
+  },
+
+  renderCorpList: function renderCorpList() {
+    var _this2 = this;
+
+    var minmaxp = this.getMinMaxPriority();
+
+    var corpListRender = [];
+
+    // this is so we get a non-undefined items .length in corpListRender.
+    this.props.resources.resources.forEach(function (c) {
+      var rend = _this2.renderResource(0, minmaxp, c);
+      if (rend) corpListRender.push(rend);
+    });
+
+    return React.createElement(
+      "div",
+      { className: "resourceview-resources" },
+      corpListRender.length > 0 ? corpListRender : React.createElement(
+        "h3",
+        { className: "aligncenter" },
+        this.state.viewSelected ? "No resources selected yet!" : "No resources found."
+      )
+    );
+  },
+  renderCorpListGroupedByInstitution: function renderCorpListGroupedByInstitution() {
+    var _this3 = this;
+
+    var minmaxp = this.getMinMaxPriority();
+
+    var groupedListRender = [];
+    Object.entries(this.state.resourcesGroupedByInstitute).forEach(function (_ref) {
+      var _ref2 = _slicedToArray(_ref, 2),
+          institution = _ref2[0],
+          groupedResources = _ref2[1];
+
+      var corpListRender = [];
+      // this is so we get a non-undefined items .length in corpListRender.
+      groupedResources.resources.forEach(function (c) {
+        var rend = _this3.renderResource(0, minmaxp, c);
+        if (rend) corpListRender.push(rend);
+      });
+      if (corpListRender.length > 0) {
+        groupedListRender.push(React.createElement(
+          "div",
+          { className: "resourceview-resources" },
+          _this3.renderSelectionButtonsGrouped(groupedResources.resources),
+          React.createElement(
+            "h3",
+            { style: { paddingTop: "0.5em" } },
+            React.createElement("i", { "class": "fa fa-institution" }),
+            " ",
+            institution
+          ),
+          _this3.renderExpansionGrouped(groupedResources),
+          groupedResources.expanded ? corpListRender : false
+        ));
+      }
+    });
+
+    return React.createElement(
+      "div",
+      { className: "resourceview-institutions" },
+      groupedListRender.length > 0 ? groupedListRender : React.createElement(
+        "h3",
+        { className: "aligncenter" },
+        this.state.viewSelected ? "No resources selected yet!" : "No resources found."
+      )
+    );
+  },
+  renderCorpListGroupedByLanguage: function renderCorpListGroupedByLanguage() {
+    var _this4 = this;
+
+    var minmaxp = this.getMinMaxPriority();
+
+    var groupedListRender = [];
+    Object.entries(this.state.resourcesGroupedByLanguage).forEach(function (_ref3) {
+      var _ref4 = _slicedToArray(_ref3, 2),
+          language = _ref4[0],
+          groupedResources = _ref4[1];
+
+      var corpListRender = [];
+      // this is so we get a non-undefined items .length in corpListRender.
+      groupedResources.resources.forEach(function (c) {
+        var rend = _this4.renderResource(0, minmaxp, c);
+        if (rend) corpListRender.push(rend);
+      });
+      if (corpListRender.length > 0) {
+        groupedListRender.push(React.createElement(
+          "div",
+          { className: "resourceview-resources" },
+          _this4.renderSelectionButtonsGrouped(groupedResources.resources),
+          React.createElement(
+            "h3",
+            { style: { paddingTop: "0.5em" } },
+            React.createElement("i", { "class": "fa fa-language" }),
+            " ",
+            _this4.props.languageMap[language],
+            " [",
+            language,
+            "]"
+          ),
+          _this4.renderExpansionGrouped(groupedResources),
+          groupedResources.expanded ? corpListRender : false
+        ));
+      }
+    });
+
+    return React.createElement(
+      "div",
+      { className: "resourceview-languages" },
+      groupedListRender.length > 0 ? groupedListRender : React.createElement(
+        "h3",
+        { className: "aligncenter" },
+        this.state.viewSelected ? "No resources selected yet!" : "No resources found."
+      )
+    );
+  },
+  render: function render() {
+    var selectedCount = 0;
+    //var disabledCount = 0;
+    this.props.resources.recurse(function (c) {
+      if (c.selected && c.visible) selectedCount++;
+      //if (c.selected) selectedCount++;
+      //if (!c.visible) disabledCount++;
+    });
+
+    var renderResourcesFn = null;
+    if (this.state.viewGroupedByInstitution) {
+      renderResourcesFn = this.renderCorpListGroupedByInstitution;
+    } else if (this.state.viewGroupedByLanguage) {
+      renderResourcesFn = this.renderCorpListGroupedByLanguage;
+    } else {
+      renderResourcesFn = this.renderCorpList;
+    }
+
+    return React.createElement(
+      "div",
+      { style: { margin: "0 30px" } },
+      React.createElement(
+        "div",
+        { className: "row" },
+        React.createElement(
+          "div",
+          { className: "float-left inline resourceview-filter-buttons" },
+          React.createElement(
+            "div",
+            { className: "btn-group btn-group-toggle" },
+            React.createElement(
+              "label",
+              { className: "btn btn-light btn " + (this.state.viewSelected ? 'active' : 'inactive'), onClick: this.toggleViewSelected, title: "View selected resources" },
+              React.createElement("span", { className: this.state.viewSelected ? "glyphicon glyphicon-check" : "glyphicon glyphicon-unchecked" }),
+              " View selected (",
+              selectedCount,
+              ")"
+            ),
+            React.createElement(
+              "label",
+              { className: "btn btn-light btn", style: { paddingRight: "0ex", pointerEvents: "none" } },
+              "Group by "
+            ),
+            React.createElement(
+              "label",
+              { className: "btn btn-light btn " + (this.state.viewGroupedByInstitution ? 'active' : 'inactive'), style: { paddingRight: "0.5ex", paddingLeft: "0.5ex" }, onClick: this.toggleViewGroupByInstitution, title: "Group resources by institution" },
+              React.createElement("span", { className: this.state.viewGroupedByInstitution ? "glyphicon glyphicon-check" : "glyphicon glyphicon-unchecked" }),
+              " Institution"
+            ),
+            React.createElement(
+              "label",
+              { className: "btn btn-light btn " + (this.state.viewGroupedByLanguage ? 'active' : 'inactive'), style: { paddingLeft: "0.5ex" }, onClick: this.toggleViewGroupByLanguage, title: "Group resources by language" },
+              React.createElement("span", { className: this.state.viewGroupedByLanguage ? "glyphicon glyphicon-check" : "glyphicon glyphicon-unchecked" }),
+              " Language"
+            )
+          )
+        ),
+        React.createElement(
+          "div",
+          { className: "float-right inline" },
+          React.createElement(
+            "button",
+            { className: "btn btn-default", style: { marginRight: 10 }, onClick: this.selectAll.bind(this, true) },
+            " Select all"
+          ),
+          React.createElement(
+            "button",
+            { className: "btn btn-default", style: { marginRight: 10 }, onClick: this.selectAllShown.bind(this, true) },
+            " Select visible"
+          ),
+          React.createElement(
+            "button",
+            { className: "btn btn-default", style: { marginRight: 20 }, onClick: this.selectAll.bind(this, false) },
+            " Deselect all"
+          )
+        ),
+        React.createElement(
+          "div",
+          { className: "float-right inline" },
+          React.createElement(
+            "div",
+            { className: "inline", style: { marginRight: 20 } },
+            React.createElement(_searchresourcebox2.default, { search: this.searchResource })
+          )
+        )
+      ),
+      React.createElement(
+        "div",
+        { className: "row", style: { marginBottom: 15 } },
+        this.renderFilteredMessage()
+      ),
+      renderResourcesFn()
+    );
+  }
+});
+
+module.exports = ResourceView;
+
+},{"./searchresourcebox.jsx":54,"classnames":2,"create-react-class":6,"prop-types":15}],52:[function(require,module,exports){
 "use strict";
 
 var _classnames = require("classnames");
@@ -50049,21 +50049,21 @@ var ResultMixin = {
     this.setState({ displayADV: !this.state.displayADV });
   },
 
-  renderPanelTitle: function renderPanelTitle(corpus) {
+  renderPanelTitle: function renderPanelTitle(resource) {
     return React.createElement(
       "div",
       { className: "inline" },
       React.createElement(
         "span",
-        { className: "corpusName" },
+        { className: "resourceName" },
         " ",
-        corpus.title
+        resource.title
       ),
       React.createElement(
         "span",
         { className: "institutionName" },
         " \u2014 ",
-        corpus.institution.name
+        resource.institution.name
       )
     );
   },
@@ -50160,7 +50160,7 @@ var ResultMixin = {
     );
   },
 
-  renderRowsAsADVGrouped: function renderRowsAsADVGrouped(corpusHit) {
+  renderRowsAsADVGrouped: function renderRowsAsADVGrouped(resourceHit) {
     function renderWithSeperators(layers, i) {
       var pre = i != 0 ? [React.createElement(
         "tr",
@@ -50172,10 +50172,10 @@ var ResultMixin = {
     function renderPlainList(layers, i) {
       return layers.map(this.renderRowsAsADV);
     }
-    var needsSeparators = Math.min.apply(Math, _toConsumableArray(corpusHit.advancedLayers.map(function (x) {
+    var needsSeparators = Math.min.apply(Math, _toConsumableArray(resourceHit.advancedLayers.map(function (x) {
       return x.length;
     }))) > 1;
-    return corpusHit.advancedLayers.map((needsSeparators ? renderWithSeperators : renderPlainList).bind(this));
+    return resourceHit.advancedLayers.map((needsSeparators ? renderWithSeperators : renderPlainList).bind(this));
   },
 
   renderDiagnostic: function renderDiagnostic(d, key) {
@@ -50193,15 +50193,15 @@ var ResultMixin = {
     );
   },
 
-  renderDiagnostics: function renderDiagnostics(corpusHit) {
-    if (!corpusHit.diagnostics || corpusHit.diagnostics.length === 0) {
+  renderDiagnostics: function renderDiagnostics(resourceHit) {
+    if (!resourceHit.diagnostics || resourceHit.diagnostics.length === 0) {
       return false;
     }
-    return corpusHit.diagnostics.map(this.renderDiagnostic);
+    return resourceHit.diagnostics.map(this.renderDiagnostic);
   },
 
-  renderErrors: function renderErrors(corpusHit) {
-    var xc = corpusHit.exception;
+  renderErrors: function renderErrors(resourceHit) {
+    var xc = resourceHit.exception;
     if (!xc) {
       return false;
     }
@@ -50223,22 +50223,22 @@ var ResultMixin = {
     );
   },
 
-  renderPanelBody: function renderPanelBody(corpusHit) {
+  renderPanelBody: function renderPanelBody(resourceHit) {
     var fulllength = { width: "100%" };
 
     if (this.state.displayADV) {
       return React.createElement(
         "div",
-        { className: "corpusResultsADV" },
-        this.renderErrors(corpusHit),
-        this.renderDiagnostics(corpusHit),
+        { className: "resourceResultsADV" },
+        this.renderErrors(resourceHit),
+        this.renderDiagnostics(resourceHit),
         React.createElement(
           "table",
           { className: "table table-condensed table-hover advanced-layers", style: fulllength },
           React.createElement(
             "tbody",
             null,
-            this.renderRowsAsADVGrouped(corpusHit)
+            this.renderRowsAsADVGrouped(resourceHit)
           )
         )
       );
@@ -50246,15 +50246,15 @@ var ResultMixin = {
       return React.createElement(
         "div",
         null,
-        this.renderErrors(corpusHit),
-        this.renderDiagnostics(corpusHit),
+        this.renderErrors(resourceHit),
+        this.renderDiagnostics(resourceHit),
         React.createElement(
           "table",
           { className: "table table-condensed table-hover kwic", style: fulllength },
           React.createElement(
             "tbody",
             null,
-            corpusHit.kwics.map(this.renderRowsAsKwic)
+            resourceHit.kwics.map(this.renderRowsAsKwic)
           )
         )
       );
@@ -50262,9 +50262,9 @@ var ResultMixin = {
       return React.createElement(
         "div",
         null,
-        this.renderErrors(corpusHit),
-        this.renderDiagnostics(corpusHit),
-        corpusHit.kwics.map(this.renderRowsAsHits)
+        this.renderErrors(resourceHit),
+        this.renderDiagnostics(resourceHit),
+        resourceHit.kwics.map(this.renderRowsAsHits)
       );
     }
   },
@@ -50295,7 +50295,7 @@ var ResultMixin = {
     );
   },
 
-  renderDownloadLinks: function renderDownloadLinks(corpusId) {
+  renderDownloadLinks: function renderDownloadLinks(resourceId) {
     return React.createElement(
       "div",
       { className: "dropdown" },
@@ -50317,7 +50317,7 @@ var ResultMixin = {
           " ",
           React.createElement(
             "a",
-            { href: this.props.getDownloadLink(corpusId, "csv") },
+            { href: this.props.getDownloadLink(resourceId, "csv") },
             " ",
             " As CSV file"
           )
@@ -50328,7 +50328,7 @@ var ResultMixin = {
           " ",
           React.createElement(
             "a",
-            { href: this.props.getDownloadLink(corpusId, "ods") },
+            { href: this.props.getDownloadLink(resourceId, "ods") },
             " ",
             " As ODS file"
           )
@@ -50339,7 +50339,7 @@ var ResultMixin = {
           " ",
           React.createElement(
             "a",
-            { href: this.props.getDownloadLink(corpusId, "excel") },
+            { href: this.props.getDownloadLink(resourceId, "excel") },
             " ",
             " As Excel file"
           )
@@ -50350,7 +50350,7 @@ var ResultMixin = {
           " ",
           React.createElement(
             "a",
-            { href: this.props.getDownloadLink(corpusId, "tcf") },
+            { href: this.props.getDownloadLink(resourceId, "tcf") },
             " ",
             " As TCF file"
           )
@@ -50361,7 +50361,7 @@ var ResultMixin = {
           " ",
           React.createElement(
             "a",
-            { href: this.props.getDownloadLink(corpusId, "text") },
+            { href: this.props.getDownloadLink(resourceId, "text") },
             " ",
             " As Plain Text file"
           )
@@ -50370,7 +50370,7 @@ var ResultMixin = {
     );
   },
 
-  renderToWeblichtLinks: function renderToWeblichtLinks(corpusId, forceLanguage, error) {
+  renderToWeblichtLinks: function renderToWeblichtLinks(resourceId, forceLanguage, error) {
     return React.createElement(
       "div",
       { className: "dropdown" },
@@ -50395,7 +50395,7 @@ var ResultMixin = {
             error
           ) : React.createElement(
             "a",
-            { href: this.props.getToWeblichtLink(corpusId, forceLanguage), target: "_blank" },
+            { href: this.props.getToWeblichtLink(resourceId, forceLanguage), target: "_blank" },
             " ",
             "Send to Weblicht"
           )
@@ -50490,8 +50490,7 @@ var Results = (0, _createReactClass2.default)({
     );
   },
 
-  renderPanelInfo: function renderPanelInfo(corpusHit) {
-    var corpus = corpusHit.corpus;
+  renderPanelInfo: function renderPanelInfo(resourceHit) {
     var inline = { display: "inline-block" };
     return React.createElement(
       "div",
@@ -50504,7 +50503,7 @@ var Results = (0, _createReactClass2.default)({
           "button",
           { className: "btn btn-default zoomResultButton",
             onClick: function (e) {
-              this.props.toggleResultModal(e, corpusHit);
+              this.props.toggleResultModal(e, resourceHit);
             }.bind(this) },
           React.createElement("span", { className: "glyphicon glyphicon-eye-open" }),
           " View"
@@ -50513,22 +50512,22 @@ var Results = (0, _createReactClass2.default)({
     );
   },
 
-  renderResultPanel: function renderResultPanel(corpusHit) {
-    if (corpusHit.kwics.length === 0 && !corpusHit.exception && corpusHit.diagnostics.length === 0) {
+  renderResultPanel: function renderResultPanel(resourceHit) {
+    if (resourceHit.kwics.length === 0 && !resourceHit.exception && resourceHit.diagnostics.length === 0) {
       return false;
     }
-    if (!this.state.displayDiagnosticsForEmptyResults && corpusHit.kwics.length === 0) {
+    if (!this.state.displayDiagnosticsForEmptyResults && resourceHit.kwics.length === 0) {
       return false;
     }
     return React.createElement(
       _reactTransitionGroup.CSSTransition,
-      { key: corpusHit.corpus.id, classNames: "fade", timeout: { enter: 200, exit: 200 } },
+      { key: resourceHit.resource.id, classNames: "fade", timeout: { enter: 200, exit: 200 } },
       React.createElement(
         _panel2.default,
-        { key: corpusHit.corpus.id,
-          title: this.renderPanelTitle(corpusHit.corpus),
-          info: this.renderPanelInfo(corpusHit) },
-        this.renderPanelBody(corpusHit)
+        { key: resourceHit.resource.id,
+          title: this.renderPanelTitle(resourceHit.resource),
+          info: this.renderPanelInfo(resourceHit) },
+        this.renderPanelBody(resourceHit)
       )
     );
   },
@@ -50662,7 +50661,7 @@ var _ = window._ = window._ || {
 
 module.exports = Results;
 
-},{"./panel.jsx":50,"./resultmixin.jsx":52,"classnames":2,"create-react-class":6,"prop-types":15,"react-transition-group":30}],54:[function(require,module,exports){
+},{"./panel.jsx":49,"./resultmixin.jsx":52,"classnames":2,"create-react-class":6,"prop-types":15,"react-transition-group":30}],54:[function(require,module,exports){
 "use strict";
 
 var _classnames = require("classnames");
@@ -50681,10 +50680,10 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 var PT = _propTypes2.default;
 
-var SearchCorpusBox = (0, _createReactClass2.default)({
-  displayName: "SearchCorpusBox",
+var SearchResourceBox = (0, _createReactClass2.default)({
+  displayName: "SearchResourceBox",
 
-  //fixme! - class SearchCorpusBox extends React.Component {
+  //fixme! - class SearchResourceBox extends React.Component {
   propTypes: {
     search: PT.func.isRequired
   },
@@ -50722,7 +50721,7 @@ var SearchCorpusBox = (0, _createReactClass2.default)({
   }
 });
 
-module.exports = SearchCorpusBox;
+module.exports = SearchResourceBox;
 
 },{"classnames":2,"create-react-class":6,"prop-types":15}],55:[function(require,module,exports){
 "use strict";
@@ -50753,7 +50752,7 @@ var ZoomedResult = (0, _createReactClass2.default)({
   displayName: "ZoomedResult",
 
   propTypes: {
-    corpusHit: PT.object,
+    resourceHit: PT.object,
     nextResults: PT.func.isRequired,
     languageMap: PT.object.isRequired,
     weblichtLanguages: PT.array.isRequired,
@@ -50771,9 +50770,9 @@ var ZoomedResult = (0, _createReactClass2.default)({
   },
 
   nextResults: function nextResults(e) {
-    this.props.corpusHit.inProgress = true;
+    this.props.resourceHit.inProgress = true;
     this.setState({ forceUpdate: this.state.forceUpdate + 1 });
-    this.props.nextResults(this.props.corpusHit.corpus.id);
+    this.props.nextResults(this.props.resourceHit.resource.id);
   },
 
   renderLanguages: function renderLanguages(languages) {
@@ -50783,15 +50782,15 @@ var ZoomedResult = (0, _createReactClass2.default)({
   },
 
   renderMoreResults: function renderMoreResults() {
-    if (this.props.corpusHit.inProgress) return React.createElement(
+    if (this.props.resourceHit.inProgress) return React.createElement(
       "span",
       { style: { fontStyle: 'italic' } },
       "Retrieving results, please wait..."
     );
 
     var moreResults = true;
-    for (var i = 0; i < this.props.corpusHit.diagnostics.length; i++) {
-      var d = this.props.corpusHit.diagnostics[i];
+    for (var i = 0; i < this.props.resourceHit.diagnostics.length; i++) {
+      var d = this.props.resourceHit.diagnostics[i];
       if (d.uri === window.MyAggregator.NO_MORE_RECORDS_DIAGNOSTIC_URI) {
         moreResults = false;
         break;
@@ -50811,8 +50810,8 @@ var ZoomedResult = (0, _createReactClass2.default)({
   },
 
   render: function render() {
-    var corpusHit = this.props.corpusHit;
-    if (!corpusHit) {
+    var resourceHit = this.props.resourceHit;
+    if (!resourceHit) {
       return false;
     }
 
@@ -50821,10 +50820,10 @@ var ZoomedResult = (0, _createReactClass2.default)({
     if (this.props.weblichtLanguages.indexOf(this.props.searchedLanguage[0]) < 0) {
       // the search language is either AnyLanguage or unsupported
       if (this.props.searchedLanguage[0] === window.MyAggregator.multipleLanguageCode) {
-        if (corpusHit.corpus.languages && corpusHit.corpus.languages.length === 1) {
-          forceLanguage = corpusHit.corpus.languages[0];
+        if (resourceHit.resource.languages && resourceHit.resource.languages.length === 1) {
+          forceLanguage = resourceHit.resource.languages[0];
         } else {
-          var langs = corpusHit.kwics.map(function (kwic) {
+          var langs = resourceHit.kwics.map(function (kwic) {
             return kwic.language;
           });
           langs = _.uniq(langs.filter(function (l) {
@@ -50839,33 +50838,33 @@ var ZoomedResult = (0, _createReactClass2.default)({
         wlerror = "Cannot use WebLicht: unsupported language (" + this.props.searchedLanguage[1] + ")";
       }
     }
-    var corpus = corpusHit.corpus;
+    var resource = resourceHit.resource;
     return React.createElement(
       "div",
       null,
       React.createElement(
         "div",
-        { className: "corpusDescription" },
+        { className: "resourceDescription" },
         React.createElement(
           "p",
           null,
           React.createElement("i", { className: "fa fa-institution" }),
           " ",
-          corpus.institution.name
+          resource.institution.name
         ),
-        corpus.description ? React.createElement(
+        resource.description ? React.createElement(
           "p",
           null,
           React.createElement("i", { className: "glyphicon glyphicon-info-sign" }),
           " ",
-          corpus.description
+          resource.description
         ) : false,
         React.createElement(
           "p",
           null,
           React.createElement("i", { className: "fa fa-language" }),
           " ",
-          this.renderLanguages(corpus.languages)
+          this.renderLanguages(resource.languages)
         )
       ),
       React.createElement(
@@ -50883,14 +50882,14 @@ var ZoomedResult = (0, _createReactClass2.default)({
               "div",
               { className: "inline" },
               " ",
-              this.renderDownloadLinks(corpusHit.corpus.id),
+              this.renderDownloadLinks(resourceHit.resource.id),
               " "
             ),
             React.createElement(
               "div",
               { className: "inline" },
               " ",
-              this.renderToWeblichtLinks(corpus.id, forceLanguage, wlerror),
+              this.renderToWeblichtLinks(resource.id, forceLanguage, wlerror),
               " "
             )
           )
@@ -50908,8 +50907,8 @@ var ZoomedResult = (0, _createReactClass2.default)({
             { className: "panel" },
             React.createElement(
               "div",
-              { className: "panel-body corpusResults" },
-              this.renderPanelBody(corpusHit)
+              { className: "panel-body resourceResults" },
+              this.renderPanelBody(resourceHit)
             )
           )
         )
@@ -50991,7 +50990,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
   - pages/aggregatorpage.jsx: defines
       - the Corpora store of resources
       - the AggregatorPage component which deals with search and displays the search results
-  - components/corpusview.jsx: defines the CorpusView, rendered when the user views the available resources
+  - components/resourceview.jsx: defines the ResourceView, rendered when the user views the available resources
   - plus in components/: various general usage React components
   
   The top-most component, Main, tracks of the window's location URL and, depending on the value,
@@ -51322,7 +51321,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
   window.onpopstate = routeFromLocation.bind(main);
 })();
 
-},{"./components/alertpane.jsx":42,"./components/embeddedfooter.jsx":45,"./components/footer.jsx":46,"./pages/aboutpage.jsx":57,"./pages/aggregatorpage.jsx":58,"./pages/helppage.jsx":59,"./pages/statisticspage.jsx":60,"create-react-class":6,"prop-types":15}],57:[function(require,module,exports){
+},{"./components/alertpane.jsx":42,"./components/embeddedfooter.jsx":44,"./components/footer.jsx":45,"./pages/aboutpage.jsx":57,"./pages/aggregatorpage.jsx":58,"./pages/helppage.jsx":59,"./pages/statisticspage.jsx":60,"create-react-class":6,"prop-types":15}],57:[function(require,module,exports){
 "use strict";
 
 var _classnames = require("classnames");
@@ -51694,9 +51693,9 @@ var _classnames = require("classnames");
 
 var _classnames2 = _interopRequireDefault(_classnames);
 
-var _corpusview = require("../components/corpusview.jsx");
+var _resourceview = require("../components/resourceview.jsx");
 
-var _corpusview2 = _interopRequireDefault(_corpusview);
+var _resourceview2 = _interopRequireDefault(_resourceview);
 
 var _languageselector = require("../components/languageselector.jsx");
 
@@ -51756,7 +51755,7 @@ var AggregatorPage = (0, _createReactClass2.default)({
     aggrContext = aggrContext && JSON.parse(aggrContext);
 
     return {
-      corpora: new Corpora([], this.updateCorpora),
+      resources: new Resources([], this.updateResources),
       languageMap: {},
       weblichtLanguages: [],
       queryTypeId: getQueryVariable('queryType') || 'cql',
@@ -51771,7 +51770,7 @@ var AggregatorPage = (0, _createReactClass2.default)({
       timeout: 0,
       hits: this.nohits,
 
-      zoomedCorpusHit: null
+      zoomedResourceHit: null
     };
   },
 
@@ -51782,7 +51781,7 @@ var AggregatorPage = (0, _createReactClass2.default)({
       url: this.props.APIROOT + 'init',
       success: function (json, textStatus, jqXHR) {
         if (this._isMounted) {
-          var corpora = new Corpora(json.corpora, this.updateCorpora);
+          var resources = new Resources(json.resources, this.updateResources);
 
           // // for testing aggregation context
           // json['x-aggregation-context'] = {
@@ -51792,56 +51791,56 @@ var AggregatorPage = (0, _createReactClass2.default)({
           var aggregationContext = json['x-aggregation-context'] || this.state.aggregationContext;
 
           window.MyAggregator.mode = getQueryVariable('mode') || json.mode;
-          window.MyAggregator.corpora = json.corpora;
+          window.MyAggregator.resources = json.resources;
           window.MyAggregator.xAggregationContext = aggregationContext;
 
-          // Setting visibility, e.g. only corpora 
+          // Setting visibility, e.g. only resources 
           // from v2.0 endpoints for fcs v2.0
-          corpora.setVisibility(this.state.queryTypeId, this.state.language[0]);
+          resources.setVisibility(this.state.queryTypeId, this.state.language[0]);
 
           if (aggregationContext) {
-            var contextCorporaInfo = corpora.setAggregationContext(aggregationContext);
-            var unavailableCorporaHandles = contextCorporaInfo.unavailable; // list of unavailable aggregationContext
-            if (unavailableCorporaHandles.length > 0) {
-              this.props.error("Could not find requested resource handles:\n" + unavailableCorporaHandles.join('\n'));
+            var contextResourcesInfo = resources.setAggregationContext(aggregationContext);
+            var unavailableResourcesHandles = contextResourcesInfo.unavailable; // list of unavailable aggregationContext
+            if (unavailableResourcesHandles.length > 0) {
+              this.props.error("Could not find requested resource handles:\n" + unavailableResourcesHandles.join('\n'));
             }
 
-            var actuallySelectedCorpora = corpora.getSelectedIds();
+            var actuallySelectedResources = resources.getSelectedIds();
 
-            if (contextCorporaInfo.selected.length !== actuallySelectedCorpora.length) {
-              if (actuallySelectedCorpora.length === 0) {
+            if (contextResourcesInfo.selected.length !== actuallySelectedResources.length) {
+              if (actuallySelectedResources.length === 0) {
                 this.props.error("This search does not support the required resource(s), will search all resources instead"); // TODO give detailed reason its not supported.
-                corpora.recurse(function (corpus) {
-                  corpus.selected = true;
+                resources.recurse(function (resource) {
+                  resource.selected = true;
                 });
               } else {
                 var err = "Some required context resources are not supported for this search:\n";
-                err = err + contextCorpora.filter(function (c) {
-                  if (actuallySelectedCorpora.indexOf(c) === -1) {
-                    console.warn("Requested corpus but not available for selection", c);
+                err = err + contextresources.filter(function (r) {
+                  if (actuallySelectedResources.indexOf(r) === -1) {
+                    console.warn("Requested resource but not available for selection", r);
                     return true;
                   }
                   return false;
-                }).map(function (c) {
-                  return c.title;
+                }).map(function (r) {
+                  return r.title;
                 }).join('\n');
                 this.props.error(err);
               }
-            } else if (contextCorporaInfo.selected.length > 0) {
-              this.props.info("Pre-selected " + contextCorporaInfo.selected.length + " resource" + (contextCorporaInfo.selected.length != 1 ? "s" : "") + ":\n" + contextCorporaInfo.selected.map(function (x) {
+            } else if (contextResourcesInfo.selected.length > 0) {
+              this.props.info("Pre-selected " + contextResourcesInfo.selected.length + " resource" + (contextResourcesInfo.selected.length != 1 ? "s" : "") + ":\n" + contextResourcesInfo.selected.map(function (x) {
                 return x.title + " (" + x.handle + ")";
               }).join('\n'));
             }
           } else {
             // no context set all visibl to selected as default.
             console.log("no context set, selecting all available");
-            corpora.recurse(function (c) {
-              c.visible ? c.selected = true : null;
+            resources.recurse(function (r) {
+              r.visible ? r.selected = true : null;
             });
           }
 
           this.setState({
-            corpora: corpora,
+            resources: resources,
             languageMap: json.languages,
             weblichtLanguages: json.weblichtLanguages,
             aggregationContext: aggregationContext
@@ -51854,7 +51853,7 @@ var AggregatorPage = (0, _createReactClass2.default)({
         if (this.state.searchId != null) {
           console.log("Try loading exiting search, from searchId provided from URL:", this.state.searchId);
           this.refreshSearchResults();
-          this.setCorpusSelectionBySearch();
+          this.setResourceSelectionBySearch();
         }
       }.bind(this)
     });
@@ -51867,8 +51866,8 @@ var AggregatorPage = (0, _createReactClass2.default)({
   },
 
 
-  updateCorpora: function updateCorpora(corpora) {
-    this.setState({ corpora: corpora });
+  updateResources: function updateResources(resources) {
+    this.setState({ resources: resources });
   },
 
   getCurrentQuery: function getCurrentQuery() {
@@ -51891,13 +51890,13 @@ var AggregatorPage = (0, _createReactClass2.default)({
       this.setState({ hits: this.nohits, searchId: null });
       return;
     }
-    var selectedIds = this.state.corpora.getSelectedIds();
+    var selectedIds = this.state.resources.getSelectedIds();
     if (!selectedIds.length) {
       this.props.error("Please select a resource to search into");
       return;
     }
 
-    // console.log("searching in the following corpora:", selectedIds);
+    // console.log("searching in the following resources:", selectedIds);
     // console.log("searching with queryType:", queryTypeId);
     this.props.ajax({
       url: this.props.APIROOT + 'search',
@@ -51907,7 +51906,7 @@ var AggregatorPage = (0, _createReactClass2.default)({
         queryType: queryTypeId,
         language: this.state.language[0],
         numberOfResults: this.state.numberOfResults,
-        corporaIds: selectedIds
+        resourceIds: selectedIds
       },
       success: function (searchId, textStatus, jqXHR) {
         // console.log("search ["+query+"] ok: ", searchId, jqXHR);
@@ -51923,13 +51922,13 @@ var AggregatorPage = (0, _createReactClass2.default)({
   },
 
 
-  nextResults: function nextResults(corpusId) {
-    // console.log("searching next results in corpus:", corpusId);
+  nextResults: function nextResults(resourceId) {
+    // console.log("searching next results in resource:", resourceId);
     this.props.ajax({
       url: this.props.APIROOT + 'search/' + this.state.searchId,
       type: "POST",
       data: {
-        corpusId: corpusId,
+        resourceId: resourceId,
         numberOfResults: this.state.numberOfResults
       },
       success: function (searchId, textStatus, jqXHR) {
@@ -51958,43 +51957,43 @@ var AggregatorPage = (0, _createReactClass2.default)({
         } else {
           console.log("search ended; hits:", json);
         }
-        var corpusHit = this.state.zoomedCorpusHit;
-        if (corpusHit) {
+        var resourceHit = this.state.zoomedResourceHit;
+        if (resourceHit) {
           for (var resi = 0; resi < json.results.length; resi++) {
             var res = json.results[resi];
-            if (res.corpus.id === corpusHit.corpus.id) {
-              corpusHit = res;
+            if (res.resource.id === resourceHit.resource.id) {
+              resourceHit = res;
               break;
             }
           }
         }
-        this.setState({ hits: json, timeout: timeout, zoomedCorpusHit: corpusHit });
+        this.setState({ hits: json, timeout: timeout, zoomedResourceHit: resourceHit });
       }.bind(this)
     });
   },
 
-  setCorpusSelectionBySearch: function setCorpusSelectionBySearch() {
+  setResourceSelectionBySearch: function setResourceSelectionBySearch() {
     if (!this.state.searchId || !this._isMounted) {
       return;
     }
     this.props.ajax({
       url: this.props.APIROOT + 'search/' + this.state.searchId,
       success: function (json, textStatus, jqXHR) {
-        var corpusIds = [];
+        var resourceIds = [];
         for (var resi = 0; resi < json.results.length; resi++) {
           var res = json.results[resi];
-          corpusIds.push(res.corpus.id);
+          resourceIds.push(res.resource.id);
         }
-        this.state.corpora.recurse(function (c) {
-          c.selected = corpusIds.includes(c.id);
+        this.state.resources.recurse(function (c) {
+          c.selected = resourceIds.includes(c.id);
         });
-        this.setState({ corpora: this.state.corpora });
+        this.setState({ resources: this.state.resources });
       }.bind(this)
     });
   },
 
-  getExportParams: function getExportParams(corpusId, format, filterLanguage) {
-    var params = corpusId ? { corpusId: corpusId } : {};
+  getExportParams: function getExportParams(resourceId, format, filterLanguage) {
+    var params = resourceId ? { resourceId: resourceId } : {};
     if (format) params.format = format;
     if (filterLanguage) {
       params.filterLanguage = filterLanguage;
@@ -52004,25 +52003,25 @@ var AggregatorPage = (0, _createReactClass2.default)({
     return encodeQueryData(params);
   },
 
-  getDownloadLink: function getDownloadLink(corpusId, format) {
-    return this.props.APIROOT + 'search/' + this.state.searchId + '/download?' + this.getExportParams(corpusId, format);
+  getDownloadLink: function getDownloadLink(resourceId, format) {
+    return this.props.APIROOT + 'search/' + this.state.searchId + '/download?' + this.getExportParams(resourceId, format);
   },
 
-  getToWeblichtLink: function getToWeblichtLink(corpusId, forceLanguage) {
-    return this.props.APIROOT + 'search/' + this.state.searchId + '/toWeblicht?' + this.getExportParams(corpusId, null, forceLanguage);
+  getToWeblichtLink: function getToWeblichtLink(resourceId, forceLanguage) {
+    return this.props.APIROOT + 'search/' + this.state.searchId + '/toWeblicht?' + this.getExportParams(resourceId, null, forceLanguage);
   },
 
   setLanguageAndFilter: function setLanguageAndFilter(languageObj, languageFilter) {
-    this.state.corpora.setVisibility(this.state.queryTypeId, languageFilter === 'byGuess' ? multipleLanguageCode : languageObj[0]);
+    this.state.resources.setVisibility(this.state.queryTypeId, languageFilter === 'byGuess' ? multipleLanguageCode : languageObj[0]);
     this.setState({
       language: languageObj,
       languageFilter: languageFilter,
-      corpora: this.state.corpora // === this.state.corpora.update();
+      resources: this.state.resources // === this.state.resources.update();
     });
   },
 
   setQueryType: function setQueryType(queryTypeId) {
-    this.state.corpora.setVisibility(queryTypeId, this.state.language[0]);
+    this.state.resources.setVisibility(queryTypeId, this.state.language[0]);
     setQueryVariable('queryType', queryTypeId);
     setQueryVariable('query', this.getCurrentQueryByQueryTypeId(queryTypeId));
     this.setState({
@@ -52052,16 +52051,16 @@ var AggregatorPage = (0, _createReactClass2.default)({
         inProgress = 0,
         hits = 0;
     if (this.state.hits.results) {
-      results = this.state.hits.results.map(function (corpusHit) {
+      results = this.state.hits.results.map(function (resourceHit) {
         return {
-          corpus: corpusHit.corpus,
-          inProgress: corpusHit.inProgress,
-          exception: corpusHit.exception,
-          diagnostics: corpusHit.diagnostics,
-          kwics: noLangFiltering ? corpusHit.kwics : corpusHit.kwics.filter(function (kwic) {
+          resource: resourceHit.resource,
+          inProgress: resourceHit.inProgress,
+          exception: resourceHit.exception,
+          diagnostics: resourceHit.diagnostics,
+          kwics: noLangFiltering ? resourceHit.kwics : resourceHit.kwics.filter(function (kwic) {
             return kwic.language === langCode || langCode === multipleLanguageCode || langCode === null;
           }),
-          advancedLayers: noLangFiltering ? corpusHit.advancedLayers : corpusHit.advancedLayers.filter(function (layers) {
+          advancedLayers: noLangFiltering ? resourceHit.advancedLayers : resourceHit.advancedLayers.filter(function (layers) {
             return layers.every(function (layer) {
               return layer.language === langCode || langCode === multipleLanguageCode || langCode === null;
             });
@@ -52091,15 +52090,15 @@ var AggregatorPage = (0, _createReactClass2.default)({
     e.stopPropagation();
   },
 
-  toggleCorpusSelection: function toggleCorpusSelection(e) {
-    $(ReactDOM.findDOMNode(this.refs.corporaModal)).modal();
+  toggleResourceSelection: function toggleResourceSelection(e) {
+    $(ReactDOM.findDOMNode(this.refs.resourcesModal)).modal();
     e.preventDefault();
     e.stopPropagation();
   },
 
-  toggleResultModal: function toggleResultModal(e, corpusHit) {
+  toggleResultModal: function toggleResultModal(e, resourceHit) {
     $(ReactDOM.findDOMNode(this.refs.resultModal)).modal();
-    this.setState({ zoomedCorpusHit: corpusHit });
+    this.setState({ zoomedResourceHit: resourceHit });
     e.preventDefault();
     e.stopPropagation();
   },
@@ -52141,16 +52140,16 @@ var AggregatorPage = (0, _createReactClass2.default)({
     _paq.push(['trackEvent', 'Search', 'CopyToClipboardMouse', text]);
   },
 
-  renderZoomedResultTitle: function renderZoomedResultTitle(corpusHit) {
-    if (!corpusHit) return React.createElement("span", null);
-    var corpus = corpusHit.corpus;
+  renderZoomedResultTitle: function renderZoomedResultTitle(resourceHit) {
+    if (!resourceHit) return React.createElement("span", null);
+    var resource = resourceHit.resource;
     return React.createElement(
       "h3",
       { style: { fontSize: '1em' } },
-      corpus.title,
-      corpus.landingPage ? React.createElement(
+      resource.title,
+      resource.landingPage ? React.createElement(
         "a",
-        { href: corpus.landingPage, onClick: this.stop, style: { fontSize: 12 } },
+        { href: resource.landingPage, onClick: this.stop, style: { fontSize: 12 } },
         React.createElement(
           "span",
           null,
@@ -52236,7 +52235,7 @@ var AggregatorPage = (0, _createReactClass2.default)({
     var queryType = queryTypeMap[this.state.queryTypeId];
     return React.createElement(_queryinput2.default, {
       searchedLanguages: this.state.searchedLanguages || [multipleLanguageCode],
-      corpora: this.props.corpora,
+      resources: this.props.resources,
       queryTypeId: this.state.queryTypeId,
       query: this.getCurrentQuery() === undefined ? queryType.searchPlaceholder : this.getCurrentQuery(),
       embedded: this.props.embedded,
@@ -52307,27 +52306,27 @@ var AggregatorPage = (0, _createReactClass2.default)({
       )
     );
   },
-  renderUnavailableCorporaMessage: function renderUnavailableCorporaMessage() {
-    if (!this.state.corpora) {
+  renderUnavailableResourcesMessage: function renderUnavailableResourcesMessage() {
+    if (!this.state.resources) {
       return;
     }
     var unavailable = [];
-    this.state.corpora.recurse(function (c) {
-      if (c.selected && !c.visible) {
-        unavailable.push(c);
+    this.state.resources.recurse(function (r) {
+      if (r.selected && !r.visible) {
+        unavailable.push(r);
       }
-      if (c.selected) {
-        // apparently a selected corpus 
+      if (r.selected) {
+        // apparently a selected resource 
       }
     });
 
     if (unavailable.length) {
       return React.createElement(
         "div",
-        { id: "unavailable-corpora-message", className: "text-muted" },
+        { id: "unavailable-resources-message", className: "text-muted" },
         React.createElement(
           "div",
-          { id: "unavailable-corpora-message-message" },
+          { id: "unavailable-resources-message-message" },
           React.createElement(
             "a",
             { role: "button", "data-toggle": "dropdown" },
@@ -52339,12 +52338,12 @@ var AggregatorPage = (0, _createReactClass2.default)({
         ),
         React.createElement(
           "ul",
-          { id: "unavailable-corpora-message-list", className: "dropdown-menu" },
-          unavailable.map(function (c) {
+          { id: "unavailable-resources-message-list", className: "dropdown-menu" },
+          unavailable.map(function (r) {
             return React.createElement(
               "li",
-              { className: "unavailable-corpora-message-item" },
-              c.name
+              { className: "unavailable-resources-message-item" },
+              r.name
             );
           })
         )
@@ -52439,8 +52438,8 @@ var AggregatorPage = (0, _createReactClass2.default)({
               ),
               React.createElement(
                 "button",
-                { type: "button", className: "btn btn-default", onClick: this.toggleCorpusSelection },
-                this.state.corpora.getSelectedMessage(),
+                { type: "button", className: "btn btn-default", onClick: this.toggleResourceSelection },
+                this.state.resources.getSelectedMessage(),
                 " ",
                 React.createElement("span", { className: "caret" })
               )
@@ -52473,17 +52472,17 @@ var AggregatorPage = (0, _createReactClass2.default)({
       this.renderSearchPermaLink(),
       React.createElement(
         _modal2.default,
-        { ref: "corporaModal", title: React.createElement(
+        { ref: "resourcesModal", title: React.createElement(
             "span",
             null,
             "Resources ",
             React.createElement(
               "small",
               { className: "text-muted" },
-              this.props.corpora && this.props.corpora.getSelectedMessage()
+              this.props.resources && this.props.resources.getSelectedMessage()
             )
           ) },
-        React.createElement(_corpusview2.default, { corpora: this.state.corpora, languageMap: this.state.languageMap })
+        React.createElement(_resourceview2.default, { resources: this.state.resources, languageMap: this.state.languageMap })
       ),
       React.createElement(
         _modal2.default,
@@ -52500,8 +52499,8 @@ var AggregatorPage = (0, _createReactClass2.default)({
       ),
       React.createElement(
         _modal2.default,
-        { ref: "resultModal", title: this.renderZoomedResultTitle(this.state.zoomedCorpusHit) },
-        React.createElement(_zoomedresult2.default, { corpusHit: this.state.zoomedCorpusHit,
+        { ref: "resultModal", title: this.renderZoomedResultTitle(this.state.zoomedResourceHit) },
+        React.createElement(_zoomedresult2.default, { resourceHit: this.state.zoomedResourceHit,
           nextResults: this.nextResults,
           getDownloadLink: this.getDownloadLink,
           getToWeblichtLink: this.getToWeblichtLink,
@@ -52524,9 +52523,9 @@ var AggregatorPage = (0, _createReactClass2.default)({
   }
 });
 
-function Corpora(corpora, updateFn) {
+function Resources(resources, updateFn) {
   var that = this;
-  this.corpora = corpora;
+  this.resources = resources;
   this.update = function () {
     updateFn(that);
   };
@@ -52539,47 +52538,47 @@ function Corpora(corpora, updateFn) {
     return x.title.toLowerCase().localeCompare(y.title.toLowerCase());
   };
 
-  this.recurse(function (corpus) {
-    corpus.subCorpora.sort(sortFn);
+  this.recurse(function (resource) {
+    resource.subResources.sort(sortFn);
   });
-  this.corpora.sort(sortFn);
+  this.resources.sort(sortFn);
 
-  this.recurse(function (corpus, index) {
-    corpus.visible = true; // visible in the corpus view
-    corpus.selected = false; // not selected in the corpus view, assign later
-    corpus.expanded = false; // not expanded in the corpus view
-    corpus.priority = 1; // used for ordering search results in corpus view
-    corpus.index = index; // original order, used for stable sort
+  this.recurse(function (resource, index) {
+    resource.visible = true; // visible in the resource view
+    resource.selected = false; // not selected in the resource view, assign later
+    resource.expanded = false; // not expanded in the resource view
+    resource.priority = 1; // used for ordering search results in resource view
+    resource.index = index; // original order, used for stable sort
   });
 }
 
-Corpora.prototype.recurseCorpus = function (corpus, fn) {
-  if (false === fn(corpus)) {
+Resources.prototype.recurseResource = function (resource, fn) {
+  if (false === fn(resource)) {
     // no recursion
   } else {
-    this.recurseCorpora(corpus.subCorpora, fn);
+    this.recurseResources(resource.subResources, fn);
   }
 };
 
-Corpora.prototype.recurseCorpora = function (corpora, fn) {
-  var recfn = function recfn(corpus, index) {
-    if (false === fn(corpus, index)) {
+Resources.prototype.recurseResources = function (resources, fn) {
+  var recfn = function recfn(resource, index) {
+    if (false === fn(resource, index)) {
       // no recursion
     } else {
-      corpus.subCorpora.forEach(recfn);
+      resource.subResources.forEach(recfn);
     }
   };
-  corpora.forEach(recfn);
+  resources.forEach(recfn);
 };
 
-Corpora.prototype.recurse = function (fn) {
-  this.recurseCorpora(this.corpora, fn);
+Resources.prototype.recurse = function (fn) {
+  this.recurseResources(this.resources, fn);
 };
 
-Corpora.prototype.getLanguageCodes = function () {
+Resources.prototype.getLanguageCodes = function () {
   var languages = {};
-  this.recurse(function (corpus) {
-    corpus.languages.forEach(function (lang) {
+  this.recurse(function (resource) {
+    resource.languages.forEach(function (lang) {
       languages[lang] = true;
     });
     return true;
@@ -52587,56 +52586,56 @@ Corpora.prototype.getLanguageCodes = function () {
   return languages;
 };
 
-Corpora.prototype.isCorpusVisible = function (corpus, queryTypeId, languageCode) {
+Resources.prototype.isResourceVisible = function (resource, queryTypeId, languageCode) {
   // check search capabilities (ignore version, just check caps)
-  if (queryTypeId === "fcs" && corpus.endpoint.searchCapabilities.indexOf("ADVANCED_SEARCH") === -1) {
+  if (queryTypeId === "fcs" && resource.endpoint.searchCapabilities.indexOf("ADVANCED_SEARCH") === -1) {
     return false;
   }
   // yes for any language
   if (languageCode === multipleLanguageCode) {
     return true;
   }
-  // yes if the corpus is in only that language
-  if (corpus.languages && corpus.languages.length === 1 && corpus.languages[0] === languageCode) {
+  // yes if the resource is in only that language
+  if (resource.languages && resource.languages.length === 1 && resource.languages[0] === languageCode) {
     return true;
   }
 
-  // ? yes if the corpus also contains that language
-  if (corpus.languages && corpus.languages.indexOf(languageCode) >= 0) {
+  // ? yes if the resource also contains that language
+  if (resource.languages && resource.languages.indexOf(languageCode) >= 0) {
     return true;
   }
 
-  // ? yes if the corpus has no language
-  // if (!corpus.languages || corpus.languages.length === 0) {
+  // ? yes if the resource has no language
+  // if (!resource.languages || resource.languages.length === 0) {
   // 	return true;
   // }
   return false;
 };
 
-Corpora.prototype.setVisibility = function (queryTypeId, languageCode) {
+Resources.prototype.setVisibility = function (queryTypeId, languageCode) {
   // top level
-  this.corpora.forEach(function (corpus) {
-    corpus.visible = this.isCorpusVisible(corpus, queryTypeId, languageCode);
-    this.recurseCorpora(corpus.subCorpora, function (c) {
-      c.visible = corpus.visible;
+  this.resources.forEach(function (resource) {
+    resource.visible = this.isResourceVisible(resource, queryTypeId, languageCode);
+    this.recurseResources(resource.subResources, function (c) {
+      c.visible = resource.visible;
     });
   }.bind(this));
 };
 
-Corpora.prototype.setAggregationContext = function (endpoints2handles) {
+Resources.prototype.setAggregationContext = function (endpoints2handles) {
   var _this = this;
 
-  var selectSubTree = function selectSubTree(select, corpus) {
-    corpus.selected = select;
-    this.recurseCorpora(corpus.subCorpora, function (c) {
-      c.selected = corpus.selected;
+  var selectSubTree = function selectSubTree(select, resource) {
+    resource.selected = select;
+    this.recurseResources(resource.subResources, function (c) {
+      c.selected = resource.selected;
     });
   };
 
-  this.corpora.forEach(selectSubTree.bind(this, false));
+  this.resources.forEach(selectSubTree.bind(this, false));
 
   var handlesNotFound = [];
-  var corporaToSelect = [];
+  var resourcesToSelect = [];
   _.pairs(endpoints2handles).forEach(function (endp) {
     var endpoint = endp[0];
     var handles = endp[1];
@@ -52644,28 +52643,28 @@ Corpora.prototype.setAggregationContext = function (endpoints2handles) {
     console.log("setAggregationContext: handles", handles);
     handles.forEach(function (handle) {
       var found = false;
-      _this.recurse(function (corpus) {
-        if (corpus.handle === handle) {
+      _this.recurse(function (resource) {
+        if (resource.handle === handle) {
           found = true;
-          corporaToSelect.push(corpus);
+          resourcesToSelect.push(resource);
         }
       });
       if (!found) {
-        console.warn("Handle not found in corpora", handle);
+        console.warn("Handle not found in resources", handle);
         handlesNotFound.push(handle);
       }
     });
   });
 
-  corporaToSelect.forEach(selectSubTree.bind(this, true));
-  return { 'selected': corporaToSelect, 'unavailable': handlesNotFound };
+  resourcesToSelect.forEach(selectSubTree.bind(this, true));
+  return { 'selected': resourcesToSelect, 'unavailable': handlesNotFound };
 };
 
-Corpora.prototype.getSelectedIds = function () {
+Resources.prototype.getSelectedIds = function () {
   var ids = [];
-  this.recurse(function (corpus) {
-    if (corpus.visible && corpus.selected) {
-      ids.push(corpus.id);
+  this.recurse(function (resource) {
+    if (resource.visible && resource.selected) {
+      ids.push(resource.id);
       //return false; // top-most resource in tree, don't delve deeper
       // But subresources are also selectable on their own?...
     }
@@ -52676,9 +52675,9 @@ Corpora.prototype.getSelectedIds = function () {
   return ids;
 };
 
-Corpora.prototype.getSelectedMessage = function () {
+Resources.prototype.getSelectedMessage = function () {
   var selected = this.getSelectedIds().length;
-  if (this.corpora.length === selected) {
+  if (this.resources.length === selected) {
     return "All available resources (" + selected + ")";
   } else if (selected === 1) {
     return "1 selected resource";
@@ -52758,7 +52757,7 @@ var queryTypeMap = {
 
 module.exports = AggregatorPage;
 
-},{"../components/corpusview.jsx":44,"../components/languageselector.jsx":48,"../components/modal.jsx":49,"../components/queryinput.jsx":51,"../components/results.jsx":53,"../components/zoomedresult.jsx":55,"classnames":2,"create-react-class":6,"prop-types":15}],59:[function(require,module,exports){
+},{"../components/languageselector.jsx":47,"../components/modal.jsx":48,"../components/queryinput.jsx":50,"../components/resourceview.jsx":51,"../components/results.jsx":53,"../components/zoomedresult.jsx":55,"classnames":2,"create-react-class":6,"prop-types":15}],59:[function(require,module,exports){
 "use strict";
 
 var _classnames = require("classnames");
@@ -52800,12 +52799,12 @@ var HelpPage = (0, _createReactClass2.default)({
         React.createElement(
           "h3",
           null,
-          "Performing federated search in corpora"
+          "Performing federated search in resources"
         ),
         React.createElement(
           "p",
           null,
-          "To perform a simple keyword search in all CLARIN Federated Content Search centres and their corpora, go to the search field at the top of the page or switch to Text Layer Contextual Query Language (CQL) in the dropdown list, enter your query, and click the 'search' button or press the 'Enter' key."
+          "To perform a simple keyword search in all CLARIN Federated Content Search centres and their resources, go to the search field at the top of the page or switch to Text Layer Contextual Query Language (CQL) in the dropdown list, enter your query, and click the 'search' button or press the 'Enter' key."
         ),
         React.createElement(
           "p",
@@ -52815,12 +52814,12 @@ var HelpPage = (0, _createReactClass2.default)({
         React.createElement(
           "p",
           null,
-          "When the search starts, the page will start filling in with the corpora responses. After the entire search process has ended you have the option to download the results in various formats."
+          "When the search starts, the page will start filling in with the resource responses. After the entire search process has ended you have the option to download the results in various formats."
         ),
         React.createElement(
           "p",
           null,
-          "If you are particularly interested in the results returned by a corpus, you have the option to focus only on the results of that corpus, by clicking on the 'Watch' button. In this view mode you can also download the results of use the WebLicht processing services to further analyse the results."
+          "If you are particularly interested in the results returned by a resource, you have the option to focus only on the results of that resource, by clicking on the 'Watch' button. In this view mode you can also download the results of use the WebLicht processing services to further analyse the results."
         ),
         React.createElement(
           "h3",
@@ -52830,7 +52829,7 @@ var HelpPage = (0, _createReactClass2.default)({
         React.createElement(
           "p",
           null,
-          "The FCS Aggregator makes possible to select specific corpora based on their name or language and to specify the number of search results (hits) per corpus per page. The user interface controls that allows to change these options are located right below the search fiels on the main page. The current options are to filter resources based on their language, to select specific resources, and to set the maximum number of hits. In the multi-layer FCS search the supported layers filter on the supported features like, e. g. part of speech or lemma in addition to the other filter options."
+          "The FCS Aggregator makes possible to select specific resources based on their name or language and to specify the number of search results (hits) per resource per page. The user interface controls that allows to change these options are located right below the search fiels on the main page. The current options are to filter resources based on their language, to select specific resources, and to set the maximum number of hits. In the multi-layer FCS search the supported layers filter on the supported features like, e. g. part of speech or lemma in addition to the other filter options."
         ),
         React.createElement(
           "h3",

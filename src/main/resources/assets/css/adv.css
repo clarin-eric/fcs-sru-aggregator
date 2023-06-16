@@ -21,7 +21,7 @@
   cursor: move;
 }
 
-.corpusview-corpora {
+.resourceview-resources {
   /*
   max-height: 70%;
   overflow-y: scroll;
@@ -36,7 +36,7 @@
   float: right;
 }
 
-#unavailable-corpora-message {
+#unavailable-resources-message {
   font-size: smaller;
 }
 

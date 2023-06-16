@@ -52,33 +52,32 @@ var Results = createReactClass({
     </div>);
   },
 
-  renderPanelInfo: function (corpusHit) {
-    var corpus = corpusHit.corpus;
+  renderPanelInfo: function (resourceHit) {
     var inline = { display: "inline-block" };
     return (<div>
       {" "}
       <div style={inline}>
         <button className="btn btn-default zoomResultButton"
-          onClick={function (e) { this.props.toggleResultModal(e, corpusHit) }.bind(this)}>
+          onClick={function (e) { this.props.toggleResultModal(e, resourceHit) }.bind(this)}>
           <span className="glyphicon glyphicon-eye-open" /> View
         </button>
       </div>
     </div>);
   },
 
-  renderResultPanel: function (corpusHit) {
-    if (corpusHit.kwics.length === 0 &&
-      !corpusHit.exception &&
-      corpusHit.diagnostics.length === 0) {
+  renderResultPanel: function (resourceHit) {
+    if (resourceHit.kwics.length === 0 &&
+      !resourceHit.exception &&
+      resourceHit.diagnostics.length === 0) {
       return false;
     }
-    if (!this.state.displayDiagnosticsForEmptyResults && corpusHit.kwics.length === 0) {
+    if (!this.state.displayDiagnosticsForEmptyResults && resourceHit.kwics.length === 0) {
       return false;
     }
-    return (<CSSTransition key={corpusHit.corpus.id} classNames="fade" timeout={{ enter: 200, exit: 200 }}><Panel key={corpusHit.corpus.id}
-      title={this.renderPanelTitle(corpusHit.corpus)}
-      info={this.renderPanelInfo(corpusHit)}>
-      {this.renderPanelBody(corpusHit)}
+    return (<CSSTransition key={resourceHit.resource.id} classNames="fade" timeout={{ enter: 200, exit: 200 }}><Panel key={resourceHit.resource.id}
+      title={this.renderPanelTitle(resourceHit.resource)}
+      info={this.renderPanelInfo(resourceHit)}>
+      {this.renderPanelBody(resourceHit)}
     </Panel></CSSTransition>);
   },
 

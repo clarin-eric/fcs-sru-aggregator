@@ -1,6 +1,6 @@
 "use strict";
 import classNames from "classnames";
-import CorpusView from "../components/corpusview.jsx";
+import ResourceView from "../components/resourceview.jsx";
 import LanguageSelector from "../components/languageselector.jsx"
 import Modal from "../components/modal.jsx";
 import Results from "../components/results.jsx";
@@ -35,7 +35,7 @@ var AggregatorPage = createReactClass({
     aggrContext = aggrContext && JSON.parse(aggrContext);
 
     return {
-      corpora: new Corpora([], this.updateCorpora),
+      resources: new Resources([], this.updateResources),
       languageMap: {},
       weblichtLanguages: [],
       queryTypeId: getQueryVariable('queryType') || 'cql',
@@ -50,7 +50,7 @@ var AggregatorPage = createReactClass({
       timeout: 0,
       hits: this.nohits,
 
-      zoomedCorpusHit: null,
+      zoomedResourceHit: null,
     };
   },
 
@@ -61,7 +61,7 @@ var AggregatorPage = createReactClass({
       url: this.props.APIROOT + 'init',
       success: function (json, textStatus, jqXHR) {
         if (this._isMounted) {
-          var corpora = new Corpora(json.corpora, this.updateCorpora);
+          var resources = new Resources(json.resources, this.updateResources);
 
           // // for testing aggregation context
           // json['x-aggregation-context'] = {
@@ -71,49 +71,49 @@ var AggregatorPage = createReactClass({
           var aggregationContext = json['x-aggregation-context'] || this.state.aggregationContext;
 
           window.MyAggregator.mode = getQueryVariable('mode') || json.mode;
-          window.MyAggregator.corpora = json.corpora;
+          window.MyAggregator.resources = json.resources;
           window.MyAggregator.xAggregationContext = aggregationContext;
 
-          // Setting visibility, e.g. only corpora 
+          // Setting visibility, e.g. only resources 
           // from v2.0 endpoints for fcs v2.0
-          corpora.setVisibility(this.state.queryTypeId, this.state.language[0]);
+          resources.setVisibility(this.state.queryTypeId, this.state.language[0]);
 
           if (aggregationContext) {
-            const contextCorporaInfo = corpora.setAggregationContext(aggregationContext);
-            const unavailableCorporaHandles = contextCorporaInfo.unavailable; // list of unavailable aggregationContext
-            if (unavailableCorporaHandles.length > 0) {
-              this.props.error("Could not find requested resource handles:\n" + unavailableCorporaHandles.join('\n'));
+            const contextResourcesInfo = resources.setAggregationContext(aggregationContext);
+            const unavailableResourcesHandles = contextResourcesInfo.unavailable; // list of unavailable aggregationContext
+            if (unavailableResourcesHandles.length > 0) {
+              this.props.error("Could not find requested resource handles:\n" + unavailableResourcesHandles.join('\n'));
             }
 
-            const actuallySelectedCorpora = corpora.getSelectedIds();
+            const actuallySelectedResources = resources.getSelectedIds();
 
-            if (contextCorporaInfo.selected.length !== actuallySelectedCorpora.length) {
-              if (actuallySelectedCorpora.length === 0) {
+            if (contextResourcesInfo.selected.length !== actuallySelectedResources.length) {
+              if (actuallySelectedResources.length === 0) {
                 this.props.error("This search does not support the required resource(s), will search all resources instead"); // TODO give detailed reason its not supported.
-                corpora.recurse(function (corpus) { corpus.selected = true; });
+                resources.recurse(function (resource) { resource.selected = true; });
               } else {
                 var err = "Some required context resources are not supported for this search:\n"
-                err = err + contextCorpora.filter((c) => {
-                  if (actuallySelectedCorpora.indexOf(c) === -1) {
-                    console.warn("Requested corpus but not available for selection", c);
+                err = err + contextresources.filter((r) => {
+                  if (actuallySelectedResources.indexOf(r) === -1) {
+                    console.warn("Requested resource but not available for selection", r);
                     return true;
                   }
                   return false;
-                }).map((c) => c.title).join('\n')
+                }).map((r) => r.title).join('\n')
                 this.props.error(err);
               }
-            } else if (contextCorporaInfo.selected.length > 0) {
-              this.props.info("Pre-selected " + contextCorporaInfo.selected.length + " resource" + (contextCorporaInfo.selected.length != 1 ? "s" : "") + ":\n" + contextCorporaInfo.selected.map(x => x.title + " (" + x.handle + ")").join('\n'));
+            } else if (contextResourcesInfo.selected.length > 0) {
+              this.props.info("Pre-selected " + contextResourcesInfo.selected.length + " resource" + (contextResourcesInfo.selected.length != 1 ? "s" : "") + ":\n" + contextResourcesInfo.selected.map(x => x.title + " (" + x.handle + ")").join('\n'));
             }
           }
           else {
             // no context set all visibl to selected as default.
             console.log("no context set, selecting all available");
-            corpora.recurse(c => { c.visible ? c.selected = true : null })
+            resources.recurse(r => { r.visible ? r.selected = true : null })
           }
 
           this.setState({
-            corpora: corpora,
+            resources: resources,
             languageMap: json.languages,
             weblichtLanguages: json.weblichtLanguages,
             aggregationContext: aggregationContext,
@@ -127,7 +127,7 @@ var AggregatorPage = createReactClass({
         if (this.state.searchId != null) {
           console.log("Try loading exiting search, from searchId provided from URL:", this.state.searchId);
           this.refreshSearchResults();
-          this.setCorpusSelectionBySearch();
+          this.setResourceSelectionBySearch();
         }
       }.bind(this),
     });
@@ -139,8 +139,8 @@ var AggregatorPage = createReactClass({
     }
   },
 
-  updateCorpora: function (corpora) {
-    this.setState({ corpora: corpora });
+  updateResources: function (resources) {
+    this.setState({ resources: resources });
   },
 
   getCurrentQuery() {
@@ -162,13 +162,13 @@ var AggregatorPage = createReactClass({
       this.setState({ hits: this.nohits, searchId: null });
       return;
     }
-    var selectedIds = this.state.corpora.getSelectedIds();
+    var selectedIds = this.state.resources.getSelectedIds();
     if (!selectedIds.length) {
       this.props.error("Please select a resource to search into");
       return;
     }
 
-    // console.log("searching in the following corpora:", selectedIds);
+    // console.log("searching in the following resources:", selectedIds);
     // console.log("searching with queryType:", queryTypeId);
     this.props.ajax({
       url: this.props.APIROOT + 'search',
@@ -178,7 +178,7 @@ var AggregatorPage = createReactClass({
         queryType: queryTypeId,
         language: this.state.language[0],
         numberOfResults: this.state.numberOfResults,
-        corporaIds: selectedIds,
+        resourceIds: selectedIds,
       },
       success: function (searchId, textStatus, jqXHR) {
         // console.log("search ["+query+"] ok: ", searchId, jqXHR);
@@ -193,13 +193,13 @@ var AggregatorPage = createReactClass({
     });
   },
 
-  nextResults: function (corpusId) {
-    // console.log("searching next results in corpus:", corpusId);
+  nextResults: function (resourceId) {
+    // console.log("searching next results in resource:", resourceId);
     this.props.ajax({
       url: this.props.APIROOT + 'search/' + this.state.searchId,
       type: "POST",
       data: {
-        corpusId: corpusId,
+        resourceId: resourceId,
         numberOfResults: this.state.numberOfResults,
       },
       success: function (searchId, textStatus, jqXHR) {
@@ -228,41 +228,41 @@ var AggregatorPage = createReactClass({
         } else {
           console.log("search ended; hits:", json);
         }
-        var corpusHit = this.state.zoomedCorpusHit;
-        if (corpusHit) {
+        var resourceHit = this.state.zoomedResourceHit;
+        if (resourceHit) {
           for (var resi = 0; resi < json.results.length; resi++) {
             var res = json.results[resi];
-            if (res.corpus.id === corpusHit.corpus.id) {
-              corpusHit = res;
+            if (res.resource.id === resourceHit.resource.id) {
+              resourceHit = res;
               break;
             }
           }
         }
-        this.setState({ hits: json, timeout: timeout, zoomedCorpusHit: corpusHit });
+        this.setState({ hits: json, timeout: timeout, zoomedResourceHit: resourceHit });
       }.bind(this),
     });
   },
 
-  setCorpusSelectionBySearch: function () {
+  setResourceSelectionBySearch: function () {
     if (!this.state.searchId || !this._isMounted) {
       return;
     }
     this.props.ajax({
       url: this.props.APIROOT + 'search/' + this.state.searchId,
       success: function (json, textStatus, jqXHR) {
-        var corpusIds = [];
+        var resourceIds = [];
         for (var resi = 0; resi < json.results.length; resi++) {
           var res = json.results[resi];
-          corpusIds.push(res.corpus.id);
+          resourceIds.push(res.resource.id);
         }
-        this.state.corpora.recurse(c => { c.selected = corpusIds.includes(c.id); });
-        this.setState({ corpora: this.state.corpora });
+        this.state.resources.recurse(c => { c.selected = resourceIds.includes(c.id); });
+        this.setState({ resources: this.state.resources });
       }.bind(this),
     });
   },
 
-  getExportParams: function (corpusId, format, filterLanguage) {
-    var params = corpusId ? { corpusId: corpusId } : {};
+  getExportParams: function (resourceId, format, filterLanguage) {
+    var params = resourceId ? { resourceId: resourceId } : {};
     if (format) params.format = format;
     if (filterLanguage) {
       params.filterLanguage = filterLanguage;
@@ -272,28 +272,28 @@ var AggregatorPage = createReactClass({
     return encodeQueryData(params);
   },
 
-  getDownloadLink: function (corpusId, format) {
+  getDownloadLink: function (resourceId, format) {
     return this.props.APIROOT + 'search/' + this.state.searchId + '/download?' +
-      this.getExportParams(corpusId, format);
+      this.getExportParams(resourceId, format);
   },
 
-  getToWeblichtLink: function (corpusId, forceLanguage) {
+  getToWeblichtLink: function (resourceId, forceLanguage) {
     return this.props.APIROOT + 'search/' + this.state.searchId + '/toWeblicht?' +
-      this.getExportParams(corpusId, null, forceLanguage);
+      this.getExportParams(resourceId, null, forceLanguage);
   },
 
   setLanguageAndFilter: function (languageObj, languageFilter) {
-    this.state.corpora.setVisibility(this.state.queryTypeId,
+    this.state.resources.setVisibility(this.state.queryTypeId,
       languageFilter === 'byGuess' ? multipleLanguageCode : languageObj[0]);
     this.setState({
       language: languageObj,
       languageFilter: languageFilter,
-      corpora: this.state.corpora, // === this.state.corpora.update();
+      resources: this.state.resources, // === this.state.resources.update();
     });
   },
 
   setQueryType: function (queryTypeId) {
-    this.state.corpora.setVisibility(queryTypeId, this.state.language[0]);
+    this.state.resources.setVisibility(queryTypeId, this.state.language[0]);
     setQueryVariable('queryType', queryTypeId);
     setQueryVariable('query', this.getCurrentQueryByQueryTypeId(queryTypeId))
     this.setState({
@@ -321,20 +321,20 @@ var AggregatorPage = createReactClass({
     var langCode = this.state.language[0];
     var results = null, inProgress = 0, hits = 0;
     if (this.state.hits.results) {
-      results = this.state.hits.results.map(function (corpusHit) {
+      results = this.state.hits.results.map(function (resourceHit) {
         return {
-          corpus: corpusHit.corpus,
-          inProgress: corpusHit.inProgress,
-          exception: corpusHit.exception,
-          diagnostics: corpusHit.diagnostics,
-          kwics: noLangFiltering ? corpusHit.kwics :
-            corpusHit.kwics.filter(function (kwic) {
+          resource: resourceHit.resource,
+          inProgress: resourceHit.inProgress,
+          exception: resourceHit.exception,
+          diagnostics: resourceHit.diagnostics,
+          kwics: noLangFiltering ? resourceHit.kwics :
+            resourceHit.kwics.filter(function (kwic) {
               return kwic.language === langCode ||
                 langCode === multipleLanguageCode ||
                 langCode === null;
             }),
-          advancedLayers: noLangFiltering ? corpusHit.advancedLayers :
-            corpusHit.advancedLayers.filter(function (layers) {
+          advancedLayers: noLangFiltering ? resourceHit.advancedLayers :
+            resourceHit.advancedLayers.filter(function (layers) {
               return layers.every(function (layer) {
                 return layer.language === langCode ||
                   langCode === multipleLanguageCode ||
@@ -366,15 +366,15 @@ var AggregatorPage = createReactClass({
     e.stopPropagation();
   },
 
-  toggleCorpusSelection: function (e) {
-    $(ReactDOM.findDOMNode(this.refs.corporaModal)).modal();
+  toggleResourceSelection: function (e) {
+    $(ReactDOM.findDOMNode(this.refs.resourcesModal)).modal();
     e.preventDefault();
     e.stopPropagation();
   },
 
-  toggleResultModal: function (e, corpusHit) {
+  toggleResultModal: function (e, resourceHit) {
     $(ReactDOM.findDOMNode(this.refs.resultModal)).modal();
-    this.setState({ zoomedCorpusHit: corpusHit });
+    this.setState({ zoomedResourceHit: resourceHit });
     e.preventDefault();
     e.stopPropagation();
   },
@@ -416,13 +416,13 @@ var AggregatorPage = createReactClass({
     _paq.push(['trackEvent', 'Search', 'CopyToClipboardMouse', text]);
   },
 
-  renderZoomedResultTitle: function (corpusHit) {
-    if (!corpusHit) return (<span />);
-    var corpus = corpusHit.corpus;
+  renderZoomedResultTitle: function (resourceHit) {
+    if (!resourceHit) return (<span />);
+    var resource = resourceHit.resource;
     return (<h3 style={{ fontSize: '1em' }}>
-      {corpus.title}
-      {corpus.landingPage ?
-        <a href={corpus.landingPage} onClick={this.stop} style={{ fontSize: 12 }}>
+      {resource.title}
+      {resource.landingPage ?
+        <a href={resource.landingPage} onClick={this.stop} style={{ fontSize: 12 }}>
           <span> – Homepage </span>
           <i className="glyphicon glyphicon-home" />
         </a> : false}
@@ -498,7 +498,7 @@ var AggregatorPage = createReactClass({
     return (
       <QueryInput
         searchedLanguages={this.state.searchedLanguages || [multipleLanguageCode]}
-        corpora={this.props.corpora}
+        resources={this.props.resources}
         queryTypeId={this.state.queryTypeId}
         query={this.getCurrentQuery() === undefined ? queryType.searchPlaceholder : this.getCurrentQuery()}
         embedded={this.props.embedded}
@@ -553,28 +553,28 @@ var AggregatorPage = createReactClass({
     </div>
   },
 
-  renderUnavailableCorporaMessage() {
-    if (!this.state.corpora) {
+  renderUnavailableResourcesMessage() {
+    if (!this.state.resources) {
       return;
     }
     const unavailable = [];
-    this.state.corpora.recurse((c) => {
-      if (c.selected && !c.visible) {
-        unavailable.push(c);
+    this.state.resources.recurse((r) => {
+      if (r.selected && !r.visible) {
+        unavailable.push(r);
       }
-      if (c.selected) {
-        // apparently a selected corpus 
+      if (r.selected) {
+        // apparently a selected resource 
       }
     });
 
     if (unavailable.length) {
-      return <div id="unavailable-corpora-message" className="text-muted">
-        <div id="unavailable-corpora-message-message">
+      return <div id="unavailable-resources-message" className="text-muted">
+        <div id="unavailable-resources-message-message">
           <a role="button" data-toggle="dropdown">{unavailable.length} selected resource{unavailable.length > 1 ? 's are' : ' is'} disabled in this search mode.</a>
         </div>
-        <ul id="unavailable-corpora-message-list" className="dropdown-menu">
+        <ul id="unavailable-resources-message-list" className="dropdown-menu">
           {
-            unavailable.map((c) => <li className="unavailable-corpora-message-item">{c.name}</li>)
+            unavailable.map((r) => <li className="unavailable-resources-message-item">{r.name}</li>)
           }
         </ul>
       </div>
@@ -592,7 +592,7 @@ var AggregatorPage = createReactClass({
         <div className="well" style={{ marginTop: 20 }}>
           <div className="aligncenter" >
             {
-              //this.renderUnavailableCorporaMessage()
+              //this.renderUnavailableResourcesMessage()
             }
             <form className="form-inline" role="form">
 
@@ -628,8 +628,8 @@ var AggregatorPage = createReactClass({
 
               <div className="input-group hidden-xs">
                 <span className="input-group-addon nobkg">in</span>
-                <button type="button" className="btn btn-default" onClick={this.toggleCorpusSelection}>
-                  {this.state.corpora.getSelectedMessage()} <span className="caret" />
+                <button type="button" className="btn btn-default" onClick={this.toggleResourceSelection}>
+                  {this.state.resources.getSelectedMessage()} <span className="caret" />
                 </button>
               </div>
 
@@ -650,8 +650,8 @@ var AggregatorPage = createReactClass({
 
         {this.renderSearchPermaLink()}
 
-        <Modal ref="corporaModal" title={<span>Resources <small className="text-muted">{this.props.corpora && this.props.corpora.getSelectedMessage()}</small></span>}>
-          <CorpusView corpora={this.state.corpora} languageMap={this.state.languageMap} />
+        <Modal ref="resourcesModal" title={<span>Resources <small className="text-muted">{this.props.resources && this.props.resources.getSelectedMessage()}</small></span>}>
+          <ResourceView resources={this.state.resources} languageMap={this.state.languageMap} />
         </Modal>
 
         <Modal ref="languageModal" title={<span>Select Language</span>}>
@@ -662,8 +662,8 @@ var AggregatorPage = createReactClass({
             languageChangeHandler={this.setLanguageAndFilter} />
         </Modal>
 
-        <Modal ref="resultModal" title={this.renderZoomedResultTitle(this.state.zoomedCorpusHit)}>
-          <ZoomedResult corpusHit={this.state.zoomedCorpusHit}
+        <Modal ref="resultModal" title={this.renderZoomedResultTitle(this.state.zoomedResourceHit)}>
+          <ZoomedResult resourceHit={this.state.zoomedResourceHit}
             nextResults={this.nextResults}
             getDownloadLink={this.getDownloadLink}
             getToWeblichtLink={this.getToWeblichtLink}
@@ -686,9 +686,9 @@ var AggregatorPage = createReactClass({
   },
 });
 
-function Corpora(corpora, updateFn) {
+function Resources(resources, updateFn) {
   var that = this;
-  this.corpora = corpora;
+  this.resources = resources;
   this.update = function () {
     updateFn(that);
   };
@@ -701,45 +701,45 @@ function Corpora(corpora, updateFn) {
     return x.title.toLowerCase().localeCompare(y.title.toLowerCase());
   };
 
-  this.recurse(function (corpus) { corpus.subCorpora.sort(sortFn); });
-  this.corpora.sort(sortFn);
+  this.recurse(function (resource) { resource.subResources.sort(sortFn); });
+  this.resources.sort(sortFn);
 
-  this.recurse(function (corpus, index) {
-    corpus.visible = true; // visible in the corpus view
-    corpus.selected = false; // not selected in the corpus view, assign later
-    corpus.expanded = false; // not expanded in the corpus view
-    corpus.priority = 1; // used for ordering search results in corpus view
-    corpus.index = index; // original order, used for stable sort
+  this.recurse(function (resource, index) {
+    resource.visible = true; // visible in the resource view
+    resource.selected = false; // not selected in the resource view, assign later
+    resource.expanded = false; // not expanded in the resource view
+    resource.priority = 1; // used for ordering search results in resource view
+    resource.index = index; // original order, used for stable sort
   });
 }
 
-Corpora.prototype.recurseCorpus = function (corpus, fn) {
-  if (false === fn(corpus)) {
+Resources.prototype.recurseResource = function (resource, fn) {
+  if (false === fn(resource)) {
     // no recursion
   } else {
-    this.recurseCorpora(corpus.subCorpora, fn);
+    this.recurseResources(resource.subResources, fn);
   }
 };
 
-Corpora.prototype.recurseCorpora = function (corpora, fn) {
-  var recfn = function (corpus, index) {
-    if (false === fn(corpus, index)) {
+Resources.prototype.recurseResources = function (resources, fn) {
+  var recfn = function (resource, index) {
+    if (false === fn(resource, index)) {
       // no recursion
     } else {
-      corpus.subCorpora.forEach(recfn);
+      resource.subResources.forEach(recfn);
     }
   };
-  corpora.forEach(recfn);
+  resources.forEach(recfn);
 };
 
-Corpora.prototype.recurse = function (fn) {
-  this.recurseCorpora(this.corpora, fn);
+Resources.prototype.recurse = function (fn) {
+  this.recurseResources(this.resources, fn);
 };
 
-Corpora.prototype.getLanguageCodes = function () {
+Resources.prototype.getLanguageCodes = function () {
   var languages = {};
-  this.recurse(function (corpus) {
-    corpus.languages.forEach(function (lang) {
+  this.recurse(function (resource) {
+    resource.languages.forEach(function (lang) {
       languages[lang] = true;
     });
     return true;
@@ -747,50 +747,50 @@ Corpora.prototype.getLanguageCodes = function () {
   return languages;
 };
 
-Corpora.prototype.isCorpusVisible = function (corpus, queryTypeId, languageCode) {
+Resources.prototype.isResourceVisible = function (resource, queryTypeId, languageCode) {
   // check search capabilities (ignore version, just check caps)
-  if (queryTypeId === "fcs" && corpus.endpoint.searchCapabilities.indexOf("ADVANCED_SEARCH") === -1) {
+  if (queryTypeId === "fcs" && resource.endpoint.searchCapabilities.indexOf("ADVANCED_SEARCH") === -1) {
     return false;
   }
   // yes for any language
   if (languageCode === multipleLanguageCode) {
     return true;
   }
-  // yes if the corpus is in only that language
-  if (corpus.languages && corpus.languages.length === 1 && corpus.languages[0] === languageCode) {
+  // yes if the resource is in only that language
+  if (resource.languages && resource.languages.length === 1 && resource.languages[0] === languageCode) {
     return true;
   }
 
-  // ? yes if the corpus also contains that language
-  if (corpus.languages && corpus.languages.indexOf(languageCode) >= 0) {
+  // ? yes if the resource also contains that language
+  if (resource.languages && resource.languages.indexOf(languageCode) >= 0) {
     return true;
   }
 
-  // ? yes if the corpus has no language
-  // if (!corpus.languages || corpus.languages.length === 0) {
+  // ? yes if the resource has no language
+  // if (!resource.languages || resource.languages.length === 0) {
   // 	return true;
   // }
   return false;
 };
 
-Corpora.prototype.setVisibility = function (queryTypeId, languageCode) {
+Resources.prototype.setVisibility = function (queryTypeId, languageCode) {
   // top level
-  this.corpora.forEach(function (corpus) {
-    corpus.visible = this.isCorpusVisible(corpus, queryTypeId, languageCode);
-    this.recurseCorpora(corpus.subCorpora, function (c) { c.visible = corpus.visible; });
+  this.resources.forEach(function (resource) {
+    resource.visible = this.isResourceVisible(resource, queryTypeId, languageCode);
+    this.recurseResources(resource.subResources, function (c) { c.visible = resource.visible; });
   }.bind(this));
 };
 
-Corpora.prototype.setAggregationContext = function (endpoints2handles) {
-  var selectSubTree = function (select, corpus) {
-    corpus.selected = select;
-    this.recurseCorpora(corpus.subCorpora, function (c) { c.selected = corpus.selected; });
+Resources.prototype.setAggregationContext = function (endpoints2handles) {
+  var selectSubTree = function (select, resource) {
+    resource.selected = select;
+    this.recurseResources(resource.subResources, function (c) { c.selected = resource.selected; });
   };
 
-  this.corpora.forEach(selectSubTree.bind(this, false));
+  this.resources.forEach(selectSubTree.bind(this, false));
 
   var handlesNotFound = [];
-  var corporaToSelect = [];
+  var resourcesToSelect = [];
   _.pairs(endpoints2handles).forEach((endp) => {
     var endpoint = endp[0];
     var handles = endp[1];
@@ -798,28 +798,28 @@ Corpora.prototype.setAggregationContext = function (endpoints2handles) {
     console.log("setAggregationContext: handles", handles);
     handles.forEach((handle) => {
       var found = false;
-      this.recurse((corpus) => {
-        if (corpus.handle === handle) {
+      this.recurse((resource) => {
+        if (resource.handle === handle) {
           found = true;
-          corporaToSelect.push(corpus);
+          resourcesToSelect.push(resource);
         }
       })
       if (!found) {
-        console.warn("Handle not found in corpora", handle);
+        console.warn("Handle not found in resources", handle);
         handlesNotFound.push(handle);
       }
     })
   })
 
-  corporaToSelect.forEach(selectSubTree.bind(this, true));
-  return { 'selected': corporaToSelect, 'unavailable': handlesNotFound };
+  resourcesToSelect.forEach(selectSubTree.bind(this, true));
+  return { 'selected': resourcesToSelect, 'unavailable': handlesNotFound };
 };
 
-Corpora.prototype.getSelectedIds = function () {
+Resources.prototype.getSelectedIds = function () {
   var ids = [];
-  this.recurse(function (corpus) {
-    if (corpus.visible && corpus.selected) {
-      ids.push(corpus.id);
+  this.recurse(function (resource) {
+    if (resource.visible && resource.selected) {
+      ids.push(resource.id);
       //return false; // top-most resource in tree, don't delve deeper
       // But subresources are also selectable on their own?...
     }
@@ -830,9 +830,9 @@ Corpora.prototype.getSelectedIds = function () {
   return ids;
 };
 
-Corpora.prototype.getSelectedMessage = function () {
+Resources.prototype.getSelectedMessage = function () {
   var selected = this.getSelectedIds().length;
-  if (this.corpora.length === selected) {
+  if (this.resources.length === selected) {
     return "All available resources (" + selected + ")";
   } else if (selected === 1) {
     return "1 selected resource";

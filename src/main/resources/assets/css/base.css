@@ -250,30 +250,30 @@ p.input {
   border-radius: 4px;
 }
 
-/*** corpus selection panel ***/
+/*** resource selection panel ***/
 
-div.corpus-container {
+div.resource-container {
   margin: 5px 0;
   border-bottom: 1px solid #eee;
 }
 
-div.corpusview-institutions>div.corpusview-corpora:hover,
-div.corpusview-languages>div.corpusview-corpora:hover,
-div.corpus-container:hover {
+div.resourceview-institutions>div.resourceview-resources:hover,
+div.resourceview-languages>div.resourceview-resources:hover,
+div.resource-container:hover {
   box-shadow: 0 0 10px rgb(179, 216, 253) !important;
 }
 
-div.corpus-container.dimmed {
+div.resource-container.dimmed {
   /* font-weight: 300; */
   /* opacity: 0.8; */
 }
 
-div.corpusview-corpora>h3 {
+div.resourceview-resources>h3 {
   padding-top: 0.5em;
   padding-left: 0.5em;
 }
 
-div.corpusview-corpora>div.expansion-handle {
+div.resourceview-resources>div.expansion-handle {
   padding-bottom: 0.5em;
   padding-left: 0.5em;
 }
@@ -282,20 +282,20 @@ div.modal-dialog input {
   border-radius: 6px;
 }
 
-div.corpus h3 {
+div.resource h3 {
   margin: 0px 0 5px 0;
   font-size: 18px;
 }
 
-div.corpus p {
+div.resource p {
   margin: 0;
 }
 
-div.corpus button {
+div.resource button {
   /* border: none; */
 }
 
-div.corpus .glyphicon {
+div.resource .glyphicon {
   font-size: 12px;
   color: #B27000;
 
@@ -308,26 +308,26 @@ div.corpus .glyphicon {
   user-select: none;
 }
 
-div.corpus button .glyphicon.glyphicon-check {
+div.resource button .glyphicon.glyphicon-check {
   font-size: 20px;
   color: #B27000;
 }
 
-div.corpus button .glyphicon.glyphicon-unchecked {
+div.resource button .glyphicon.glyphicon-unchecked {
   font-size: 20px;
   color: #036;
 }
 
-div.corpus .fa.fa-institution {
+div.resource .fa.fa-institution {
   font-size: 12px;
 }
 
-div.corpus p {
+div.resource p {
   margin: 5px 0;
 }
 
-div.corpusview-corpora div.expansion-handle,
-div.corpus div.expansion-handle {
+div.resourceview-resources div.expansion-handle,
+div.resource div.expansion-handle {
   margin: 0 0 5px 0;
   cursor: pointer;
 }
@@ -441,7 +441,7 @@ td {
   border: none !important;
 }
 
-.panel-body div.corpusResultsADV {
+.panel-body div.resourceResultsADV {
   overflow-x: auto;
 }
 
@@ -472,15 +472,15 @@ div.popover {
 
 /*** zoomed result ***/
 
-.modal-body .corpusDescription {
+.modal-body .resourceDescription {
   padding-left: 15px;
 }
 
-.modal-body .corpusDescription p {
+.modal-body .resourceDescription p {
   margin: 4px 0;
 }
 
-.modal-body .corpusResults {
+.modal-body .resourceResults {
   padding: 15px;
   border: 1px solid #ddd;
   border-left: 5px solid #036;

@@ -8,8 +8,8 @@ import eu.clarin.sru.client.SRUVersion;
 import eu.clarin.sru.fcs.aggregator.app.Aggregator;
 import eu.clarin.sru.fcs.aggregator.app.AggregatorConfiguration;
 import eu.clarin.sru.fcs.aggregator.app.AggregatorConfiguration.Params.WeblichtConfig;
-import eu.clarin.sru.fcs.aggregator.scan.Corpora;
-import eu.clarin.sru.fcs.aggregator.scan.Corpus;
+import eu.clarin.sru.fcs.aggregator.scan.Resources;
+import eu.clarin.sru.fcs.aggregator.scan.Resource;
 import eu.clarin.sru.fcs.aggregator.scan.FCSProtocolVersion;
 import eu.clarin.sru.fcs.aggregator.scan.FCSSearchCapabilities;
 import eu.clarin.sru.fcs.aggregator.scan.Statistics;
@@ -87,13 +87,13 @@ public class RestService {
 
     @GET
     @Produces({ MediaType.APPLICATION_JSON })
-    @Path("corpora")
-    @Operation(description = "Get all corpora.", tags = { "web" }, responses = {
-            @ApiResponse(description = "List of corpora objects.", content = {
-                    @Content(mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Corpus.class))) }) })
-    public Response getCorpora() throws IOException {
-        List<Corpus> corpora = Aggregator.getInstance().getCorpora().getCorpora();
-        return Response.ok(toJson(corpora)).build();
+    @Path("resources")
+    @Operation(description = "Get all resources.", tags = { "web" }, responses = {
+            @ApiResponse(description = "List of resource objects.", content = {
+                    @Content(mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Resource.class))) }) })
+    public Response getResources() throws IOException {
+        List<Resource> resources = Aggregator.getInstance().getResources().getResources();
+        return Response.ok(toJson(resources)).build();
     }
 
     private static abstract class LanguageMap implements Map<String, String> {
@@ -102,10 +102,10 @@ public class RestService {
     @GET
     @Produces({ MediaType.APPLICATION_JSON })
     @Path("languages")
-    @Operation(description = "Get all languages (code --> name) from all corpora.", tags = { "web" }, responses = {
+    @Operation(description = "Get all languages (code --> name) from all resources.", tags = { "web" }, responses = {
             @ApiResponse(description = "Mapping of language ISO code to English name.", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = LanguageMap.class), examples = @ExampleObject(value = "{\n  \"deu\": \"German\",\n  \"eng\": \"English\"}"))) })
     public Response getLanguages() throws IOException {
-        Set<String> codes = Aggregator.getInstance().getCorpora().getLanguages();
+        Set<String> codes = Aggregator.getInstance().getResources().getLanguages();
         log.info("get language codes: {}", codes);
         Map<String, String> languages = LanguagesISO693.getInstance().getLanguageMap(codes);
         return Response.ok(toJson(languages)).build();
@@ -113,7 +113,7 @@ public class RestService {
 
     private static class InitSchema {
         @JsonProperty(required = true)
-        List<Corpus> corpora;
+        List<Resource> resources;
         @JsonProperty(required = true)
         List<String> languages;
         @JsonProperty(required = true)
@@ -129,13 +129,13 @@ public class RestService {
     @GET
     @Produces({ MediaType.APPLICATION_JSON })
     @Path("init")
-    @Operation(description = "Get initial webpage data (corpora, languages)."
-            + " Optional 'x-aggregation-context' for pre-selecting corpora "
+    @Operation(description = "Get initial webpage data (resources, languages)."
+            + " Optional 'x-aggregation-context' for pre-selecting resources "
             + "and/or 'mode' and 'query' for starting a search.", tags = { "web" }, responses = {
-                    @ApiResponse(description = "Initial page data (corpora, languages)", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = InitSchema.class))) })
+                    @ApiResponse(description = "Initial page data (resources, languages)", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = InitSchema.class))) })
     public Response getInit(@Context final HttpServletRequest request) throws IOException {
         log.info("get initial data");
-        final Corpora corpora = Aggregator.getInstance().getCorpora();
+        final Resources resources = Aggregator.getInstance().getResources();
         final Object query = request.getSession().getAttribute(PARAM_QUERY);
         final Object mode = request.getSession().getAttribute(PARAM_MODE);
         final Object contextString = request.getSession().getAttribute(PARAM_AGGREGATION_CONTEXT);
@@ -151,11 +151,11 @@ public class RestService {
                 }
                 if (contextString instanceof String) {
                     Object context = new ObjectMapper().readValue((String) contextString, Object.class);
-                    put(PARAM_AGGREGATION_CONTEXT, context); // preselected corpora
+                    put(PARAM_AGGREGATION_CONTEXT, context); // preselected resources
                     request.getSession().setAttribute(PARAM_AGGREGATION_CONTEXT, null);
                 }
-                put("corpora", corpora.getCorpora());
-                put("languages", LanguagesISO693.getInstance().getLanguageMap(corpora.getLanguages()));
+                put("resources", resources.getResources());
+                put("languages", LanguagesISO693.getInstance().getLanguageMap(resources.getLanguages()));
                 put("weblichtLanguages",
                         Aggregator.getInstance().getParams().getWeblichtConfig().getAcceptedTcfLanguages());
             }
@@ -174,8 +174,8 @@ public class RestService {
                     @Link(name = "Load subSearch results", operationId = "postSearchNextResults", parameters = {
                             @LinkParameter(name = "id", expression = "$response.body") }) }),
             @ApiResponse(responseCode = "400", description = "Missing 'query' parameter."),
-            @ApiResponse(responseCode = "400", description = "Missing 'corporaIds' parameter."),
-            @ApiResponse(responseCode = "503", description = "No corpora. Server might still be scanning. Please try again later."),
+            @ApiResponse(responseCode = "400", description = "Missing 'resourceIds' parameter."),
+            @ApiResponse(responseCode = "503", description = "No resources. Server might still be scanning. Please try again later."),
             @ApiResponse(responseCode = "500", description = "Initiating search failed.") }, tags = { "search" })
     public Response postSearch(
             @FormParam("query") String query,
@@ -183,27 +183,28 @@ public class RestService {
             @FormParam("firstResultIndex") Integer firstResultIndex,
             @FormParam("numberOfResults") Integer numberOfResults,
             @FormParam("language") String language,
-            @FormParam("corporaIds[]") List<String> corporaIds) throws Exception {
+            @FormParam("resourceIds[]") List<String> resourceIds) throws Exception {
         if (query == null || query.isEmpty()) {
             return Response.status(400).entity("'query' parameter expected").build();
         }
-        // log.info("POST /search corporaIds: {}", corporaIds);
-        if (corporaIds == null || corporaIds.isEmpty()) {
-            return Response.status(400).entity("'corporaIds' parameter expected").build();
+        // log.info("POST /search resourceIds: {}", resourceIds);
+        if (resourceIds == null || resourceIds.isEmpty()) {
+            return Response.status(400).entity("'resourceIds' parameter expected").build();
         }
-        List<Corpus> corpora = Aggregator.getInstance().getCorpora().getCorporaByIds(new HashSet<String>(corporaIds));
+        List<Resource> resources = Aggregator.getInstance().getResources()
+                .getResourcesByIds(new HashSet<String>(resourceIds));
         if ("fcs".equals(queryType)) {
-            List<Corpus> tmp = new ArrayList<Corpus>();
-            for (Corpus corpus : corpora) {
-                if (corpus.getEndpoint().getProtocol().equals(FCSProtocolVersion.VERSION_2) && corpus.getEndpoint()
+            List<Resource> tmp = new ArrayList<Resource>();
+            for (Resource resource : resources) {
+                if (resource.getEndpoint().getProtocol().equals(FCSProtocolVersion.VERSION_2) && resource.getEndpoint()
                         .getSearchCapabilities().contains(FCSSearchCapabilities.ADVANCED_SEARCH)) {
-                    tmp.add(corpus);
+                    tmp.add(resource);
                 }
             }
-            corpora = tmp;
+            resources = tmp;
         }
-        if (corpora == null || corpora.isEmpty()) {
-            return Response.status(503).entity("No corpora, please wait for the server to finish scanning").build();
+        if (resources == null || resources.isEmpty()) {
+            return Response.status(503).entity("No resources, please wait for the server to finish scanning").build();
         }
 
         if (firstResultIndex == null || firstResultIndex < 1) {
@@ -221,7 +222,7 @@ public class RestService {
         }
         Search search = Aggregator.getInstance().startSearch(
                 "fcs".equals(queryType) ? SRUVersion.VERSION_2_0 : SRUVersion.VERSION_1_2,
-                corpora, queryType, query, language, firstResultIndex, numberOfResults);
+                resources, queryType, query, language, firstResultIndex, numberOfResults);
         if (search == null) {
             return Response.status(500).entity("Initiating search failed").build();
         }
@@ -249,13 +250,13 @@ public class RestService {
                     @Content(schema = @Schema(implementation = JsonSearch.class)) }),
             @ApiResponse(responseCode = "404", description = "Search job not found.") }, tags = { "search" })
     public Response getSearch(@PathParam("id") Long searchId,
-            @QueryParam("corpusId") String corpusId) throws Exception {
+            @QueryParam("resourceId") String resourceId) throws Exception {
         Search search = Aggregator.getInstance().getSearchById(searchId);
         if (search == null) {
             return Response.status(Response.Status.NOT_FOUND).entity("Search job not found").build();
         }
 
-        JsonSearch js = new JsonSearch(search.getResults(corpusId));
+        JsonSearch js = new JsonSearch(search.getResults(resourceId));
         for (Result r : js.results) {
             if (r.getInProgress()) {
                 js.inProgress++;
@@ -268,19 +269,19 @@ public class RestService {
     @Consumes({ MediaType.APPLICATION_FORM_URLENCODED })
     @Produces({ MediaType.APPLICATION_JSON })
     @Path("search/{id}")
-    @Operation(description = "Request more search results for a specific corpus.", responses = {
+    @Operation(description = "Request more search results for a specific resource.", responses = {
             @ApiResponse(responseCode = "201", description = "Started subSearch, return search ID.", content = @Content(schema = @Schema(implementation = Long.class)), links = {
                     @Link(name = "Get search results", operationId = "getSearch", parameters = {
                             @LinkParameter(name = "id", expression = "$response.body") }) }),
-            @ApiResponse(responseCode = "400", description = "Missing 'corpusId' parameter."),
+            @ApiResponse(responseCode = "400", description = "Missing 'resourceId' parameter."),
             @ApiResponse(responseCode = "404", description = "Search job not found."),
             @ApiResponse(responseCode = "500", description = "Initiating subSearch failed.") }, tags = { "search" })
     public Response postSearchNextResults(@PathParam("id") Long searchId,
-            @FormParam("corpusId") String corpusId,
+            @FormParam("resourceId") String resourceId,
             @FormParam("numberOfResults") Integer numberOfResults) throws Exception {
-        log.info("POST /search/{id}, searchId: {}, corpusId: {}", searchId, corpusId);
-        if (corpusId == null || corpusId.isEmpty()) {
-            return Response.status(400).entity("'corpusId' parameter expected").build();
+        log.info("POST /search/{id}, searchId: {}, resourceId: {}", searchId, resourceId);
+        if (resourceId == null || resourceId.isEmpty()) {
+            return Response.status(400).entity("'resourceId' parameter expected").build();
         }
         Search search = Aggregator.getInstance().getSearchById(searchId);
         if (search == null) {
@@ -293,7 +294,7 @@ public class RestService {
             numberOfResults = 250;
         }
 
-        boolean ret = search.searchForNextResults(corpusId, numberOfResults);
+        boolean ret = search.searchForNextResults(resourceId, numberOfResults);
         if (ret == false) {
             return Response.status(500).entity("Initiating subSearch failed").build();
         }
@@ -315,7 +316,7 @@ public class RestService {
             @ApiResponse(responseCode = "400", description = "format parameter must be one of: text, tcf, ods, excel, csv")
     }, tags = { "search" })
     public Response downloadSearchResults(@PathParam("id") Long searchId,
-            @QueryParam("corpusId") String corpusId,
+            @QueryParam("resourceId") String resourceId,
             @QueryParam("filterLanguage") String filterLanguage,
             @QueryParam("format") String format) throws Exception {
         Search search = Aggregator.getInstance().getSearchById(searchId);
@@ -327,20 +328,20 @@ public class RestService {
         }
 
         if (format == null || format.trim().isEmpty() || format.trim().equals("text")) {
-            String text = Exports.getExportText(search.getResults(corpusId), filterLanguage);
+            String text = Exports.getExportText(search.getResults(resourceId), filterLanguage);
             return download(text, MediaType.TEXT_PLAIN, search.getQuery() + ".txt");
         } else if (format.equals("tcf")) {
             byte[] bytes = Exports.getExportTCF(
-                    search.getResults(corpusId), search.getSearchLanguage(), filterLanguage);
+                    search.getResults(resourceId), search.getSearchLanguage(), filterLanguage);
             return download(bytes, TCF_MEDIA_TYPE, search.getQuery() + ".xml");
         } else if (format.equals("ods")) {
-            byte[] bytes = Exports.getExportODS(search.getResults(corpusId), filterLanguage);
+            byte[] bytes = Exports.getExportODS(search.getResults(resourceId), filterLanguage);
             return download(bytes, ODS_MEDIA_TYPE, search.getQuery() + ".ods");
         } else if (format.equals("excel")) {
-            byte[] bytes = Exports.getExportExcel(search.getResults(corpusId), filterLanguage);
+            byte[] bytes = Exports.getExportExcel(search.getResults(resourceId), filterLanguage);
             return download(bytes, EXCEL_MEDIA_TYPE, search.getQuery() + ".xls");
         } else if (format.equals("csv")) {
-            String csv = Exports.getExportCSV(search.getResults(corpusId), filterLanguage, ";");
+            String csv = Exports.getExportCSV(search.getResults(resourceId), filterLanguage, ";");
             return download(csv, MediaType.TEXT_PLAIN, search.getQuery() + ".csv");
         }
 
@@ -393,7 +394,7 @@ public class RestService {
                     @ApiResponse(responseCode = "503", description = "Error while exporting to weblicht.") })
     public Response sendSearchResultsToWeblicht(@PathParam("id") Long searchId,
             @QueryParam("filterLanguage") String filterLanguage,
-            @QueryParam("corpusId") String corpusId) throws Exception {
+            @QueryParam("resourceId") String resourceId) throws Exception {
         Search search = Aggregator.getInstance().getSearchById(searchId);
         if (search == null) {
             return Response.status(Response.Status.NOT_FOUND).entity("Search job not found").build();
@@ -405,7 +406,7 @@ public class RestService {
         WeblichtConfig weblicht = Aggregator.getInstance().getParams().getWeblichtConfig();
 
         String url = null;
-        byte[] bytes = Exports.getExportTCF(search.getResults(corpusId), search.getSearchLanguage(), filterLanguage);
+        byte[] bytes = Exports.getExportTCF(search.getResults(resourceId), search.getSearchLanguage(), filterLanguage);
         if (bytes != null) {
             // store bytes in-memory TCF weblicht export in searches (searches might only
             // live up to 60min if under high load)

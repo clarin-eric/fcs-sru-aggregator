@@ -27,10 +27,10 @@ var ResultMixin = {
     this.setState({ displayADV: !this.state.displayADV });
   },
 
-  renderPanelTitle: function (corpus) {
+  renderPanelTitle: function (resource) {
     return (<div className='inline'>
-      <span className="corpusName"> {corpus.title}</span>
-      <span className="institutionName"> — {corpus.institution.name}</span>
+      <span className="resourceName"> {resource.title}</span>
+      <span className="institutionName"> — {resource.institution.name}</span>
     </div>);
   },
 
@@ -86,7 +86,7 @@ var ResultMixin = {
     </tr>);
   },
 
-  renderRowsAsADVGrouped: function (corpusHit) {
+  renderRowsAsADVGrouped: function (resourceHit) {
     function renderWithSeperators(layers, i) {
       var pre = (i != 0) ? [(
         <tr class="hitrow-sep"><td colspan="100%" /></tr>
@@ -96,8 +96,8 @@ var ResultMixin = {
     function renderPlainList(layers, i) {
       return layers.map(this.renderRowsAsADV);
     }
-    var needsSeparators = Math.min(...corpusHit.advancedLayers.map(x => x.length)) > 1;
-    return corpusHit.advancedLayers.map((needsSeparators ? renderWithSeperators : renderPlainList).bind(this));
+    var needsSeparators = Math.min(...resourceHit.advancedLayers.map(x => x.length)) > 1;
+    return resourceHit.advancedLayers.map((needsSeparators ? renderWithSeperators : renderPlainList).bind(this));
   },
 
   renderDiagnostic: function (d, key) {
@@ -109,15 +109,15 @@ var ResultMixin = {
     </div>);
   },
 
-  renderDiagnostics: function (corpusHit) {
-    if (!corpusHit.diagnostics || corpusHit.diagnostics.length === 0) {
+  renderDiagnostics: function (resourceHit) {
+    if (!resourceHit.diagnostics || resourceHit.diagnostics.length === 0) {
       return false;
     }
-    return corpusHit.diagnostics.map(this.renderDiagnostic);
+    return resourceHit.diagnostics.map(this.renderDiagnostic);
   },
 
-  renderErrors: function (corpusHit) {
-    var xc = corpusHit.exception;
+  renderErrors: function (resourceHit) {
+    var xc = resourceHit.exception;
     if (!xc) {
       return false;
     }
@@ -129,30 +129,30 @@ var ResultMixin = {
     );
   },
 
-  renderPanelBody: function (corpusHit) {
+  renderPanelBody: function (resourceHit) {
     var fulllength = { width: "100%" };
 
     if (this.state.displayADV) {
-      return (<div className="corpusResultsADV">
-        {this.renderErrors(corpusHit)}
-        {this.renderDiagnostics(corpusHit)}
+      return (<div className="resourceResultsADV">
+        {this.renderErrors(resourceHit)}
+        {this.renderDiagnostics(resourceHit)}
         <table className="table table-condensed table-hover advanced-layers" style={fulllength}>
-          <tbody>{this.renderRowsAsADVGrouped(corpusHit)}</tbody>
+          <tbody>{this.renderRowsAsADVGrouped(resourceHit)}</tbody>
         </table>
       </div>);
     } else if (this.state.displayKwic) {
       return (<div>
-        {this.renderErrors(corpusHit)}
-        {this.renderDiagnostics(corpusHit)}
+        {this.renderErrors(resourceHit)}
+        {this.renderDiagnostics(resourceHit)}
         <table className="table table-condensed table-hover kwic" style={fulllength}>
-          <tbody>{corpusHit.kwics.map(this.renderRowsAsKwic)}</tbody>
+          <tbody>{resourceHit.kwics.map(this.renderRowsAsKwic)}</tbody>
         </table>
       </div>);
     } else {
       return (<div>
-        {this.renderErrors(corpusHit)}
-        {this.renderDiagnostics(corpusHit)}
-        {corpusHit.kwics.map(this.renderRowsAsHits)}
+        {this.renderErrors(resourceHit)}
+        {this.renderDiagnostics(resourceHit)}
+        {resourceHit.kwics.map(this.renderRowsAsHits)}
       </div>);
     }
   },
@@ -183,7 +183,7 @@ var ResultMixin = {
     </div>);
   },
 
-  renderDownloadLinks: function (corpusId) {
+  renderDownloadLinks: function (resourceId) {
     return (
       <div className="dropdown">
         <button className="btn btn-flat" aria-expanded="false" data-toggle="dropdown">
@@ -192,22 +192,22 @@ var ResultMixin = {
           <span className="caret" />
         </button>
         <ul className="dropdown-menu">
-          <li> <a href={this.props.getDownloadLink(corpusId, "csv")}>
+          <li> <a href={this.props.getDownloadLink(resourceId, "csv")}>
             {" "} As CSV file</a></li>
-          <li> <a href={this.props.getDownloadLink(corpusId, "ods")}>
+          <li> <a href={this.props.getDownloadLink(resourceId, "ods")}>
             {" "} As ODS file</a></li>
-          <li> <a href={this.props.getDownloadLink(corpusId, "excel")}>
+          <li> <a href={this.props.getDownloadLink(resourceId, "excel")}>
             {" "} As Excel file</a></li>
-          <li> <a href={this.props.getDownloadLink(corpusId, "tcf")}>
+          <li> <a href={this.props.getDownloadLink(resourceId, "tcf")}>
             {" "} As TCF file</a></li>
-          <li> <a href={this.props.getDownloadLink(corpusId, "text")}>
+          <li> <a href={this.props.getDownloadLink(resourceId, "text")}>
             {" "} As Plain Text file</a></li>
         </ul>
       </div>
     );
   },
 
-  renderToWeblichtLinks: function (corpusId, forceLanguage, error) {
+  renderToWeblichtLinks: function (resourceId, forceLanguage, error) {
     return (
       <div className="dropdown">
         <button className="btn btn-flat" aria-expanded="false" data-toggle="dropdown">
@@ -219,7 +219,7 @@ var ResultMixin = {
           <li>
             {error ?
               <div className="alert alert-danger" style={{ margin: 10, width: 200 }}>{error}</div> :
-              <a href={this.props.getToWeblichtLink(corpusId, forceLanguage)} target="_blank">{" "}
+              <a href={this.props.getToWeblichtLink(resourceId, forceLanguage)} target="_blank">{" "}
                 Send to Weblicht</a>
             }
           </li>

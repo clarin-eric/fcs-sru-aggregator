@@ -1,7 +1,7 @@
 package eu.clarin.sru.fcs.aggregator.scan;
 
 /**
- * Endpoint description capabilities. Used to filter which corpus/endpoint
+ * Endpoint description capabilities. Used to filter which resource/endpoint
  * supports what type of search. E.g. allows use cases where endpoints support
  * FCS 2.0 without FCS-QL searches.
  *

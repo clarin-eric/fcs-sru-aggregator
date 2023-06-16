@@ -12,13 +12,13 @@ import eu.clarin.sru.fcs.aggregator.search.Search;
 import eu.clarin.sru.fcs.aggregator.scan.ScanCrawlTask;
 import eu.clarin.sru.fcs.aggregator.scan.CenterRegistryLive;
 import eu.clarin.sru.fcs.aggregator.scan.ClientFactory;
-import eu.clarin.sru.fcs.aggregator.scan.Corpora;
+import eu.clarin.sru.fcs.aggregator.scan.Resources;
 import eu.clarin.sru.client.SRUVersion;
 import eu.clarin.sru.client.fcs.ClarinFCSClientBuilder;
 import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescriptionParser;
 import eu.clarin.sru.fcs.aggregator.client.MaxConcurrentRequestsCallback;
 import eu.clarin.sru.fcs.aggregator.client.ThrottledClient;
-import eu.clarin.sru.fcs.aggregator.scan.Corpus;
+import eu.clarin.sru.fcs.aggregator.scan.Resource;
 import eu.clarin.sru.fcs.aggregator.rest.RestService;
 import eu.clarin.sru.fcs.aggregator.scan.Statistics;
 import eu.clarin.sru.fcs.aggregator.util.LanguagesISO693;
@@ -66,9 +66,9 @@ import org.slf4j.LoggerFactory;
  * - it gets REST requests from the client (the JS code in browser)
  *   and serves them. See the RestService class
  * - using an executor service, it scans periodically for FCS endpoints and
- *   gathers informations about the corpora stored at each one. See the scan
+ *   gathers informations about the resources stored at each one. See the scan
  *   package and ScanCrawl class
- * - when prompted by the user, through a REST call, it searches the corpora
+ * - when prompted by the user, through a REST call, it searches the resources
  *   by sending requests to all the appropriate endpoints. See the search package
  *   and especially the Search class.
  *   Note: because sending too many concurrent requests to the FCS endpoints is
@@ -109,7 +109,7 @@ import org.slf4j.LoggerFactory;
  *     - When having multiple hits in the same result,
  *       show the hit in multiple rows, linked visually
  *     - Optimise page load
- *     - Expand parents of x-aggregator-context selected corpus
+ *     - Expand parents of x-aggregator-context selected resource
  */
 
 /**
@@ -133,7 +133,7 @@ public class Aggregator extends Application<AggregatorConfiguration> {
     private static Aggregator instance;
     private AggregatorConfiguration.Params params;
 
-    private AtomicReference<Corpora> scanCacheAtom = new AtomicReference<Corpora>(new Corpora());
+    private AtomicReference<Resources> scanCacheAtom = new AtomicReference<Resources>(new Resources());
     private AtomicReference<Statistics> scanStatsAtom = new AtomicReference<Statistics>(new Statistics());
     private AtomicReference<Statistics> searchStatsAtom = new AtomicReference<Statistics>(new Statistics());
 
@@ -237,7 +237,7 @@ public class Aggregator extends Application<AggregatorConfiguration> {
         return params;
     }
 
-    public Corpora getCorpora() {
+    public Resources getResources() {
         return scanCacheAtom.get();
     }
 
@@ -290,28 +290,28 @@ public class Aggregator extends Application<AggregatorConfiguration> {
                 sruScanClient, maxScanConcurrentRequestsCallback,
                 sruSearchClient, maxSearchConcurrentRequestsCallback);
 
-        File corporaCacheFile = new File(params.AGGREGATOR_FILE_PATH);
-        File corporaOldCacheFile = new File(params.AGGREGATOR_FILE_PATH_BACKUP);
+        File resourcesCacheFile = new File(params.AGGREGATOR_FILE_PATH);
+        File resourcesOldCacheFile = new File(params.AGGREGATOR_FILE_PATH_BACKUP);
 
-        // init corpora from file
+        // init resources from file
         {
-            Corpora corpora = null;
+            Resources resources = null;
             try {
-                corpora = new ObjectMapper().readValue(corporaCacheFile, Corpora.class);
+                resources = new ObjectMapper().readValue(resourcesCacheFile, Resources.class);
             } catch (Exception xc) {
-                log.error("Failed to load cached corpora from primary file:", xc);
+                log.error("Failed to load cached resources from primary file:", xc);
             }
-            if (corpora == null) {
+            if (resources == null) {
                 try {
-                    corpora = new ObjectMapper().readValue(corporaOldCacheFile, Corpora.class);
+                    resources = new ObjectMapper().readValue(resourcesOldCacheFile, Resources.class);
                 } catch (Exception e) {
-                    log.error("Failed to load cached corpora from backup file:", e);
+                    log.error("Failed to load cached resources from backup file:", e);
                 }
             }
-            if (corpora != null) {
-                scanCacheAtom.set(corpora);
-                log.info("corpus list read from file; number of root corpora: {}",
-                        scanCacheAtom.get().getCorpora().size());
+            if (resources != null) {
+                scanCacheAtom.set(resources);
+                log.info("resource list read from file; number of root resources: {}",
+                        scanCacheAtom.get().getResources().size());
             }
         }
 
@@ -325,7 +325,7 @@ public class Aggregator extends Application<AggregatorConfiguration> {
                 params.CENTER_REGISTRY_URL, params.SCAN_MAX_DEPTH,
                 params.additionalCQLEndpoints,
                 params.additionalFCSEndpoints,
-                null, scanCacheAtom, corporaCacheFile, corporaOldCacheFile,
+                null, scanCacheAtom, resourcesCacheFile, resourcesOldCacheFile,
                 scanStatsAtom, searchStatsAtom);
         scheduler.scheduleAtFixedRate(task, params.SCAN_TASK_INITIAL_DELAY,
                 params.SCAN_TASK_INTERVAL, params.getScanTaskTimeUnit());
@@ -343,11 +343,11 @@ public class Aggregator extends Application<AggregatorConfiguration> {
     }
 
     // this function should be thread-safe
-    public Search startSearch(SRUVersion version, List<Corpus> corpora,
+    public Search startSearch(SRUVersion version, List<Resource> resources,
             String queryType, String searchString, String searchLang,
             int firstRecord, int maxRecords) throws Exception {
-        if (corpora.isEmpty()) {
-            // No corpora
+        if (resources.isEmpty()) {
+            // No resources
             return null;
         } else if (searchString.isEmpty()) {
             // No query
@@ -355,7 +355,7 @@ public class Aggregator extends Application<AggregatorConfiguration> {
         } else {
             Search sr = new Search(sruClient,
                     version, searchStatsAtom.get(),
-                    corpora, queryType, searchString, searchLang, maxRecords);
+                    resources, queryType, searchString, searchLang, maxRecords);
             if (activeSearches.size() > SEARCHES_SIZE_GC_THRESHOLD) {
                 List<Long> toBeRemoved = new ArrayList<Long>();
                 long t0 = System.currentTimeMillis();
