@@ -1,5 +1,10 @@
 # Changelog
 
+# [3.7.0](https://github.com/clarin-eric/fcs-sru-aggregator/releases/tag/3.7.0) - 2023-06-16
+
+- Refactor:
+  - Rename _corpus_ to _resource_ and _collection_ to _resources_, this changes a lot of internal classes, the REST API and the frontend!
+
 # [3.6.3](https://github.com/clarin-eric/fcs-sru-aggregator/releases/tag/3.6.3) - 2023-06-15
 
 - Changes:
