@@ -1,6 +1,10 @@
-name: Build (npm + maven)
+name: Build (npm + maven) + Report
 
 on: [push]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.sha }}
+  cancel-in-progress: true
 
 jobs:
   build-frontend:
