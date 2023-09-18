@@ -12,6 +12,7 @@ import createReactClass from "create-react-class";
   "use strict";
 
   window.MyAggregator = window.MyAggregator || {};
+  window._paq = window._paq || [];
 
   var VERSION = window.MyAggregator.VERSION = "v.3.7.0";
 
