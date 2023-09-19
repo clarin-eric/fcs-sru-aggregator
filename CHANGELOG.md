@@ -1,5 +1,11 @@
 # Changelog
 
+# [3.7.1](https://github.com/clarin-eric/fcs-sru-aggregator/releases/tag/3.7.1) - 2023-09-19
+
+- Bug fixes:
+  - `_paq` race-condition on initial page load with page routing
+  - font path
+
 # [3.7.0](https://github.com/clarin-eric/fcs-sru-aggregator/releases/tag/3.7.0) - 2023-06-16
 
 - Refactor:
