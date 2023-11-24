@@ -113,9 +113,9 @@ public class Search {
         searchRequest.setRecordSchema(legacy
                 ? ClarinFCSRecordData.LEGACY_RECORD_SCHEMA
                 : ClarinFCSRecordData.RECORD_SCHEMA);
-        searchRequest.setQuery(
-                (legacy || version != SRUVersion.VERSION_2_0) ? SRUClientConstants.QUERY_TYPE_CQL : "fcs",
-                searchString);
+        searchRequest
+                .setQuery((legacy || version.compareTo(SRUVersion.VERSION_2_0) < 0) ? SRUClientConstants.QUERY_TYPE_CQL
+                        : queryType, searchString);
         if (resource.getHandle() != null) {
             searchRequest.setExtraRequestData(legacy
                     ? SRUCQL.SEARCH_RESOURCE_HANDLE_LEGACY_PARAMETER
