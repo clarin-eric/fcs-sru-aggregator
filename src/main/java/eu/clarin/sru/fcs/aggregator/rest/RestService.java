@@ -221,7 +221,7 @@ public class RestService {
             numberOfResults = 250;
         }
         Search search = Aggregator.getInstance().startSearch(
-                "fcs".equals(queryType) ? SRUVersion.VERSION_2_0 : SRUVersion.VERSION_1_2,
+                "fcs".equals(queryType) ? SRUVersion.VERSION_2_0 : null,
                 resources, queryType, query, language, firstResultIndex, numberOfResults);
         if (search == null) {
             return Response.status(500).entity("Initiating search failed").build();

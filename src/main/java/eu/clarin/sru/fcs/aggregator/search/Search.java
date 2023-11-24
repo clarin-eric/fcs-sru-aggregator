@@ -62,9 +62,31 @@ public class Search {
         this.statistics = statistics;
         for (Resource resource : resources) {
             Result result = new Result(resource);
+            version = computeVersion(version, queryType, resource);
             executeSearch(result, version, queryType, query, 1, maxRecords);
             results.add(result);
         }
+    }
+
+    private SRUVersion computeVersion(SRUVersion version, String queryType, Resource resource) {
+        // if a specific SRU version was requested, use it
+        if (version != null) {
+            return version;
+        }
+        // use SRU 2.0 if query type is FCS (required)
+        if ("fcs".equals(queryType)) {
+            return SRUVersion.VERSION_2_0;
+        }
+        // otherwise go by resource->endpoint version (version of endpoint description,
+        // not SRU Server Config!)
+        if (resource.getEndpoint().getProtocol() == FCSProtocolVersion.VERSION_2) {
+            return SRUVersion.VERSION_2_0;
+        } else if (resource.getEndpoint().getProtocol() == FCSProtocolVersion.VERSION_1) {
+            return SRUVersion.VERSION_1_2;
+        }
+        // TODO: what to do with FCSProtocolVersion.LEGACY ? --> SRU 1.1 / SRU 1.2
+        // default to 1.2
+        return SRUVersion.VERSION_1_2;
     }
 
     public boolean searchForNextResults(String resourceId, int maxRecords) {
