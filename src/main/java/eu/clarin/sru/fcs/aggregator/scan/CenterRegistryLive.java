@@ -55,12 +55,14 @@ public class CenterRegistryLive implements CenterRegistry {
         }) {
             List<Center> regCenters = connector.retrieveCenters();
             for (Center regCenter : regCenters) {
-                String institutionUrl = regCenter.getId();
-                String institutionName = regCenter.getCenterName();
-                Institution institution = new Institution(institutionName, institutionUrl);
                 // display in the tree only those institutions that have CQL endpoints:
                 CenterProfile profile = connector.retrieveCenterProfile(regCenter);
                 CenterExtendedInformation info = profile.getCenterExtendedInformation();
+
+                String institutionUrl = info.getWebsite();
+                String institutionName = regCenter.getCenterName();
+                Institution institution = new Institution(institutionName, institutionUrl);
+
                 List<WebReference> webRefs = info.getWebReference();
                 if (webRefs != null) {
                     for (WebReference webRef : webRefs) {
