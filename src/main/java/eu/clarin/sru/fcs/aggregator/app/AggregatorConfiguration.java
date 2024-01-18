@@ -31,6 +31,9 @@ public class AggregatorConfiguration extends Configuration {
             @JsonProperty
             String name;
 
+            @JsonProperty
+            String website;
+
             protected EndpointConfig(String url) throws MalformedURLException {
                 this.url = new URL(url);
             }
@@ -46,6 +49,11 @@ public class AggregatorConfiguration extends Configuration {
             @JsonIgnore
             public String getName() {
                 return name;
+            }
+
+            @JsonIgnore
+            public String getWebsite() {
+                return website;
             }
         }
 

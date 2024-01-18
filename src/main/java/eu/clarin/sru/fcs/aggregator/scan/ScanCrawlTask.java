@@ -78,7 +78,7 @@ public class ScanCrawlTask implements Runnable {
                     if (ep.getName() == null || ep.getName().isEmpty()) {
                         continue;
                     }
-                    institutions.add(0, new Institution(ep.getName() + ", legacy", null) {
+                    institutions.add(0, new Institution(ep.getName() + ", legacy", ep.getWebsite()) {
                         {
                             addEndpoint(ep.getUrl().toExternalForm(), FCSProtocolVersion.LEGACY);
                         }
@@ -103,7 +103,7 @@ public class ScanCrawlTask implements Runnable {
                     if (ep.getName() == null || ep.getName().isEmpty()) {
                         continue;
                     }
-                    institutions.add(0, new Institution(ep.getName() + ", FCS v2.0", null) {
+                    institutions.add(0, new Institution(ep.getName() + ", FCS v2.0", ep.getWebsite()) {
                         {
                             addEndpoint(ep.getUrl().toExternalForm(), FCSProtocolVersion.VERSION_2);
                         }

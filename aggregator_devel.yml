@@ -8,6 +8,7 @@ aggregatorParams:
     #- https://spraakbanken.gu.se/ws/fcs/2.0/endpoint/korp/sru  # single string -> URL, no name
     #- url: https://spraakbanken.gu.se/ws/fcs/2.0/endpoint/korp/sru
     #  name: Språkbanken
+    #  website: https://spraakbanken.gu.se/
     #- name: Språkbanken 2
     #  url: https://spraakbanken.gu.se/ws/fcs/2.0/endpoint/korp/sru
     #- url: https://spraakbanken.gu.se/ws/fcs/2.0/endpoint/korp/sru  # same as simple string
