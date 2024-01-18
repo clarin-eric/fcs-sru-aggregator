@@ -694,7 +694,7 @@ function Resources(resources, updateFn) {
   };
 
   var sortFn = function (x, y) {
-    var r = x.institution.name.localeCompare(y.institution.name);
+    var r = x.institution.localeCompare(y.institution);
     if (r !== 0) {
       return r;
     }

@@ -7,6 +7,7 @@ import eu.clarin.sru.client.SRUSearchRetrieveRequest;
 import eu.clarin.sru.client.SRUSearchRetrieveResponse;
 import eu.clarin.sru.client.SRUVersion;
 import eu.clarin.sru.client.fcs.ClarinFCSRecordData;
+import eu.clarin.sru.client.fcs.LegacyClarinFCSRecordData;
 import eu.clarin.sru.fcs.aggregator.client.ThrottledClient;
 import eu.clarin.sru.fcs.aggregator.scan.Resource;
 import eu.clarin.sru.fcs.aggregator.scan.Diagnostic;
@@ -111,7 +112,7 @@ public class Search {
         searchRequest.setMaximumRecords(maxRecords);
         boolean legacy = resource.getEndpoint().getProtocol().equals(FCSProtocolVersion.LEGACY);
         searchRequest.setRecordSchema(legacy
-                ? ClarinFCSRecordData.LEGACY_RECORD_SCHEMA
+                ? LegacyClarinFCSRecordData.RECORD_SCHEMA
                 : ClarinFCSRecordData.RECORD_SCHEMA);
         searchRequest
                 .setQuery((legacy || version.compareTo(SRUVersion.VERSION_2_0) < 0) ? SRUClientConstants.QUERY_TYPE_CQL
@@ -123,7 +124,7 @@ public class Search {
                     resource.getHandle());
         }
 
-        statistics.initEndpoint(resource.getInstitution(), resource.getEndpoint(),
+        statistics.initEndpoint(resource.getEndpointInstitution(), resource.getEndpoint(),
                 searchClient.getMaxConcurrentRequests(true, resource.getEndpoint().getUrl()));
         result.setInProgress(true);
 
@@ -132,14 +133,14 @@ public class Search {
                 @Override
                 public void onSuccess(SRUSearchRetrieveResponse response, ThrottledClient.Stats stats) {
                     try {
-                        statistics.addEndpointDatapoint(resource.getInstitution(), resource.getEndpoint(),
+                        statistics.addEndpointDatapoint(resource.getEndpointInstitution(), resource.getEndpoint(),
                                 stats.getQueueTime(), stats.getExecutionTime());
                         result.addResponse(response);
                         List<Diagnostic> diagnostics = result.getDiagnostics();
                         if (diagnostics != null && !diagnostics.isEmpty()) {
                             log.error("diagnostic for url: {}", response.getRequest().getRequestedURI().toString());
                             for (Diagnostic diagnostic : diagnostics) {
-                                statistics.addEndpointDiagnostic(resource.getInstitution(), resource.getEndpoint(),
+                                statistics.addEndpointDiagnostic(resource.getEndpointInstitution(), resource.getEndpoint(),
                                         diagnostic, response.getRequest().getRequestedURI().toString());
                             }
                         }
@@ -154,9 +155,9 @@ public class Search {
                 public void onError(SRUSearchRetrieveRequest srureq, SRUClientException xc,
                         ThrottledClient.Stats stats) {
                     try {
-                        statistics.addEndpointDatapoint(resource.getInstitution(), resource.getEndpoint(),
+                        statistics.addEndpointDatapoint(resource.getEndpointInstitution(), resource.getEndpoint(),
                                 stats.getQueueTime(), stats.getExecutionTime());
-                        statistics.addErrorDatapoint(resource.getInstitution(), resource.getEndpoint(), xc,
+                        statistics.addErrorDatapoint(resource.getEndpointInstitution(), resource.getEndpoint(), xc,
                                 srureq.getRequestedURI().toString());
                         result.setException(xc);
                         log.error("search.onError:", xc);

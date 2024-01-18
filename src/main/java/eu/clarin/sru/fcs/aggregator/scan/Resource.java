@@ -29,7 +29,7 @@ public class Resource {
     public static final String MIMETYPE_DATAVIEW_HITS = "application/x-clarin-fcs-hits+xml";
     public static final String MIMETYPE_DATAVIEW_ADVANCED = "application/x-clarin-fcs-adv+xml";
 
-    private Institution institution;
+    private Institution endpointInstitution;
     private Endpoint endpoint;
     private String handle;
     private Integer numberOfRecords;
@@ -37,6 +37,7 @@ public class Resource {
     private String landingPage;
     private String title;
     private String description;
+    private String institution;
     private EnumSet<FCSSearchCapabilities> searchCapabilities = EnumSet.of(FCSSearchCapabilities.BASIC_SEARCH);
     private List<DataView> availableDataViews;
     private List<Layer> availableLayers;
@@ -46,7 +47,7 @@ public class Resource {
     }
 
     public Resource(Institution institution, Endpoint endpoint) {
-        this.institution = institution;
+        this.endpointInstitution = institution;
         this.endpoint = endpoint;
     }
 
@@ -93,12 +94,12 @@ public class Resource {
         this.endpoint = endpoint;
     }
 
-    public Institution getInstitution() {
-        return institution;
+    public Institution getEndpointInstitution() {
+        return endpointInstitution;
     }
 
-    public void setInstitution(Institution institution) {
-        this.institution = institution;
+    public void setEndpointInstitution(Institution institution) {
+        this.endpointInstitution = institution;
     }
 
     public List<DataView> getAvailableDataViews() {
@@ -185,6 +186,14 @@ public class Resource {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public String getInstitution() {
+        return institution;
+    }
+
+    public void setInstitution(String institution) {
+        this.institution = institution;
     }
 
     @Override

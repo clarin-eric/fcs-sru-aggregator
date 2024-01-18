@@ -49393,7 +49393,7 @@ var ResourceView = (0, _createReactClass2.default)({
   updateResourcesGroupedByInstitute: function updateResourcesGroupedByInstitute(resources) {
     var resourcesGroupedByInstitute = {};
     resources.resources.forEach(function (resource) {
-      var institute = resource.institution.name;
+      var institute = resource.institution;
       if (!resourcesGroupedByInstitute.hasOwnProperty(institute)) {
         resourcesGroupedByInstitute[institute] = { expanded: true, resources: [] };
       }
@@ -49532,7 +49532,7 @@ var ResourceView = (0, _createReactClass2.default)({
         if (resource.description && resource.description.toLowerCase().indexOf(qtoken) >= 0) {
           resource.priority++;
         }
-        if (resource.institution && resource.institution.name && resource.institution.name.toLowerCase().indexOf(qtoken) >= 0) {
+        if (resource.institution && resource.institution.toLowerCase().indexOf(qtoken) >= 0) {
           resource.priority++;
         }
         if (resource.languages) {
@@ -49780,7 +49780,7 @@ var ResourceView = (0, _createReactClass2.default)({
             { style: expansive },
             React.createElement("i", { className: "fa fa-institution" }),
             " ",
-            resource.institution.name
+            resource.institution
           ),
           React.createElement(
             "p",
@@ -50063,7 +50063,7 @@ var ResultMixin = {
         "span",
         { className: "institutionName" },
         " \u2014 ",
-        resource.institution.name
+        resource.institution
       )
     );
   },
@@ -50850,7 +50850,7 @@ var ZoomedResult = (0, _createReactClass2.default)({
           null,
           React.createElement("i", { className: "fa fa-institution" }),
           " ",
-          resource.institution.name
+          resource.institution
         ),
         resource.description ? React.createElement(
           "p",
@@ -52532,7 +52532,7 @@ function Resources(resources, updateFn) {
   };
 
   var sortFn = function sortFn(x, y) {
-    var r = x.institution.name.localeCompare(y.institution.name);
+    var r = x.institution.localeCompare(y.institution);
     if (r !== 0) {
       return r;
     }

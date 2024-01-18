@@ -47,7 +47,7 @@ var ResourceView = createReactClass({
   updateResourcesGroupedByInstitute: function (resources) {
     const resourcesGroupedByInstitute = {};
     resources.resources.forEach(resource => {
-      const institute = resource.institution.name;
+      const institute = resource.institution;
       if (!resourcesGroupedByInstitute.hasOwnProperty(institute)) {
         resourcesGroupedByInstitute[institute] = { expanded: true, resources: [] };
       }
@@ -168,8 +168,8 @@ var ResourceView = createReactClass({
         if (resource.description && resource.description.toLowerCase().indexOf(qtoken) >= 0) {
           resource.priority++;
         }
-        if (resource.institution && resource.institution.name &&
-          resource.institution.name.toLowerCase().indexOf(qtoken) >= 0) {
+        if (resource.institution &&
+          resource.institution.toLowerCase().indexOf(qtoken) >= 0) {
           resource.priority++;
         }
         if (resource.languages) {
@@ -354,7 +354,7 @@ var ResourceView = createReactClass({
         </div>
         <div className="col-sm-3 vcenter">
           <p style={expansive}>
-            <i className="fa fa-institution" /> {resource.institution.name}
+            <i className="fa fa-institution" /> {resource.institution}
           </p>
           <p style={expansive}>
             <i className="fa fa-language" /> {this.renderLanguages(resource.languages)}

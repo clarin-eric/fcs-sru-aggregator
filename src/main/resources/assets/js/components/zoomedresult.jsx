@@ -85,7 +85,7 @@ var ZoomedResult = createReactClass({
     var resource = resourceHit.resource;
     return (<div>
       <div className='resourceDescription'>
-        <p><i className="fa fa-institution" /> {resource.institution.name}</p>
+        <p><i className="fa fa-institution" /> {resource.institution}</p>
         {resource.description ?
           <p><i className="glyphicon glyphicon-info-sign" /> {resource.description}</p> : false}
         <p><i className="fa fa-language" /> {this.renderLanguages(resource.languages)}</p>

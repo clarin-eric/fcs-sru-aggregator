@@ -30,7 +30,7 @@ var ResultMixin = {
   renderPanelTitle: function (resource) {
     return (<div className='inline'>
       <span className="resourceName"> {resource.title}</span>
-      <span className="institutionName"> — {resource.institution.name}</span>
+      <span className="institutionName"> — {resource.institution}</span>
     </div>);
   },
 

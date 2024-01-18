@@ -212,8 +212,9 @@ public class ScanCrawler {
             r.setHandle(ri.getPid());
             r.setTitle(getBestValueFrom(ri.getTitle()));
             r.setDescription(getBestValueFromNullable(ri.getDescription()));
-            r.setLanguages(new HashSet<String>(ri.getLanguages()));
+            r.setInstitution(getBestValueFromNullable(ri.getInstitution(), institution.getName()));
             r.setLandingPage(ri.getLandingPageURI());
+            r.setLanguages(new HashSet<String>(ri.getLanguages()));
 
             r.setSearchCapabilities(endpoint.getSearchCapabilities());
             r.setAvailableDataViews(ri.getAvailableDataViews());
@@ -238,11 +239,15 @@ public class ScanCrawler {
         }
     }
 
-    private static String getBestValueFromNullable(Map<String, String> map) {
-        if (map == null) {
-            return null;
+    private static String getBestValueFromNullable(Map<String, String> map, String defaultValue) {
+        if (map == null || map.isEmpty()) {
+            return defaultValue;
         }
         return getBestValueFrom(map);
+    }
+
+    private static String getBestValueFromNullable(Map<String, String> map) {
+        return getBestValueFromNullable(map, null);
     }
 
     private static String getBestValueFrom(Map<String, String> map) {
@@ -388,6 +393,7 @@ public class ScanCrawler {
     private static Resource createResource(Institution institution, Endpoint endpoint, SRUTerm term) {
         Resource r = new Resource(institution, endpoint);
         r.setTitle("" + term.getDisplayTerm());
+        r.setInstitution(institution.getName());
         String handle = term.getValue();
         if (handle == null) {
             log.error("null handle for resource: {} : {}", endpoint, term.getDisplayTerm());
