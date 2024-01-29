@@ -1,5 +1,11 @@
 # Changelog
 
+# [3.8.1](https://github.com/clarin-eric/fcs-sru-aggregator/releases/tag/3.8.1) - 2024-01-29
+
+- Changes:
+  - Bump java dependency versions: `io.dropwizard` to `2.1.11`, `io.swagger.core.v3` to `2.2.19`, `org.junit.jupiter` to `5.10.1`
+    - NOTE: `io.swagger.core.v3` in `2.2.20` causes a `java.lang.NoSuchFieldError: READ_DATE_TIMESTAMPS_AS_NANOSECONDS` error
+
 # [3.8.0](https://github.com/clarin-eric/fcs-sru-aggregator/releases/tag/3.8.0) - 2024-01-29
 
 - Bug fixes:
