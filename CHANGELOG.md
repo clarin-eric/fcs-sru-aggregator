@@ -1,5 +1,14 @@
 # Changelog
 
+# [3.8.0](https://github.com/clarin-eric/fcs-sru-aggregator/releases/tag/3.8.0) - 2024-01-29
+
+- Bug fixes:
+  - API: Add real institution website instead of centre id
+
+- Changes:
+  - Improve how SRU/FCS versions are determined and which queryType is being used as default
+  - Allow endpoint sideloading to include the institution website
+
 # [3.7.1](https://github.com/clarin-eric/fcs-sru-aggregator/releases/tag/3.7.1) - 2023-09-19
 
 - Bug fixes:
