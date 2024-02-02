@@ -1,5 +1,18 @@
 # Changelog
 
+# [3.9.0](https://github.com/clarin-eric/fcs-sru-aggregator/releases/tag/3.9.0) - 2024-02-02
+
+- Dependencies:
+  - Bump `eu.clarin.sru:sru-client` to `2.2.1`, `eu.clarin.sru.fcs:fcs-simple-client` to `2.1.1`
+
+- Changes:
+  - Allow for endpoint provided `<Institution>` information on `<Resource>` elements in the `<EndpointDescription>`.  
+    This will overwrite the default value provided by the Centre Registry (or when side-loaded).
+  - **This is also a breaking API change!**  
+    API routes `/rest/resources/` or `/rest/init`: response `resources[].institution` will now contain a plain string with the institution name, and `resources[].endpointInstitution` will have the Institution object with `.name`/`.link`/`.endpoints`. The field `resources[].institution` will now behave similar to `resources[].title` and `resources[].description` in that it can be extracted from the `<Resource>`'s endpoint description and be in the preferred language. The POJO classes were updated as well.
+  - The `eu.clarin.sru.fcs:fcs-simple-client` update changed the `<EndpointDescription>` parsing from event stream based to DOM XPath. This allows for a bit more flexibility and future proofing against spec updates for older SRU/FCS clients.  
+  It is possible to switch back to the stream based parsing with `new ClarinFCSEndpointDescriptionParser(false)` but not recommended.
+
 # [3.8.1](https://github.com/clarin-eric/fcs-sru-aggregator/releases/tag/3.8.1) - 2024-01-29
 
 - Changes:
