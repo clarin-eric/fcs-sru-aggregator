@@ -63,8 +63,8 @@ public class Search {
         this.statistics = statistics;
         for (Resource resource : resources) {
             Result result = new Result(resource);
-            version = computeVersion(version, queryType, resource);
-            executeSearch(result, version, queryType, query, 1, maxRecords);
+            SRUVersion versionForResource = computeVersion(this.version, queryType, resource);
+            executeSearch(result, versionForResource, queryType, query, 1, maxRecords);
             results.add(result);
         }
     }
@@ -93,7 +93,8 @@ public class Search {
     public boolean searchForNextResults(String resourceId, int maxRecords) {
         for (Result r : results) {
             if (r.getResource().getId().equals(resourceId)) {
-                executeSearch(r, version, queryType, query, r.getNextRecordPosition(), maxRecords);
+                SRUVersion versionForResource = computeVersion(version, queryType, r.getResource());
+                executeSearch(r, versionForResource, queryType, query, r.getNextRecordPosition(), maxRecords);
                 return true;
             }
         }
