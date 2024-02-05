@@ -1,5 +1,10 @@
 # Changelog
 
+# [3.9.1](https://github.com/clarin-eric/fcs-sru-aggregator/releases/tag/3.9.1) - 2024-02-05
+
+- Bug Fixes:
+  - Fix NPE in _next search results_ loading, new SRU/FCS version detection/usage (from [`3.8.0`](#380---2024-01-29) change)
+
 # [3.9.0](https://github.com/clarin-eric/fcs-sru-aggregator/releases/tag/3.9.0) - 2024-02-02
 
 - Dependencies:
