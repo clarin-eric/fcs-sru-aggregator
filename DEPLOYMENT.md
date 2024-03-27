@@ -108,6 +108,10 @@ aggregatorParams:
 
 Using environment variables those settings can be overwritten. `setDomains` / `PIWIK_SETDOMAINS` is an array of strings, so correct quoting is required. Examples: `PIWIK_SETDOMAINS=[]` for an empty list or `PIWIK_SETDOMAINS=['*.contentsearch.clarin.eu', 'contentsearch.claring.eu']` for one or more domain patterns.
 
+## FCS Endpoint Validator
+
+The [FCS Endpoint Validator](https://www.clarin.eu/fcsvalidator) can also be configured via `VALIDATOR_URL` to show a quick link on the statistics page for each FCS endpoint URL. This allows to easily switch to the FCS Endpoint Validator with certain inputs prefilled for a quick evaluation.
+
 ## Single Page Application Proxying
 
 The CLARIN FCS Aggregator uses a ReactJS-based single-page-application frontend. For (initial) requests to dynamic sub pages, the `index.html` start page needs to be returned.

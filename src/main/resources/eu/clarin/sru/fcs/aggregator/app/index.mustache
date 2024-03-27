@@ -68,6 +68,12 @@
     <script type="text/javascript">
         window.MyAggregator = window.MyAggregator || {};
         window.MyAggregator.showSearchResultLink = {{showSearchResultLink}};
+        {{#validatorUrl}}
+        window.MyAggregator.validatorUrl = "{{validatorUrl}}";
+        {{/validatorUrl}}
+        {{^validatorUrl}}
+        window.MyAggregator.validatorUrl = undefined;
+        {{/validatorUrl}}
     </script>
 
     {{#piwikConfig}}

@@ -249,6 +249,14 @@ public class AggregatorConfiguration extends Configuration {
         public String getSERVER_URL() {
             return SERVER_URL;
         }
+
+        @JsonProperty
+        String VALIDATOR_URL;
+
+        @JsonIgnore
+        public String getVALIDATOR_URL() {
+            return VALIDATOR_URL;
+        }
     }
 
     @Valid

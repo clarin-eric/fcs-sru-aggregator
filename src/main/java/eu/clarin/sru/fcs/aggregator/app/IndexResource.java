@@ -32,17 +32,19 @@ public class IndexResource {
 
     PiwikConfig config;
     boolean searchResultLinkEnabled;
+    String validatorUrl;
 
     public IndexResource() {
         config = Aggregator.getInstance().getParams().getPiwikConfig();
         searchResultLinkEnabled = Aggregator.getInstance().getParams().getSearchResultLinkEnabled();
+        validatorUrl = Aggregator.getInstance().getParams().getVALIDATOR_URL();
     }
 
     @GET
     @Produces({ MediaType.TEXT_HTML })
     @Operation(description = "Start page of \"" + Aggregator.NAME + "\".", hidden = true)
     public IndexView getIndex() {
-        return new IndexView(config, searchResultLinkEnabled);
+        return new IndexView(config, searchResultLinkEnabled, validatorUrl);
     }
 
     @POST
@@ -71,6 +73,6 @@ public class IndexResource {
             log.info("Param {}: {}", PARAM_AGGREGATION_CONTEXT, aggregationContext);
         }
 
-        return new IndexView(config, searchResultLinkEnabled);
+        return new IndexView(config, searchResultLinkEnabled, validatorUrl);
     }
 }

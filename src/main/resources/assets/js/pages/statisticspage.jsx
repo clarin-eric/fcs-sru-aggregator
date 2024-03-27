@@ -102,6 +102,7 @@ var StatisticsPage = createReactClass({
     var stat = endpoint[1];
     var errors = _.values(stat.errors);
     var diagnostics = _.values(stat.diagnostics);
+    var validatorUrlForEndpoint = window.MyAggregator.validatorUrl + "?url=" + encodeURIComponent(endpoint[0]);
     return <div style={{ marginTop: 10 }} key={endpoint[0]}>
       <ul className='list-inline list-unstyled' style={{ marginBottom: 0 }}>
         <li>
@@ -110,7 +111,8 @@ var StatisticsPage = createReactClass({
             : stat.version == "VERSION_1" ? <span style={{ color: '#a94442' }}>version 1 <i className="glyphicon glyphicon-thumbs-down"></i></span>
               : <span style={{ color: '#3c763d' }}>version 2 <i className="glyphicon glyphicon-thumbs-up"></i> </span>
           }
-          {" " + endpoint[0]}
+          {" " + endpoint[0] + " "}
+          {window.MyAggregator.validatorUrl ? <a href={validatorUrlForEndpoint} target="_blank" title="Inspect FCS Endpoint in Validator"><i className="glyphicon glyphicon-eye-open"></i></a> : false}
         </li>
       </ul>
       <div style={{ marginLeft: 40 }}>

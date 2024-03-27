@@ -58,6 +58,7 @@ aggregatorParams:
 
   openapiEnabled: ${SWAGGER_ENABLED:-true}
   SERVER_URL: ${SERVER_URL:-https://contentsearch.clarin.eu/}
+  VALIDATOR_URL: ${VALIDATOR_URL:-https://www.clarin.eu/fcsvalidator/}
 
 # use the simple server factory, run on a single port
 server:

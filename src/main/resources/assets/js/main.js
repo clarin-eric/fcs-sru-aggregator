@@ -53047,6 +53047,7 @@ var StatisticsPage = (0, _createReactClass2.default)({
     var stat = endpoint[1];
     var errors = _.values(stat.errors);
     var diagnostics = _.values(stat.diagnostics);
+    var validatorUrlForEndpoint = window.MyAggregator.validatorUrl + "?url=" + encodeURIComponent(endpoint[0]);
     return React.createElement(
       "div",
       { style: { marginTop: 10 }, key: endpoint[0] },
@@ -53074,7 +53075,12 @@ var StatisticsPage = (0, _createReactClass2.default)({
             React.createElement("i", { className: "glyphicon glyphicon-thumbs-up" }),
             " "
           ),
-          " " + endpoint[0]
+          " " + endpoint[0] + " ",
+          window.MyAggregator.validatorUrl ? React.createElement(
+            "a",
+            { href: validatorUrlForEndpoint, target: "_blank", title: "Inspect FCS Endpoint in Validator" },
+            React.createElement("i", { className: "glyphicon glyphicon-eye-open" })
+          ) : false
         )
       ),
       React.createElement(
