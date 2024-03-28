@@ -1,6 +1,6 @@
 # Changelog
 
-# WIP - 2024-03-28
+# [3.9.2](https://github.com/clarin-eric/fcs-sru-aggregator/releases/tag/3.9.2) - 2024-03-28
 
 - Bug Fixes:
   - Fix cached resources (`fcsAggregatorResources.json`) deserialization (invisible non-default constructor of external FCS libraries)
