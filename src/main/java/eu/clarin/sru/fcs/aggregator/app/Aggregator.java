@@ -1,5 +1,6 @@
 package eu.clarin.sru.fcs.aggregator.app;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.optimaize.langdetect.LanguageDetector;
 import com.optimaize.langdetect.LanguageDetectorBuilder;
@@ -15,6 +16,7 @@ import eu.clarin.sru.fcs.aggregator.scan.ClientFactory;
 import eu.clarin.sru.fcs.aggregator.scan.Resources;
 import eu.clarin.sru.client.SRUVersion;
 import eu.clarin.sru.client.fcs.ClarinFCSClientBuilder;
+import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescription;
 import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescriptionParser;
 import eu.clarin.sru.fcs.aggregator.client.MaxConcurrentRequestsCallback;
 import eu.clarin.sru.fcs.aggregator.client.ThrottledClient;
@@ -295,15 +297,20 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 
         // init resources from file
         {
+            ObjectMapper mapper = new ObjectMapper()
+                    .addMixIn(ClarinFCSEndpointDescription.DataView.class,
+                            ClarinFCSEndpointDescriptionDataViewMixin.class)
+                    .addMixIn(ClarinFCSEndpointDescription.Layer.class, ClarinFCSEndpointDescriptionLayerMixin.class);
+
             Resources resources = null;
             try {
-                resources = new ObjectMapper().readValue(resourcesCacheFile, Resources.class);
+                resources = mapper.readValue(resourcesCacheFile, Resources.class);
             } catch (Exception xc) {
                 log.error("Failed to load cached resources from primary file:", xc);
             }
             if (resources == null) {
                 try {
-                    resources = new ObjectMapper().readValue(resourcesOldCacheFile, Resources.class);
+                    resources = mapper.readValue(resourcesOldCacheFile, Resources.class);
                 } catch (Exception e) {
                     log.error("Failed to load cached resources from backup file:", e);
                 }
@@ -331,6 +338,26 @@ public class Aggregator extends Application<AggregatorConfiguration> {
                 params.SCAN_TASK_INTERVAL, params.getScanTaskTimeUnit());
 
         log.info("Aggregator initialization finished.");
+    }
+
+    // Definitions for Jackson Deserializer due to non-public non-default
+    // constructors
+    private static abstract class ClarinFCSEndpointDescriptionDataViewMixin {
+        @SuppressWarnings("unused")
+        ClarinFCSEndpointDescriptionDataViewMixin(@JsonProperty("identifier") String identifier,
+                @JsonProperty("mimeType") String mimeType,
+                @JsonProperty("deliveryPolicy") ClarinFCSEndpointDescription.DataView.DeliveryPolicy deliveryPolicy) {
+        }
+    }
+
+    private static abstract class ClarinFCSEndpointDescriptionLayerMixin {
+        @SuppressWarnings("unused")
+        ClarinFCSEndpointDescriptionLayerMixin(@JsonProperty("identifier") String identifier,
+                @JsonProperty("resultId") URI resultId, @JsonProperty("layerType") String layerType,
+                @JsonProperty("encoding") ClarinFCSEndpointDescription.Layer.ContentEncoding encoding,
+                @JsonProperty("qualifier") String qualifier, @JsonProperty("altValueInfo") String altValueInfo,
+                @JsonProperty("altValueInfoURI") URI altValueInfoURI) {
+        }
     }
 
     public void shutdown(AggregatorConfiguration config) {
