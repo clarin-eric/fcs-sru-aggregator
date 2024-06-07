@@ -1,5 +1,11 @@
 # Changelog
 
+# [3.10.0](https://github.com/clarin-eric/fcs-sru-aggregator/releases/tag/3.10.0) - 2024-06-07
+
+- Changes:
+  - Added `VALIDATOR_URL` configuration to link to FCS Endpoint Validator from Stats page
+  - Added `metaonly` API route to poll for results without receiving full data sets
+
 # [3.9.2](https://github.com/clarin-eric/fcs-sru-aggregator/releases/tag/3.9.2) - 2024-03-28
 
 - Bug Fixes:
