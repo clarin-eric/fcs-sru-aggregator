@@ -1,12 +1,17 @@
-/**
- * @license http://www.gnu.org/licenses/gpl-3.0.txt
- *  GNU General Public License v3
- */
 package eu.clarin.sru.fcs.aggregator.search;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+
+import org.slf4j.LoggerFactory;
+import org.w3c.dom.Node;
 
 import eu.clarin.sru.client.SRUDiagnostic;
 import eu.clarin.sru.client.SRURecord;
-import eu.clarin.sru.fcs.aggregator.scan.Resource;
 import eu.clarin.sru.client.SRUSearchRetrieveResponse;
 import eu.clarin.sru.client.SRUSurrogateRecordData;
 import eu.clarin.sru.client.fcs.ClarinFCSRecordData;
@@ -17,52 +22,68 @@ import eu.clarin.sru.client.fcs.DataViewGenericString;
 import eu.clarin.sru.client.fcs.DataViewHits;
 import eu.clarin.sru.fcs.aggregator.scan.Diagnostic;
 import eu.clarin.sru.fcs.aggregator.scan.JsonException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
-import org.w3c.dom.Node;
-import org.slf4j.LoggerFactory;
+import eu.clarin.sru.fcs.aggregator.scan.Resource;
 
-/**
- * The results of a SRU search-retrieve operation for a particular resource.
- * Its content is json-serialized and sent to the JS client for display.
- *
- * @author Yana Panchenko
- * @author edima
- * @author ljo
- */
-public final class Result {
+public class MetaOnlyResult {
 
     private static final org.slf4j.Logger log = LoggerFactory.getLogger(Result.class);
 
-    private final Resource resource;
+    private AtomicReference<String> resourceHandle = new AtomicReference<String>();
+    private AtomicReference<String> endpointUrl = new AtomicReference<String>();
 
     private AtomicBoolean inProgress = new AtomicBoolean(true);
 
     private AtomicInteger nextRecordPosition = new AtomicInteger(1);
     private AtomicInteger numberOfRecords = new AtomicInteger(-1);
+    private AtomicInteger numberOfRecordsLoaded = new AtomicInteger(0);
+
+    private AtomicBoolean hasAdvResults = new AtomicBoolean(false);
 
     private AtomicReference<JsonException> exception = new AtomicReference<JsonException>();
     private List<Diagnostic> diagnostics = Collections.synchronizedList(new ArrayList<Diagnostic>());
 
-    private AtomicBoolean hasAdvResults = new AtomicBoolean(false);
-
-    private List<Kwic> kwics = Collections.synchronizedList(new ArrayList<Kwic>());
-    private List<List<AdvancedLayer>> advLayers = Collections.synchronizedList(new ArrayList<List<AdvancedLayer>>());
-
-    public List<Kwic> getKwics() {
-        return kwics;
+    public MetaOnlyResult(Resource resource) {
+        endpointUrl.set(resource.getEndpoint().getUrl());
+        resourceHandle.set(resource.getHandle());
     }
 
-    public List<List<AdvancedLayer>> getAdvancedLayers() {
-        return advLayers;
+    public MetaOnlyResult(Result result) {
+        endpointUrl.set(result.getResource().getEndpoint().getUrl());
+        resourceHandle.set(result.getResource().getHandle());
+
+        inProgress.set(result.getInProgress());
+
+        nextRecordPosition.set(result.getNextRecordPosition());
+        numberOfRecords.set(result.getNumberOfRecords());
+        numberOfRecordsLoaded.set(result.getKwics().size());
+
+        hasAdvResults.set(result.hasAdvancedResults());
+
+        diagnostics.addAll(result.getDiagnostics());
+        exception.set(result.getException());
     }
 
-    public Result(Resource resource) {
-        this.resource = resource;
+    public String getResourceHandle() {
+        return resourceHandle.get();
+    }
+
+    public void setResourceHandle(String handle) {
+        resourceHandle.set(handle);
+    }
+
+    public String getEndpointUrl() {
+        return endpointUrl.get();
+    }
+
+    public void setEndpointUrl(String url) {
+        endpointUrl.set(url);
+    }
+
+    public String getId() {
+        return endpointUrl.get() + "#" + resourceHandle.get();
+    }
+
+    public void setId(String id) { // dumb setter for JsonDeserialization
     }
 
     public void setInProgress(boolean inProgress) {
@@ -71,6 +92,34 @@ public final class Result {
 
     public boolean getInProgress() {
         return inProgress.get();
+    }
+
+    public List<Diagnostic> getDiagnostics() {
+        return Collections.unmodifiableList(diagnostics);
+    }
+
+    public JsonException getException() {
+        return exception.get();
+    }
+
+    public void setException(Exception xc) {
+        exception.set(new JsonException(xc));
+    }
+
+    public int getNextRecordPosition() {
+        return nextRecordPosition.get();
+    }
+
+    public int getNumberOfRecords() {
+        return numberOfRecords.get();
+    }
+
+    public int getNumberOfRecordsLoaded() {
+        return numberOfRecordsLoaded.get();
+    }
+
+    public boolean hasAdvancedResults() {
+        return hasAdvResults.get();
     }
 
     public void addResponse(SRUSearchRetrieveResponse response) {
@@ -85,6 +134,7 @@ public final class Result {
                     diagnostics.add(new Diagnostic(d.getURI(), d.getMessage(), d.getDetails()));
                 }
             }
+
             if (response.getNextRecordPosition() > 0) {
                 nextRecordPosition.set(response.getNextRecordPosition());
             }
@@ -92,7 +142,7 @@ public final class Result {
         }
     }
 
-    void addRecord(SRURecord record) {
+    private void addRecord(SRURecord record) {
         nextRecordPosition.incrementAndGet();
         if (record.isRecordSchema(ClarinFCSRecordData.RECORD_SCHEMA)) {
             ClarinFCSRecordData rd = (ClarinFCSRecordData) record.getRecordData();
@@ -144,48 +194,11 @@ public final class Result {
             } else if (dataview instanceof DataViewHits) {
                 final DataViewHits hits = (DataViewHits) dataview;
                 final Kwic kwic = new Kwic(hits, pid, reference);
-                kwics.add(kwic);
+                numberOfRecordsLoaded.incrementAndGet();
                 log.debug("DataViewHits: {}", kwic.getFragments());
             } else if (dataview instanceof DataViewAdvanced) {
-                final DataViewAdvanced adv = (DataViewAdvanced) dataview;
-                List<AdvancedLayer> advLayersSingleGroup = new ArrayList<>();
-                for (DataViewAdvanced.Layer layer : adv.getLayers()) {
-                    log.debug("DataViewAdvanced layer: {}", adv.getUnit(), layer.getId());
-                    final AdvancedLayer aLayer = new AdvancedLayer(layer, pid, reference);
-                    advLayersSingleGroup.add(aLayer);
-                }
-                advLayers.add(advLayersSingleGroup);
                 hasAdvResults.set(true);
             }
         }
     }
-
-    public List<Diagnostic> getDiagnostics() {
-        return Collections.unmodifiableList(diagnostics);
-    }
-
-    public JsonException getException() {
-        return exception.get();
-    }
-
-    public void setException(Exception xc) {
-        exception.set(new JsonException(xc));
-    }
-
-    public int getNextRecordPosition() {
-        return nextRecordPosition.get();
-    }
-
-    public int getNumberOfRecords() {
-        return numberOfRecords.get();
-    }
-
-    public Resource getResource() {
-        return resource;
-    }
-
-    public boolean hasAdvancedResults() {
-        return hasAdvResults.get();
-    }
-
 }

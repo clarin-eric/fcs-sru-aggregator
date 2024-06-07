@@ -18,6 +18,7 @@ import eu.clarin.sru.fcs.aggregator.search.Result;
 import eu.clarin.sru.fcs.aggregator.search.Search;
 import eu.clarin.sru.fcs.aggregator.util.LanguagesISO693;
 import eu.clarin.sru.fcs.aggregator.search.Exports;
+import eu.clarin.sru.fcs.aggregator.search.MetaOnlyResult;
 import io.swagger.v3.oas.annotations.OpenAPIDefinition;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.info.Info;
@@ -39,6 +40,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.FormParam;
@@ -63,7 +66,7 @@ import org.slf4j.LoggerFactory;
  */
 @Produces(MediaType.APPLICATION_JSON)
 @Path("/rest")
-@OpenAPIDefinition(info = @Info(title = Aggregator.NAME + " REST API", version = "1.0.0", description = "The "
+@OpenAPIDefinition(info = @Info(title = Aggregator.NAME + " REST API", version = "1.2.0", description = "The "
         + Aggregator.NAME + " REST API is documented following the open API specification."
         + "<br />Code repository is hosted on <a href=\"https://github.com/clarin-eric/fcs-sru-aggregator\">GitHub</a>.", license = @License(name = "GNU General Public License Version 3 (GPLv3)", url = "https://www.gnu.org/licenses/gpl-3.0.txt")))
 public class RestService {
@@ -263,6 +266,52 @@ public class RestService {
             }
         }
         return Response.ok(js).build();
+    }
+
+    public static class JsonMetaOnlySearch {
+
+        @JsonProperty(required = true)
+        int inProgress = 0;
+
+        @JsonProperty(required = true)
+        List<MetaOnlyResult> results;
+
+        public JsonMetaOnlySearch(List<MetaOnlyResult> results) {
+            this.results = results;
+        }
+
+        public static JsonMetaOnlySearch fromJsonSearch(JsonSearch search) {
+            final List<MetaOnlyResult> results = search.results.stream().map(r -> new MetaOnlyResult(r))
+                    .collect(Collectors.toList());
+            final JsonMetaOnlySearch js = new JsonMetaOnlySearch(results);
+            js.inProgress = search.inProgress;
+            return js;
+        }
+    }
+
+    @GET
+    @Produces({ MediaType.APPLICATION_JSON })
+    @Path("search/{id}/metaonly")
+    @Operation(description = "Get (partial) metadata-only search result.", responses = {
+            @ApiResponse(responseCode = "200", description = "Search result with (partial) responses and number of outstanding responses.", content = {
+                    @Content(schema = @Schema(implementation = JsonMetaOnlySearch.class)) }),
+            @ApiResponse(responseCode = "404", description = "Search job not found.") }, tags = { "search" })
+    public Response getSearchMetaOnly(@PathParam("id") Long searchId,
+            @QueryParam("resourceId") String resourceId) throws Exception {
+        Search search = Aggregator.getInstance().getSearchById(searchId);
+        if (search == null) {
+            return Response.status(Response.Status.NOT_FOUND).entity("Search job not found").build();
+        }
+
+        JsonSearch js = new JsonSearch(search.getResults(resourceId));
+        for (Result r : js.results) {
+            if (r.getInProgress()) {
+                js.inProgress++;
+            }
+        }
+        JsonMetaOnlySearch jmos = JsonMetaOnlySearch.fromJsonSearch(js);
+
+        return Response.ok(jmos).build();
     }
 
     @POST
