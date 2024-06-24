@@ -48,6 +48,8 @@ aggregatorParams:
       - es
       - pl
 
+  prettyPrintJSON: true
+
   piwikConfig:
     enabled: ${PIWIK_ENABLED:-false}
     url: ${PIWIK_URL:-https://stats.clarin.eu/}

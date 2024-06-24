@@ -1,9 +1,6 @@
 package eu.clarin.sru.fcs.aggregator.rest;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
 import eu.clarin.sru.client.SRUVersion;
 import eu.clarin.sru.fcs.aggregator.app.Aggregator;
 import eu.clarin.sru.fcs.aggregator.app.AggregatorConfiguration;
@@ -13,12 +10,10 @@ import eu.clarin.sru.fcs.aggregator.scan.Resource;
 import eu.clarin.sru.fcs.aggregator.scan.FCSProtocolVersion;
 import eu.clarin.sru.fcs.aggregator.scan.FCSSearchCapabilities;
 import eu.clarin.sru.fcs.aggregator.scan.Statistics;
-import eu.clarin.sru.fcs.aggregator.scan.Statistics.EndpointStats;
 import eu.clarin.sru.fcs.aggregator.search.Result;
 import eu.clarin.sru.fcs.aggregator.search.Search;
 import eu.clarin.sru.fcs.aggregator.util.LanguagesISO693;
 import eu.clarin.sru.fcs.aggregator.search.Exports;
-import eu.clarin.sru.fcs.aggregator.search.MetaOnlyResult;
 import io.swagger.v3.oas.annotations.OpenAPIDefinition;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.info.Info;
@@ -34,13 +29,11 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
@@ -82,12 +75,6 @@ public class RestService {
 
     private static final org.slf4j.Logger log = LoggerFactory.getLogger(RestService.class);
 
-    ObjectWriter ow = new ObjectMapper().writerWithDefaultPrettyPrinter();
-
-    private String toJson(Object o) throws JsonProcessingException {
-        return ow.writeValueAsString(o);
-    }
-
     @GET
     @Produces({ MediaType.APPLICATION_JSON })
     @Path("resources")
@@ -96,10 +83,7 @@ public class RestService {
                     @Content(mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Resource.class))) }) })
     public Response getResources() throws IOException {
         List<Resource> resources = Aggregator.getInstance().getResources().getResources();
-        return Response.ok(toJson(resources)).build();
-    }
-
-    private static abstract class LanguageMap implements Map<String, String> {
+        return Response.ok(resources).build();
     }
 
     @GET
@@ -111,22 +95,7 @@ public class RestService {
         Set<String> codes = Aggregator.getInstance().getResources().getLanguages();
         log.info("get language codes: {}", codes);
         Map<String, String> languages = LanguagesISO693.getInstance().getLanguageMap(codes);
-        return Response.ok(toJson(languages)).build();
-    }
-
-    private static class InitSchema {
-        @JsonProperty(required = true)
-        List<Resource> resources;
-        @JsonProperty(required = true)
-        List<String> languages;
-        @JsonProperty(required = true)
-        List<String> weblichtLanguages;
-        @JsonProperty
-        String query;
-        @JsonProperty
-        String mode;
-        @JsonProperty("x-aggregation-context")
-        Map<String, List<String>> contextString;
+        return Response.ok(languages).build();
     }
 
     @GET
@@ -163,7 +132,7 @@ public class RestService {
                         Aggregator.getInstance().getParams().getWeblichtConfig().getAcceptedTcfLanguages());
             }
         };
-        return Response.ok(toJson(j)).build();
+        return Response.ok(j).build();
     }
 
     @POST
@@ -233,18 +202,6 @@ public class RestService {
         return Response.created(uri).entity(search.getId()).build();
     }
 
-    public static class JsonSearch {
-
-        @JsonProperty(required = true)
-        int inProgress = 0;
-        @JsonProperty(required = true)
-        List<Result> results;
-
-        public JsonSearch(List<Result> results) {
-            this.results = results;
-        }
-    }
-
     @GET
     @Produces({ MediaType.APPLICATION_JSON })
     @Path("search/{id}")
@@ -266,27 +223,6 @@ public class RestService {
             }
         }
         return Response.ok(js).build();
-    }
-
-    public static class JsonMetaOnlySearch {
-
-        @JsonProperty(required = true)
-        int inProgress = 0;
-
-        @JsonProperty(required = true)
-        List<MetaOnlyResult> results;
-
-        public JsonMetaOnlySearch(List<MetaOnlyResult> results) {
-            this.results = results;
-        }
-
-        public static JsonMetaOnlySearch fromJsonSearch(JsonSearch search) {
-            final List<MetaOnlyResult> results = search.results.stream().map(r -> new MetaOnlyResult(r))
-                    .collect(Collectors.toList());
-            final JsonMetaOnlySearch js = new JsonMetaOnlySearch(results);
-            js.inProgress = search.inProgress;
-            return js;
-        }
     }
 
     @GET
@@ -472,24 +408,6 @@ public class RestService {
                 : Response.seeOther(weblichtUri).entity(weblichtUri).build();
     }
 
-    private static class ScanSearchStatisticsSchema {
-        private static class StatisticsSchema {
-            @JsonProperty(required = true)
-            int timeout;
-            @JsonProperty(required = true)
-            Boolean isScan;
-            @JsonProperty(required = true)
-            Map<String, Map<String, EndpointStats>> institutions;
-            @JsonProperty(required = true)
-            Date date;
-        }
-
-        @JsonProperty(value = "Last Scan", required = true)
-        StatisticsSchema scans;
-        @JsonProperty(value = "Recent Searches", required = true)
-        StatisticsSchema searches;
-    }
-
     @GET
     @Produces({ MediaType.APPLICATION_JSON })
     @Path("statistics")
@@ -520,7 +438,7 @@ public class RestService {
                 });
             }
         };
-        return Response.ok(toJson(j)).build();
+        return Response.ok(j).build();
     }
 
 }

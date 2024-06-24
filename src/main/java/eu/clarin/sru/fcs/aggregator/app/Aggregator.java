@@ -2,6 +2,7 @@ package eu.clarin.sru.fcs.aggregator.app;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.optimaize.langdetect.LanguageDetector;
 import com.optimaize.langdetect.LanguageDetectorBuilder;
 import com.optimaize.langdetect.ngram.NgramExtractors;
@@ -208,6 +209,11 @@ public class Aggregator extends Application<AggregatorConfiguration> {
         environment.jersey().setUrlPattern("/*");
         environment.jersey().register(new IndexResource());
         environment.jersey().register(new RestService());
+
+        // pretty printing
+        if (config.aggregatorParams.prettyPrintJSON) {
+            environment.getObjectMapper().configure(SerializationFeature.INDENT_OUTPUT, true);
+        }
 
         // swagger
         if (config.aggregatorParams.openapiEnabled) {

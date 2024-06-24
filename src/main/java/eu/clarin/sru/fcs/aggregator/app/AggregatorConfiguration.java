@@ -182,6 +182,14 @@ public class AggregatorConfiguration extends Configuration {
             return SEARCH_MAX_CONCURRENT_REQUESTS_PER_SLOW_ENDPOINT;
         }
 
+        @JsonProperty
+        boolean prettyPrintJSON;
+
+        @JsonIgnore
+        public boolean getPrettyPrintJSON() {
+            return prettyPrintJSON;
+        }
+
         public static class PiwikConfig {
             @JsonProperty
             boolean enabled;
