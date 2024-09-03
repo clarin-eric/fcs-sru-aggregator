@@ -32,13 +32,13 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <!-- plug-in settings -->
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
         <!-- build artifact stuff -->
         <serviceUser>aggregator</serviceUser>
         <serviceGroup>aggregator</serviceGroup>
         <!-- dependencies -->
-        <version.dropwizard>2.1.11</version.dropwizard>
+        <version.dropwizard>3.0.8</version.dropwizard>
         <version.junit>5.10.1</version.junit>
         <version.swagger>2.2.19</version.swagger>
     </properties>

@@ -8,7 +8,7 @@ import com.sun.jersey.client.apache4.ApacheHttpClient4Handler;
 */
 import io.dropwizard.client.JerseyClientBuilder;
 import io.dropwizard.client.JerseyClientConfiguration;
-import io.dropwizard.setup.Environment;
+import io.dropwizard.core.setup.Environment;
 import io.dropwizard.util.Duration;
 import org.slf4j.LoggerFactory;
 

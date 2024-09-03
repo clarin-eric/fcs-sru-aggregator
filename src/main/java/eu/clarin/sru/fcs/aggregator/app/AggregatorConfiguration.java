@@ -2,7 +2,7 @@ package eu.clarin.sru.fcs.aggregator.app;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import io.dropwizard.Configuration;
+import io.dropwizard.core.Configuration;
 
 import java.net.MalformedURLException;
 import java.net.URI;

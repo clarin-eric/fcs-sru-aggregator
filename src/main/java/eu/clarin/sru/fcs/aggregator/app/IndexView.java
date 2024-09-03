@@ -1,7 +1,7 @@
 package eu.clarin.sru.fcs.aggregator.app;
 
 import eu.clarin.sru.fcs.aggregator.app.AggregatorConfiguration.Params.PiwikConfig;
-import io.dropwizard.views.View;
+import io.dropwizard.views.common.View;
 
 /**
  * Dynamically generate {@code index.html} page.
