@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # ---------------------------------------------------------------------------
-FROM node:16.19.1-bullseye AS web
+FROM node:16.20.2-bookworm AS web
 
 WORKDIR /work
 
@@ -13,7 +13,7 @@ RUN ./build.sh --npm
 RUN ./build.sh --jsx-force
 
 # ---------------------------------------------------------------------------
-FROM maven:3.8.7-eclipse-temurin-11-focal AS jar
+FROM maven:3.9.9-eclipse-temurin-11-focal AS jar
 
 WORKDIR /work
 
@@ -37,11 +37,11 @@ RUN ./build.sh --jar
 # TODO: upgrade to 17
 FROM eclipse-temurin:11-jre-jammy AS run
 
-WORKDIR /work
+WORKDIR /app
 
-COPY --from=jar /work/target/aggregator-*.jar /work/target/
-COPY build.sh /work/
-COPY aggregator.yml /work/
+COPY --from=jar /app/target/aggregator-*.jar /app/target/
+COPY build.sh /app/
+COPY aggregator.yml /app/
 
 EXPOSE 4019
 
