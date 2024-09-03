@@ -1,5 +1,13 @@
 # Changelog
 
+# [3.11.0] - 2024-09-03
+
+- Added:
+  - New `prettyPrintJSON` configuration to output indented JSON
+
+- Refactor:
+  - Move JSON Jackson serialization definitions into own classes
+
 # [3.10.1] - 2024-09-03
 
 - Bug Fixes:
@@ -237,6 +245,7 @@
 
 For older changes, see commit history at [https://github.com/clarin-eric/fcs-sru-aggregator/commits/master](https://github.com/clarin-eric/fcs-sru-aggregator/commits/master?after=7ea45464475b0df6d4d8e2b93970c803b13ffb54+0&branch=master&qualified_name=refs%2Fheads%2Fmaster)
 
+[3.11.0]: https://github.com/clarin-eric/fcs-sru-aggregator/releases/tag/3.11.0
 [3.10.1]: https://github.com/clarin-eric/fcs-sru-aggregator/releases/tag/3.10.1
 [3.10.0]: https://github.com/clarin-eric/fcs-sru-aggregator/releases/tag/3.10.0
 [3.9.2]: https://github.com/clarin-eric/fcs-sru-aggregator/releases/tag/3.9.2
