@@ -10,6 +10,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Node;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import eu.clarin.sru.client.SRUDiagnostic;
 import eu.clarin.sru.client.SRURecord;
 import eu.clarin.sru.client.SRUSearchRetrieveResponse;
@@ -118,6 +120,7 @@ public class MetaOnlyResult {
         return numberOfRecordsLoaded.get();
     }
 
+    @JsonProperty("hasAdvResults")
     public boolean hasAdvancedResults() {
         return hasAdvResults.get();
     }

@@ -24,6 +24,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import org.w3c.dom.Node;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import org.slf4j.LoggerFactory;
 
 /**
@@ -184,6 +187,7 @@ public final class Result {
         return resource;
     }
 
+    @JsonProperty("hasAdvResults")
     public boolean hasAdvancedResults() {
         return hasAdvResults.get();
     }
