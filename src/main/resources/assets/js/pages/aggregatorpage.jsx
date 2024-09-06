@@ -93,8 +93,8 @@ var AggregatorPage = createReactClass({
                 resources.recurse(function (resource) { resource.selected = true; });
               } else {
                 var err = "Some required context resources are not supported for this search:\n"
-                err = err + contextresources.filter((r) => {
-                  if (actuallySelectedResources.indexOf(r) === -1) {
+                err = err + contextResourcesInfo.selected.filter((r) => {
+                  if (actuallySelectedResources.indexOf(r.id) === -1) {
                     console.warn("Requested resource but not available for selection", r);
                     return true;
                   }
