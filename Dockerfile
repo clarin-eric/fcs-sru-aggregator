@@ -39,7 +39,7 @@ FROM eclipse-temurin:11-jre-jammy AS run
 
 WORKDIR /app
 
-COPY --from=jar /app/target/aggregator-*.jar /app/target/
+COPY --from=jar /work/target/aggregator-*.jar /app/target/
 COPY build.sh /app/
 COPY aggregator.yml /app/
 
