@@ -9,11 +9,11 @@
     "codemirror": "^5.49.2",
     "create-react-class": "^15.6.3",
     "prop-types": "^15.7.2",
-    "react": "^16.11.0",
+    "react": "^16.14.0",
     "react-addons-pure-render-mixin": "^15.6.2",
     "react-bootstrap": "^0.31.3",
     "react-codemirror2": "^4.3.0",
-    "react-dom": "^16.11.0",
+    "react-dom": "^16.14.0",
     "react-i18next": "^5.4.1",
     "react-transition-group": "^2.9.0"
   },
