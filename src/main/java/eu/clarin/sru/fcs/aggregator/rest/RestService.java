@@ -209,7 +209,7 @@ public class RestService {
             @ApiResponse(responseCode = "200", description = "Search result with (partial) responses and number of outstanding responses.", content = {
                     @Content(schema = @Schema(implementation = JsonSearch.class)) }),
             @ApiResponse(responseCode = "404", description = "Search job not found.") }, tags = { "search" })
-    public Response getSearch(@PathParam("id") Long searchId,
+    public Response getSearch(@PathParam("id") String searchId,
             @QueryParam("resourceId") String resourceId) throws Exception {
         Search search = Aggregator.getInstance().getSearchById(searchId);
         if (search == null) {
@@ -232,7 +232,7 @@ public class RestService {
             @ApiResponse(responseCode = "200", description = "Search result with (partial) responses and number of outstanding responses.", content = {
                     @Content(schema = @Schema(implementation = JsonMetaOnlySearch.class)) }),
             @ApiResponse(responseCode = "404", description = "Search job not found.") }, tags = { "search" })
-    public Response getSearchMetaOnly(@PathParam("id") Long searchId,
+    public Response getSearchMetaOnly(@PathParam("id") String searchId,
             @QueryParam("resourceId") String resourceId) throws Exception {
         Search search = Aggregator.getInstance().getSearchById(searchId);
         if (search == null) {
@@ -261,7 +261,7 @@ public class RestService {
             @ApiResponse(responseCode = "400", description = "Missing 'resourceId' parameter."),
             @ApiResponse(responseCode = "404", description = "Search job not found."),
             @ApiResponse(responseCode = "500", description = "Initiating subSearch failed.") }, tags = { "search" })
-    public Response postSearchNextResults(@PathParam("id") Long searchId,
+    public Response postSearchNextResults(@PathParam("id") String searchId,
             @FormParam("resourceId") String resourceId,
             @FormParam("numberOfResults") Integer numberOfResults) throws Exception {
         log.info("POST /search/{id}, searchId: {}, resourceId: {}", searchId, resourceId);
@@ -300,7 +300,7 @@ public class RestService {
             @ApiResponse(responseCode = "404", description = "Search job not found."),
             @ApiResponse(responseCode = "400", description = "format parameter must be one of: text, tcf, ods, excel, csv")
     }, tags = { "search" })
-    public Response downloadSearchResults(@PathParam("id") Long searchId,
+    public Response downloadSearchResults(@PathParam("id") String searchId,
             @QueryParam("resourceId") String resourceId,
             @QueryParam("filterLanguage") String filterLanguage,
             @QueryParam("format") String format) throws Exception {
@@ -356,7 +356,7 @@ public class RestService {
                     @ApiResponse(responseCode = "404", description = "Search job not found."),
                     @ApiResponse(responseCode = "404", description = "Weblicht export data not found.")
             })
-    public Response getWeblichtExport(@PathParam("id") Long searchId, @PathParam("eid") Long exportId) {
+    public Response getWeblichtExport(@PathParam("id") String searchId, @PathParam("eid") String exportId) {
         Search search = Aggregator.getInstance().getSearchById(searchId);
         if (search == null) {
             return Response.status(Response.Status.NOT_FOUND).entity("Search job not found").build();
@@ -366,7 +366,7 @@ public class RestService {
             return Response.status(Response.Status.NOT_FOUND).entity("Weblicht export data not found").build();
         }
         return download(bytes, TCF_MEDIA_TYPE,
-                "export-{id}-{eid}.tcf".replace("{id}", searchId.toString()).replace("{eid}", exportId.toString()));
+                "export.{id}.{eid}.tcf".replace("{id}", searchId).replace("{eid}", exportId));
     }
 
     @GET
@@ -377,7 +377,7 @@ public class RestService {
                     @ApiResponse(description = "Redirect to Weblicht page with query parameters set to access TCF encoded search results."),
                     @ApiResponse(responseCode = "404", description = "Search job not found."),
                     @ApiResponse(responseCode = "503", description = "Error while exporting to weblicht.") })
-    public Response sendSearchResultsToWeblicht(@PathParam("id") Long searchId,
+    public Response sendSearchResultsToWeblicht(@PathParam("id") String searchId,
             @QueryParam("filterLanguage") String filterLanguage,
             @QueryParam("resourceId") String resourceId) throws Exception {
         Search search = Aggregator.getInstance().getSearchById(searchId);
@@ -395,9 +395,8 @@ public class RestService {
         if (bytes != null) {
             // store bytes in-memory TCF weblicht export in searches (searches might only
             // live up to 60min if under high load)
-            Long exportId = search.addWeblichtExport(bytes);
-            url = "search/{id}/weblicht-export/{eid}".replace("{id}", searchId.toString()).replace("{eid}",
-                    exportId.toString());
+            String exportId = search.addWeblichtExport(bytes);
+            url = "search/{id}/weblicht-export/{eid}".replace("{id}", searchId).replace("{eid}", exportId);
             url = weblicht.getExportServerUrl() + url;
             log.debug("Export weblicht url: {}", url);
         }

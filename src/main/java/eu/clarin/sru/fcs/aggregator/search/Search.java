@@ -1,6 +1,7 @@
 package eu.clarin.sru.fcs.aggregator.search;
 
 import java.util.List;
+import java.util.UUID;
 import eu.clarin.sru.client.SRUClientConstants;
 import eu.clarin.sru.client.SRUClientException;
 import eu.clarin.sru.client.SRUSearchRetrieveRequest;
@@ -17,8 +18,6 @@ import eu.clarin.sru.fcs.aggregator.util.SRUCQL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Random;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.slf4j.LoggerFactory;
@@ -36,11 +35,9 @@ public class Search {
 
     static final int EXPORTS_SIZE_GC_THRESHOLD = 3;
 
-    private static final AtomicLong counter = new AtomicLong(Math.abs(new Random().nextInt()));
-
     private final ThrottledClient searchClient;
     private final SRUVersion version;
-    private final Long id;
+    private final String id;
     private final String queryType;
     private final String query;
     private final long createdAt = System.currentTimeMillis();
@@ -56,7 +53,7 @@ public class Search {
             String searchLanguage, int maxRecords) {
         this.searchClient = searchClient;
         this.version = version;
-        this.id = counter.getAndIncrement();
+        this.id = generateId();
         this.queryType = queryType;
         this.query = quoteIfQuotableExpression(searchString, queryType);
         this.searchLanguage = searchLanguage;
@@ -141,7 +138,8 @@ public class Search {
                         if (diagnostics != null && !diagnostics.isEmpty()) {
                             log.error("diagnostic for url: {}", response.getRequest().getRequestedURI().toString());
                             for (Diagnostic diagnostic : diagnostics) {
-                                statistics.addEndpointDiagnostic(resource.getEndpointInstitution(), resource.getEndpoint(),
+                                statistics.addEndpointDiagnostic(resource.getEndpointInstitution(),
+                                        resource.getEndpoint(),
                                         diagnostic, response.getRequest().getRequestedURI().toString());
                             }
                         }
@@ -174,7 +172,7 @@ public class Search {
         }
     }
 
-    public Long getId() {
+    public String getId() {
         return id;
     }
 
@@ -230,17 +228,15 @@ public class Search {
     // ----------------------------------------------------------------------
 
     public static class WeblichtExportCacheEntry {
-        private static final AtomicLong counter = new AtomicLong(Math.abs(new Random().nextInt()));
-
-        private final Long id;
+        private final String id;
         private final byte[] data;
 
         public WeblichtExportCacheEntry(byte[] data) {
-            this.id = counter.getAndIncrement();
+            this.id = generateId();
             this.data = data;
         }
 
-        public Long getId() {
+        public String getId() {
             return id;
         }
 
@@ -252,7 +248,7 @@ public class Search {
     private final List<WeblichtExportCacheEntry> exports = Collections
             .synchronizedList(new ArrayList<WeblichtExportCacheEntry>());
 
-    public byte[] getWeblichtExport(Long exportId) {
+    public byte[] getWeblichtExport(String exportId) {
         synchronized (exports) {
             for (WeblichtExportCacheEntry export : exports) {
                 if (exportId.equals(export.getId())) {
@@ -263,7 +259,7 @@ public class Search {
         return null;
     }
 
-    public Long addWeblichtExport(byte[] data) {
+    public String addWeblichtExport(byte[] data) {
         synchronized (exports) {
             // check if data already exists in cache
             int dataHash = Arrays.hashCode(data);
@@ -281,6 +277,17 @@ public class Search {
             exports.add(export);
             return export.getId();
         }
+    }
+
+    // ----------------------------------------------------------------------
+
+    /**
+     * Generate random ID based on UUID4.
+     *
+     * @return new random ID
+     */
+    protected static String generateId() {
+        return UUID.randomUUID().toString();
     }
 
 }

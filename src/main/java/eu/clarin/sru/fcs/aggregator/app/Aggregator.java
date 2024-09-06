@@ -146,7 +146,7 @@ public class Aggregator extends Application<AggregatorConfiguration> {
     private ThrottledClient sruClient = null;
     public MaxConcurrentRequestsCallback maxScanConcurrentRequestsCallback;
     public MaxConcurrentRequestsCallback maxSearchConcurrentRequestsCallback;
-    private Map<Long, Search> activeSearches = Collections.synchronizedMap(new HashMap<Long, Search>());
+    private Map<String, Search> activeSearches = Collections.synchronizedMap(new HashMap<String, Search>());
 
     public static void main(String[] args) throws Exception {
         new Aggregator().run(args);
@@ -390,16 +390,16 @@ public class Aggregator extends Application<AggregatorConfiguration> {
                     version, searchStatsAtom.get(),
                     resources, queryType, searchString, searchLang, maxRecords);
             if (activeSearches.size() > SEARCHES_SIZE_GC_THRESHOLD) {
-                List<Long> toBeRemoved = new ArrayList<Long>();
+                List<String> toBeRemoved = new ArrayList<String>();
                 long t0 = System.currentTimeMillis();
-                for (Map.Entry<Long, Search> e : activeSearches.entrySet()) {
+                for (Map.Entry<String, Search> e : activeSearches.entrySet()) {
                     long dtmin = (t0 - e.getValue().getCreatedAt()) / 1000 / 60;
                     if (dtmin > SEARCHES_AGE_GC_THRESHOLD) {
                         log.info("removing search {}: {} minutes old", e.getKey(), dtmin);
                         toBeRemoved.add(e.getKey());
                     }
                 }
-                for (Long l : toBeRemoved) {
+                for (String l : toBeRemoved) {
                     activeSearches.remove(l);
                 }
             }
@@ -408,7 +408,7 @@ public class Aggregator extends Application<AggregatorConfiguration> {
         }
     }
 
-    public Search getSearchById(Long id) {
+    public Search getSearchById(String id) {
         return activeSearches.get(id);
     }
 

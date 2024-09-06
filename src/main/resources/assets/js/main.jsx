@@ -283,7 +283,7 @@ import createReactClass from "create-react-class";
     } else if (pageFnName === 'embed') {
       this.toEmbedded(false);
     } else if (pageFnName.startsWith("search-")) {
-      var searchId = Number.parseInt(pageFnName.substring(7));
+      const searchId = pageFnName.substring(7);
       this.setState({ initialSearchId: searchId });
       this.toAggregator(false);
     } else {

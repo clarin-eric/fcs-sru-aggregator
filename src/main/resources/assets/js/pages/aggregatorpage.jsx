@@ -22,7 +22,7 @@ var AggregatorPage = createReactClass({
     error: PT.func.isRequired,
     info: PT.func.isRequired,
     embedded: PT.bool.isRequired,
-    searchId: PT.number,
+    searchId: PT.string,
   },
 
   nohits: {

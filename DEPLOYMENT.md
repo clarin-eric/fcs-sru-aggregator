@@ -141,7 +141,7 @@ server {
 
     location / {
         # SPA path rewrites
-        rewrite ^/((help|about|stats|embed)$|search-\d+) / break;
+        rewrite ^/((help|about|stats|embed)$|search-[A-Fa-f0-9-]{36}) / break;
 
         proxy_set_header        Host $host;
         proxy_set_header        X-Real-IP $remote_addr;
@@ -219,7 +219,7 @@ Add your configuration to `/etc/apache2/sites-available`, e.g. `aggregator.conf`
     RewriteRule ^/about$ / [L,PT]
     RewriteRule ^/stats$ / [L,PT]
     RewriteRule ^/embed$ / [L,PT]
-    RewriteRule ^/search-(\d+)$ / [L,PT]
+    RewriteRule ^/search-([A-Fa-f0-9-]{36})$ / [L,PT]
     RewriteRule ^ - [L,PT]
 
     ProxyPreserveHost on
