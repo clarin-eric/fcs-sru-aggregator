@@ -1,31 +1,5 @@
 package eu.clarin.sru.fcs.aggregator.rest;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import eu.clarin.sru.client.SRUVersion;
-import eu.clarin.sru.fcs.aggregator.app.Aggregator;
-import eu.clarin.sru.fcs.aggregator.app.AggregatorConfiguration;
-import eu.clarin.sru.fcs.aggregator.app.AggregatorConfiguration.Params.WeblichtConfig;
-import eu.clarin.sru.fcs.aggregator.scan.Resources;
-import eu.clarin.sru.fcs.aggregator.scan.Resource;
-import eu.clarin.sru.fcs.aggregator.scan.FCSProtocolVersion;
-import eu.clarin.sru.fcs.aggregator.scan.FCSSearchCapabilities;
-import eu.clarin.sru.fcs.aggregator.scan.Statistics;
-import eu.clarin.sru.fcs.aggregator.search.Result;
-import eu.clarin.sru.fcs.aggregator.search.Search;
-import eu.clarin.sru.fcs.aggregator.util.LanguagesISO693;
-import eu.clarin.sru.fcs.aggregator.search.Exports;
-import io.swagger.v3.oas.annotations.OpenAPIDefinition;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.info.Info;
-import io.swagger.v3.oas.annotations.info.License;
-import io.swagger.v3.oas.annotations.links.Link;
-import io.swagger.v3.oas.annotations.links.LinkParameter;
-import io.swagger.v3.oas.annotations.media.ArraySchema;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.ExampleObject;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
@@ -51,6 +25,35 @@ import javax.ws.rs.core.UriBuilder;
 
 import org.slf4j.LoggerFactory;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
+
+import eu.clarin.sru.client.SRUVersion;
+import eu.clarin.sru.fcs.aggregator.app.Aggregator;
+import eu.clarin.sru.fcs.aggregator.app.AggregatorConfiguration;
+import eu.clarin.sru.fcs.aggregator.app.AggregatorConfiguration.Params.WeblichtConfig;
+import eu.clarin.sru.fcs.aggregator.scan.FCSProtocolVersion;
+import eu.clarin.sru.fcs.aggregator.scan.FCSSearchCapabilities;
+import eu.clarin.sru.fcs.aggregator.scan.Resource;
+import eu.clarin.sru.fcs.aggregator.scan.Resources;
+import eu.clarin.sru.fcs.aggregator.scan.Statistics;
+import eu.clarin.sru.fcs.aggregator.search.Exports;
+import eu.clarin.sru.fcs.aggregator.search.Result;
+import eu.clarin.sru.fcs.aggregator.search.Search;
+import eu.clarin.sru.fcs.aggregator.util.LanguagesISO693;
+import io.swagger.v3.oas.annotations.OpenAPIDefinition;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.info.Info;
+import io.swagger.v3.oas.annotations.info.License;
+import io.swagger.v3.oas.annotations.links.Link;
+import io.swagger.v3.oas.annotations.links.LinkParameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+
 /**
  * The REST API of the Aggregator (actually, it's a HTTP API, not very restful).
  *
@@ -74,6 +77,13 @@ public class RestService {
     private static final String EXCEL_MEDIA_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
     private static final org.slf4j.Logger log = LoggerFactory.getLogger(RestService.class);
+    private static final ObjectWriter ow = new ObjectMapper().writerWithDefaultPrettyPrinter();
+
+    private static String toJson(Object o) throws JsonProcessingException {
+        return ow.writeValueAsString(o);
+    }
+
+    // ----------------------------------------------------------------------
 
     @GET
     @Produces({ MediaType.APPLICATION_JSON })
@@ -199,7 +209,7 @@ public class RestService {
             return Response.status(500).entity("Initiating search failed").build();
         }
         URI uri = UriBuilder.fromMethod(RestService.class, "getSearch").resolveTemplate("id", search.getId()).build();
-        return Response.created(uri).entity(search.getId()).build();
+        return Response.created(uri).entity(toJson(search.getId())).build();
     }
 
     @GET
@@ -284,7 +294,7 @@ public class RestService {
             return Response.status(500).entity("Initiating subSearch failed").build();
         }
         URI uri = UriBuilder.fromMethod(RestService.class, "getSearch").resolveTemplate("id", search.getId()).build();
-        return Response.created(uri).entity(search.getId()).build();
+        return Response.created(uri).entity(toJson(search.getId())).build();
     }
 
     @GET
@@ -439,5 +449,4 @@ public class RestService {
         };
         return Response.ok(j).build();
     }
-
 }
