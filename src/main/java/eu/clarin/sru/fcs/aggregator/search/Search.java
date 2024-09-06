@@ -217,7 +217,7 @@ public class Search {
     protected static String quoteIfQuotableExpression(final String queryString, final String queryType) {
         Matcher matcher = quotePattern.matcher(queryString.trim());
         boolean quotableFound = matcher.find();
-        if ("cql".equals(queryType) && quotableFound && !"\"".equals(queryString.charAt(0))) {
+        if ("cql".equals(queryType) && quotableFound && '"' != queryString.charAt(0)) {
             return "\"" + queryString + "\"";
         }
         return queryString;
