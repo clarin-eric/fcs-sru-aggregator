@@ -50973,7 +50973,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
   window.MyAggregator = window.MyAggregator || {};
   window._paq = window._paq || [];
 
-  var VERSION = window.MyAggregator.VERSION = "v.3.12.0";
+  var VERSION = window.MyAggregator.VERSION = "v.3.13.0";
 
   // TODO: set this via environment variables at build time (envify)
   var URLROOT = window.MyAggregator.URLROOT = "";
@@ -51301,7 +51301,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
     } else if (pageFnName === 'embed') {
       this.toEmbedded(false);
     } else if (pageFnName.startsWith("search-")) {
-      var searchId = Number.parseInt(pageFnName.substring(7));
+      var searchId = pageFnName.substring(7);
       this.setState({ initialSearchId: searchId });
       this.toAggregator(false);
     } else {
@@ -51743,7 +51743,7 @@ var AggregatorPage = (0, _createReactClass2.default)({
     error: PT.func.isRequired,
     info: PT.func.isRequired,
     embedded: PT.bool.isRequired,
-    searchId: PT.number
+    searchId: PT.string
   },
 
   nohits: {
@@ -51816,8 +51816,8 @@ var AggregatorPage = (0, _createReactClass2.default)({
                 });
               } else {
                 var err = "Some required context resources are not supported for this search:\n";
-                err = err + contextresources.filter(function (r) {
-                  if (actuallySelectedResources.indexOf(r) === -1) {
+                err = err + contextResourcesInfo.selected.filter(function (r) {
+                  if (actuallySelectedResources.indexOf(r.id) === -1) {
                     console.warn("Requested resource but not available for selection", r);
                     return true;
                   }

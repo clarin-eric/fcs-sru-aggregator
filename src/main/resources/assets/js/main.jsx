@@ -14,7 +14,7 @@ import createReactClass from "create-react-class";
   window.MyAggregator = window.MyAggregator || {};
   window._paq = window._paq || [];
 
-  var VERSION = window.MyAggregator.VERSION = "v.3.12.0";
+  var VERSION = window.MyAggregator.VERSION = "v.3.13.0";
 
   // TODO: set this via environment variables at build time (envify)
   var URLROOT = window.MyAggregator.URLROOT = "";

@@ -1,5 +1,14 @@
 # Changelog
 
+# [3.13.0] - 2024-09-05
+
+- Changed:
+  - **Breaking**: search and export job IDs are now UUIDs instead of semi-random numbers. Improves randomness of IDs and makes guessing search/export jobs of other users much harder. This means that [single page application URL rewrites](DEPLOYMENT.md#single-page-application-proxying) might need to be updated!
+  - Code quality updates.
+
+- Fixed:
+  - JS: parameter evaluation for error case with `x-aggregation-context` in combination with `queryType` for resources that should be pre-selected but are not available for in a specific query type.
+
 # [3.12.0] - 2024-09-03
 
 - Changes:
@@ -254,6 +263,7 @@
 
 For older changes, see commit history at [https://github.com/clarin-eric/fcs-sru-aggregator/commits/master](https://github.com/clarin-eric/fcs-sru-aggregator/commits/master?after=7ea45464475b0df6d4d8e2b93970c803b13ffb54+0&branch=master&qualified_name=refs%2Fheads%2Fmaster)
 
+[3.13.0]: https://github.com/clarin-eric/fcs-sru-aggregator/releases/tag/3.13.0
 [3.12.0]: https://github.com/clarin-eric/fcs-sru-aggregator/releases/tag/3.12.0
 [3.11.0]: https://github.com/clarin-eric/fcs-sru-aggregator/releases/tag/3.11.0
 [3.10.1]: https://github.com/clarin-eric/fcs-sru-aggregator/releases/tag/3.10.1
