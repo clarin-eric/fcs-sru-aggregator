@@ -175,10 +175,33 @@ import createReactClass from "create-react-class";
     toEmbedded: function (doPushHistory) { this.gotoPage(doPushHistory, 'embed'); },
 
     renderLogin: function () {
-      return false;
-      // return  <li className="unauthenticated">
-      // 			<a href="login" tabIndex="-1"><span className="glyphicon glyphicon-log-in"></span> LOGIN</a>
-      // 		</li>;
+      var loginUrl = URLROOT + "/login" + "?redirect=" + encodeURIComponent(CURURL);
+
+      function doLogin () {
+        document.querySelector('form#login').submit();
+      }
+
+      return (
+        <li className="unauthenticated">
+          <form id="login" class="login-form" action={loginUrl} method="POST">
+          </form>
+          <a href="#" onClick={doLogin} tabIndex="-1">
+            <span class="glyphicon glyphicon-log-in"></span>
+            <span>&nbsp;LOGIN</span>
+          </a>
+        </li>
+      );
+    },
+
+    renderLogout: function () {
+      return (
+        <li className="authenticated">
+          <a href="https://catalog.clarin.eu/Shibboleth.sso/Logout" tabIndex="-1">
+            <span className="glyphicon glyphicon-log-out"></span>
+            <span>&nbsp;LOGOUT</span>
+          </a>
+        </li>
+      );
     },
 
     renderCollapsible: function () {
@@ -195,7 +218,7 @@ import createReactClass from "create-react-class";
           </ul>
           <ul className="nav navbar-nav navbar-right">
             <li> <div id="clarinservices" style={{ padding: 4, paddingTop: 8 }} /> </li>
-            {this.renderLogin()}
+            {window.MyAggregator.isLoggedIn ? this.renderLogout() : this.renderLogin()}
           </ul>
         </div>
       );

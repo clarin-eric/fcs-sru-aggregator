@@ -13,10 +13,13 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.SecurityContext;
 
 import org.slf4j.LoggerFactory;
 
+import eu.clarin.sru.fcs.aggregator.app.AggregatorConfiguration.Params;
 import eu.clarin.sru.fcs.aggregator.app.AggregatorConfiguration.Params.PiwikConfig;
+import eu.clarin.sru.fcs.aggregator.rest.AuthenticationInfo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.links.Link;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -35,16 +38,19 @@ public class IndexResource {
     String validatorUrl;
 
     public IndexResource() {
-        config = Aggregator.getInstance().getParams().getPiwikConfig();
-        searchResultLinkEnabled = Aggregator.getInstance().getParams().getSearchResultLinkEnabled();
-        validatorUrl = Aggregator.getInstance().getParams().getVALIDATOR_URL();
+        Params params = Aggregator.getInstance().getParams();
+
+        config = params.getPiwikConfig();
+        searchResultLinkEnabled = params.getSearchResultLinkEnabled();
+        validatorUrl = params.getVALIDATOR_URL();
     }
 
     @GET
     @Produces({ MediaType.TEXT_HTML })
     @Operation(description = "Start page of \"" + Aggregator.NAME + "\".", hidden = true)
-    public IndexView getIndex() {
-        return new IndexView(config, searchResultLinkEnabled, validatorUrl);
+    public IndexView getIndex(@Context final SecurityContext security) {
+        final AuthenticationInfo authInfo = AuthenticationInfo.fromPrincipal(security.getUserPrincipal());
+        return new IndexView(config, searchResultLinkEnabled, validatorUrl, authInfo.isAuthenticated());
     }
 
     @POST
@@ -56,7 +62,8 @@ public class IndexResource {
                             @Link(name = "Initial JS page load", operationId = "getInit") }) }, tags = { "search" })
     public IndexView postExternalSearchRequest(@Context final HttpServletRequest request,
             @FormParam(PARAM_QUERY) String query, @FormParam(PARAM_MODE) String mode,
-            @FormParam(PARAM_AGGREGATION_CONTEXT) String aggregationContext) {
+            @FormParam(PARAM_AGGREGATION_CONTEXT) String aggregationContext,
+            @Context final SecurityContext security) {
         log.warn("Received external search request");
 
         if (query != null && !query.isEmpty()) {
@@ -73,6 +80,8 @@ public class IndexResource {
             log.info("Param {}: {}", PARAM_AGGREGATION_CONTEXT, aggregationContext);
         }
 
-        return new IndexView(config, searchResultLinkEnabled, validatorUrl);
+        final AuthenticationInfo authInfo = AuthenticationInfo.fromPrincipal(security.getUserPrincipal());
+
+        return new IndexView(config, searchResultLinkEnabled, validatorUrl, authInfo.isAuthenticated());
     }
 }

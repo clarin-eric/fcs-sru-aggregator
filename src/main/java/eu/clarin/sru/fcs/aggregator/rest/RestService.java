@@ -2,6 +2,7 @@ package eu.clarin.sru.fcs.aggregator.rest;
 
 import java.io.IOException;
 import java.net.URI;
+import java.security.Principal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -11,6 +12,7 @@ import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -21,6 +23,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.SecurityContext;
 import javax.ws.rs.core.UriBuilder;
 
 import org.slf4j.LoggerFactory;
@@ -448,5 +451,22 @@ public class RestService {
             }
         };
         return Response.ok(j).build();
+    }
+
+    @GET
+    @Path("login")
+    public Response getLogin(@QueryParam("redirect") @DefaultValue("") String redirectUri,
+            @Context final SecurityContext security) throws IOException {
+        log.info("Authentication information requested. Security context {}. Redirect URI: '{}'", security,
+                redirectUri);
+        final Principal userPrincipal = security.getUserPrincipal();
+        log.trace("User principal: {}", userPrincipal);
+        final AuthenticationInfo authInfo = AuthenticationInfo.fromPrincipal(userPrincipal);
+
+        if (redirectUri == null || redirectUri.isBlank()) {
+            return Response.ok(authInfo).build();
+        } else {
+            return Response.seeOther(URI.create(redirectUri)).entity(authInfo).build();
+        }
     }
 }

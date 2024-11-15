@@ -1,49 +1,12 @@
 package eu.clarin.sru.fcs.aggregator.app;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.optimaize.langdetect.LanguageDetector;
-import com.optimaize.langdetect.LanguageDetectorBuilder;
-import com.optimaize.langdetect.ngram.NgramExtractors;
-import com.optimaize.langdetect.profiles.LanguageProfile;
-import com.optimaize.langdetect.profiles.LanguageProfileReader;
-import com.optimaize.langdetect.text.*;
-import eu.clarin.sru.client.SRUThreadedClient;
-import eu.clarin.sru.fcs.aggregator.search.Search;
-import eu.clarin.sru.fcs.aggregator.scan.ScanCrawlTask;
-import eu.clarin.sru.fcs.aggregator.scan.CenterRegistryLive;
-import eu.clarin.sru.fcs.aggregator.scan.ClientFactory;
-import eu.clarin.sru.fcs.aggregator.scan.Resources;
-import eu.clarin.sru.client.SRUVersion;
-import eu.clarin.sru.client.fcs.ClarinFCSClientBuilder;
-import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescription;
-import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescriptionParser;
-import eu.clarin.sru.fcs.aggregator.client.MaxConcurrentRequestsCallback;
-import eu.clarin.sru.fcs.aggregator.client.ThrottledClient;
-import eu.clarin.sru.fcs.aggregator.scan.Resource;
-import eu.clarin.sru.fcs.aggregator.rest.RestService;
-import eu.clarin.sru.fcs.aggregator.scan.Statistics;
-import eu.clarin.sru.fcs.aggregator.util.LanguagesISO693;
-import io.dropwizard.core.Application;
-import io.dropwizard.assets.AssetsBundle;
-import io.dropwizard.configuration.EnvironmentVariableSubstitutor;
-import io.dropwizard.configuration.SubstitutingSourceProvider;
-import io.dropwizard.core.setup.Bootstrap;
-import io.dropwizard.core.setup.Environment;
-import io.dropwizard.views.common.ViewBundle;
-import io.swagger.v3.jaxrs2.SwaggerSerializers;
-import io.swagger.v3.jaxrs2.integration.resources.OpenApiResource;
-import io.swagger.v3.oas.integration.SwaggerConfiguration;
-import io.swagger.v3.oas.models.OpenAPI;
-import io.swagger.v3.oas.models.servers.Server;
-
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,10 +16,52 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
+import javax.servlet.DispatcherType;
 import javax.ws.rs.client.Client;
 
 import org.eclipse.jetty.server.session.SessionHandler;
 import org.slf4j.LoggerFactory;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.optimaize.langdetect.LanguageDetector;
+import com.optimaize.langdetect.LanguageDetectorBuilder;
+import com.optimaize.langdetect.ngram.NgramExtractors;
+import com.optimaize.langdetect.profiles.LanguageProfile;
+import com.optimaize.langdetect.profiles.LanguageProfileReader;
+import com.optimaize.langdetect.text.CommonTextObjectFactories;
+import com.optimaize.langdetect.text.TextObjectFactory;
+
+import de.mpg.aai.shhaa.AuthFilter;
+import eu.clarin.sru.client.SRUThreadedClient;
+import eu.clarin.sru.client.SRUVersion;
+import eu.clarin.sru.client.fcs.ClarinFCSClientBuilder;
+import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescription;
+import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescriptionParser;
+import eu.clarin.sru.fcs.aggregator.client.MaxConcurrentRequestsCallback;
+import eu.clarin.sru.fcs.aggregator.client.ThrottledClient;
+import eu.clarin.sru.fcs.aggregator.rest.RestService;
+import eu.clarin.sru.fcs.aggregator.scan.CenterRegistryLive;
+import eu.clarin.sru.fcs.aggregator.scan.ClientFactory;
+import eu.clarin.sru.fcs.aggregator.scan.Resource;
+import eu.clarin.sru.fcs.aggregator.scan.Resources;
+import eu.clarin.sru.fcs.aggregator.scan.ScanCrawlTask;
+import eu.clarin.sru.fcs.aggregator.scan.Statistics;
+import eu.clarin.sru.fcs.aggregator.search.Search;
+import eu.clarin.sru.fcs.aggregator.util.LanguagesISO693;
+import io.dropwizard.assets.AssetsBundle;
+import io.dropwizard.configuration.EnvironmentVariableSubstitutor;
+import io.dropwizard.configuration.SubstitutingSourceProvider;
+import io.dropwizard.core.Application;
+import io.dropwizard.core.setup.Bootstrap;
+import io.dropwizard.core.setup.Environment;
+import io.dropwizard.views.common.ViewBundle;
+import io.swagger.v3.jaxrs2.SwaggerSerializers;
+import io.swagger.v3.jaxrs2.integration.resources.OpenApiResource;
+import io.swagger.v3.oas.integration.SwaggerConfiguration;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.servers.Server;
 
 /**  ---- FCS AGGREGATOR OVERVIEW ----
  *
@@ -208,7 +213,15 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 
         environment.jersey().setUrlPattern("/*");
         environment.jersey().register(new IndexResource());
+        environment.jersey().register(new LoginResource());
         environment.jersey().register(new RestService());
+
+        // AAI - MPG SHHAA
+        environment.servlets().addFilter("AAIFilter", AuthFilter.class)
+                .addMappingForUrlPatterns(EnumSet.allOf(DispatcherType.class), true, "/*");
+        environment.servlets().setInitParameter("ShhaaConfigLocation", "/WEB-INF/shhaa.xml");
+        // de.mpg.aai.shhaa.config.ConfigContextListener.ConfigContextListener
+        environment.servlets().addServletListeners(new AuthConfigContextListener());
 
         // pretty printing
         if (config.aggregatorParams.prettyPrintJSON) {

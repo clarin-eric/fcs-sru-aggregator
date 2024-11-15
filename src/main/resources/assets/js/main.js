@@ -51146,10 +51146,44 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
     },
 
     renderLogin: function renderLogin() {
-      return false;
-      // return  <li className="unauthenticated">
-      // 			<a href="login" tabIndex="-1"><span className="glyphicon glyphicon-log-in"></span> LOGIN</a>
-      // 		</li>;
+      var loginUrl = URLROOT + "/login" + "?redirect=" + encodeURIComponent(CURURL);
+
+      function doLogin() {
+        document.querySelector('form#login').submit();
+      }
+
+      return React.createElement(
+        "li",
+        { className: "unauthenticated" },
+        React.createElement("form", { id: "login", "class": "login-form", action: loginUrl, method: "POST" }),
+        React.createElement(
+          "a",
+          { href: "#", onClick: doLogin, tabIndex: "-1" },
+          React.createElement("span", { "class": "glyphicon glyphicon-log-in" }),
+          React.createElement(
+            "span",
+            null,
+            "\xA0LOGIN"
+          )
+        )
+      );
+    },
+
+    renderLogout: function renderLogout() {
+      return React.createElement(
+        "li",
+        { className: "authenticated" },
+        React.createElement(
+          "a",
+          { href: "https://catalog.clarin.eu/Shibboleth.sso/Logout", tabIndex: "-1" },
+          React.createElement("span", { className: "glyphicon glyphicon-log-out" }),
+          React.createElement(
+            "span",
+            null,
+            "\xA0LOGOUT"
+          )
+        )
+      );
     },
 
     renderCollapsible: function renderCollapsible() {
@@ -51189,7 +51223,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
             React.createElement("div", { id: "clarinservices", style: { padding: 4, paddingTop: 8 } }),
             " "
           ),
-          this.renderLogin()
+          window.MyAggregator.isLoggedIn ? this.renderLogout() : this.renderLogin()
         )
       );
     },
