@@ -20,7 +20,15 @@ public class AuthConfigContextListener implements ServletContextListener {
 
     private ConfigContext configCtx;
 
-    public AuthConfigContextListener() {
+    private String shibWebappHost;
+    private String shibLogin;
+    private String shibLogout;
+
+    public AuthConfigContextListener(String shibWebappHost, String shibLogin, String shibLogout) {
+        super();
+        this.shibWebappHost = shibWebappHost;
+        this.shibLogin = shibLogin;
+        this.shibLogout = shibLogout;
     }
 
     @Override
@@ -45,7 +53,7 @@ public class AuthConfigContextListener implements ServletContextListener {
             } else {
                 location = servletCtx.getInitParameter(PARAM_NAME);
                 if (location == null) {
-                    location = "/WEB-INF/shhaa.xml";
+                    location = ConfigContext.DEFAULT_CONF_LOCATION;
                     log.debug("no config-location found as init-parameter {}, fallback to {}", PARAM_NAME,
                             location);
                 } else {
@@ -55,10 +63,10 @@ public class AuthConfigContextListener implements ServletContextListener {
                 URL locURL = location.startsWith("/")
                         ? io.dropwizard.util.Resources.getResource(location.substring(1))
                         : new URL(location);
-                ConfigContext ctx = new ConfigContext();
+                ConfigContext ctx = new AuthConfigContext(shibWebappHost, shibLogin, shibLogout);
                 ctx.init(locURL);
-                this.configCtx = ctx;
-                servletCtx.setAttribute(ConfigContext.CONTEXT_ID, this.configCtx);
+                configCtx = ctx;
+                servletCtx.setAttribute(ConfigContext.CONTEXT_ID, configCtx);
             }
         } catch (ConfigurationException cex) {
             log.error("failed to initialize configuration context: {}", cex.getMessage());
@@ -68,10 +76,9 @@ public class AuthConfigContextListener implements ServletContextListener {
         }
     }
 
-    
     public void closeConfigContext(ServletContext servletCtx) {
         log.debug("closing configuration context");
-        this.configCtx = null;
+        configCtx = null;
         servletCtx.removeAttribute(ConfigContext.CONTEXT_ID);
     }
 

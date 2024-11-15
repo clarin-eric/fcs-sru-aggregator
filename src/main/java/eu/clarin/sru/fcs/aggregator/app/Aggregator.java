@@ -217,11 +217,15 @@ public class Aggregator extends Application<AggregatorConfiguration> {
         environment.jersey().register(new RestService());
 
         // AAI - MPG SHHAA
-        environment.servlets().addFilter("AAIFilter", AuthFilter.class)
-                .addMappingForUrlPatterns(EnumSet.allOf(DispatcherType.class), true, "/*");
-        environment.servlets().setInitParameter("ShhaaConfigLocation", "/WEB-INF/shhaa.xml");
-        // de.mpg.aai.shhaa.config.ConfigContextListener.ConfigContextListener
-        environment.servlets().addServletListeners(new AuthConfigContextListener());
+        final AggregatorConfiguration.Params.AAIConfig aaiConfig = config.aggregatorParams.aaiConfig;
+        if (aaiConfig != null && aaiConfig.isAAIEnabled()) {
+            environment.servlets().addFilter("AAIFilter", AuthFilter.class)
+                    .addMappingForUrlPatterns(EnumSet.allOf(DispatcherType.class), true, "/*");
+            environment.servlets().setInitParameter("ShhaaConfigLocation", "/WEB-INF/shhaa.xml");
+            // de.mpg.aai.shhaa.config.ConfigContextListener.ConfigContextListener
+            environment.servlets().addServletListeners(new AuthConfigContextListener(aaiConfig.getShibWebappHost(),
+                    aaiConfig.getShibLogin(), aaiConfig.getShibLogout()));
+        }
 
         // pretty printing
         if (config.aggregatorParams.prettyPrintJSON) {

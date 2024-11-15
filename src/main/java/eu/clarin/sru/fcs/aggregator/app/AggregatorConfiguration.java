@@ -265,6 +265,45 @@ public class AggregatorConfiguration extends Configuration {
         public String getVALIDATOR_URL() {
             return VALIDATOR_URL;
         }
+
+        public static class AAIConfig {
+            @JsonProperty
+            boolean enabled;
+
+            @JsonIgnore
+            public boolean isAAIEnabled() {
+                return enabled;
+            }
+
+            @JsonProperty
+            String shibWebappHost;
+
+            @JsonIgnore
+            public String getShibWebappHost() {
+                return shibWebappHost;
+            }
+
+            @JsonProperty
+            String shibLogin;
+
+            @JsonIgnore
+            public String getShibLogin() {
+                return shibLogin;
+            }
+
+            @JsonProperty
+            String shibLogout;
+
+            @JsonIgnore
+            public String getShibLogout() {
+                return shibLogout;
+            }
+        }
+
+        @Valid
+        @NotNull
+        @JsonProperty
+        AAIConfig aaiConfig;
     }
 
     @Valid

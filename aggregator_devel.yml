@@ -62,6 +62,9 @@ aggregatorParams:
   SERVER_URL: ${SERVER_URL:-https://contentsearch.clarin.eu/}
   VALIDATOR_URL: ${VALIDATOR_URL:-https://www.clarin.eu/fcsvalidator/}
 
+  aaiConfig:
+    enabled: ${SHIB_ENABLED:-false}
+
 # use the simple server factory, run on a single port
 server:
   applicationContextPath: /
