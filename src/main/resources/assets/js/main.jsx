@@ -175,10 +175,12 @@ import createReactClass from "create-react-class";
     toEmbedded: function (doPushHistory) { this.gotoPage(doPushHistory, 'embed'); },
 
     renderLogin: function () {
-      var loginUrl = URLROOT + "/login" + "?redirect=" + encodeURIComponent(CURURL);
+      var loginUrl = URLROOT + (URLROOT.endsWith("/") || URLROOT.trim().length === 0 ? '' : '/') + "login" + "?redirect=" + encodeURIComponent(CURURL);
 
-      function doLogin () {
+      function doLogin(e) {
         document.querySelector('form#login').submit();
+        e.preventDefault();
+        e.stopPropagation();
       }
 
       return (

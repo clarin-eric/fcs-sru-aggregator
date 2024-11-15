@@ -51146,10 +51146,12 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
     },
 
     renderLogin: function renderLogin() {
-      var loginUrl = URLROOT + "/login" + "?redirect=" + encodeURIComponent(CURURL);
+      var loginUrl = URLROOT + (URLROOT.endsWith("/") || URLROOT.trim().length === 0 ? '' : '/') + "login" + "?redirect=" + encodeURIComponent(CURURL);
 
-      function doLogin() {
+      function doLogin(e) {
         document.querySelector('form#login').submit();
+        e.preventDefault();
+        e.stopPropagation();
       }
 
       return React.createElement(

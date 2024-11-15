@@ -62,8 +62,8 @@ public class AuthConfigContext extends ConfigContext {
             } catch (IllegalArgumentException | IllegalAccessException | NoSuchFieldException | SecurityException
                     | NoSuchMethodException | InvocationTargetException e) {
                 log.error("Failure doing extremely hacking configuration loading for AAI ...", e);
+                throw new ConfigurationException("Hacky configuration update failed", e);
             }
-
         }
     }
 }
