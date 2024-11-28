@@ -43,6 +43,10 @@ public class AuthConfigContext extends ConfigContext {
 
                 // do our custom overriding ...
                 if (shibWebappHost != null && !shibWebappHost.isBlank()) {
+                    // remove any trailing slashes if there are any
+                    if (shibWebappHost.endsWith("/")) {
+                        shibWebappHost = shibWebappHost.replaceFirst("/*$", "");
+                    }
                     config.setHost(shibWebappHost);
                 }
                 if (shibLogin != null && !shibLogin.isBlank()) {

@@ -35,6 +35,8 @@
                 <attribute>displayName</attribute>
                 <attribute>commonName</attribute>
                 <attribute>mail</attribute>
+                <username>eduPersonPrincipalName</username>
+                <username>eduPersonTargetedID</username>
                 <!-- TODO: ? -->
             </shibheader>
         </composition>
@@ -51,11 +53,16 @@
                 <location target="/clarinservices/*" />
             </ignore>
 
+            <!-- url parameter name to recognize flags for actions shhaa shall perform -->
+            <!-- <actionparam>shhaaDo</actionparam> -->
+
             <!-- configures the view-control targets -->
+            <!--
             <pages>
-                <!--  <info action="dI">/protected/info.jsp</info> -->
-                <!-- <denied action="dD">pages/noaccess.jsp</denied> -->
+                <info action="dI">/protected/info.jsp</info>
+                <denied action="dD">/pages/noaccess.jsp</denied>
             </pages>
+            -->
 
         </handler>
 
