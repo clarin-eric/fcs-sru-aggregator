@@ -34,8 +34,17 @@
             <shibheader>
                 <attribute>displayName</attribute>
                 <attribute>commonName</attribute>
+
+                <attribute>organizationName</attribute>
+
                 <attribute>mail</attribute>
+                
+                <attribute>oid-eduPersonPrincipalName</attribute>
+                <attribute>mace-eduPersonPrincipalName</attribute>
                 <attribute>eduPersonPrincipalName</attribute>
+
+                <attribute>oid-eduPersonTargetedID</attribute>
+                <attribute>mace-eduPersonTargetedID</attribute>
                 <attribute>eduPersonTargetedID</attribute>
                 <!-- TODO: ? -->
             </shibheader>

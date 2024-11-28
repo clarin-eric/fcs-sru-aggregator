@@ -47,6 +47,10 @@ public class UserCredentials {
         return result;
     }
 
+    public String getOrganization() {
+        return getFirstValue(userPrincipal, List.of("organizationname", "organizationName", "o"));
+    }
+
     // ----------------------------------------------------------------------
     // this should be automatic by using the shhaa.xml configuration
     // - Principal.getName() (de.mpg.aai.shhaa.model.AuthPrincipal)
@@ -54,11 +58,13 @@ public class UserCredentials {
     // - authentication > shibheader > username
 
     public String getEduPersonPrincipalName() {
-        return getFirstValue(userPrincipal, List.of("oid-edupersonprincipalname"));
+        return getFirstValue(userPrincipal, List.of("oid-edupersonprincipalname", "oid-eduPersonPrincipalName",
+                "mace-eduPersonPrincipalName", "eduPersonPrincipalName"));
     }
 
     public String getEduPersonTargetedID() {
-        return getFirstValue(userPrincipal, List.of("edupersontargetedid"));
+        return getFirstValue(userPrincipal, List.of("edupersontargetedid", "oid-eduPersonTargetedID",
+                "mace-eduPersonTargetedID", "eduPersonTargetedID"));
     }
 
     public String getEmail() {

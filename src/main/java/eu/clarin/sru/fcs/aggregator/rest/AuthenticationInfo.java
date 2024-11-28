@@ -17,7 +17,7 @@ public class AuthenticationInfo {
     @JsonProperty
     private String displayName;
     @JsonProperty
-    private String email;
+    private String organization;
     @JsonProperty
     private List<String> userId;
 
@@ -33,7 +33,7 @@ public class AuthenticationInfo {
         if (userInfo != null) {
             this.username = userInfo.getPrincipalName();
             this.displayName = userInfo.getDisplayName(); // ignore, maybe for frontend as indicator?
-            this.email = userInfo.getEmail(); // should be implicitely in username
+            this.organization = userInfo.getOrganization();
             // WIP: for now only for debugging, to list the chain of attributes that are
             // checked to retrieve the username
             this.userId = Arrays.asList(new String[] { userInfo.getEmail(), userInfo.getEduPersonPrincipalName(),
@@ -64,8 +64,8 @@ public class AuthenticationInfo {
         return displayName;
     }
 
-    public String getEmail() {
-        return email;
+    public String getOrganization() {
+        return organization;
     }
 
     public List<String> getUserId() {
@@ -78,8 +78,8 @@ public class AuthenticationInfo {
 
     @Override
     public String toString() {
-        return String.format("User name: [%s], display name: [%s], email: [%s], isAuthenticated: [%b]",
-                username, displayName, email, authenticated);
+        return String.format("User name: [%s], display name: [%s], organization: [%s], isAuthenticated: [%b]", username,
+                displayName, organization, authenticated);
     }
 
 }
