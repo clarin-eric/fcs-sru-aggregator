@@ -14,6 +14,7 @@ import javax.ws.rs.core.UriInfo;
 
 import org.slf4j.LoggerFactory;
 
+@Path("/")
 public class LoginResource {
     private static final org.slf4j.Logger log = LoggerFactory.getLogger(LoginResource.class);
 
