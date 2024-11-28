@@ -3,6 +3,7 @@ package eu.clarin.sru.fcs.aggregator.rest;
 import eu.clarin.sru.fcs.aggregator.app.UserCredentials;
 
 import java.security.Principal;
+import java.util.Arrays;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -35,8 +36,8 @@ public class AuthenticationInfo {
             this.email = userInfo.getEmail(); // should be implicitely in username
             // WIP: for now only for debugging, to list the chain of attributes that are
             // checked to retrieve the username
-            this.userId = List.of(userInfo.getEmail(), userInfo.getEduPersonPrincipalName(),
-                    userInfo.getEduPersonTargetedID(), userInfo.getUserID());
+            this.userId = Arrays.asList(new String[] { userInfo.getEmail(), userInfo.getEduPersonPrincipalName(),
+                    userInfo.getEduPersonTargetedID(), userInfo.getUserID() });
         }
     }
 
