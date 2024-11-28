@@ -1,7 +1,6 @@
 package eu.clarin.sru.fcs.aggregator.app;
 
 import java.security.Principal;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.codec.digest.DigestUtils;

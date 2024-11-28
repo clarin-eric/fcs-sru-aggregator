@@ -60,6 +60,10 @@
     <script src="lib/react.production.min.js"></script>
     <script src="lib/react-dom.production.min.js"></script>
     <script src="lib/bootstrap.min.js"></script>
+    <script src="js/main.js"></script>
+
+    <link href="clarinservices/clarinservices.css" rel="stylesheet">
+    <script src="clarinservices/clarinservices.js"></script>
 
     <script type="text/javascript">
         window.MyAggregator = window.MyAggregator || {};
@@ -70,13 +74,8 @@
         {{^validatorUrl}}
         window.MyAggregator.validatorUrl = undefined;
         {{/validatorUrl}}
-        window.MyAggregator.isLoggedIn = {{isLoggedIn}}
+        window.MyAggregator.isLoggedIn = {{isLoggedIn}};
     </script>
-
-    <script src="js/main.js"></script>
-
-    <link href="clarinservices/clarinservices.css" rel="stylesheet">
-    <script src="clarinservices/clarinservices.js"></script>
 
     {{#piwikConfig}}
     {{#enabled}}

@@ -235,7 +235,7 @@ public class Aggregator extends Application<AggregatorConfiguration> {
         // swagger
         if (config.aggregatorParams.openapiEnabled) {
             final String[] resourceClasses = { "eu.clarin.sru.fcs.aggregator.app.IndexResource",
-                    "eu.clarin.sru.fcs.aggregator.rest.RestService" };
+                    "eu.clarin.sru.fcs.aggregator.app.LoginResource", "eu.clarin.sru.fcs.aggregator.rest.RestService" };
             final SwaggerConfiguration oasConfiguration = new SwaggerConfiguration()
                     .openAPI(new OpenAPI().addServersItem(
                             new Server().url(config.aggregatorParams.SERVER_URL).description("Local API endpoint")))

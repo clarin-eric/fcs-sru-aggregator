@@ -5,6 +5,8 @@ import createReactClass from "create-react-class";
 
 var PT = PropTypes;
 
+window.MyAggregator = window.MyAggregator || {};
+
 var StatisticsPage = createReactClass({
   // fixme! - class StatisticsPage extends React.Component {
   propTypes: {
