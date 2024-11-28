@@ -3,6 +3,7 @@ package eu.clarin.sru.fcs.aggregator.rest;
 import eu.clarin.sru.fcs.aggregator.app.UserCredentials;
 
 import java.security.Principal;
+import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -16,6 +17,8 @@ public class AuthenticationInfo {
     private String displayName;
     @JsonProperty
     private String email;
+    @JsonProperty
+    private List<String> userId;
 
     public AuthenticationInfo() {
     }
@@ -28,8 +31,12 @@ public class AuthenticationInfo {
         this.authenticated = (userInfo != null);
         if (userInfo != null) {
             this.username = userInfo.getPrincipalName();
-            this.displayName = userInfo.getDisplayName();
-            this.email = userInfo.getEmail();
+            this.displayName = userInfo.getDisplayName(); // ignore, maybe for frontend as indicator?
+            this.email = userInfo.getEmail(); // should be implicitely in username
+            // WIP: for now only for debugging, to list the chain of attributes that are
+            // checked to retrieve the username
+            this.userId = List.of(userInfo.getEmail(), userInfo.getEduPersonPrincipalName(),
+                    userInfo.getEduPersonTargetedID(), userInfo.getUserID());
         }
     }
 
@@ -58,6 +65,10 @@ public class AuthenticationInfo {
 
     public String getEmail() {
         return email;
+    }
+
+    public List<String> getUserId() {
+        return userId;
     }
 
     public boolean isAuthenticated() {

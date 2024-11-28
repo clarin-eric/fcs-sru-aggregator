@@ -40,47 +40,49 @@ public class UserCredentials {
     }
 
     public String getDisplayName() {
-        String result = null;
-        if (userPrincipal instanceof AuthPrincipal) {
-            List<String> displayNamesAttributes = new ArrayList<String>();
-            displayNamesAttributes.add("displayName");
-            displayNamesAttributes.add("commonName");
-
-            AuthPrincipal authPrincipal = (AuthPrincipal) userPrincipal;
-            for (String key : displayNamesAttributes) {
-                result = getValue(authPrincipal, key);
-                if (result != null) {
-                    break;
-                }
-            }
-        }
+        String result = getFirstValue(userPrincipal, List.of("displayName", "commonName"));
         if (result == null) {
             result = getPrincipalName();
         }
         return result;
+    }
+
+    // ----------------------------------------------------------------------
+    // this should be automatic by using the shhaa.xml configuration
+    // - Principal.getName() (de.mpg.aai.shhaa.model.AuthPrincipal)
+    // - de.mpg.aai.shhaa.config.Configuration.getShibUsernameIDs()
+    // - authentication > shibheader > username
+
+    public String getEduPersonPrincipalName() {
+        return getFirstValue(userPrincipal, List.of("oid-edupersonprincipalname"));
+    }
+
+    public String getEduPersonTargetedID() {
+        return getFirstValue(userPrincipal, List.of("edupersontargetedid"));
     }
 
     public String getEmail() {
-        String result = null;
-        if (userPrincipal instanceof AuthPrincipal) {
-            List<String> emailAttributes = new ArrayList<String>();
-            emailAttributes.add("email");
+        return getFirstValue(userPrincipal, List.of("mail"));
+    }
 
-            AuthPrincipal authPrincipal = (AuthPrincipal) userPrincipal;
-            for (String key : emailAttributes) {
-                result = getValue(authPrincipal, key);
-                if (result != null) {
-                    break;
-                }
-            }
+    public String getUserID() {
+        // should be equal to getPrincipalName() / userPrincipal.getName()
+        String result = null;
+        if (result == null) {
+            result = getEmail();
         }
         if (result == null) {
-            result = getPrincipalName();
+            result = getEduPersonPrincipalName();
+        }
+        if (result == null) {
+            result = getEduPersonTargetedID();
         }
         return result;
     }
 
-    private String getValue(AuthPrincipal authPrincipal, String key) {
+    // ----------------------------------------------------------------------
+
+    private static String getValue(AuthPrincipal authPrincipal, String key) {
         String result = null;
         AuthAttributes attributes = authPrincipal.getAttribues();
         if (attributes != null) {
@@ -89,6 +91,20 @@ public class UserCredentials {
                 Object authAttrValue = authAttribute.getValue();
                 if (authAttrValue instanceof String) {
                     result = (String) authAttrValue;
+                }
+            }
+        }
+        return result;
+    }
+
+    private static String getFirstValue(Principal userPrincipal, List<String> attributes) {
+        String result = null;
+        if (userPrincipal instanceof AuthPrincipal) {
+            AuthPrincipal authPrincipal = (AuthPrincipal) userPrincipal;
+            for (String key : attributes) {
+                result = getValue(authPrincipal, key);
+                if (result != null) {
+                    break;
                 }
             }
         }

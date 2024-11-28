@@ -4,13 +4,12 @@
     <shhaa>
 
         <webapp>
-            <host>https://catalog.clarin.eu</host>
-            <!-- TODO: contentsearch.catalog.eu ? -->
+            <host>https://contentsearch.clarin.eu</host>
         </webapp>
 
         <authentication>
             <shibheader>
-                <!-- TODO: email -->
+                <username>mail</username>
 
                 <username>oid-eduPersonPrincipalName</username>
                 <username>mace-eduPersonPrincipalName</username>
@@ -27,15 +26,15 @@
             <fallback>
                 <username>anonymous</username>
             </fallback>
-            <sso action="lI">https://catalog.clarin.eu/Shibboleth.sso/Login</sso>
-            <slo action="lO">https://catalog.clarin.eu/Shibboleth.sso/Logout</slo>
+            <sso action="lI">https://contentsearch.clarin.eu/Shibboleth.sso/Login</sso>
+            <slo action="lO">https://contentsearch.clarin.eu/Shibboleth.sso/Logout</slo>
         </authentication>
 
         <composition action="rF">
             <shibheader>
                 <attribute>displayName</attribute>
                 <attribute>commonName</attribute>
-                <attribute>email</attribute>
+                <attribute>mail</attribute>
                 <!-- TODO: ? -->
             </shibheader>
         </composition>
