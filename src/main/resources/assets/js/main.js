@@ -51172,13 +51172,22 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
     },
 
     renderLogout: function renderLogout() {
+      var logoutUrl = URLROOT + (URLROOT.endsWith("/") || URLROOT.trim().length === 0 ? '' : '/') + "logout" + "?redirect=" + encodeURIComponent(CURURL);
+
+      function doLogout(e) {
+        document.querySelector('form#logout').submit();
+        e.preventDefault();
+        e.stopPropagation();
+      }
+
       return React.createElement(
         "li",
         { className: "authenticated" },
+        React.createElement("form", { id: "logout", "class": "logout-form", action: logoutUrl, method: "POST" }),
         React.createElement(
           "a",
-          { href: "https://catalog.clarin.eu/Shibboleth.sso/Logout", tabIndex: "-1" },
-          React.createElement("span", { className: "glyphicon glyphicon-log-out" }),
+          { href: "#", onClick: doLogout, tabIndex: "-1" },
+          React.createElement("span", { "class": "glyphicon glyphicon-log-out" }),
           React.createElement(
             "span",
             null,

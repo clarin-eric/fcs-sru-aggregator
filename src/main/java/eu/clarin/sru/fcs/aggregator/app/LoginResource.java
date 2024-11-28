@@ -50,4 +50,20 @@ public class LoginResource {
         }
     }
 
+    @POST
+    @Path("logout")
+    public Response postLogout(@QueryParam("redirect") @DefaultValue("") String redirectUri, @Context UriInfo uriInfo,
+            @Context final SecurityContext security) {
+        log.debug("Client has triggered de-authentication request [POST]: '{}' -> '{}'. Redirect URI: '{}'.",
+                security != null ? security.getUserPrincipal() : null, uriInfo.getRequestUri(), redirectUri);
+
+        if (redirectUri == null || redirectUri.isBlank()) {
+            log.debug("redirect to '/' path");
+            return Response.seeOther(URI.create("/")).build();
+        } else {
+            log.debug("redirect to: {}", redirectUri);
+            return Response.seeOther(URI.create(redirectUri)).build();
+        }
+    }
+
 }

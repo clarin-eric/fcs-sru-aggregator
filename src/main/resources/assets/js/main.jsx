@@ -196,10 +196,20 @@ import createReactClass from "create-react-class";
     },
 
     renderLogout: function () {
+      var logoutUrl = URLROOT + (URLROOT.endsWith("/") || URLROOT.trim().length === 0 ? '' : '/') + "logout" + "?redirect=" + encodeURIComponent(CURURL);
+
+      function doLogout(e) {
+        document.querySelector('form#logout').submit();
+        e.preventDefault();
+        e.stopPropagation();
+      }
+
       return (
         <li className="authenticated">
-          <a href="https://catalog.clarin.eu/Shibboleth.sso/Logout" tabIndex="-1">
-            <span className="glyphicon glyphicon-log-out"></span>
+          <form id="logout" class="logout-form" action={logoutUrl} method="POST">
+          </form>
+          <a href="#" onClick={doLogout} tabIndex="-1">
+            <span class="glyphicon glyphicon-log-out"></span>
             <span>&nbsp;LOGOUT</span>
           </a>
         </li>
