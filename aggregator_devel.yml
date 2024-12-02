@@ -63,7 +63,30 @@ aggregatorParams:
   VALIDATOR_URL: ${VALIDATOR_URL:-https://www.clarin.eu/fcsvalidator/}
 
   aaiConfig:
-    enabled: ${SHIB_ENABLED:-false}
+    enabled: ${SHIB_ENABLED:-true}
+    shibWebappHost: ${SERVER_URL:-https://contentsearch.clarin.eu/}
+    shibLogin: ${SHIB_LI:-https://contentsearch.clarin.eu/Shibboleth.sso/Login}
+    shibLogout: ${SHIB_LO:-https://contentsearch.clarin.eu/Shibboleth.sso/Logout}
+    keys:
+      # Quote ENVVAR if you use something like this which creates whitespaces instead of linebreaks
+      #   $ export PUBLIC_KEY=$(cat public-key.pem)
+      # You can also create the key like this which creates (escaped) linebreaks "\n" strings
+      #   $ export PUBLIC_KEY='-----BEGIN PUBLIC KEY-----\nABC...DEF\n-----END PUBLIC KEY-----'
+      publicKey: '${PUBLIC_KEY}'
+      # YOU can also directly embed a key with this two variants
+      publicKey: '-----BEGIN PUBLIC KEY-----
+...
+-----END PUBLIC KEY-----'
+      # or like this which looks nicer
+      publicKey: |
+        -----BEGIN PUBLIC KEY-----
+        ...
+        -----END PUBLIC KEY-----
+      # same for privateKey as with publicKey
+      privateKey: |
+        -----BEGIN PRIVATE KEY-----
+        ...
+        -----END PRIVATE KEY-----
 
 # use the simple server factory, run on a single port
 server:
