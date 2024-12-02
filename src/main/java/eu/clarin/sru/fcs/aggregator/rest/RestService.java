@@ -12,7 +12,6 @@ import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
-import javax.ws.rs.DefaultValue;
 import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -118,7 +117,8 @@ public class RestService {
             + " Optional 'x-aggregation-context' for pre-selecting resources "
             + "and/or 'mode' and 'query' for starting a search.", tags = { "web" }, responses = {
                     @ApiResponse(description = "Initial page data (resources, languages)", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = InitSchema.class))) })
-    public Response getInit(@Context final HttpServletRequest request) throws IOException {
+    public Response getInit(@Context final HttpServletRequest request, @Context final SecurityContext security)
+            throws IOException {
         log.info("get initial data");
         final Resources resources = Aggregator.getInstance().getResources();
         final Object query = request.getSession().getAttribute(PARAM_QUERY);
@@ -168,7 +168,8 @@ public class RestService {
             @FormParam("firstResultIndex") Integer firstResultIndex,
             @FormParam("numberOfResults") Integer numberOfResults,
             @FormParam("language") String language,
-            @FormParam("resourceIds[]") List<String> resourceIds) throws Exception {
+            @FormParam("resourceIds[]") List<String> resourceIds,
+            @Context final SecurityContext security) throws Exception {
         if (query == null || query.isEmpty()) {
             return Response.status(400).entity("'query' parameter expected").build();
         }
@@ -205,9 +206,14 @@ public class RestService {
         if (numberOfResults > 250) {
             numberOfResults = 250;
         }
+
+        final AuthenticationInfo authInfo = AuthenticationInfo.fromPrincipal(security.getUserPrincipal());
+        // TODO: check if resource selection all require auth, then fail early
+        String userid = authInfo.isAuthenticated() ? authInfo.getUsername() : null;
+
         Search search = Aggregator.getInstance().startSearch(
                 "fcs".equals(queryType) ? SRUVersion.VERSION_2_0 : null,
-                resources, queryType, query, language, firstResultIndex, numberOfResults);
+                resources, queryType, query, language, firstResultIndex, numberOfResults, userid);
         if (search == null) {
             return Response.status(500).entity("Initiating search failed").build();
         }
@@ -276,7 +282,8 @@ public class RestService {
             @ApiResponse(responseCode = "500", description = "Initiating subSearch failed.") }, tags = { "search" })
     public Response postSearchNextResults(@PathParam("id") String searchId,
             @FormParam("resourceId") String resourceId,
-            @FormParam("numberOfResults") Integer numberOfResults) throws Exception {
+            @FormParam("numberOfResults") Integer numberOfResults,
+            @Context final SecurityContext security) throws Exception {
         log.info("POST /search/{id}, searchId: {}, resourceId: {}", searchId, resourceId);
         if (resourceId == null || resourceId.isEmpty()) {
             return Response.status(400).entity("'resourceId' parameter expected").build();
@@ -292,7 +299,12 @@ public class RestService {
             numberOfResults = 250;
         }
 
-        boolean ret = search.searchForNextResults(resourceId, numberOfResults);
+        // check if resource requires authentification info
+        final AuthenticationInfo authInfo = AuthenticationInfo.fromPrincipal(security.getUserPrincipal());
+        // TODO: check if resource requires auth, then fail early
+        String userid = authInfo.isAuthenticated() ? authInfo.getUsername() : null;
+
+        boolean ret = search.searchForNextResults(resourceId, numberOfResults, userid);
         if (ret == false) {
             return Response.status(500).entity("Initiating subSearch failed").build();
         }
@@ -454,19 +466,13 @@ public class RestService {
     }
 
     @GET
-    @Path("login")
-    public Response getLogin(@QueryParam("redirect") @DefaultValue("") String redirectUri,
-            @Context final SecurityContext security) throws IOException {
-        log.info("Authentication information requested. Security context {}. Redirect URI: '{}'", security,
-                redirectUri);
+    @Path("user")
+    public Response getUser(@Context final SecurityContext security) throws IOException {
+        log.debug("Authentication information requested. Security context {}.", security);
         final Principal userPrincipal = security.getUserPrincipal();
-        log.trace("User principal: {}", userPrincipal);
+        log.debug("User principal: {}", userPrincipal);
         final AuthenticationInfo authInfo = AuthenticationInfo.fromPrincipal(userPrincipal);
-
-        if (redirectUri == null || redirectUri.isBlank()) {
-            return Response.ok(authInfo).build();
-        } else {
-            return Response.seeOther(URI.create(redirectUri)).entity(authInfo).build();
-        }
+        log.debug("Authentication info: {}", authInfo);
+        return Response.ok(authInfo).build();
     }
 }

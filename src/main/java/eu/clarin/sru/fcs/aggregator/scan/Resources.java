@@ -1,12 +1,14 @@
 package eu.clarin.sru.fcs.aggregator.scan;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
 import org.slf4j.LoggerFactory;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Implementation of the cached scan data (endpoints descriptions) that stores
@@ -64,9 +66,22 @@ public class Resources {
         final List<Resource> found = new ArrayList<Resource>();
         visit(resources, new CallResource() {
             @Override
-            public void call(Resource r) {
-                if (resourceIds.contains(r.getId())) {
-                    found.add(r);
+            public void call(Resource resource) {
+                if (resourceIds.contains(resource.getId())) {
+                    found.add(resource);
+                }
+            }
+        });
+        return found;
+    }
+
+    public List<Resource> getResourcesWithoutAuth() {
+        final List<Resource> found = new ArrayList<Resource>();
+        visit(resources, new CallResource() {
+            @Override
+            public void call(Resource resource) {
+                if (!resource.hasAvailabilityRestriction()) {
+                    found.add(resource);
                 }
             }
         });
@@ -100,13 +115,13 @@ public class Resources {
     }
 
     public static interface CallResource {
-        void call(Resource r);
+        void call(Resource resource);
     }
 
     private static void visit(List<Resource> resources, CallResource clb) {
-        for (Resource r : resources) {
-            clb.call(r);
-            visit(r.getSubResources(), clb);
+        for (Resource resource : resources) {
+            clb.call(resource);
+            visit(resource.getSubResources(), clb);
         }
     }
 

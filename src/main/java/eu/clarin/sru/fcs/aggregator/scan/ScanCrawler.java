@@ -9,14 +9,13 @@ import eu.clarin.sru.client.SRUExtraResponseData;
 import eu.clarin.sru.client.SRUScanRequest;
 import eu.clarin.sru.client.SRUScanResponse;
 import eu.clarin.sru.client.SRUTerm;
+import eu.clarin.sru.client.fcs.ClarinFCSConstants;
 import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescription;
 import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescription.ResourceInfo;
 import eu.clarin.sru.fcs.aggregator.client.ThrottledClient;
 import eu.clarin.sru.fcs.aggregator.util.SRUCQL;
 import eu.clarin.sru.fcs.aggregator.util.Throw;
 import java.net.SocketTimeoutException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -44,15 +43,6 @@ public class ScanCrawler {
     private final CounterLatch latch;
     private final ThrottledClient sruClient;
     private final Statistics statistics = new Statistics();
-
-    private static final URI advSearchCap;
-    static {
-        try {
-            advSearchCap = new URI("http://clarin.eu/fcs/capability/advanced-search");
-        } catch (URISyntaxException e) {
-            throw new RuntimeException("Class initialization failed due to static variable exception.", e);
-        }
-    }
 
     public ScanCrawler(List<Institution> institutions, ThrottledClient sruClient, int maxDepth) {
         this.institutions = institutions;
@@ -136,8 +126,14 @@ public class ScanCrawler {
                             ClarinFCSEndpointDescription desc = (ClarinFCSEndpointDescription) data;
                             if (desc.getVersion() == 2) {
                                 endpoint.setProtocol(FCSProtocolVersion.VERSION_2);
-                                if (desc.getCapabilities().contains(advSearchCap)) {
+                                if (desc.getCapabilities().contains(ClarinFCSConstants.CAPABILITY_ADVANCED_SEARCH)) {
                                     endpoint.addSearchCapability(FCSSearchCapabilities.ADVANCED_SEARCH);
+                                }
+
+                                // check if auth requirements
+                                if (desc.getCapabilities()
+                                        .contains(ClarinFCSConstants.CAPABILITY_AUTHENTICATED_SEARCH)) {
+                                    endpoint.addSearchCapability(FCSSearchCapabilities.AUTHENTICATED_SEARCH);
                                 }
                             } else {
                                 endpoint.setProtocol(FCSProtocolVersion.VERSION_1);
@@ -219,6 +215,13 @@ public class ScanCrawler {
             r.setSearchCapabilities(endpoint.getSearchCapabilities());
             r.setAvailableDataViews(ri.getAvailableDataViews());
             r.setAvailableLayers(ri.getAvailableLayers());
+
+            // check for requirements on resource
+            if (endpoint.getSearchCapabilities().contains(FCSSearchCapabilities.AUTHENTICATED_SEARCH)
+                    && ri.hasAvailabilityRestriction()) {
+                r.setAvailabilityRestriction(ri.getAvailabilityRestriction());
+                // TODO: should populate up/down the hierarchy?
+            }
 
             if (resources.addResource(r, parentResource)) {
                 if (rootResources != null) {

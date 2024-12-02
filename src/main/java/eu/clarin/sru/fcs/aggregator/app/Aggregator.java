@@ -4,17 +4,16 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 
 import javax.servlet.DispatcherType;
 import javax.ws.rs.client.Client;
@@ -34,8 +33,10 @@ import com.optimaize.langdetect.text.CommonTextObjectFactories;
 import com.optimaize.langdetect.text.TextObjectFactory;
 
 import de.mpg.aai.shhaa.AuthFilter;
+import eu.clarin.sru.client.SRURequestAuthenticator;
 import eu.clarin.sru.client.SRUThreadedClient;
 import eu.clarin.sru.client.SRUVersion;
+import eu.clarin.sru.client.auth.ClarinFCSRequestAuthenticator;
 import eu.clarin.sru.client.fcs.ClarinFCSClientBuilder;
 import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescription;
 import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescriptionParser;
@@ -213,12 +214,16 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 
         environment.jersey().setUrlPattern("/*");
         environment.jersey().register(new IndexResource());
-        environment.jersey().register(new LoginResource());
         environment.jersey().register(new RestService());
 
         // AAI - MPG SHHAA
         final AggregatorConfiguration.Params.AAIConfig aaiConfig = config.aggregatorParams.aaiConfig;
         if (aaiConfig != null && aaiConfig.isAAIEnabled()) {
+            // add resources (routes) for AAI and JWKS
+            environment.jersey().register(new LoginResource());
+            environment.jersey().register(new JWKSResource());
+
+            // add AAI filters
             environment.servlets().addFilter("AAIFilter", AuthFilter.class)
                     .addMappingForUrlPatterns(EnumSet.allOf(DispatcherType.class), true, "/*");
             environment.servlets().setInitParameter("ShhaaConfigLocation", "/WEB-INF/shhaa.xml");
@@ -234,14 +239,19 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 
         // swagger
         if (config.aggregatorParams.openapiEnabled) {
-            final String[] resourceClasses = { "eu.clarin.sru.fcs.aggregator.app.IndexResource",
-                    "eu.clarin.sru.fcs.aggregator.app.LoginResource", "eu.clarin.sru.fcs.aggregator.rest.RestService" };
+            List<String> resourceClasses = new ArrayList<>(List.of("eu.clarin.sru.fcs.aggregator.app.IndexResource",
+                    "eu.clarin.sru.fcs.aggregator.rest.RestService"));
+
+            if (aaiConfig != null && aaiConfig.isAAIEnabled()) {
+                resourceClasses.addAll(List.of("eu.clarin.sru.fcs.aggregator.app.LoginResource",
+                        "eu.clarin.sru.fcs.aggregator.app.JWKSResource"));
+            }
             final SwaggerConfiguration oasConfiguration = new SwaggerConfiguration()
                     .openAPI(new OpenAPI().addServersItem(
                             new Server().url(config.aggregatorParams.SERVER_URL).description("Local API endpoint")))
                     .prettyPrint(true)
                     .readAllResources(true)
-                    .resourceClasses(Arrays.stream(resourceClasses).collect(Collectors.toSet()));
+                    .resourceClasses(Set.copyOf(resourceClasses));
             environment.jersey().register(new OpenApiResource().openApiConfiguration(oasConfiguration));
             environment.jersey().register(new SwaggerSerializers());
         }
@@ -277,6 +287,31 @@ public class Aggregator extends Application<AggregatorConfiguration> {
     public void init(Environment environment) throws IOException {
         log.info("Aggregator initialization started.");
 
+        SRURequestAuthenticator requestAuthStrategy = null;
+        if (params.aaiConfig != null && params.aaiConfig.enabled && params.aaiConfig.keys != null
+                && params.aaiConfig.keys.publicKey != null && params.aaiConfig.keys.privateKey != null) {
+            final ClarinFCSRequestAuthenticator.AuthenticationInfoProvider authInfoPovider = new ClarinFCSRequestAuthenticator.AuthenticationInfoProvider() {
+                @Override
+                public String getAudience(String endpointURI, Map<String, String> context) {
+                    return endpointURI; // default behaviour, aud is endpoint url
+                }
+
+                @Override
+                public String getSubject(String endpointURI, Map<String, String> context) {
+                    if (context != null) {
+                        return context.get(Search.PARAM_AUTHINFO_USERID);
+                    }
+                    return null;
+                }
+            };
+
+            requestAuthStrategy = ClarinFCSRequestAuthenticator.Builder.create()
+                    .withIssuer(params.SERVER_URL)
+                    .withKeyPairStrings(params.aaiConfig.keys.publicKey, params.aaiConfig.keys.privateKey)
+                    .withAuthenticationInfoProvider(authInfoPovider)
+                    .build();
+        }
+
         SRUThreadedClient sruScanClient = new ClarinFCSClientBuilder()
                 .setConnectTimeout(params.ENDPOINTS_SCAN_TIMEOUT_MS)
                 .setSocketTimeout(params.ENDPOINTS_SCAN_TIMEOUT_MS)
@@ -284,6 +319,7 @@ public class Aggregator extends Application<AggregatorConfiguration> {
                 .registerExtraResponseDataParser(
                         new ClarinFCSEndpointDescriptionParser())
                 .enableLegacySupport()
+                .setRequestAuthenticator(requestAuthStrategy)
                 .buildThreadedClient();
 
         SRUThreadedClient sruSearchClient = new ClarinFCSClientBuilder()
@@ -293,6 +329,7 @@ public class Aggregator extends Application<AggregatorConfiguration> {
                 .registerExtraResponseDataParser(
                         new ClarinFCSEndpointDescriptionParser())
                 .enableLegacySupport()
+                .setRequestAuthenticator(requestAuthStrategy)
                 .buildThreadedClient();
 
         maxScanConcurrentRequestsCallback = new MaxConcurrentRequestsCallback() {
@@ -393,9 +430,8 @@ public class Aggregator extends Application<AggregatorConfiguration> {
     }
 
     // this function should be thread-safe
-    public Search startSearch(SRUVersion version, List<Resource> resources,
-            String queryType, String searchString, String searchLang,
-            int firstRecord, int maxRecords) throws Exception {
+    public Search startSearch(SRUVersion version, List<Resource> resources, String queryType, String searchString,
+            String searchLang, int firstRecord, int maxRecords, String userid) throws Exception {
         if (resources.isEmpty()) {
             // No resources
             return null;
@@ -403,9 +439,8 @@ public class Aggregator extends Application<AggregatorConfiguration> {
             // No query
             return null;
         } else {
-            Search sr = new Search(sruClient,
-                    version, searchStatsAtom.get(),
-                    resources, queryType, searchString, searchLang, maxRecords);
+            Search sr = new Search(sruClient, version, searchStatsAtom.get(), resources, queryType, searchString,
+                    searchLang, maxRecords, userid);
             if (activeSearches.size() > SEARCHES_SIZE_GC_THRESHOLD) {
                 List<String> toBeRemoved = new ArrayList<String>();
                 long t0 = System.currentTimeMillis();

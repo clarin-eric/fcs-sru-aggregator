@@ -2,6 +2,8 @@ package eu.clarin.sru.fcs.aggregator.app;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonProperty.Access;
+
 import io.dropwizard.core.Configuration;
 
 import java.net.MalformedURLException;
@@ -298,6 +300,32 @@ public class AggregatorConfiguration extends Configuration {
             public String getShibLogout() {
                 return shibLogout;
             }
+
+            public static class KeyConfig {
+                @JsonProperty
+                String publicKey;
+
+                @JsonIgnore
+                public String getPublicKey() {
+                    return publicKey;
+                }
+
+                @JsonProperty(access = Access.WRITE_ONLY)
+                String privateKey;
+
+                @JsonIgnore
+                public String getPrivateKey() {
+                    return privateKey;
+                }
+
+                // TODO: maybe key path properties?
+                // TODO: validation?
+            }
+
+            @Valid
+            @NotNull
+            @JsonProperty
+            KeyConfig keys;
         }
 
         @Valid

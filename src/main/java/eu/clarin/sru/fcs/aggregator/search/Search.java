@@ -1,7 +1,15 @@
 package eu.clarin.sru.fcs.aggregator.search;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.slf4j.LoggerFactory;
+
 import eu.clarin.sru.client.SRUClientConstants;
 import eu.clarin.sru.client.SRUClientException;
 import eu.clarin.sru.client.SRUSearchRetrieveRequest;
@@ -9,18 +17,13 @@ import eu.clarin.sru.client.SRUSearchRetrieveResponse;
 import eu.clarin.sru.client.SRUVersion;
 import eu.clarin.sru.client.fcs.ClarinFCSRecordData;
 import eu.clarin.sru.client.fcs.LegacyClarinFCSRecordData;
+import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescription.ResourceInfo.AvailabilityRestriction;
 import eu.clarin.sru.fcs.aggregator.client.ThrottledClient;
-import eu.clarin.sru.fcs.aggregator.scan.Resource;
 import eu.clarin.sru.fcs.aggregator.scan.Diagnostic;
 import eu.clarin.sru.fcs.aggregator.scan.FCSProtocolVersion;
+import eu.clarin.sru.fcs.aggregator.scan.Resource;
 import eu.clarin.sru.fcs.aggregator.scan.Statistics;
 import eu.clarin.sru.fcs.aggregator.util.SRUCQL;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import org.slf4j.LoggerFactory;
 
 /**
  * A search operation done on a list of resources.
@@ -32,6 +35,8 @@ import org.slf4j.LoggerFactory;
 public class Search {
 
     private static final org.slf4j.Logger log = LoggerFactory.getLogger(Search.class);
+
+    public final static String PARAM_AUTHINFO_USERID = "authinfo.userid";
 
     static final int EXPORTS_SIZE_GC_THRESHOLD = 3;
 
@@ -46,11 +51,8 @@ public class Search {
     private final Statistics statistics;
     private static final Pattern quotePattern = Pattern.compile("[\\s<>=/\\(\\)]");
 
-    public Search(ThrottledClient searchClient,
-            SRUVersion version,
-            Statistics statistics, List<Resource> resources,
-            String queryType, String searchString,
-            String searchLanguage, int maxRecords) {
+    public Search(ThrottledClient searchClient, SRUVersion version, Statistics statistics, List<Resource> resources,
+            String queryType, String searchString, String searchLanguage, int maxRecords, String userid) {
         this.searchClient = searchClient;
         this.version = version;
         this.id = generateId();
@@ -61,7 +63,7 @@ public class Search {
         for (Resource resource : resources) {
             Result result = new Result(resource);
             SRUVersion versionForResource = computeVersion(this.version, queryType, resource);
-            executeSearch(result, versionForResource, queryType, query, 1, maxRecords);
+            executeSearch(result, versionForResource, queryType, query, 1, maxRecords, userid);
             results.add(result);
         }
     }
@@ -87,11 +89,11 @@ public class Search {
         return SRUVersion.VERSION_1_2;
     }
 
-    public boolean searchForNextResults(String resourceId, int maxRecords) {
+    public boolean searchForNextResults(String resourceId, int maxRecords, final String userid) {
         for (Result r : results) {
             if (r.getResource().getId().equals(resourceId)) {
                 SRUVersion versionForResource = computeVersion(version, queryType, r.getResource());
-                executeSearch(r, versionForResource, queryType, query, r.getNextRecordPosition(), maxRecords);
+                executeSearch(r, versionForResource, queryType, query, r.getNextRecordPosition(), maxRecords, userid);
                 return true;
             }
         }
@@ -99,7 +101,7 @@ public class Search {
     }
 
     private void executeSearch(final Result result, SRUVersion version, String queryType, String searchString,
-            int startRecord, int maxRecords) {
+            int startRecord, int maxRecords, final String userid) {
         final Resource resource = result.getResource();
         log.info("Executing search in '{}' version='{}' queryType ='{}' query='{}' maxRecords='{}'",
                 resource, version, queryType, searchString, maxRecords);
@@ -120,6 +122,24 @@ public class Search {
                     ? SRUCQL.SEARCH_RESOURCE_HANDLE_LEGACY_PARAMETER
                     : SRUCQL.SEARCH_RESOURCE_HANDLE_PARAMETER,
                     resource.getHandle());
+        }
+        if (resource.hasAvailabilityRestriction()) {
+            // if the resource has an availability restriction, then add details for
+            // authentication, otherwise we will not set it, to let the library not send
+            // more information than neccessary
+            // TODO: or check endpoint caps and always send auth info?
+            if (userid != null) {
+                // only if 'userid' is set, do we have an authenticated user, otherwise
+                // the user is 'anonymous' (unauthenticated) and we do not want to send auth
+                // infos that might confuse an endpoint to assume a user is authenticated
+                searchRequest.setSendAuthentication(true);
+
+                if (AvailabilityRestriction.PERSONAL_IDENTIFIER.equals(resource.getAvailabilityRestriction())) {
+                    // and we only set the 'userid' if 'PERSONAL_IDENTIFIER' is requested, otherwise
+                    // a valid JWT authentication signals a valid authentication at the aggregator
+                    searchRequest.setAuthenticationContext(PARAM_AUTHINFO_USERID, userid);
+                }
+            }
         }
 
         statistics.initEndpoint(resource.getEndpointInstitution(), resource.getEndpoint(),

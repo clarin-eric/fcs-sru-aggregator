@@ -1,8 +1,5 @@
 package eu.clarin.sru.fcs.aggregator.scan;
 
-import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescription.DataView;
-import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescription.Layer;
-import eu.clarin.sru.fcs.aggregator.util.LanguagesISO693;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -10,7 +7,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
+
 import org.slf4j.LoggerFactory;
+
+import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescription.DataView;
+import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescription.Layer;
+import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescription.ResourceInfo.AvailabilityRestriction;
+import eu.clarin.sru.fcs.aggregator.util.LanguagesISO693;
 
 /**
  * Represents information about resource, such as resource handle (id),
@@ -39,6 +42,7 @@ public class Resource {
     private String description;
     private String institution;
     private EnumSet<FCSSearchCapabilities> searchCapabilities = EnumSet.of(FCSSearchCapabilities.BASIC_SEARCH);
+    private AvailabilityRestriction availabilityRestriction = AvailabilityRestriction.NONE;
     private List<DataView> availableDataViews;
     private List<Layer> availableLayers;
     public List<Resource> subResources = Collections.synchronizedList(new ArrayList<Resource>());
@@ -116,6 +120,18 @@ public class Resource {
 
     public void setAvailableLayers(List<Layer> availableLayers) {
         this.availableLayers = availableLayers;
+    }
+
+    public void setAvailabilityRestriction(AvailabilityRestriction restriction) {
+        this.availabilityRestriction = restriction;
+    }
+
+    public AvailabilityRestriction getAvailabilityRestriction() {
+        return availabilityRestriction;
+    }
+
+    public boolean hasAvailabilityRestriction() {
+        return !AvailabilityRestriction.NONE.equals(availabilityRestriction);
     }
 
     public void setSearchCapabilities(EnumSet<FCSSearchCapabilities> searchCapabilities) {

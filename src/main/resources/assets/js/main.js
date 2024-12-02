@@ -50748,6 +50748,8 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 var PT = _propTypes2.default;
 
+window.MyAggregator = window.MyAggregator || {};
+
 var ZoomedResult = (0, _createReactClass2.default)({
   displayName: "ZoomedResult",
 
@@ -52924,6 +52926,8 @@ var _createReactClass2 = _interopRequireDefault(_createReactClass);
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 var PT = _propTypes2.default;
+
+window.MyAggregator = window.MyAggregator || {};
 
 var StatisticsPage = (0, _createReactClass2.default)({
   displayName: "StatisticsPage",
