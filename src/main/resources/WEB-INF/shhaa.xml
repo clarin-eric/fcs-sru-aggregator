@@ -13,6 +13,10 @@
                 <!-- shib attributes used to computed the username (first only) -->
                 <username>mail</username>
 
+                <username>oid-eppn</username>
+                <username>mace-eppn</username>
+                <username>eppn</username>
+
                 <username>oid-eduPersonPrincipalName</username>
                 <username>mace-eduPersonPrincipalName</username>
                 <username>eduPersonPrincipalName</username>
@@ -40,10 +44,15 @@
                 <!-- shib attributes that should be populated for access -->
                 <attribute>displayName</attribute>
                 <attribute>commonName</attribute>
+                <attribute>cn</attribute>
 
                 <attribute>organizationName</attribute>
 
                 <attribute>mail</attribute>
+
+                <username>oid-eppn</username>
+                <username>mace-eppn</username>
+                <username>eppn</username>
                 
                 <attribute>oid-eduPersonPrincipalName</attribute>
                 <attribute>mace-eduPersonPrincipalName</attribute>

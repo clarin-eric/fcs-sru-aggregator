@@ -107,9 +107,21 @@ var AggregatorPage = createReactClass({
             }
           }
           else {
-            // no context set all visibl to selected as default.
+            // no context set all visible to selected as default.
             console.log("no context set, selecting all available");
             resources.recurse(r => { r.visible ? r.selected = true : null })
+
+            if (!window.MyAggregator.isLoggedIn) {
+              // deselect all resources with availability restriction
+              const selectedResourcesBefore = resources.getSelectedIds();
+              resources.recurse(r => { r.visible && r.selected && r.availabilityRestriction	!= "NONE" ? r.selected = false : null })
+              const selectedResourcesAfter = resources.getSelectedIds();
+              const deselectedResources = selectedResourcesBefore.filter(rId => !selectedResourcesAfter.includes(rId));
+              if (deselectedResources.length > 0) {
+                console.log("not authenticated, de-selecting " + deselectedResources.length + " resources", deselectedResources);
+                this.props.info("Deselected " + deselectedResources.length + " resource(s) that require authentication.");
+              }
+            }
           }
 
           this.setState({

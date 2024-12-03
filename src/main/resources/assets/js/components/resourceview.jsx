@@ -329,6 +329,9 @@ var ResourceView = createReactClass({
     var priorityStyle = { paddingBottom: 4, paddingLeft: 2, borderBottom: '3px solid ' + color };
     var expansive = resource.descExpanded ? { overflow: 'hidden' }
       : { whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' };
+    var isResourceRestricted = resource.availabilityRestriction && resource.availabilityRestriction !== "NONE";
+    var canRessourceBeAccessed = !isResourceRestricted || window.MyAggregator.isLoggedIn;
+    var availabilityRestrictionIconClasses = "fa " + (canRessourceBeAccessed ? "fa-unlock" : "fa-lock");
     return <div className={resourceContainerClass} key={resource.id}>
       <div className="row resource" onClick={this.toggleDescExpansion.bind(this, resource)}>
         <div className="col-sm-1 vcenter">
@@ -340,6 +343,7 @@ var ResourceView = createReactClass({
           <div style={indent}>
             <h3 style={expansive}>
               {resource.title}
+              {isResourceRestricted ? <i className={availabilityRestrictionIconClasses} style={{ marginLeft: '6px', marginRight: '2px' }} title="This resource requires authentication!" /> : null}
               {resource.landingPage ?
                 <a href={resource.landingPage} onClick={this.stop}>
                   <span style={{ fontSize: 12 }}> – Homepage </span>

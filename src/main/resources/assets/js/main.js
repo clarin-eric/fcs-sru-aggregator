@@ -49728,6 +49728,9 @@ var ResourceView = (0, _createReactClass2.default)({
     var color = minmaxp[0] === minmaxp[1] ? 'transparent' : 'hsl(' + hue + ', 50%, 50%)';
     var priorityStyle = { paddingBottom: 4, paddingLeft: 2, borderBottom: '3px solid ' + color };
     var expansive = resource.descExpanded ? { overflow: 'hidden' } : { whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' };
+    var isResourceRestricted = resource.availabilityRestriction && resource.availabilityRestriction !== "NONE";
+    var canRessourceBeAccessed = !isResourceRestricted || window.MyAggregator.isLoggedIn;
+    var availabilityRestrictionIconClasses = "fa " + (canRessourceBeAccessed ? "fa-unlock" : "fa-lock");
     return React.createElement(
       "div",
       { className: resourceContainerClass, key: resource.id },
@@ -49753,6 +49756,7 @@ var ResourceView = (0, _createReactClass2.default)({
               "h3",
               { style: expansive },
               resource.title,
+              isResourceRestricted ? React.createElement("i", { className: availabilityRestrictionIconClasses, style: { marginLeft: '6px', marginRight: '2px' }, title: "This resource requires authentication!" }) : null,
               resource.landingPage ? React.createElement(
                 "a",
                 { href: resource.landingPage, onClick: this.stop },
@@ -50026,7 +50030,7 @@ function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
 
 var PT = _propTypes2.default;
 
-window.MyAggregator = window.MyAggragtor || {};
+window.MyAggregator = window.MyAggregator || {};
 var NO_MORE_RECORDS_DIAGNOSTIC_URI = window.MyAggregator.NO_MORE_RECORDS_DIAGNOSTIC_URI = "info:srw/diagnostic/1/61";
 
 var ResultMixin = {
@@ -50747,8 +50751,6 @@ var _reactTransitionGroup = require("react-transition-group");
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 var PT = _propTypes2.default;
-
-window.MyAggregator = window.MyAggregator || {};
 
 var ZoomedResult = (0, _createReactClass2.default)({
   displayName: "ZoomedResult",
@@ -51880,11 +51882,27 @@ var AggregatorPage = (0, _createReactClass2.default)({
               }).join('\n'));
             }
           } else {
-            // no context set all visibl to selected as default.
+            // no context set all visible to selected as default.
             console.log("no context set, selecting all available");
             resources.recurse(function (r) {
               r.visible ? r.selected = true : null;
             });
+
+            if (!window.MyAggregator.isLoggedIn) {
+              // deselect all resources with availability restriction
+              var selectedResourcesBefore = resources.getSelectedIds();
+              resources.recurse(function (r) {
+                r.visible && r.selected && r.availabilityRestriction != "NONE" ? r.selected = false : null;
+              });
+              var selectedResourcesAfter = resources.getSelectedIds();
+              var deselectedResources = selectedResourcesBefore.filter(function (rId) {
+                return !selectedResourcesAfter.includes(rId);
+              });
+              if (deselectedResources.length > 0) {
+                console.log("not authenticated, de-selecting " + deselectedResources.length + " resources", deselectedResources);
+                this.props.info("Deselected " + deselectedResources.length + " resource(s) that require authentication.");
+              }
+            }
           }
 
           this.setState({
@@ -52926,8 +52944,6 @@ var _createReactClass2 = _interopRequireDefault(_createReactClass);
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 var PT = _propTypes2.default;
-
-window.MyAggregator = window.MyAggregator || {};
 
 var StatisticsPage = (0, _createReactClass2.default)({
   displayName: "StatisticsPage",

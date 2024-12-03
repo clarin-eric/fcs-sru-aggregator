@@ -7,8 +7,6 @@ import { CSSTransition, TransitionGroup } from "react-transition-group";
 
 var PT = PropTypes;
 
-window.MyAggregator = window.MyAggregator || {};
-
 var ZoomedResult = createReactClass({
   propTypes: {
     resourceHit: PT.object,

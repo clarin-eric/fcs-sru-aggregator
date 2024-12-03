@@ -43,7 +43,7 @@ public class UserCredentials {
     }
 
     public String getDisplayName() {
-        String result = getFirstValue(userPrincipal, List.of("displayName", "commonName"));
+        String result = getFirstValue(userPrincipal, List.of("displayName", "commonName", "cn"));
         if (result == null) {
             result = getPrincipalName();
         }

@@ -4,7 +4,7 @@ import PropTypes from "prop-types";
 
 var PT = PropTypes;
 
-window.MyAggregator = window.MyAggragtor || {};
+window.MyAggregator = window.MyAggregator || {};
 var NO_MORE_RECORDS_DIAGNOSTIC_URI = window.MyAggregator.NO_MORE_RECORDS_DIAGNOSTIC_URI = "info:srw/diagnostic/1/61";
 
 var ResultMixin = {
