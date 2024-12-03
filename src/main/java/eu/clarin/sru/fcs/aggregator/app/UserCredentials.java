@@ -1,7 +1,11 @@
 package eu.clarin.sru.fcs.aggregator.app;
 
 import java.security.Principal;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.codec.digest.DigestUtils;
 
@@ -58,7 +62,7 @@ public class UserCredentials {
 
     public String getEduPersonPrincipalName() {
         return getFirstValue(userPrincipal, List.of("oid-edupersonprincipalname", "oid-eduPersonPrincipalName",
-                "mace-eduPersonPrincipalName", "eduPersonPrincipalName"));
+                "mace-eduPersonPrincipalName", "eduPersonPrincipalName", "oid-eppn", "mace-eppn", "eppn"));
     }
 
     public String getEduPersonTargetedID() {
@@ -68,6 +72,10 @@ public class UserCredentials {
 
     public String getEmail() {
         return getFirstValue(userPrincipal, List.of("mail"));
+    }
+
+    public List<String> getEmails() {
+        return getFirstValues(userPrincipal, List.of("mail"));
     }
 
     public String getUserID() {
@@ -81,6 +89,20 @@ public class UserCredentials {
         }
         if (result == null) {
             result = getEduPersonTargetedID();
+        }
+        return result;
+    }
+
+    /* DEBUG */
+    public Map<String, List<String>> getAllAttributes() {
+        Map<String, List<String>> result = new HashMap<>();
+        if (userPrincipal instanceof AuthPrincipal) {
+            AuthPrincipal authPrincipal = (AuthPrincipal) userPrincipal;
+            AuthAttributes attributes = authPrincipal.getAttribues();
+            for (String key : attributes.getIDs()) {
+                List<String> values = getValues(authPrincipal, key);
+                result.put(key, values);
+            }
         }
         return result;
     }
@@ -102,6 +124,25 @@ public class UserCredentials {
         return result;
     }
 
+    private static List<String> getValues(AuthPrincipal authPrincipal, String key) {
+        List<String> result = new ArrayList<>();
+        AuthAttributes attributes = authPrincipal.getAttribues();
+        if (attributes != null) {
+            AuthAttribute<?> authAttribute = attributes.get(key);
+            if (authAttribute != null) {
+                Set<?> authAttrValues = authAttribute.getValues();
+                if (authAttrValues != null) {
+                    for (Object authAttrValue : authAttrValues) {
+                        if (authAttrValue instanceof String) {
+                            result.add((String) authAttrValue);
+                        }
+                    }
+                }
+            }
+        }
+        return result;
+    }
+
     private static String getFirstValue(Principal userPrincipal, List<String> attributes) {
         String result = null;
         if (userPrincipal instanceof AuthPrincipal) {
@@ -109,6 +150,20 @@ public class UserCredentials {
             for (String key : attributes) {
                 result = getValue(authPrincipal, key);
                 if (result != null) {
+                    break;
+                }
+            }
+        }
+        return result;
+    }
+
+    private static List<String> getFirstValues(Principal userPrincipal, List<String> attributes) {
+        List<String> result = new ArrayList<>();
+        if (userPrincipal instanceof AuthPrincipal) {
+            AuthPrincipal authPrincipal = (AuthPrincipal) userPrincipal;
+            for (String key : attributes) {
+                result = getValues(authPrincipal, key);
+                if (result != null && !result.isEmpty()) {
                     break;
                 }
             }

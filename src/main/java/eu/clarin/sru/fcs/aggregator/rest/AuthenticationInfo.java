@@ -3,8 +3,8 @@ package eu.clarin.sru.fcs.aggregator.rest;
 import eu.clarin.sru.fcs.aggregator.app.UserCredentials;
 
 import java.security.Principal;
-import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -19,7 +19,9 @@ public class AuthenticationInfo {
     @JsonProperty
     private String organization;
     @JsonProperty
-    private List<String> userId;
+    private String userId;
+    @JsonProperty
+    private Map<String, List<String>> attributes;
 
     public AuthenticationInfo() {
     }
@@ -29,15 +31,15 @@ public class AuthenticationInfo {
     }
 
     public AuthenticationInfo(UserCredentials userInfo) {
-        this.authenticated = (userInfo != null);
+        authenticated = (userInfo != null);
         if (userInfo != null) {
-            this.username = userInfo.getPrincipalName();
-            this.displayName = userInfo.getDisplayName(); // ignore, maybe for frontend as indicator?
-            this.organization = userInfo.getOrganization();
-            // WIP: for now only for debugging, to list the chain of attributes that are
-            // checked to retrieve the username
-            this.userId = Arrays.asList(new String[] { userInfo.getEmail(), userInfo.getEduPersonPrincipalName(),
-                    userInfo.getEduPersonTargetedID(), userInfo.getUserID() });
+            username = userInfo.getPrincipalName();
+            displayName = userInfo.getDisplayName(); // ignore, maybe for frontend as indicator?
+            organization = userInfo.getOrganization();
+            userId = userInfo.getUserID();
+
+            // WIP: for now only for debugging, to retrieve all available SAML attributes
+            attributes = userInfo.getAllAttributes();
         }
     }
 
@@ -68,8 +70,12 @@ public class AuthenticationInfo {
         return organization;
     }
 
-    public List<String> getUserId() {
+    public String getUserId() {
         return userId;
+    }
+
+    public Map<String, List<String>> getAttributes() {
+        return attributes;
     }
 
     public boolean isAuthenticated() {
