@@ -11,8 +11,6 @@
         <authentication>
             <shibheader>
                 <!-- shib attributes used to computed the username (first only) -->
-                <username>mail</username>
-
                 <username>oid-eppn</username>
                 <username>mace-eppn</username>
                 <username>eppn</username>
@@ -24,6 +22,8 @@
                 <username>oid-eduPersonTargetedID</username>
                 <username>mace-eduPersonTargetedID</username>
                 <username>eduPersonTargetedID</username>
+
+                <username>mail</username>
 
                 <!-- some usefull defaults, required -->
                 <session>Shib-Session-ID</session>

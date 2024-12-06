@@ -82,13 +82,13 @@ public class UserCredentials {
         // should be equal to getPrincipalName() / userPrincipal.getName()
         String result = null;
         if (result == null) {
-            result = getEmail();
-        }
-        if (result == null) {
             result = getEduPersonPrincipalName();
         }
         if (result == null) {
             result = getEduPersonTargetedID();
+        }
+        if (result == null) {
+            result = getEmail();
         }
         return result;
     }
