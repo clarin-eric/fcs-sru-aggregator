@@ -1,6 +1,5 @@
 package eu.clarin.sru.fcs.aggregator.app;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.optimaize.langdetect.LanguageDetector;
@@ -19,12 +18,15 @@ import eu.clarin.sru.client.SRUVersion;
 import eu.clarin.sru.client.fcs.ClarinFCSClientBuilder;
 import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescription;
 import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescriptionParser;
+import eu.clarin.sru.fcs.aggregator.app.serialization.ClarinFCSEndpointDescriptionDataViewMixin;
+import eu.clarin.sru.fcs.aggregator.app.serialization.ClarinFCSEndpointDescriptionLayerMixin;
+import eu.clarin.sru.fcs.aggregator.app.serialization.StatisticsEndpointStatsMixin;
 import eu.clarin.sru.fcs.aggregator.client.MaxConcurrentRequestsCallback;
 import eu.clarin.sru.fcs.aggregator.client.ThrottledClient;
 import eu.clarin.sru.fcs.aggregator.scan.Resource;
 import eu.clarin.sru.fcs.aggregator.rest.RestService;
-import eu.clarin.sru.fcs.aggregator.rest.serialization.StatisticsEndpointStatsMixin;
 import eu.clarin.sru.fcs.aggregator.scan.Statistics;
+import eu.clarin.sru.fcs.aggregator.scan.ScanCrawlTask.ScanCrawlTaskCompletedCallback;
 import eu.clarin.sru.fcs.aggregator.util.LanguagesISO693;
 import io.dropwizard.core.Application;
 import io.dropwizard.assets.AssetsBundle;
@@ -147,6 +149,7 @@ public class Aggregator extends Application<AggregatorConfiguration> {
     private ThrottledClient sruClient = null;
     public MaxConcurrentRequestsCallback maxScanConcurrentRequestsCallback;
     public MaxConcurrentRequestsCallback maxSearchConcurrentRequestsCallback;
+    public ScanCrawlTaskCompletedCallback scanCrawlTaskCompletedCallback;
     private Map<String, Search> activeSearches = Collections.synchronizedMap(new HashMap<String, Search>());
 
     public static void main(String[] args) throws Exception {
@@ -309,28 +312,9 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 
         // init resources from file
         {
-            ObjectMapper mapper = new ObjectMapper()
-                    .addMixIn(ClarinFCSEndpointDescription.DataView.class,
-                            ClarinFCSEndpointDescriptionDataViewMixin.class)
-                    .addMixIn(ClarinFCSEndpointDescription.Layer.class, ClarinFCSEndpointDescriptionLayerMixin.class);
-
-            Resources resources = null;
-            try {
-                resources = mapper.readValue(resourcesCacheFile, Resources.class);
-            } catch (Exception xc) {
-                log.error("Failed to load cached resources from primary file:", xc);
-            }
-            if (resources == null) {
-                try {
-                    resources = mapper.readValue(resourcesOldCacheFile, Resources.class);
-                } catch (Exception e) {
-                    log.error("Failed to load cached resources from backup file:", e);
-                }
-            }
+            Resources resources = loadResourcesCache(resourcesCacheFile, resourcesOldCacheFile);
             if (resources != null) {
                 scanCacheAtom.set(resources);
-                log.info("resource list read from file; number of root resources: {}",
-                        scanCacheAtom.get().getResources().size());
             }
         }
 
@@ -340,36 +324,43 @@ public class Aggregator extends Application<AggregatorConfiguration> {
         final Client jerseyClient = ClientFactory.create(CenterRegistryLive.CONNECT_TIMEOUT,
                 CenterRegistryLive.READ_TIMEOUT, environment);
 
+        scanCrawlTaskCompletedCallback = new ScanCrawlTaskCompletedCallback() {
+            @Override
+            public void onSuccess(Resources resources, Statistics statistics) {
+                if (resources.getResources().isEmpty()) {
+                    log.warn("ScanCrawlTask: No resources: skipped updating stats; skipped writing to disk.");
+                } else {
+                    scanCacheAtom.set(resources);
+                    scanStatsAtom.set(statistics);
+                    searchStatsAtom.set(new Statistics()); // reset search stats
+
+                    try {
+                        writeResourcesCache(resources, resourcesCacheFile, resourcesOldCacheFile);
+                    } catch (IOException xc) {
+                        log.error("ScanCrawlTask: error writing resources cache file", xc);
+                    }
+
+                    log.info("ScanCrawlTask: wrote to disk, finished");
+                }
+            }
+
+            @Override
+            public void onError(Throwable xc) {
+                log.error("ScanCrawlTask: exception", xc);
+            }
+
+        };
+
         ScanCrawlTask task = new ScanCrawlTask(sruClient, jerseyClient,
                 params.CENTER_REGISTRY_URL, params.SCAN_MAX_DEPTH,
                 params.additionalCQLEndpoints,
                 params.additionalFCSEndpoints,
-                null, scanCacheAtom, resourcesCacheFile, resourcesOldCacheFile,
-                scanStatsAtom, searchStatsAtom);
+                null,
+                scanCrawlTaskCompletedCallback);
         scheduler.scheduleAtFixedRate(task, params.SCAN_TASK_INITIAL_DELAY,
                 params.SCAN_TASK_INTERVAL, params.getScanTaskTimeUnit());
 
         log.info("Aggregator initialization finished.");
-    }
-
-    // Definitions for Jackson Deserializer due to non-public non-default
-    // constructors
-    private static abstract class ClarinFCSEndpointDescriptionDataViewMixin {
-        @SuppressWarnings("unused")
-        ClarinFCSEndpointDescriptionDataViewMixin(@JsonProperty("identifier") String identifier,
-                @JsonProperty("mimeType") String mimeType,
-                @JsonProperty("deliveryPolicy") ClarinFCSEndpointDescription.DataView.DeliveryPolicy deliveryPolicy) {
-        }
-    }
-
-    private static abstract class ClarinFCSEndpointDescriptionLayerMixin {
-        @SuppressWarnings("unused")
-        ClarinFCSEndpointDescriptionLayerMixin(@JsonProperty("identifier") String identifier,
-                @JsonProperty("resultId") URI resultId, @JsonProperty("layerType") String layerType,
-                @JsonProperty("encoding") ClarinFCSEndpointDescription.Layer.ContentEncoding encoding,
-                @JsonProperty("qualifier") String qualifier, @JsonProperty("altValueInfo") String altValueInfo,
-                @JsonProperty("altValueInfoURI") URI altValueInfoURI) {
-        }
     }
 
     public void shutdown(AggregatorConfiguration config) {
@@ -446,5 +437,50 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 
     public String detectLanguage(String text) {
         return languageDetector.detect(textObjectFactory.forText(text)).orNull();
+    }
+
+    private static void writeResourcesCache(Resources resources, File cachedResources, File oldCachedResources)
+            throws IOException {
+        if (cachedResources.exists()) {
+            try {
+                oldCachedResources.delete();
+            } catch (Throwable txc) {
+                // ignore
+            }
+            try {
+                cachedResources.renameTo(oldCachedResources);
+            } catch (Throwable txc) {
+                // ignore
+            }
+        }
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.writerWithDefaultPrettyPrinter().writeValue(cachedResources, resources);
+    }
+
+    private static Resources loadResourcesCache(File cachedResources, File oldCachedResources) throws IOException {
+        // add definitions for Jackson Deserializer due to non-public non-default
+        // constructors
+        ObjectMapper mapper = new ObjectMapper()
+                .addMixIn(ClarinFCSEndpointDescription.DataView.class,
+                        ClarinFCSEndpointDescriptionDataViewMixin.class)
+                .addMixIn(ClarinFCSEndpointDescription.Layer.class, ClarinFCSEndpointDescriptionLayerMixin.class);
+
+        Resources resources = null;
+        try {
+            resources = mapper.readValue(cachedResources, Resources.class);
+        } catch (Exception xc) {
+            log.error("Failed to load cached resources from primary file:", xc);
+        }
+        if (resources == null) {
+            try {
+                resources = mapper.readValue(oldCachedResources, Resources.class);
+            } catch (Exception e) {
+                log.error("Failed to load cached resources from backup file:", e);
+            }
+        }
+        if (resources != null) {
+            log.info("Resource list read from file. Number of root resources: {}", resources.getResources().size());
+        }
+        return resources;
     }
 }

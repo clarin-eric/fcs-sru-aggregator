@@ -16,7 +16,6 @@ import eu.clarin.sru.fcs.aggregator.util.SRUCQL;
 import eu.clarin.sru.fcs.aggregator.util.Throw;
 import java.net.SocketTimeoutException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;

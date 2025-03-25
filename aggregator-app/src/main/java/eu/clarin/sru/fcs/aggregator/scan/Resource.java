@@ -1,5 +1,6 @@
 package eu.clarin.sru.fcs.aggregator.scan;
 
+import eu.clarin.sru.client.fcs.ClarinFCSConstants;
 import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescription.DataView;
 import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescription.Layer;
 import eu.clarin.sru.fcs.aggregator.util.LanguagesISO693;
@@ -26,6 +27,7 @@ public class Resource {
     public static final String ROOT_HANDLE = "root";
     public static final Pattern HANDLE_WITH_SPECIAL_CHARS = Pattern.compile(".*[<>=/()\\s].*");
 
+    // TODO: use from CLARIN libs
     public static final String MIMETYPE_DATAVIEW_HITS = "application/x-clarin-fcs-hits+xml";
     public static final String MIMETYPE_DATAVIEW_ADVANCED = "application/x-clarin-fcs-adv+xml";
 

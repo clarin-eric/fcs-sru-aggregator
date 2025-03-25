@@ -1,17 +1,13 @@
 package eu.clarin.sru.fcs.aggregator.scan;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import eu.clarin.sru.fcs.aggregator.client.ThrottledClient;
-import java.io.File;
-import java.io.IOException;
-import java.util.List;
 import java.util.ArrayList;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.List;
 
 import javax.ws.rs.client.Client;
 
 import org.slf4j.LoggerFactory;
+
+import eu.clarin.sru.fcs.aggregator.client.ThrottledClient;
 
 /**
  * This task is run by an executor every now and then to scan for new endpoints.
@@ -27,24 +23,23 @@ public class ScanCrawlTask implements Runnable {
     private final Client jerseyClient;
     private int cacheMaxDepth;
     private EndpointFilter filter;
-    private AtomicReference<Resources> resourcesAtom;
-    private File cachedResources;
-    private File oldCachedResources;
-    private AtomicReference<Statistics> scanStatisticsAtom;
-    private AtomicReference<Statistics> searchStatisticsAtom;
     private String centerRegistryUrl;
     private List<EndpointConfig> additionalCQLEndpoints;
     private List<EndpointConfig> additionalFCSEndpoints;
+    private ScanCrawlTaskCompletedCallback callback;
+
+    public interface ScanCrawlTaskCompletedCallback {
+        void onSuccess(Resources resources, Statistics statistics);
+
+        void onError(Throwable xc);
+    }
 
     public ScanCrawlTask(ThrottledClient sruClient, Client jerseyClient, String centerRegistryUrl,
             int cacheMaxDepth,
             List<EndpointConfig> additionalCQLEndpoints,
             List<EndpointConfig> additionalFCSEndpoints,
             EndpointFilter filter,
-            AtomicReference<Resources> resourcesAtom,
-            File cachedResources, File oldCachedResources,
-            AtomicReference<Statistics> scanStatisticsAtom,
-            AtomicReference<Statistics> searchStatisticsAtom) {
+            ScanCrawlTaskCompletedCallback callback) {
         this.sruClient = sruClient;
         this.jerseyClient = jerseyClient;
         this.centerRegistryUrl = centerRegistryUrl;
@@ -52,11 +47,7 @@ public class ScanCrawlTask implements Runnable {
         this.additionalCQLEndpoints = additionalCQLEndpoints;
         this.additionalFCSEndpoints = additionalFCSEndpoints;
         this.filter = filter;
-        this.resourcesAtom = resourcesAtom;
-        this.cachedResources = cachedResources;
-        this.oldCachedResources = oldCachedResources;
-        this.scanStatisticsAtom = scanStatisticsAtom;
-        this.searchStatisticsAtom = searchStatisticsAtom;
+        this.callback = callback;
     }
 
     @Override
@@ -131,39 +122,12 @@ public class ScanCrawlTask implements Runnable {
             log.info("ScanCrawlTask: crawl done in {}s, number of root resources: {}",
                     time / 1000., resources.getResources().size());
 
-            if (resources.getResources().isEmpty()) {
-                log.warn("ScanCrawlTask: No resources: skipped updating stats; skipped writing to disk.");
-            } else {
-                resourcesAtom.set(resources);
-                scanStatisticsAtom.set(scanCrawler.getStatistics());
-                searchStatisticsAtom.set(new Statistics()); // reset search stats
-
-                dump(resources, cachedResources, oldCachedResources);
-                log.info("ScanCrawlTask: wrote to disk, finished");
-            }
-        } catch (IOException xc) {
-            log.error("!!! Scan Crawler task IO exception", xc);
+            callback.onSuccess(resources, scanCrawler.getStatistics());
         } catch (Throwable xc) {
-            log.error("!!! Scan Crawler task throwable exception", xc);
+            log.error("ScanCrawlTask: throwable exception", xc);
+            callback.onError(xc);
             throw xc;
         }
     }
 
-    private static void dump(Resources resources,
-            File cachedResources, File oldCachedResources) throws IOException {
-        if (cachedResources.exists()) {
-            try {
-                oldCachedResources.delete();
-            } catch (Throwable txc) {
-                // ignore
-            }
-            try {
-                cachedResources.renameTo(oldCachedResources);
-            } catch (Throwable txc) {
-                // ignore
-            }
-        }
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.writerWithDefaultPrettyPrinter().writeValue(cachedResources, resources);
-    }
 }

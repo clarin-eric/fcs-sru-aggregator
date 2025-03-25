@@ -1,4 +1,4 @@
-package eu.clarin.sru.fcs.aggregator.rest.serialization;
+package eu.clarin.sru.fcs.aggregator.app.serialization;
 
 import java.util.EnumSet;
 import java.util.List;

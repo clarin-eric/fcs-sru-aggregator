@@ -134,8 +134,8 @@ public class LanguagesISO693 {
         Map<String, String> languages = new HashMap<String, String>();
         for (String code : codes) {
             String name = LanguagesISO693.getInstance().nameForCode(code);
-            // NOTE: put null if not known to easier identify later
-            languages.put(code, name);
+            // TODO: put null if not known to easier identify later
+            languages.put(code, (name != null) ? name : code);
         }
         return languages;
     }
