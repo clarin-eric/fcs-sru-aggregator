@@ -4,22 +4,25 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize.Typing;
 
-import eu.clarin.sru.fcs.aggregator.search.MetaOnlyResult;
+import eu.clarin.sru.fcs.aggregator.search.ResultMeta;
 
 public class JsonMetaOnlySearch {
     @JsonProperty(required = true)
     int inProgress = 0;
 
     @JsonProperty(required = true)
-    List<MetaOnlyResult> results;
+    @JsonSerialize(typing = Typing.STATIC)
+    List<ResultMeta> results;
 
-    public JsonMetaOnlySearch(List<MetaOnlyResult> results) {
+    public JsonMetaOnlySearch(List<ResultMeta> results) {
         this.results = results;
     }
 
     public static JsonMetaOnlySearch fromJsonSearch(JsonSearch search) {
-        final List<MetaOnlyResult> results = search.results.stream().map(r -> new MetaOnlyResult(r))
+        final List<ResultMeta> results = search.results.stream().map(r -> (ResultMeta) r)
                 .collect(Collectors.toList());
         final JsonMetaOnlySearch js = new JsonMetaOnlySearch(results);
         js.inProgress = search.inProgress;

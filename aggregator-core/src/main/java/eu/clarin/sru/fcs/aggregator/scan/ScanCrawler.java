@@ -1,6 +1,7 @@
 package eu.clarin.sru.fcs.aggregator.scan;
 
 import eu.clarin.sru.fcs.aggregator.util.CounterLatch;
+import eu.clarin.sru.fcs.aggregator.util.MultilingualString;
 import eu.clarin.sru.client.SRUClientException;
 import eu.clarin.sru.client.SRUDiagnostic;
 import eu.clarin.sru.client.SRUExplainRequest;
@@ -19,7 +20,6 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.DocumentFragment;
 import org.w3c.dom.Element;
@@ -203,9 +203,9 @@ public class ScanCrawler {
         for (ResourceInfo ri : resourceInfos) {
             Resource r = new Resource(institution, endpoint);
             r.setHandle(ri.getPid());
-            r.setTitle(getBestValueFrom(ri.getTitle()));
-            r.setDescription(getBestValueFromNullable(ri.getDescription()));
-            r.setInstitution(getBestValueFromNullable(ri.getInstitution(), institution.getName()));
+            r.setTitle(MultilingualString.getBestValueFrom(ri.getTitle()));
+            r.setDescription(MultilingualString.getBestValueFromNullable(ri.getDescription()));
+            r.setInstitution(MultilingualString.getBestValueFromNullable(ri.getInstitution(), institution.getName()));
             r.setLandingPage(ri.getLandingPageURI());
             r.setLanguages(new HashSet<String>(ri.getLanguages()));
 
@@ -230,39 +230,6 @@ public class ScanCrawler {
                 }
             }
         }
-    }
-
-    private static String getBestValueFromNullable(Map<String, String> map, String defaultValue) {
-        if (map == null || map.isEmpty()) {
-            return defaultValue;
-        }
-        return getBestValueFrom(map);
-    }
-
-    private static String getBestValueFromNullable(Map<String, String> map) {
-        return getBestValueFromNullable(map, null);
-    }
-
-    private static String getBestValueFrom(Map<String, String> map) {
-        String ret = map.get("en");
-        if (ret == null || ret.trim().isEmpty()) {
-            ret = map.get("eng");
-        }
-        if (ret == null || ret.trim().isEmpty()) {
-            ret = map.get(null);
-        }
-        if (ret == null || ret.trim().isEmpty()) {
-            ret = map.get("de");
-        }
-        if (ret == null || ret.trim().isEmpty()) {
-            ret = map.get("deu");
-        }
-        if (ret == null || ret.trim().isEmpty()) {
-            ret = map.size() > 0
-                    ? map.values().iterator().next()
-                    : null;
-        }
-        return ret;
     }
 
     class ScanTask implements ThrottledClient.ScanCallback {

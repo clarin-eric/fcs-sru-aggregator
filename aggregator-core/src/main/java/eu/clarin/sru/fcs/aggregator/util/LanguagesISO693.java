@@ -1,15 +1,14 @@
 package eu.clarin.sru.fcs.aggregator.util;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+
 import org.slf4j.LoggerFactory;
 
 /**
@@ -18,8 +17,8 @@ import org.slf4j.LoggerFactory;
  * @author Yana Panchenko
  */
 public class LanguagesISO693 {
-
     private static final org.slf4j.Logger log = LoggerFactory.getLogger(LanguagesISO693.class);
+
     public static final String LANGUAGES_FILE_PATH = "/lang/iso-639-3_20140320.tab";
     public static final String LANGUAGES_FILE_ENCODING = "UTF-8";
 
@@ -27,8 +26,12 @@ public class LanguagesISO693 {
 
     public static class Language {
 
-        // code is ISO-639-3 (3 letters) while code_1 is ISO-639-1 (2 letters)
-        private String code_3, code_1, name;
+        // code_3 is ISO-639-3 (3 letters)
+        public final String code_3;
+        // code_1 is ISO-639-1 (2 letters)
+        public final String code_1;
+        // English language name
+        public final String name;
 
         public Language(String code_3, String code_1, String name) {
             this.code_3 = code_3;
@@ -69,12 +72,6 @@ public class LanguagesISO693 {
         } catch (IOException ex) {
             log.error("Initialization of languages code to name mapping failed.", ex);
         }
-
-        ObjectWriter ow = new ObjectMapper().writerWithDefaultPrettyPrinter();
-        try {
-            System.out.println(ow.writeValueAsString(codeToLang));
-        } catch (JsonProcessingException ex) {
-        }
     }
 
     public static LanguagesISO693 getInstance() {
@@ -82,6 +79,10 @@ public class LanguagesISO693 {
             instance = new LanguagesISO693();
         }
         return instance;
+    }
+
+    public Map<String, Language> getCodeToLangMap() {
+        return Collections.unmodifiableMap(codeToLang);
     }
 
     public boolean isCode(String code) {

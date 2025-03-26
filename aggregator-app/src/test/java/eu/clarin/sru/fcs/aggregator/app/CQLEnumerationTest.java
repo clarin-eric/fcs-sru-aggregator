@@ -1,31 +1,32 @@
 package eu.clarin.sru.fcs.aggregator.app;
 
-import eu.clarin.sru.fcs.aggregator.scan.CenterRegistry;
-import eu.clarin.sru.fcs.aggregator.scan.CenterRegistryLive;
-import eu.clarin.sru.fcs.aggregator.scan.ClientFactory;
-import eu.clarin.sru.fcs.aggregator.scan.Endpoint;
-import eu.clarin.sru.fcs.aggregator.scan.Institution;
-import io.dropwizard.core.setup.Environment;
-import io.dropwizard.testing.ResourceHelpers;
-import io.dropwizard.testing.junit5.DropwizardAppExtension;
-import io.dropwizard.testing.junit5.DropwizardExtensionsSupport;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
 import javax.naming.NamingException;
 import javax.ws.rs.client.Client;
 
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricFilter;
 
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import eu.clarin.sru.fcs.aggregator.app.scan.ClientFactory;
+import eu.clarin.sru.fcs.aggregator.scan.CenterRegistry;
+import eu.clarin.sru.fcs.aggregator.scan.CenterRegistryLive;
+import eu.clarin.sru.fcs.aggregator.scan.Endpoint;
+import eu.clarin.sru.fcs.aggregator.scan.Institution;
+import io.dropwizard.core.setup.Environment;
+import io.dropwizard.testing.ResourceHelpers;
+import io.dropwizard.testing.junit5.DropwizardAppExtension;
+import io.dropwizard.testing.junit5.DropwizardExtensionsSupport;
 
 /**
  *

@@ -1,9 +1,5 @@
 package eu.clarin.sru.fcs.aggregator.scan;
 
-import eu.clarin.sru.client.fcs.ClarinFCSConstants;
-import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescription.DataView;
-import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescription.Layer;
-import eu.clarin.sru.fcs.aggregator.util.LanguagesISO693;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -11,7 +7,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
+
 import org.slf4j.LoggerFactory;
+
+import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescription.DataView;
+import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescription.Layer;
+import eu.clarin.sru.client.fcs.DataViewAdvanced;
+import eu.clarin.sru.fcs.aggregator.util.LanguagesISO693;
 
 /**
  * Represents information about resource, such as resource handle (id),
@@ -21,28 +23,27 @@ import org.slf4j.LoggerFactory;
  * @author Yana Panchenko
  */
 public class Resource {
-
     private static final org.slf4j.Logger log = LoggerFactory.getLogger(Resource.class);
 
     public static final String ROOT_HANDLE = "root";
     public static final Pattern HANDLE_WITH_SPECIAL_CHARS = Pattern.compile(".*[<>=/()\\s].*");
 
-    // TODO: use from CLARIN libs
-    public static final String MIMETYPE_DATAVIEW_HITS = "application/x-clarin-fcs-hits+xml";
-    public static final String MIMETYPE_DATAVIEW_ADVANCED = "application/x-clarin-fcs-adv+xml";
-
     private Institution endpointInstitution;
     private Endpoint endpoint;
+
     private String handle;
     private Integer numberOfRecords;
+
     private Set<String> languages = new HashSet<String>();
     private String landingPage;
     private String title;
     private String description;
     private String institution;
+
     private EnumSet<FCSSearchCapabilities> searchCapabilities = EnumSet.of(FCSSearchCapabilities.BASIC_SEARCH);
     private List<DataView> availableDataViews;
     private List<Layer> availableLayers;
+
     public List<Resource> subResources = Collections.synchronizedList(new ArrayList<Resource>());
 
     public Resource() {
@@ -55,9 +56,6 @@ public class Resource {
 
     public String getId() {
         return endpoint.getUrl() + "#" + handle;
-    }
-
-    public void setId(String id) { // dumb setter for JsonDeserialization
     }
 
     public void addResource(Resource r) {
@@ -133,11 +131,11 @@ public class Resource {
 
         if (availableDataViews != null && !availableDataViews.isEmpty()) {
             for (DataView availableDataView : availableDataViews) {
-                // if (availableDataView.getMimeType().equals(MIMETYPE_DATAVIEW_HITS)) {
+                // if (availableDataView.getMimeType().equals(DataViewHits.TYPE)) {
                 // // NOTE: this dataview is required
                 // resolvedSearchCapabilities.add(FCSSearchCapabilities.BASIC_SEARCH);
                 // } else
-                if (availableDataView.getMimeType().equals(MIMETYPE_DATAVIEW_ADVANCED)) {
+                if (availableDataView.getMimeType().equals(DataViewAdvanced.TYPE)) {
                     resolvedSearchCapabilities.add(FCSSearchCapabilities.ADVANCED_SEARCH);
                 }
             }

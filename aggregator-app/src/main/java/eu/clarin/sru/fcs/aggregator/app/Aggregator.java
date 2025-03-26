@@ -1,46 +1,5 @@
 package eu.clarin.sru.fcs.aggregator.app;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.optimaize.langdetect.LanguageDetector;
-import com.optimaize.langdetect.LanguageDetectorBuilder;
-import com.optimaize.langdetect.ngram.NgramExtractors;
-import com.optimaize.langdetect.profiles.LanguageProfile;
-import com.optimaize.langdetect.profiles.LanguageProfileReader;
-import com.optimaize.langdetect.text.*;
-import eu.clarin.sru.client.SRUThreadedClient;
-import eu.clarin.sru.fcs.aggregator.search.Search;
-import eu.clarin.sru.fcs.aggregator.scan.ScanCrawlTask;
-import eu.clarin.sru.fcs.aggregator.scan.CenterRegistryLive;
-import eu.clarin.sru.fcs.aggregator.scan.ClientFactory;
-import eu.clarin.sru.fcs.aggregator.scan.Resources;
-import eu.clarin.sru.client.SRUVersion;
-import eu.clarin.sru.client.fcs.ClarinFCSClientBuilder;
-import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescription;
-import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescriptionParser;
-import eu.clarin.sru.fcs.aggregator.app.serialization.ClarinFCSEndpointDescriptionDataViewMixin;
-import eu.clarin.sru.fcs.aggregator.app.serialization.ClarinFCSEndpointDescriptionLayerMixin;
-import eu.clarin.sru.fcs.aggregator.app.serialization.StatisticsEndpointStatsMixin;
-import eu.clarin.sru.fcs.aggregator.client.MaxConcurrentRequestsCallback;
-import eu.clarin.sru.fcs.aggregator.client.ThrottledClient;
-import eu.clarin.sru.fcs.aggregator.scan.Resource;
-import eu.clarin.sru.fcs.aggregator.rest.RestService;
-import eu.clarin.sru.fcs.aggregator.scan.Statistics;
-import eu.clarin.sru.fcs.aggregator.scan.ScanCrawlTask.ScanCrawlTaskCompletedCallback;
-import eu.clarin.sru.fcs.aggregator.util.LanguagesISO693;
-import io.dropwizard.core.Application;
-import io.dropwizard.assets.AssetsBundle;
-import io.dropwizard.configuration.EnvironmentVariableSubstitutor;
-import io.dropwizard.configuration.SubstitutingSourceProvider;
-import io.dropwizard.core.setup.Bootstrap;
-import io.dropwizard.core.setup.Environment;
-import io.dropwizard.views.common.ViewBundle;
-import io.swagger.v3.jaxrs2.SwaggerSerializers;
-import io.swagger.v3.jaxrs2.integration.resources.OpenApiResource;
-import io.swagger.v3.oas.integration.SwaggerConfiguration;
-import io.swagger.v3.oas.models.OpenAPI;
-import io.swagger.v3.oas.models.servers.Server;
-
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -60,6 +19,54 @@ import javax.ws.rs.client.Client;
 
 import org.eclipse.jetty.server.session.SessionHandler;
 import org.slf4j.LoggerFactory;
+
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.optimaize.langdetect.LanguageDetector;
+import com.optimaize.langdetect.LanguageDetectorBuilder;
+import com.optimaize.langdetect.ngram.NgramExtractors;
+import com.optimaize.langdetect.profiles.LanguageProfile;
+import com.optimaize.langdetect.profiles.LanguageProfileReader;
+import com.optimaize.langdetect.text.CommonTextObjectFactories;
+import com.optimaize.langdetect.text.TextObjectFactory;
+
+import eu.clarin.sru.client.SRUThreadedClient;
+import eu.clarin.sru.client.SRUVersion;
+import eu.clarin.sru.client.fcs.ClarinFCSClientBuilder;
+import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescription;
+import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescriptionParser;
+import eu.clarin.sru.fcs.aggregator.app.scan.ClientFactory;
+import eu.clarin.sru.fcs.aggregator.app.serialization.ClarinFCSEndpointDescriptionDataViewMixin;
+import eu.clarin.sru.fcs.aggregator.app.serialization.ClarinFCSEndpointDescriptionLayerMixin;
+import eu.clarin.sru.fcs.aggregator.app.serialization.ResourcesMixin;
+import eu.clarin.sru.fcs.aggregator.app.serialization.ResultMetaMixin;
+import eu.clarin.sru.fcs.aggregator.app.serialization.StatisticsEndpointStatsMixin;
+import eu.clarin.sru.fcs.aggregator.client.MaxConcurrentRequestsCallback;
+import eu.clarin.sru.fcs.aggregator.client.ThrottledClient;
+import eu.clarin.sru.fcs.aggregator.rest.RestService;
+import eu.clarin.sru.fcs.aggregator.rest.WeblichtExportCache;
+import eu.clarin.sru.fcs.aggregator.scan.CenterRegistryLive;
+import eu.clarin.sru.fcs.aggregator.scan.Resource;
+import eu.clarin.sru.fcs.aggregator.scan.Resources;
+import eu.clarin.sru.fcs.aggregator.scan.ScanCrawlTask;
+import eu.clarin.sru.fcs.aggregator.scan.ScanCrawlTask.ScanCrawlTaskCompletedCallback;
+import eu.clarin.sru.fcs.aggregator.scan.Statistics;
+import eu.clarin.sru.fcs.aggregator.search.ResultMeta;
+import eu.clarin.sru.fcs.aggregator.search.Search;
+import eu.clarin.sru.fcs.aggregator.util.LanguagesISO693;
+import io.dropwizard.assets.AssetsBundle;
+import io.dropwizard.configuration.EnvironmentVariableSubstitutor;
+import io.dropwizard.configuration.SubstitutingSourceProvider;
+import io.dropwizard.core.Application;
+import io.dropwizard.core.setup.Bootstrap;
+import io.dropwizard.core.setup.Environment;
+import io.dropwizard.views.common.ViewBundle;
+import io.swagger.v3.jaxrs2.SwaggerSerializers;
+import io.swagger.v3.jaxrs2.integration.resources.OpenApiResource;
+import io.swagger.v3.oas.integration.SwaggerConfiguration;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.servers.Server;
 
 /**  ---- FCS AGGREGATOR OVERVIEW ----
  *
@@ -150,7 +157,9 @@ public class Aggregator extends Application<AggregatorConfiguration> {
     public MaxConcurrentRequestsCallback maxScanConcurrentRequestsCallback;
     public MaxConcurrentRequestsCallback maxSearchConcurrentRequestsCallback;
     public ScanCrawlTaskCompletedCallback scanCrawlTaskCompletedCallback;
-    private Map<String, Search> activeSearches = Collections.synchronizedMap(new HashMap<String, Search>());
+
+    private Map<String, Search> activeSearches = Collections.synchronizedMap(new HashMap<>());
+    private Map<String, WeblichtExportCache> activeWeblichtExports = Collections.synchronizedMap(new HashMap<>());
 
     public static void main(String[] args) throws Exception {
         new Aggregator().run(args);
@@ -222,7 +231,8 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 
         // custom serialization of POJOs
         environment.getObjectMapper()
-                .addMixIn(Statistics.EndpointStats.class, StatisticsEndpointStatsMixin.class);
+                .addMixIn(Statistics.EndpointStats.class, StatisticsEndpointStatsMixin.class)
+                .addMixIn(ResultMeta.class, ResultMetaMixin.class);
 
         // swagger
         if (config.aggregatorParams.openapiEnabled) {
@@ -318,7 +328,17 @@ public class Aggregator extends Application<AggregatorConfiguration> {
             }
         }
 
-        LanguagesISO693.getInstance(); // force init
+        // force init
+        LanguagesISO693.getInstance();
+        // {
+        // System.out.println("LanguagesISO693: ");
+        // final ObjectWriter ow = new ObjectMapper().writerWithDefaultPrettyPrinter();
+        // try {
+        // System.out.println(ow.writeValueAsString(LanguagesISO693.getInstance().getCodeToLangMap()));
+        // } catch (JsonProcessingException ex) {
+        // }
+        // }
+
         initLanguageDetector();
 
         final Client jerseyClient = ClientFactory.create(CenterRegistryLive.CONNECT_TIMEOUT,
@@ -398,6 +418,7 @@ public class Aggregator extends Application<AggregatorConfiguration> {
                 }
                 for (String l : toBeRemoved) {
                     activeSearches.remove(l);
+                    activeWeblichtExports.remove(l);
                 }
             }
             activeSearches.put(sr.getId(), sr);
@@ -407,6 +428,15 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 
     public Search getSearchById(String id) {
         return activeSearches.get(id);
+    }
+
+    public WeblichtExportCache getWeblichtExportCacheBySearchId(String searchId, boolean createIfNeeded) {
+        WeblichtExportCache cache = activeWeblichtExports.get(searchId);
+        if (cache == null && createIfNeeded) {
+            cache = new WeblichtExportCache();
+            activeWeblichtExports.put(searchId, cache);
+        }
+        return cache;
     }
 
     private static void shutdownAndAwaitTermination(AggregatorConfiguration.Params params,
@@ -439,6 +469,18 @@ public class Aggregator extends Application<AggregatorConfiguration> {
         return languageDetector.detect(textObjectFactory.forText(text)).orNull();
     }
 
+    private static ObjectMapper createResourcesCacheMapper() {
+        // add definitions
+        // - for Jackson Deserializer due to non-public non-default constructors
+        // - ignore unknown properties
+        return new ObjectMapper()
+                .addMixIn(ClarinFCSEndpointDescription.DataView.class,
+                        ClarinFCSEndpointDescriptionDataViewMixin.class)
+                .addMixIn(ClarinFCSEndpointDescription.Layer.class, ClarinFCSEndpointDescriptionLayerMixin.class)
+                .addMixIn(Resources.class, ResourcesMixin.class)
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    }
+
     private static void writeResourcesCache(Resources resources, File cachedResources, File oldCachedResources)
             throws IOException {
         if (cachedResources.exists()) {
@@ -453,17 +495,12 @@ public class Aggregator extends Application<AggregatorConfiguration> {
                 // ignore
             }
         }
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = createResourcesCacheMapper();
         mapper.writerWithDefaultPrettyPrinter().writeValue(cachedResources, resources);
     }
 
     private static Resources loadResourcesCache(File cachedResources, File oldCachedResources) throws IOException {
-        // add definitions for Jackson Deserializer due to non-public non-default
-        // constructors
-        ObjectMapper mapper = new ObjectMapper()
-                .addMixIn(ClarinFCSEndpointDescription.DataView.class,
-                        ClarinFCSEndpointDescriptionDataViewMixin.class)
-                .addMixIn(ClarinFCSEndpointDescription.Layer.class, ClarinFCSEndpointDescriptionLayerMixin.class);
+        ObjectMapper mapper = createResourcesCacheMapper();
 
         Resources resources = null;
         try {

@@ -10,8 +10,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Node;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 import eu.clarin.sru.client.SRUDiagnostic;
 import eu.clarin.sru.client.SRURecord;
 import eu.clarin.sru.client.SRUSearchRetrieveResponse;
@@ -26,44 +24,29 @@ import eu.clarin.sru.fcs.aggregator.scan.Diagnostic;
 import eu.clarin.sru.fcs.aggregator.scan.JavaException;
 import eu.clarin.sru.fcs.aggregator.scan.Resource;
 
-public class MetaOnlyResult {
+public class ResultMeta {
+    private static final org.slf4j.Logger log = LoggerFactory.getLogger(ResultMeta.class);
 
-    private static final org.slf4j.Logger log = LoggerFactory.getLogger(Result.class);
+    protected AtomicReference<String> resourceHandle = new AtomicReference<String>();
+    protected AtomicReference<String> endpointUrl = new AtomicReference<String>();
 
-    private AtomicReference<String> resourceHandle = new AtomicReference<String>();
-    private AtomicReference<String> endpointUrl = new AtomicReference<String>();
+    protected AtomicBoolean inProgress = new AtomicBoolean(true);
 
-    private AtomicBoolean inProgress = new AtomicBoolean(true);
+    protected AtomicInteger nextRecordPosition = new AtomicInteger(1);
+    protected AtomicInteger numberOfRecords = new AtomicInteger(-1);
+    protected AtomicInteger numberOfRecordsLoaded = new AtomicInteger(0);
 
-    private AtomicInteger nextRecordPosition = new AtomicInteger(1);
-    private AtomicInteger numberOfRecords = new AtomicInteger(-1);
-    private AtomicInteger numberOfRecordsLoaded = new AtomicInteger(0);
+    protected AtomicBoolean hasAdvancedResults = new AtomicBoolean(false);
 
-    private AtomicBoolean hasAdvResults = new AtomicBoolean(false);
+    protected AtomicReference<JavaException> exception = new AtomicReference<JavaException>();
+    protected List<Diagnostic> diagnostics = Collections.synchronizedList(new ArrayList<Diagnostic>());
 
-    private AtomicReference<JavaException> exception = new AtomicReference<JavaException>();
-    private List<Diagnostic> diagnostics = Collections.synchronizedList(new ArrayList<Diagnostic>());
-
-    public MetaOnlyResult(Resource resource) {
+    public ResultMeta(Resource resource) {
         endpointUrl.set(resource.getEndpoint().getUrl());
         resourceHandle.set(resource.getHandle());
     }
 
-    public MetaOnlyResult(Result result) {
-        endpointUrl.set(result.getResource().getEndpoint().getUrl());
-        resourceHandle.set(result.getResource().getHandle());
-
-        inProgress.set(result.getInProgress());
-
-        nextRecordPosition.set(result.getNextRecordPosition());
-        numberOfRecords.set(result.getNumberOfRecords());
-        numberOfRecordsLoaded.set(result.getKwics().size());
-
-        hasAdvResults.set(result.hasAdvancedResults());
-
-        diagnostics.addAll(result.getDiagnostics());
-        exception.set(result.getException());
-    }
+    // ----------------------------------------------------------------------
 
     public String getResourceHandle() {
         return resourceHandle.get();
@@ -120,10 +103,11 @@ public class MetaOnlyResult {
         return numberOfRecordsLoaded.get();
     }
 
-    @JsonProperty("hasAdvResults")
     public boolean hasAdvancedResults() {
-        return hasAdvResults.get();
+        return hasAdvancedResults.get();
     }
+
+    // ----------------------------------------------------------------------
 
     public void addResponse(SRUSearchRetrieveResponse response) {
         if (response != null) {
@@ -195,13 +179,23 @@ public class MetaOnlyResult {
                 log.debug("DataView (generic string): data = {}",
                         view.getContent());
             } else if (dataview instanceof DataViewHits) {
-                final DataViewHits hits = (DataViewHits) dataview;
-                final Kwic kwic = new Kwic(hits, pid, reference);
                 numberOfRecordsLoaded.incrementAndGet();
-                log.debug("DataViewHits: {}", kwic.getFragments());
+                processDataViewHits((DataViewHits) dataview, pid, reference);
             } else if (dataview instanceof DataViewAdvanced) {
-                hasAdvResults.set(true);
+                hasAdvancedResults.set(true);
+                processDataViewAdvanced((DataViewAdvanced) dataview, pid, reference);
             }
         }
     }
+
+    // for overriding
+
+    protected void processDataViewHits(final DataViewHits dataview, final String pid, final String reference) {
+        // empty
+    }
+
+    protected void processDataViewAdvanced(final DataViewAdvanced dataview, final String pid, final String reference) {
+        // empty
+    }
+
 }

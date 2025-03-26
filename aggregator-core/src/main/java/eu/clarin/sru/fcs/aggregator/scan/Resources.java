@@ -1,6 +1,5 @@
 package eu.clarin.sru.fcs.aggregator.scan;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -20,9 +19,7 @@ public class Resources {
 
     private static final org.slf4j.Logger log = LoggerFactory.getLogger(Resources.class);
 
-    @JsonProperty
     private List<Institution> institutions = Collections.synchronizedList(new ArrayList<Institution>());
-    @JsonProperty
     private List<Resource> resources = new ArrayList<Resource>();
 
     public List<Institution> getInstitutions() {

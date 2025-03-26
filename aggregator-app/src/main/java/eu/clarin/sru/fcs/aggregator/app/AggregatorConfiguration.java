@@ -1,14 +1,6 @@
 package eu.clarin.sru.fcs.aggregator.app;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
-
-import eu.clarin.sru.fcs.aggregator.scan.EndpointConfig;
-import io.dropwizard.core.Configuration;
-
-import java.net.MalformedURLException;
 import java.net.URI;
-import java.net.URL;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -17,6 +9,12 @@ import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
 import org.hibernate.validator.constraints.Range;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import eu.clarin.sru.fcs.aggregator.scan.EndpointConfig;
+import io.dropwizard.core.Configuration;
 
 public class AggregatorConfiguration extends Configuration {
 

@@ -1,27 +1,12 @@
 package eu.clarin.sru.fcs.aggregator.app;
 
-import eu.clarin.sru.client.SRUThreadedClient;
-import eu.clarin.sru.client.fcs.ClarinFCSClientBuilder;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import eu.clarin.sru.fcs.aggregator.client.MaxConcurrentRequestsCallback;
-import eu.clarin.sru.fcs.aggregator.scan.Resources;
-import eu.clarin.sru.fcs.aggregator.scan.EndpointUrlFilterAllow;
-import eu.clarin.sru.fcs.aggregator.scan.ScanCrawler;
-import eu.clarin.sru.fcs.aggregator.client.ThrottledClient;
-import eu.clarin.sru.fcs.aggregator.scan.CenterRegistryLive;
-import eu.clarin.sru.fcs.aggregator.scan.ClientFactory;
-import eu.clarin.sru.fcs.aggregator.scan.Resource;
-import io.dropwizard.core.setup.Environment;
-import io.dropwizard.testing.ResourceHelpers;
-import io.dropwizard.testing.junit5.DropwizardAppExtension;
-import io.dropwizard.testing.junit5.DropwizardExtensionsSupport;
 
 import java.net.URI;
 import java.util.HashSet;
 import java.util.Set;
-import javax.naming.InitialContext;
+
 import javax.naming.NamingException;
 import javax.ws.rs.client.Client;
 
@@ -33,6 +18,21 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricFilter;
+
+import eu.clarin.sru.client.SRUThreadedClient;
+import eu.clarin.sru.client.fcs.ClarinFCSClientBuilder;
+import eu.clarin.sru.fcs.aggregator.app.scan.ClientFactory;
+import eu.clarin.sru.fcs.aggregator.client.MaxConcurrentRequestsCallback;
+import eu.clarin.sru.fcs.aggregator.client.ThrottledClient;
+import eu.clarin.sru.fcs.aggregator.scan.CenterRegistryLive;
+import eu.clarin.sru.fcs.aggregator.scan.EndpointUrlFilterAllow;
+import eu.clarin.sru.fcs.aggregator.scan.Resource;
+import eu.clarin.sru.fcs.aggregator.scan.Resources;
+import eu.clarin.sru.fcs.aggregator.scan.ScanCrawler;
+import io.dropwizard.core.setup.Environment;
+import io.dropwizard.testing.ResourceHelpers;
+import io.dropwizard.testing.junit5.DropwizardAppExtension;
+import io.dropwizard.testing.junit5.DropwizardExtensionsSupport;
 
 /**
  *

@@ -62,7 +62,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
  */
 @Produces(MediaType.APPLICATION_JSON)
 @Path("/rest")
-@OpenAPIDefinition(info = @Info(title = Aggregator.NAME + " REST API", version = "1.2.0", description = "The "
+@OpenAPIDefinition(info = @Info(title = Aggregator.NAME + " REST API", version = "1.3.0", description = "The "
         + Aggregator.NAME + " REST API is documented following the open API specification."
         + "<br />Code repository is hosted on <a href=\"https://github.com/clarin-eric/fcs-sru-aggregator\">GitHub</a>.", license = @License(name = "GNU General Public License Version 3 (GPLv3)", url = "https://www.gnu.org/licenses/gpl-3.0.txt")))
 public class RestService {
@@ -108,7 +108,7 @@ public class RestService {
         return Response.ok(languages).build();
     }
 
-    @SuppressWarnings({ "serial", "unchecked" })
+    @SuppressWarnings({ "unchecked" })
     @GET
     @Produces({ MediaType.APPLICATION_JSON })
     @Path("init")
@@ -368,11 +368,11 @@ public class RestService {
                     @ApiResponse(responseCode = "404", description = "Weblicht export data not found.")
             })
     public Response getWeblichtExport(@PathParam("id") String searchId, @PathParam("eid") String exportId) {
-        Search search = Aggregator.getInstance().getSearchById(searchId);
-        if (search == null) {
+        WeblichtExportCache cache = Aggregator.getInstance().getWeblichtExportCacheBySearchId(searchId, false);
+        if (cache == null) {
             return Response.status(Response.Status.NOT_FOUND).entity("Search job not found").build();
         }
-        byte[] bytes = search.getWeblichtExport(exportId);
+        byte[] bytes = cache.getWeblichtExport(exportId);
         if (bytes == null) {
             return Response.status(Response.Status.NOT_FOUND).entity("Weblicht export data not found").build();
         }
@@ -406,7 +406,9 @@ public class RestService {
         if (bytes != null) {
             // store bytes in-memory TCF weblicht export in searches (searches might only
             // live up to 60min if under high load)
-            String exportId = search.addWeblichtExport(bytes);
+            WeblichtExportCache cache = Aggregator.getInstance().getWeblichtExportCacheBySearchId(searchId, true);
+            String exportId = cache.addWeblichtExport(bytes);
+
             url = "search/{id}/weblicht-export/{eid}".replace("{id}", searchId).replace("{eid}", exportId);
             url = weblicht.getExportServerUrl() + url;
             log.debug("Export weblicht url: {}", url);
