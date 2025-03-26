@@ -1,4 +1,4 @@
-package eu.clarin.sru.fcs.aggregator.search;
+package eu.clarin.sru.fcs.aggregator.app.export;
 
 /**
  * @author edima

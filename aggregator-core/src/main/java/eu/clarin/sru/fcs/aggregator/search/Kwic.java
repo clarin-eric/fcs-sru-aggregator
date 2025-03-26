@@ -1,11 +1,11 @@
 package eu.clarin.sru.fcs.aggregator.search;
 
-import eu.clarin.sru.client.fcs.DataViewHits;
-import eu.clarin.sru.fcs.aggregator.app.Aggregator;
-import eu.clarin.sru.fcs.aggregator.util.LanguagesISO693;
 import java.util.ArrayList;
 import java.util.List;
+
 import org.apache.commons.text.StringEscapeUtils;
+
+import eu.clarin.sru.client.fcs.DataViewHits;
 
 /**
  * Represents keyword in context data view and information about its PID and
@@ -17,8 +17,8 @@ public class Kwic {
 
     public static class TextFragment {
 
-        String text;
-        boolean isHit;
+        private final String text;
+        private final boolean isHit;
 
         public TextFragment(String text, boolean isHit) {
             this.text = text;
@@ -39,8 +39,8 @@ public class Kwic {
         }
     }
 
-    private String pid;
-    private String reference;
+    private final String pid;
+    private final String reference;
     private String language;
     private List<TextFragment> fragments = new ArrayList<TextFragment>();
 
@@ -50,7 +50,7 @@ public class Kwic {
 
         // warning: the client library doesn't unescape the xml
         // so the text can still contains &lt; and &amp; codes
-        String str = hits.getText();
+        final String str = hits.getText();
 
         int lastOffset = 0;
         for (int i = 0; i < hits.getHitCount(); i++) {
@@ -69,10 +69,6 @@ public class Kwic {
             String text = StringEscapeUtils.unescapeXml(str.substring(lastOffset, str.length()));
             fragments.add(new TextFragment(text, false));
         }
-
-        String code_iso639_1 = Aggregator.getInstance().detectLanguage(str);
-        language = code_iso639_1 == null ? null
-                : LanguagesISO693.getInstance().code_3ForCode(code_iso639_1);
     }
 
     public List<TextFragment> getFragments() {
@@ -89,6 +85,10 @@ public class Kwic {
 
     public String getLanguage() {
         return language;
+    }
+
+    public void setLanguage(String language) {
+        this.language = language;
     }
 
     @Deprecated

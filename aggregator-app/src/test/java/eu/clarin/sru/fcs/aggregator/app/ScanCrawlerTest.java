@@ -21,7 +21,6 @@ import com.codahale.metrics.MetricFilter;
 
 import eu.clarin.sru.client.SRUThreadedClient;
 import eu.clarin.sru.client.fcs.ClarinFCSClientBuilder;
-import eu.clarin.sru.fcs.aggregator.app.scan.ClientFactory;
 import eu.clarin.sru.fcs.aggregator.client.MaxConcurrentRequestsCallback;
 import eu.clarin.sru.fcs.aggregator.client.ThrottledClient;
 import eu.clarin.sru.fcs.aggregator.scan.CenterRegistryLive;

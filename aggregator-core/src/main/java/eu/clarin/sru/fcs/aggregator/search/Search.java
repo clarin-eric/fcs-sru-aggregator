@@ -33,23 +33,29 @@ import eu.clarin.sru.fcs.aggregator.util.UniqueId;
 public class Search {
     private static final org.slf4j.Logger log = LoggerFactory.getLogger(Search.class);
 
+    private static final Pattern QUOTE_PATTERN = Pattern.compile("[\\s<>=/\\(\\)]");
+
     private final ThrottledClient searchClient;
+    private final Statistics statistics;
+
     private final SRUVersion version;
-    private final String id = UniqueId.generateId();
     private final String queryType;
     private final String query;
-    private final long createdAt = System.currentTimeMillis();
     private final String searchLanguage;
+
+    private final String id = UniqueId.generateId();
+    private final long createdAt = System.currentTimeMillis();
+
     private final List<Result> results = Collections.synchronizedList(new ArrayList<>());
-    private final Statistics statistics;
-    private static final Pattern quotePattern = Pattern.compile("[\\s<>=/\\(\\)]");
 
     public Search(ThrottledClient searchClient,
+            PerformLanguageDetectionCallback langDetectCallback,
             SRUVersion version,
             Statistics statistics, List<Resource> resources,
             String queryType, String searchString,
             String searchLanguage, int maxRecords) {
         this.searchClient = searchClient;
+
         this.version = version;
         this.queryType = queryType;
         this.query = quoteIfQuotableExpression(searchString, queryType);
@@ -58,7 +64,7 @@ public class Search {
 
         for (Resource resource : resources) {
             SRUVersion versionForResource = computeVersion(version, queryType, resource);
-            Result result = new Result(resource);
+            Result result = new Result(resource, langDetectCallback);
             executeSearch(result, versionForResource, queryType, query, 1, maxRecords);
             results.add(result);
         }
@@ -219,7 +225,7 @@ public class Search {
     }
 
     static String quoteIfQuotableExpression(final String queryString, final String queryType) {
-        Matcher matcher = quotePattern.matcher(queryString.trim());
+        Matcher matcher = QUOTE_PATTERN.matcher(queryString.trim());
         boolean quotableFound = matcher.find();
         if ("cql".equals(queryType) && quotableFound && '"' != queryString.charAt(0)) {
             return "\"" + queryString + "\"";

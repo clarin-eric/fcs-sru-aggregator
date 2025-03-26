@@ -26,14 +26,16 @@ public final class Result extends ResultMeta {
     private static final org.slf4j.Logger log = LoggerFactory.getLogger(Result.class);
 
     private final Resource resource;
+    private final PerformLanguageDetectionCallback langDetectCallback;
 
     private List<Kwic> kwics = Collections.synchronizedList(new ArrayList<Kwic>());
     private List<List<AdvancedLayer>> advancedLayers = Collections
             .synchronizedList(new ArrayList<List<AdvancedLayer>>());
 
-    public Result(Resource resource) {
+    public Result(Resource resource, PerformLanguageDetectionCallback langDetectCallback) {
         super(resource);
         this.resource = resource;
+        this.langDetectCallback = langDetectCallback;
     }
 
     public Resource getResource() {
@@ -53,6 +55,14 @@ public final class Result extends ResultMeta {
     @Override
     protected void processDataViewHits(DataViewHits dataview, String pid, String reference) {
         final Kwic kwic = new Kwic(dataview, pid, reference);
+
+        // auto-detect language for KWIC
+        if (langDetectCallback != null) {
+            String dvText = dataview.getText();
+            String language = langDetectCallback.detect(dvText);
+            kwic.setLanguage(language);
+        }
+
         kwics.add(kwic);
         log.debug("DataViewHits: {}", kwic.getFragments());
     }

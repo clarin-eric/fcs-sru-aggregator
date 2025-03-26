@@ -1,4 +1,4 @@
-package eu.clarin.sru.fcs.aggregator.rest;
+package eu.clarin.sru.fcs.aggregator.app.rest;
 
 import java.util.List;
 import java.util.Map;

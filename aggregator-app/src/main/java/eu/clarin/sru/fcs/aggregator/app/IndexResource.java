@@ -1,8 +1,8 @@
 package eu.clarin.sru.fcs.aggregator.app;
 
-import static eu.clarin.sru.fcs.aggregator.rest.RestService.PARAM_AGGREGATION_CONTEXT;
-import static eu.clarin.sru.fcs.aggregator.rest.RestService.PARAM_MODE;
-import static eu.clarin.sru.fcs.aggregator.rest.RestService.PARAM_QUERY;
+import static eu.clarin.sru.fcs.aggregator.app.rest.RestService.PARAM_AGGREGATION_CONTEXT;
+import static eu.clarin.sru.fcs.aggregator.app.rest.RestService.PARAM_MODE;
+import static eu.clarin.sru.fcs.aggregator.app.rest.RestService.PARAM_QUERY;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;

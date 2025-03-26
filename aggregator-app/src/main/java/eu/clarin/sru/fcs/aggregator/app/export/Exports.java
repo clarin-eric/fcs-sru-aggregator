@@ -1,5 +1,8 @@
-package eu.clarin.sru.fcs.aggregator.search;
+package eu.clarin.sru.fcs.aggregator.app.export;
 
+import eu.clarin.sru.fcs.aggregator.search.AdvancedLayer;
+import eu.clarin.sru.fcs.aggregator.search.Kwic;
+import eu.clarin.sru.fcs.aggregator.search.Result;
 import eu.clarin.sru.fcs.aggregator.util.LanguagesISO693;
 import eu.clarin.weblicht.wlfxb.io.WLDObjector;
 import eu.clarin.weblicht.wlfxb.io.WLFormatException;
@@ -392,7 +395,7 @@ public class Exports {
                     }
                     int i = kwic.getFragments().size() - 1;
                     for (Kwic.TextFragment tf : kwic.getFragments()) {
-                        text.append(tf.text);
+                        text.append(tf.getText());
                         char last = text.length() > 0 ? text.charAt(text.length() - 1) : ' ';
                         if (i > 0 && !Character.isWhitespace(last)) {
                             text.append(" ");

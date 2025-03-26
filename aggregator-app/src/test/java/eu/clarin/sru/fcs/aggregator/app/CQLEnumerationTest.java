@@ -18,7 +18,6 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricFilter;
 
-import eu.clarin.sru.fcs.aggregator.app.scan.ClientFactory;
 import eu.clarin.sru.fcs.aggregator.scan.CenterRegistry;
 import eu.clarin.sru.fcs.aggregator.scan.CenterRegistryLive;
 import eu.clarin.sru.fcs.aggregator.scan.Endpoint;

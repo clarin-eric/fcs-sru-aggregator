@@ -1,4 +1,4 @@
-package eu.clarin.sru.fcs.aggregator.rest;
+package eu.clarin.sru.fcs.aggregator.app.export;
 
 import java.util.ArrayList;
 import java.util.Arrays;

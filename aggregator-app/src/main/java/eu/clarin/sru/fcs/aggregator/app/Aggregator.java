@@ -36,7 +36,8 @@ import eu.clarin.sru.client.SRUVersion;
 import eu.clarin.sru.client.fcs.ClarinFCSClientBuilder;
 import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescription;
 import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescriptionParser;
-import eu.clarin.sru.fcs.aggregator.app.scan.ClientFactory;
+import eu.clarin.sru.fcs.aggregator.app.export.WeblichtExportCache;
+import eu.clarin.sru.fcs.aggregator.app.rest.RestService;
 import eu.clarin.sru.fcs.aggregator.app.serialization.ClarinFCSEndpointDescriptionDataViewMixin;
 import eu.clarin.sru.fcs.aggregator.app.serialization.ClarinFCSEndpointDescriptionLayerMixin;
 import eu.clarin.sru.fcs.aggregator.app.serialization.ResourcesMixin;
@@ -44,14 +45,13 @@ import eu.clarin.sru.fcs.aggregator.app.serialization.ResultMetaMixin;
 import eu.clarin.sru.fcs.aggregator.app.serialization.StatisticsEndpointStatsMixin;
 import eu.clarin.sru.fcs.aggregator.client.MaxConcurrentRequestsCallback;
 import eu.clarin.sru.fcs.aggregator.client.ThrottledClient;
-import eu.clarin.sru.fcs.aggregator.rest.RestService;
-import eu.clarin.sru.fcs.aggregator.rest.WeblichtExportCache;
 import eu.clarin.sru.fcs.aggregator.scan.CenterRegistryLive;
 import eu.clarin.sru.fcs.aggregator.scan.Resource;
 import eu.clarin.sru.fcs.aggregator.scan.Resources;
 import eu.clarin.sru.fcs.aggregator.scan.ScanCrawlTask;
 import eu.clarin.sru.fcs.aggregator.scan.ScanCrawlTask.ScanCrawlTaskCompletedCallback;
 import eu.clarin.sru.fcs.aggregator.scan.Statistics;
+import eu.clarin.sru.fcs.aggregator.search.PerformLanguageDetectionCallback;
 import eu.clarin.sru.fcs.aggregator.search.ResultMeta;
 import eu.clarin.sru.fcs.aggregator.search.Search;
 import eu.clarin.sru.fcs.aggregator.util.LanguagesISO693;
@@ -157,6 +157,7 @@ public class Aggregator extends Application<AggregatorConfiguration> {
     public MaxConcurrentRequestsCallback maxScanConcurrentRequestsCallback;
     public MaxConcurrentRequestsCallback maxSearchConcurrentRequestsCallback;
     public ScanCrawlTaskCompletedCallback scanCrawlTaskCompletedCallback;
+    public PerformLanguageDetectionCallback performLanguageDetectionCallback;
 
     private Map<String, Search> activeSearches = Collections.synchronizedMap(new HashMap<>());
     private Map<String, WeblichtExportCache> activeWeblichtExports = Collections.synchronizedMap(new HashMap<>());
@@ -165,10 +166,34 @@ public class Aggregator extends Application<AggregatorConfiguration> {
         new Aggregator().run(args);
     }
 
+    // ----------------------------------------------------------------------
+
     @Override
     public String getName() {
         return NAME;
     }
+
+    public static Aggregator getInstance() {
+        return instance;
+    }
+
+    public AggregatorConfiguration.Params getParams() {
+        return params;
+    }
+
+    public Resources getResources() {
+        return scanCacheAtom.get();
+    }
+
+    public Statistics getScanStatistics() {
+        return scanStatsAtom.get();
+    }
+
+    public Statistics getSearchStatistics() {
+        return searchStatsAtom.get();
+    }
+
+    // ----------------------------------------------------------------------
 
     @Override
     public void initialize(Bootstrap<AggregatorConfiguration> bootstrap) {
@@ -256,26 +281,6 @@ public class Aggregator extends Application<AggregatorConfiguration> {
         }
     }
 
-    public static Aggregator getInstance() {
-        return instance;
-    }
-
-    public AggregatorConfiguration.Params getParams() {
-        return params;
-    }
-
-    public Resources getResources() {
-        return scanCacheAtom.get();
-    }
-
-    public Statistics getScanStatistics() {
-        return scanStatsAtom.get();
-    }
-
-    public Statistics getSearchStatistics() {
-        return searchStatsAtom.get();
-    }
-
     public void init(Environment environment) throws IOException {
         log.info("Aggregator initialization started.");
 
@@ -341,6 +346,16 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 
         initLanguageDetector();
 
+        performLanguageDetectionCallback = new PerformLanguageDetectionCallback() {
+            @Override
+            public String detect(String content) {
+                String code_iso639_1 = detectLanguage(content);
+                String language = code_iso639_1 == null ? null
+                        : LanguagesISO693.getInstance().code_3ForCode(code_iso639_1);
+                return language;
+            }
+        };
+
         final Client jerseyClient = ClientFactory.create(CenterRegistryLive.CONNECT_TIMEOUT,
                 CenterRegistryLive.READ_TIMEOUT, environment);
 
@@ -383,6 +398,8 @@ public class Aggregator extends Application<AggregatorConfiguration> {
         log.info("Aggregator initialization finished.");
     }
 
+    // ----------------------------------------------------------------------
+
     public void shutdown(AggregatorConfiguration config) {
         log.info("Aggregator is shutting down.");
         for (Search search : activeSearches.values()) {
@@ -391,6 +408,24 @@ public class Aggregator extends Application<AggregatorConfiguration> {
         shutdownAndAwaitTermination(config.aggregatorParams, sruClient, scheduler);
         log.info("Aggregator shutdown complete.");
     }
+
+    private static void shutdownAndAwaitTermination(AggregatorConfiguration.Params params,
+            ThrottledClient sruClient, ExecutorService scheduler) {
+        try {
+            sruClient.shutdown();
+            scheduler.shutdown();
+            Thread.sleep(params.EXECUTOR_SHUTDOWN_TIMEOUT_MS);
+            sruClient.shutdownNow();
+            scheduler.shutdownNow();
+            Thread.sleep(params.EXECUTOR_SHUTDOWN_TIMEOUT_MS);
+        } catch (InterruptedException ie) {
+            sruClient.shutdownNow();
+            scheduler.shutdownNow();
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    // ----------------------------------------------------------------------
 
     // this function should be thread-safe
     public Search startSearch(SRUVersion version, List<Resource> resources,
@@ -403,7 +438,7 @@ public class Aggregator extends Application<AggregatorConfiguration> {
             // No query
             return null;
         } else {
-            Search sr = new Search(sruClient,
+            Search sr = new Search(sruClient, performLanguageDetectionCallback,
                     version, searchStatsAtom.get(),
                     resources, queryType, searchString, searchLang, maxRecords);
             if (activeSearches.size() > SEARCHES_SIZE_GC_THRESHOLD) {
@@ -439,21 +474,7 @@ public class Aggregator extends Application<AggregatorConfiguration> {
         return cache;
     }
 
-    private static void shutdownAndAwaitTermination(AggregatorConfiguration.Params params,
-            ThrottledClient sruClient, ExecutorService scheduler) {
-        try {
-            sruClient.shutdown();
-            scheduler.shutdown();
-            Thread.sleep(params.EXECUTOR_SHUTDOWN_TIMEOUT_MS);
-            sruClient.shutdownNow();
-            scheduler.shutdownNow();
-            Thread.sleep(params.EXECUTOR_SHUTDOWN_TIMEOUT_MS);
-        } catch (InterruptedException ie) {
-            sruClient.shutdownNow();
-            scheduler.shutdownNow();
-            Thread.currentThread().interrupt();
-        }
-    }
+    // ----------------------------------------------------------------------
 
     public void initLanguageDetector() throws IOException {
         List<LanguageProfile> languageProfiles = new LanguageProfileReader().readAll();
@@ -468,6 +489,8 @@ public class Aggregator extends Application<AggregatorConfiguration> {
     public String detectLanguage(String text) {
         return languageDetector.detect(textObjectFactory.forText(text)).orNull();
     }
+
+    // ----------------------------------------------------------------------
 
     private static ObjectMapper createResourcesCacheMapper() {
         // add definitions
@@ -520,4 +543,5 @@ public class Aggregator extends Application<AggregatorConfiguration> {
         }
         return resources;
     }
+
 }

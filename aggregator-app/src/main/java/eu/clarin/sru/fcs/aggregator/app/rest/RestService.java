@@ -1,4 +1,4 @@
-package eu.clarin.sru.fcs.aggregator.rest;
+package eu.clarin.sru.fcs.aggregator.app.rest;
 
 import java.io.IOException;
 import java.net.URI;
@@ -33,12 +33,13 @@ import eu.clarin.sru.client.SRUVersion;
 import eu.clarin.sru.fcs.aggregator.app.Aggregator;
 import eu.clarin.sru.fcs.aggregator.app.AggregatorConfiguration;
 import eu.clarin.sru.fcs.aggregator.app.AggregatorConfiguration.Params.WeblichtConfig;
+import eu.clarin.sru.fcs.aggregator.app.export.Exports;
+import eu.clarin.sru.fcs.aggregator.app.export.WeblichtExportCache;
 import eu.clarin.sru.fcs.aggregator.scan.FCSProtocolVersion;
 import eu.clarin.sru.fcs.aggregator.scan.FCSSearchCapabilities;
 import eu.clarin.sru.fcs.aggregator.scan.Resource;
 import eu.clarin.sru.fcs.aggregator.scan.Resources;
 import eu.clarin.sru.fcs.aggregator.scan.Statistics;
-import eu.clarin.sru.fcs.aggregator.search.Exports;
 import eu.clarin.sru.fcs.aggregator.search.Result;
 import eu.clarin.sru.fcs.aggregator.search.Search;
 import eu.clarin.sru.fcs.aggregator.util.LanguagesISO693;
