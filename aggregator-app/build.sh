@@ -142,8 +142,8 @@ if [ $RUN_JAR ]
 then
 	echo; echo "---- run devel"
 	JAR=`find target -iname 'aggregator-app-*.jar'`
-	echo java -cp src/main/resources:$JAR -Xmx4096m eu.clarin.sru.fcs.aggregator.app.Aggregator server aggregator_devel.yml
-	java $DEBUGGER_OPTS -cp src/main/resources:$JAR -Xmx4096m eu.clarin.sru.fcs.aggregator.app.Aggregator server aggregator_devel.yml
+	echo java -cp src/main/resources:$JAR -Xmx4096m eu.clarin.sru.fcs.aggregator.app.AggregatorApp server aggregator_devel.yml
+	java $DEBUGGER_OPTS -cp src/main/resources:$JAR -Xmx4096m eu.clarin.sru.fcs.aggregator.app.AggregatorApp server aggregator_devel.yml
 fi
 
 if [ $RUN_JAR_PRODUCTION ]

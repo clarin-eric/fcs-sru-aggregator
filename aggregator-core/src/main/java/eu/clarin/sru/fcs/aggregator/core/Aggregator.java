@@ -54,8 +54,10 @@ public class Aggregator {
         // create SRU client for scan/search requests
         sruClient = createClient(params);
 
-        // create and schedule scan crawl task
-        scheduleScanCrawlTask(sruClient, jerseyClient, params, filter, scanCrawlTaskCompletedCallback);
+        if (params.enableScanCrawlTask()) {
+            // create and schedule scan crawl task
+            scheduleScanCrawlTask(sruClient, jerseyClient, params, filter, scanCrawlTaskCompletedCallback);
+        }
     }
 
     public void scheduleScanCrawlTask(ThrottledClient sruClient, Client jerseyClient, ScanCrawlParams params,
@@ -78,7 +80,15 @@ public class Aggregator {
             long scanTaskInterval, TimeUnit scanTaskTimeUnit) {
         final ScanCrawlTask task = createScanCrawlTask(sruClient, jerseyClient, centerRegistryUrl, scanMaxDepth,
                 additionalCQLEndpoints, additionalFCSEndpoints, filter, scanCrawlTaskCompletedCallback);
-        scheduler.scheduleAtFixedRate(task, scanTaskInitialDelay, scanTaskInterval, scanTaskTimeUnit);
+        if (scanTaskInterval > 0) {
+            log.debug("Scheduling Scan scrawl at regular intervals: {} {} with initial delay of {}", scanTaskInterval,
+                    scanTaskTimeUnit, scanTaskInitialDelay);
+            scheduler.scheduleAtFixedRate(task, scanTaskInitialDelay, scanTaskInterval, scanTaskTimeUnit);
+        } else {
+            log.debug("Submit Scan crawl task to run once after initial delay: {} {}", scanTaskInitialDelay,
+                    scanTaskTimeUnit);
+            scheduler.schedule(task, scanTaskInitialDelay, scanTaskTimeUnit);
+        }
     }
 
     public void shutdown(ShutdownParams params) {
@@ -151,7 +161,7 @@ public class Aggregator {
 
     // this function should be thread-safe
     public Search startSearch(SRUVersion version, List<Resource> resources, String queryType, String searchString,
-            String searchLang, int firstRecord, int maxRecords) throws Exception {
+            String searchLang, int startRecord, int maxRecords) throws Exception {
         if (resources.isEmpty()) {
             // No resources
             return null;
@@ -161,7 +171,7 @@ public class Aggregator {
         } else {
             final Statistics stats = searchStatsAtom.get();
             final Search sr = new Search(sruClient, performLanguageDetectionCallback, version, stats, resources,
-                    queryType, searchString, searchLang, maxRecords);
+                    queryType, searchString, searchLang, startRecord, maxRecords);
             activeSearches.put(sr.getId(), sr);
             return sr;
         }

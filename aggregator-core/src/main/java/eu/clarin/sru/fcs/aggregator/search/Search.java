@@ -53,7 +53,7 @@ public class Search {
             SRUVersion version,
             Statistics statistics, List<Resource> resources,
             String queryType, String searchString,
-            String searchLanguage, int maxRecords) {
+            String searchLanguage, int startRecord, int maxRecords) {
         this.searchClient = searchClient;
 
         this.version = version;
@@ -62,10 +62,14 @@ public class Search {
         this.searchLanguage = searchLanguage;
         this.statistics = statistics;
 
+        if (startRecord < 1) {
+            startRecord = 1;
+        }
+
         for (Resource resource : resources) {
             SRUVersion versionForResource = computeVersion(version, queryType, resource);
             Result result = new Result(resource, langDetectCallback);
-            executeSearch(result, versionForResource, queryType, query, 1, maxRecords);
+            executeSearch(result, versionForResource, queryType, query, startRecord, maxRecords);
             results.add(result);
         }
     }

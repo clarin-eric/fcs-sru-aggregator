@@ -354,6 +354,11 @@ public class AggregatorApp extends Application<AggregatorConfiguration> {
             public int getSearchesAgeThreshold() {
                 return SEARCHES_AGE_GC_THRESHOLD;
             }
+
+            @Override
+            public boolean enableScanCrawlTask() {
+                return true;
+            }
         };
 
         // cached resources loading
@@ -441,7 +446,7 @@ public class AggregatorApp extends Application<AggregatorConfiguration> {
     // this function should be thread-safe
     public Search startSearch(SRUVersion version, List<Resource> resources,
             String queryType, String searchString, String searchLang,
-            int firstRecord, int maxRecords) throws Exception {
+            int startRecord, int maxRecords) throws Exception {
         // first some cleanup
         List<String> prunedSearchIds = aggregator.gcSearches(aggregatorParams);
         for (String searchId : prunedSearchIds) {
@@ -449,7 +454,7 @@ public class AggregatorApp extends Application<AggregatorConfiguration> {
         }
 
         // then the search
-        return aggregator.startSearch(version, resources, queryType, searchString, searchLang, firstRecord, maxRecords);
+        return aggregator.startSearch(version, resources, queryType, searchString, searchLang, startRecord, maxRecords);
     }
 
     public Search getSearchById(String id) {

@@ -95,6 +95,15 @@ public class Statistics {
         public int getNumberOfRequests() {
             return executionTimes.size();
         }
+
+        @Override
+        public String toString() {
+            return "EndpointStats [version=" + version + ", searchCapabilities=" + searchCapabilities
+                    + ", rootResources=" + rootResources + ", diagnostics=" + diagnostics + ", errors=" + errors
+                    + ", getAvgQueueTime()=" + getAvgQueueTime() + ", getMaxQueueTime()=" + getMaxQueueTime()
+                    + ", getAvgExecutionTime()=" + getAvgExecutionTime() + ", getMaxExecutionTime()="
+                    + getMaxExecutionTime() + ", getNumberOfRequests()=" + getNumberOfRequests() + "]";
+        }
     };
 
     private final Object lock = new Object();
