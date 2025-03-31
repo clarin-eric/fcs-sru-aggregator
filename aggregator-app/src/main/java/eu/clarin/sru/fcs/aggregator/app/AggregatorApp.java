@@ -23,6 +23,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.optimaize.langdetect.LanguageDetector;
 import com.optimaize.langdetect.LanguageDetectorBuilder;
+import com.optimaize.langdetect.i18n.LdLocale;
 import com.optimaize.langdetect.ngram.NgramExtractors;
 import com.optimaize.langdetect.profiles.LanguageProfile;
 import com.optimaize.langdetect.profiles.LanguageProfileReader;
@@ -473,7 +474,7 @@ public class AggregatorApp extends Application<AggregatorConfiguration> {
     // ----------------------------------------------------------------------
 
     public void initLanguageDetector() throws IOException {
-        List<LanguageProfile> languageProfiles = new LanguageProfileReader().readAll();
+        List<LanguageProfile> languageProfiles = new LanguageProfileReader().readAllBuiltIn();
         languageDetector = LanguageDetectorBuilder
                 .create(NgramExtractors.standard())
                 .withProfiles(languageProfiles)
@@ -483,7 +484,11 @@ public class AggregatorApp extends Application<AggregatorConfiguration> {
     }
 
     public String detectLanguage(String text) {
-        return languageDetector.detect(textObjectFactory.forText(text)).orNull();
+        LdLocale lang = languageDetector.detect(textObjectFactory.forText(text)).orNull();
+        if (lang != null) {
+            return lang.getLanguage();
+        }
+        return null;
     }
 
     // ----------------------------------------------------------------------
