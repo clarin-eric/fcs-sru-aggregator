@@ -9,9 +9,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
@@ -31,11 +29,8 @@ import com.optimaize.langdetect.profiles.LanguageProfileReader;
 import com.optimaize.langdetect.text.CommonTextObjectFactories;
 import com.optimaize.langdetect.text.TextObjectFactory;
 
-import eu.clarin.sru.client.SRUThreadedClient;
 import eu.clarin.sru.client.SRUVersion;
-import eu.clarin.sru.client.fcs.ClarinFCSClientBuilder;
 import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescription;
-import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescriptionParser;
 import eu.clarin.sru.fcs.aggregator.app.export.WeblichtExportCache;
 import eu.clarin.sru.fcs.aggregator.app.rest.RestService;
 import eu.clarin.sru.fcs.aggregator.app.serialization.ClarinFCSEndpointDescriptionDataViewMixin;
@@ -43,12 +38,12 @@ import eu.clarin.sru.fcs.aggregator.app.serialization.ClarinFCSEndpointDescripti
 import eu.clarin.sru.fcs.aggregator.app.serialization.ResourcesMixin;
 import eu.clarin.sru.fcs.aggregator.app.serialization.ResultMetaMixin;
 import eu.clarin.sru.fcs.aggregator.app.serialization.StatisticsEndpointStatsMixin;
-import eu.clarin.sru.fcs.aggregator.client.MaxConcurrentRequestsCallback;
-import eu.clarin.sru.fcs.aggregator.client.ThrottledClient;
+import eu.clarin.sru.fcs.aggregator.core.Aggregator;
+import eu.clarin.sru.fcs.aggregator.core.AggregatorParams;
 import eu.clarin.sru.fcs.aggregator.scan.CenterRegistryLive;
+import eu.clarin.sru.fcs.aggregator.scan.EndpointConfig;
 import eu.clarin.sru.fcs.aggregator.scan.Resource;
 import eu.clarin.sru.fcs.aggregator.scan.Resources;
-import eu.clarin.sru.fcs.aggregator.scan.ScanCrawlTask;
 import eu.clarin.sru.fcs.aggregator.scan.ScanCrawlTask.ScanCrawlTaskCompletedCallback;
 import eu.clarin.sru.fcs.aggregator.scan.Statistics;
 import eu.clarin.sru.fcs.aggregator.search.PerformLanguageDetectionCallback;
@@ -133,37 +128,31 @@ import io.swagger.v3.oas.models.servers.Server;
  * @author edima
  * @author ljo
  */
-public class Aggregator extends Application<AggregatorConfiguration> {
-
-    private static final org.slf4j.Logger log = LoggerFactory.getLogger(Aggregator.class);
+public class AggregatorApp extends Application<AggregatorConfiguration> {
+    private static final org.slf4j.Logger log = LoggerFactory.getLogger(AggregatorApp.class);
 
     public final static String NAME = "CLARIN FCS Aggregator";
+
+    // aggregator core
+    private final static Aggregator aggregator = new Aggregator();
+    private static AggregatorParams aggregatorParams;
 
     final int SEARCHES_SIZE_GC_THRESHOLD = 1000;
     final int SEARCHES_AGE_GC_THRESHOLD = 60;
 
-    private static final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-    private static Aggregator instance;
+    private static AggregatorApp instance;
     private AggregatorConfiguration.Params params;
 
     private AtomicReference<Resources> scanCacheAtom = new AtomicReference<Resources>(new Resources());
     private AtomicReference<Statistics> scanStatsAtom = new AtomicReference<Statistics>(new Statistics());
-    private AtomicReference<Statistics> searchStatsAtom = new AtomicReference<Statistics>(new Statistics());
 
     private LanguageDetector languageDetector;
     private TextObjectFactory textObjectFactory;
 
-    private ThrottledClient sruClient = null;
-    public MaxConcurrentRequestsCallback maxScanConcurrentRequestsCallback;
-    public MaxConcurrentRequestsCallback maxSearchConcurrentRequestsCallback;
-    public ScanCrawlTaskCompletedCallback scanCrawlTaskCompletedCallback;
-    public PerformLanguageDetectionCallback performLanguageDetectionCallback;
-
-    private Map<String, Search> activeSearches = Collections.synchronizedMap(new HashMap<>());
     private Map<String, WeblichtExportCache> activeWeblichtExports = Collections.synchronizedMap(new HashMap<>());
 
     public static void main(String[] args) throws Exception {
-        new Aggregator().run(args);
+        new AggregatorApp().run(args);
     }
 
     // ----------------------------------------------------------------------
@@ -173,7 +162,7 @@ public class Aggregator extends Application<AggregatorConfiguration> {
         return NAME;
     }
 
-    public static Aggregator getInstance() {
+    public static AggregatorApp getInstance() {
         return instance;
     }
 
@@ -190,7 +179,7 @@ public class Aggregator extends Application<AggregatorConfiguration> {
     }
 
     public Statistics getSearchStatistics() {
-        return searchStatsAtom.get();
+        return aggregator.getSearchStatistics();
     }
 
     // ----------------------------------------------------------------------
@@ -284,46 +273,92 @@ public class Aggregator extends Application<AggregatorConfiguration> {
     public void init(Environment environment) throws IOException {
         log.info("Aggregator initialization started.");
 
-        SRUThreadedClient sruScanClient = new ClarinFCSClientBuilder()
-                .setConnectTimeout(params.ENDPOINTS_SCAN_TIMEOUT_MS)
-                .setSocketTimeout(params.ENDPOINTS_SCAN_TIMEOUT_MS)
-                .addDefaultDataViewParsers()
-                .registerExtraResponseDataParser(
-                        new ClarinFCSEndpointDescriptionParser())
-                .enableLegacySupport()
-                .buildThreadedClient();
-
-        SRUThreadedClient sruSearchClient = new ClarinFCSClientBuilder()
-                .setConnectTimeout(params.ENDPOINTS_SEARCH_TIMEOUT_MS)
-                .setSocketTimeout(params.ENDPOINTS_SEARCH_TIMEOUT_MS)
-                .addDefaultDataViewParsers()
-                .registerExtraResponseDataParser(
-                        new ClarinFCSEndpointDescriptionParser())
-                .enableLegacySupport()
-                .buildThreadedClient();
-
-        maxScanConcurrentRequestsCallback = new MaxConcurrentRequestsCallback() {
+        // make aggregator core params
+        aggregatorParams = new AggregatorParams() {
             @Override
-            public int getMaxConcurrentRequest(URI baseURI) {
+            public int getEndpointScanTimeout() {
+                return params.ENDPOINTS_SCAN_TIMEOUT_MS;
+            }
+
+            @Override
+            public int getEndpointSearchTimeout() {
+                return params.ENDPOINTS_SEARCH_TIMEOUT_MS;
+            }
+
+            @Override
+            public int getMaxConcurrentScanRequestsPerEndpoint() {
                 return params.SCAN_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT;
             }
-        };
 
-        maxSearchConcurrentRequestsCallback = new MaxConcurrentRequestsCallback() {
             @Override
-            public int getMaxConcurrentRequest(URI baseURI) {
-                return (params.slowEndpoints != null && params.slowEndpoints.contains(baseURI))
-                        ? params.SEARCH_MAX_CONCURRENT_REQUESTS_PER_SLOW_ENDPOINT
-                        : params.SEARCH_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT;
+            public int getMaxConcurrentSearchRequestsPerEndpoint() {
+                return params.SEARCH_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT;
+            }
+
+            @Override
+            public int getMaxConcurrentSearchRequestsPerSlowEndpoint() {
+                return params.SEARCH_MAX_CONCURRENT_REQUESTS_PER_SLOW_ENDPOINT;
+            }
+
+            @Override
+            public List<URI> getSlowEndpoints() {
+                return params.slowEndpoints;
+            }
+
+            @Override
+            public String getCenterRegistryUrl() {
+                return params.CENTER_REGISTRY_URL;
+            }
+
+            @Override
+            public int getScanMaxDepth() {
+                return params.SCAN_MAX_DEPTH;
+            }
+
+            @Override
+            public List<EndpointConfig> getAdditionalCQLEndpoints() {
+                return params.additionalCQLEndpoints;
+            }
+
+            @Override
+            public List<EndpointConfig> getAdditionalFCSEndpoints() {
+                return params.additionalFCSEndpoints;
+            }
+
+            @Override
+            public long getScanTaskInitialDelay() {
+                return params.SCAN_TASK_INITIAL_DELAY;
+            }
+
+            @Override
+            public long getScanTaskInterval() {
+                return params.SCAN_TASK_INTERVAL;
+            }
+
+            @Override
+            public TimeUnit getScanTaskTimeUnit() {
+                return params.getScanTaskTimeUnit();
+            }
+
+            @Override
+            public long getExecutorShutdownTimeout() {
+                return params.EXECUTOR_SHUTDOWN_TIMEOUT_MS;
+            }
+
+            @Override
+            public int getSearchesSizeThreshold() {
+                return SEARCHES_SIZE_GC_THRESHOLD;
+            }
+
+            @Override
+            public int getSearchesAgeThreshold() {
+                return SEARCHES_AGE_GC_THRESHOLD;
             }
         };
 
-        sruClient = new ThrottledClient(
-                sruScanClient, maxScanConcurrentRequestsCallback,
-                sruSearchClient, maxSearchConcurrentRequestsCallback);
-
-        File resourcesCacheFile = new File(params.AGGREGATOR_FILE_PATH);
-        File resourcesOldCacheFile = new File(params.AGGREGATOR_FILE_PATH_BACKUP);
+        // cached resources loading
+        final File resourcesCacheFile = new File(params.AGGREGATOR_FILE_PATH);
+        final File resourcesOldCacheFile = new File(params.AGGREGATOR_FILE_PATH_BACKUP);
 
         // init resources from file
         {
@@ -346,7 +381,8 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 
         initLanguageDetector();
 
-        performLanguageDetectionCallback = new PerformLanguageDetectionCallback() {
+        // inject language detection for search results
+        final PerformLanguageDetectionCallback performLanguageDetectionCallback = new PerformLanguageDetectionCallback() {
             @Override
             public String detect(String content) {
                 String code_iso639_1 = detectLanguage(content);
@@ -356,10 +392,11 @@ public class Aggregator extends Application<AggregatorConfiguration> {
             }
         };
 
+        // client for CLARIN registry
         final Client jerseyClient = ClientFactory.create(CenterRegistryLive.CONNECT_TIMEOUT,
                 CenterRegistryLive.READ_TIMEOUT, environment);
 
-        scanCrawlTaskCompletedCallback = new ScanCrawlTaskCompletedCallback() {
+        final ScanCrawlTaskCompletedCallback scanCrawlTaskCompletedCallback = new ScanCrawlTaskCompletedCallback() {
             @Override
             public void onSuccess(Resources resources, Statistics statistics) {
                 if (resources.getResources().isEmpty()) {
@@ -367,7 +404,7 @@ public class Aggregator extends Application<AggregatorConfiguration> {
                 } else {
                     scanCacheAtom.set(resources);
                     scanStatsAtom.set(statistics);
-                    searchStatsAtom.set(new Statistics()); // reset search stats
+                    aggregator.setSearchStatistics(new Statistics()); // reset search stats
 
                     try {
                         writeResourcesCache(resources, resourcesCacheFile, resourcesOldCacheFile);
@@ -383,17 +420,10 @@ public class Aggregator extends Application<AggregatorConfiguration> {
             public void onError(Throwable xc) {
                 log.error("ScanCrawlTask: exception", xc);
             }
-
         };
 
-        ScanCrawlTask task = new ScanCrawlTask(sruClient, jerseyClient,
-                params.CENTER_REGISTRY_URL, params.SCAN_MAX_DEPTH,
-                params.additionalCQLEndpoints,
-                params.additionalFCSEndpoints,
-                null,
-                scanCrawlTaskCompletedCallback);
-        scheduler.scheduleAtFixedRate(task, params.SCAN_TASK_INITIAL_DELAY,
-                params.SCAN_TASK_INTERVAL, params.getScanTaskTimeUnit());
+        aggregator.setPerformLanguageDetectionCallback(performLanguageDetectionCallback);
+        aggregator.init(jerseyClient, aggregatorParams, null, scanCrawlTaskCompletedCallback);
 
         log.info("Aggregator initialization finished.");
     }
@@ -402,27 +432,8 @@ public class Aggregator extends Application<AggregatorConfiguration> {
 
     public void shutdown(AggregatorConfiguration config) {
         log.info("Aggregator is shutting down.");
-        for (Search search : activeSearches.values()) {
-            search.shutdown();
-        }
-        shutdownAndAwaitTermination(config.aggregatorParams, sruClient, scheduler);
+        aggregator.shutdown(aggregatorParams);
         log.info("Aggregator shutdown complete.");
-    }
-
-    private static void shutdownAndAwaitTermination(AggregatorConfiguration.Params params,
-            ThrottledClient sruClient, ExecutorService scheduler) {
-        try {
-            sruClient.shutdown();
-            scheduler.shutdown();
-            Thread.sleep(params.EXECUTOR_SHUTDOWN_TIMEOUT_MS);
-            sruClient.shutdownNow();
-            scheduler.shutdownNow();
-            Thread.sleep(params.EXECUTOR_SHUTDOWN_TIMEOUT_MS);
-        } catch (InterruptedException ie) {
-            sruClient.shutdownNow();
-            scheduler.shutdownNow();
-            Thread.currentThread().interrupt();
-        }
     }
 
     // ----------------------------------------------------------------------
@@ -431,38 +442,18 @@ public class Aggregator extends Application<AggregatorConfiguration> {
     public Search startSearch(SRUVersion version, List<Resource> resources,
             String queryType, String searchString, String searchLang,
             int firstRecord, int maxRecords) throws Exception {
-        if (resources.isEmpty()) {
-            // No resources
-            return null;
-        } else if (searchString.isEmpty()) {
-            // No query
-            return null;
-        } else {
-            Search sr = new Search(sruClient, performLanguageDetectionCallback,
-                    version, searchStatsAtom.get(),
-                    resources, queryType, searchString, searchLang, maxRecords);
-            if (activeSearches.size() > SEARCHES_SIZE_GC_THRESHOLD) {
-                List<String> toBeRemoved = new ArrayList<String>();
-                long t0 = System.currentTimeMillis();
-                for (Map.Entry<String, Search> e : activeSearches.entrySet()) {
-                    long dtmin = (t0 - e.getValue().getCreatedAt()) / 1000 / 60;
-                    if (dtmin > SEARCHES_AGE_GC_THRESHOLD) {
-                        log.info("removing search {}: {} minutes old", e.getKey(), dtmin);
-                        toBeRemoved.add(e.getKey());
-                    }
-                }
-                for (String l : toBeRemoved) {
-                    activeSearches.remove(l);
-                    activeWeblichtExports.remove(l);
-                }
-            }
-            activeSearches.put(sr.getId(), sr);
-            return sr;
+        // first some cleanup
+        List<String> prunedSearchIds = aggregator.gcSearches(aggregatorParams);
+        for (String searchId : prunedSearchIds) {
+            activeWeblichtExports.remove(searchId);
         }
+
+        // then the search
+        return aggregator.startSearch(version, resources, queryType, searchString, searchLang, firstRecord, maxRecords);
     }
 
     public Search getSearchById(String id) {
-        return activeSearches.get(id);
+        return aggregator.getSearchById(id);
     }
 
     public WeblichtExportCache getWeblichtExportCacheBySearchId(String searchId, boolean createIfNeeded) {

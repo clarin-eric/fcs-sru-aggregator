@@ -13,7 +13,7 @@
     <groupId>eu.clarin.sru.fcs</groupId>
     <artifactId>aggregator-app</artifactId>
     <version>4.0.0-SNAPSHOT</version>
-    <name>FCS Aggregator</name>
+    <name>FCS Aggregator App</name>
 
     <organization>
         <name>CLARIN</name>

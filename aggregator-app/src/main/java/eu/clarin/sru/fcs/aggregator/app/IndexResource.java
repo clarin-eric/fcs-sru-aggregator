@@ -35,14 +35,14 @@ public class IndexResource {
     String validatorUrl;
 
     public IndexResource() {
-        config = Aggregator.getInstance().getParams().getPiwikConfig();
-        searchResultLinkEnabled = Aggregator.getInstance().getParams().getSearchResultLinkEnabled();
-        validatorUrl = Aggregator.getInstance().getParams().getVALIDATOR_URL();
+        config = AggregatorApp.getInstance().getParams().getPiwikConfig();
+        searchResultLinkEnabled = AggregatorApp.getInstance().getParams().getSearchResultLinkEnabled();
+        validatorUrl = AggregatorApp.getInstance().getParams().getVALIDATOR_URL();
     }
 
     @GET
     @Produces({ MediaType.TEXT_HTML })
-    @Operation(description = "Start page of \"" + Aggregator.NAME + "\".", hidden = true)
+    @Operation(description = "Start page of \"" + AggregatorApp.NAME + "\".", hidden = true)
     public IndexView getIndex() {
         return new IndexView(config, searchResultLinkEnabled, validatorUrl);
     }

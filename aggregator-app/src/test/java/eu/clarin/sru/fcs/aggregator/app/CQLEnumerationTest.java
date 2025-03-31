@@ -40,7 +40,7 @@ public class CQLEnumerationTest {
 
     @RegisterExtension
     public static final DropwizardAppExtension<AggregatorConfiguration> RULE = new DropwizardAppExtension<>(
-            Aggregator.class, ResourceHelpers.resourceFilePath("aggregator_test.yml"));
+            AggregatorApp.class, ResourceHelpers.resourceFilePath("aggregator_test.yml"));
     // TODO: needs a bit more work, while we create our Aggregator app to access the
     // dropwizard environment, the scan crawler starts and runs in the background
     //

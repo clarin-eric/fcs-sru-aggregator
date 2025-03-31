@@ -30,7 +30,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 
 import eu.clarin.sru.client.SRUVersion;
-import eu.clarin.sru.fcs.aggregator.app.Aggregator;
+import eu.clarin.sru.fcs.aggregator.app.AggregatorApp;
 import eu.clarin.sru.fcs.aggregator.app.AggregatorConfiguration;
 import eu.clarin.sru.fcs.aggregator.app.AggregatorConfiguration.Params.WeblichtConfig;
 import eu.clarin.sru.fcs.aggregator.app.export.Exports;
@@ -63,8 +63,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
  */
 @Produces(MediaType.APPLICATION_JSON)
 @Path("/rest")
-@OpenAPIDefinition(info = @Info(title = Aggregator.NAME + " REST API", version = "1.3.0", description = "The "
-        + Aggregator.NAME + " REST API is documented following the open API specification."
+@OpenAPIDefinition(info = @Info(title = AggregatorApp.NAME + " REST API", version = "1.3.0", description = "The "
+        + AggregatorApp.NAME + " REST API is documented following the open API specification."
         + "<br />Code repository is hosted on <a href=\"https://github.com/clarin-eric/fcs-sru-aggregator\">GitHub</a>.", license = @License(name = "GNU General Public License Version 3 (GPLv3)", url = "https://www.gnu.org/licenses/gpl-3.0.txt")))
 public class RestService {
 
@@ -93,7 +93,7 @@ public class RestService {
             @ApiResponse(description = "List of resource objects.", content = {
                     @Content(mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Resource.class))) }) })
     public Response getResources() throws IOException {
-        List<Resource> resources = Aggregator.getInstance().getResources().getResources();
+        List<Resource> resources = AggregatorApp.getInstance().getResources().getResources();
         return Response.ok(resources).build();
     }
 
@@ -103,7 +103,7 @@ public class RestService {
     @Operation(description = "Get all languages (code --> name) from all resources.", tags = { "web" }, responses = {
             @ApiResponse(description = "Mapping of language ISO code to English name.", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = LanguageMap.class), examples = @ExampleObject(value = "{\n  \"deu\": \"German\",\n  \"eng\": \"English\"}"))) })
     public Response getLanguages() throws IOException {
-        Set<String> codes = Aggregator.getInstance().getResources().getLanguages();
+        Set<String> codes = AggregatorApp.getInstance().getResources().getLanguages();
         log.info("get language codes: {}", codes);
         Map<String, String> languages = LanguagesISO693.getInstance().getLanguageMap(codes);
         return Response.ok(languages).build();
@@ -119,7 +119,7 @@ public class RestService {
                     @ApiResponse(description = "Initial page data (resources, languages)", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = InitData.class))) })
     public Response getInit(@Context final HttpServletRequest request) throws IOException {
         log.info("get initial data");
-        final Resources resources = Aggregator.getInstance().getResources();
+        final Resources resources = AggregatorApp.getInstance().getResources();
         final Object query = request.getSession().getAttribute(PARAM_QUERY);
         final Object mode = request.getSession().getAttribute(PARAM_MODE);
         final Object contextString = request.getSession().getAttribute(PARAM_AGGREGATION_CONTEXT);
@@ -128,7 +128,7 @@ public class RestService {
 
         data.resources = resources.getResources();
         data.languages = LanguagesISO693.getInstance().getLanguageMap(resources.getLanguages());
-        data.weblichtLanguages = Aggregator.getInstance().getParams().getWeblichtConfig().getAcceptedTcfLanguages();
+        data.weblichtLanguages = AggregatorApp.getInstance().getParams().getWeblichtConfig().getAcceptedTcfLanguages();
 
         if (query != null) {
             data.query = (String) query;
@@ -175,7 +175,7 @@ public class RestService {
         if (resourceIds == null || resourceIds.isEmpty()) {
             return Response.status(400).entity("'resourceIds' parameter expected").build();
         }
-        List<Resource> resources = Aggregator.getInstance().getResources()
+        List<Resource> resources = AggregatorApp.getInstance().getResources()
                 .getResourcesByIds(new HashSet<String>(resourceIds));
         if ("fcs".equals(queryType)) {
             List<Resource> tmp = new ArrayList<Resource>();
@@ -204,7 +204,7 @@ public class RestService {
         if (numberOfResults > 250) {
             numberOfResults = 250;
         }
-        Search search = Aggregator.getInstance().startSearch(
+        Search search = AggregatorApp.getInstance().startSearch(
                 "fcs".equals(queryType) ? SRUVersion.VERSION_2_0 : null,
                 resources, queryType, query, language, firstResultIndex, numberOfResults);
         if (search == null) {
@@ -223,7 +223,7 @@ public class RestService {
             @ApiResponse(responseCode = "404", description = "Search job not found.") }, tags = { "search" })
     public Response getSearch(@PathParam("id") String searchId,
             @QueryParam("resourceId") String resourceId) throws Exception {
-        Search search = Aggregator.getInstance().getSearchById(searchId);
+        Search search = AggregatorApp.getInstance().getSearchById(searchId);
         if (search == null) {
             return Response.status(Response.Status.NOT_FOUND).entity("Search job not found").build();
         }
@@ -246,7 +246,7 @@ public class RestService {
             @ApiResponse(responseCode = "404", description = "Search job not found.") }, tags = { "search" })
     public Response getSearchMetaOnly(@PathParam("id") String searchId,
             @QueryParam("resourceId") String resourceId) throws Exception {
-        Search search = Aggregator.getInstance().getSearchById(searchId);
+        Search search = AggregatorApp.getInstance().getSearchById(searchId);
         if (search == null) {
             return Response.status(Response.Status.NOT_FOUND).entity("Search job not found").build();
         }
@@ -280,7 +280,7 @@ public class RestService {
         if (resourceId == null || resourceId.isEmpty()) {
             return Response.status(400).entity("'resourceId' parameter expected").build();
         }
-        Search search = Aggregator.getInstance().getSearchById(searchId);
+        Search search = AggregatorApp.getInstance().getSearchById(searchId);
         if (search == null) {
             return Response.status(Response.Status.NOT_FOUND).entity("Search job not found").build();
         }
@@ -316,7 +316,7 @@ public class RestService {
             @QueryParam("resourceId") String resourceId,
             @QueryParam("filterLanguage") String filterLanguage,
             @QueryParam("format") String format) throws Exception {
-        Search search = Aggregator.getInstance().getSearchById(searchId);
+        Search search = AggregatorApp.getInstance().getSearchById(searchId);
         if (search == null) {
             return Response.status(Response.Status.NOT_FOUND).entity("Search job not found").build();
         }
@@ -369,7 +369,7 @@ public class RestService {
                     @ApiResponse(responseCode = "404", description = "Weblicht export data not found.")
             })
     public Response getWeblichtExport(@PathParam("id") String searchId, @PathParam("eid") String exportId) {
-        WeblichtExportCache cache = Aggregator.getInstance().getWeblichtExportCacheBySearchId(searchId, false);
+        WeblichtExportCache cache = AggregatorApp.getInstance().getWeblichtExportCacheBySearchId(searchId, false);
         if (cache == null) {
             return Response.status(Response.Status.NOT_FOUND).entity("Search job not found").build();
         }
@@ -392,7 +392,7 @@ public class RestService {
     public Response sendSearchResultsToWeblicht(@PathParam("id") String searchId,
             @QueryParam("filterLanguage") String filterLanguage,
             @QueryParam("resourceId") String resourceId) throws Exception {
-        Search search = Aggregator.getInstance().getSearchById(searchId);
+        Search search = AggregatorApp.getInstance().getSearchById(searchId);
         if (search == null) {
             return Response.status(Response.Status.NOT_FOUND).entity("Search job not found").build();
         }
@@ -400,14 +400,14 @@ public class RestService {
             filterLanguage = null;
         }
 
-        WeblichtConfig weblicht = Aggregator.getInstance().getParams().getWeblichtConfig();
+        WeblichtConfig weblicht = AggregatorApp.getInstance().getParams().getWeblichtConfig();
 
         String url = null;
         byte[] bytes = Exports.getExportTCF(search.getResults(resourceId), search.getSearchLanguage(), filterLanguage);
         if (bytes != null) {
             // store bytes in-memory TCF weblicht export in searches (searches might only
             // live up to 60min if under high load)
-            WeblichtExportCache cache = Aggregator.getInstance().getWeblichtExportCacheBySearchId(searchId, true);
+            WeblichtExportCache cache = AggregatorApp.getInstance().getWeblichtExportCacheBySearchId(searchId, true);
             String exportId = cache.addWeblichtExport(bytes);
 
             url = "search/{id}/weblicht-export/{eid}".replace("{id}", searchId).replace("{eid}", exportId);
@@ -428,9 +428,9 @@ public class RestService {
     @Operation(description = "Get scan and search statistics.", tags = { "web" }, responses = {
             @ApiResponse(description = "Scan and Search statistics for each endpoint.", content = @Content(schema = @Schema(implementation = ScanSearchStatisticsSchema.class))) })
     public Response getStatistics() throws IOException {
-        final Statistics scan = Aggregator.getInstance().getScanStatistics();
-        final Statistics search = Aggregator.getInstance().getSearchStatistics();
-        final AggregatorConfiguration.Params params = Aggregator.getInstance().getParams();
+        final Statistics scan = AggregatorApp.getInstance().getScanStatistics();
+        final Statistics search = AggregatorApp.getInstance().getSearchStatistics();
+        final AggregatorConfiguration.Params params = AggregatorApp.getInstance().getParams();
 
         Object j = new HashMap<String, Object>() {
             {

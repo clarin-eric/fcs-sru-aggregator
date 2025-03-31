@@ -43,7 +43,7 @@ public class ScanCrawlerTest {
 
     @RegisterExtension
     private static final DropwizardAppExtension<AggregatorConfiguration> RULE = new DropwizardAppExtension<>(
-            Aggregator.class, ResourceHelpers.resourceFilePath("aggregator_test.yml"));
+            AggregatorApp.class, ResourceHelpers.resourceFilePath("aggregator_test.yml"));
 
     public static Client jerseyClient;
 
