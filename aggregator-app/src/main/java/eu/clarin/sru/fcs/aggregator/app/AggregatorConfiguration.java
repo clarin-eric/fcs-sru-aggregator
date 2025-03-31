@@ -1,6 +1,8 @@
 package eu.clarin.sru.fcs.aggregator.app;
 
+import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URL;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -22,6 +24,43 @@ public class AggregatorConfiguration extends Configuration {
 
         @JsonProperty
         String CENTER_REGISTRY_URL;
+
+        public static class EndpointConfigPOJO implements EndpointConfig {
+            @NotNull
+            @JsonProperty
+            private URL url;
+
+            @JsonProperty
+            private String name;
+
+            @JsonProperty
+            private String website;
+
+            public EndpointConfigPOJO(String url) throws MalformedURLException {
+                this.url = new URL(url);
+            }
+
+            public EndpointConfigPOJO() {
+            }
+
+            @JsonIgnore
+            @Override
+            public URL getUrl() {
+                return url;
+            }
+
+            @JsonIgnore
+            @Override
+            public String getName() {
+                return name;
+            }
+
+            @JsonIgnore
+            @Override
+            public String getWebsite() {
+                return website;
+            }
+        }
 
         @Valid
         @JsonProperty

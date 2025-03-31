@@ -39,9 +39,9 @@
         <serviceUser>aggregator</serviceUser>
         <serviceGroup>aggregator</serviceGroup>
         <!-- dependencies -->
-        <version.dropwizard>3.0.8</version.dropwizard>
-        <version.junit>5.10.1</version.junit>
-        <version.swagger>2.2.19</version.swagger>
+        <version.dropwizard>3.0.13</version.dropwizard>
+        <version.junit>5.11.0</version.junit>
+        <version.swagger>2.2.29</version.swagger>
     </properties>
 
     <repositories>
@@ -89,76 +89,6 @@
             <groupId>io.dropwizard</groupId>
             <artifactId>dropwizard-core</artifactId>
             <version>${version.dropwizard}</version>
-            <!--
-            <exclusions>
-                <exclusion>
-                    <groupId>org.checkerframework</groupId>
-                    <artifactId>checker-qual</artifactId>
-                </exclusion>
-            </exclusions>
-            -->
-            <!--
-            <exclusions>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-api</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.sun.jersey</groupId>
-                    <artifactId>jersey-core</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.eclipse.jetty</groupId>
-                    <artifactId>jetty-http</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.eclipse.jetty</groupId>
-                    <artifactId>jetty-servlet</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.eclipse.jetty</groupId>
-                    <artifactId>jetty-util</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.eclipse.jetty</groupId>
-                    <artifactId>jetty-server</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.eclipse.jetty</groupId>
-                    <artifactId>jetty-io</artifactId>
-                </exclusion>
-
-                <exclusion>
-                    <groupId>io.dropwizard</groupId>
-                    <artifactId>dropwizard-logging</artifactId>
-                </exclusion>
-
-                <exclusion>
-                    <groupId>io.dropwizard</groupId>
-                    <artifactId>dropwizard-validation</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>io.dropwizard</groupId>
-                    <artifactId>dropwizard-util</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>io.dropwizard</groupId>
-                    <artifactId>dropwizard-jackson</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.fasterxml.jackson.core</groupId>
-                    <artifactId>jackson-annotations</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.fasterxml.jackson.core</groupId>
-                    <artifactId>jackson-core</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.google.guava</groupId>
-                    <artifactId>guava</artifactId>
-                </exclusion>
-            </exclusions>
-            -->
         </dependency>
         <dependency>
             <groupId>io.dropwizard</groupId>
@@ -180,7 +110,7 @@
         <dependency>
             <groupId>javax.servlet</groupId>
             <artifactId>javax.servlet-api</artifactId>
-            <version>3.1.0</version>
+            <version>4.0.1</version>
         </dependency>
 
         <!-- api doc: swagger -->
@@ -253,47 +183,11 @@
                 </exclusion>
             </exclusions>
         </dependency>
-        <dependency>
-            <groupId>eu.clarin.weblicht</groupId>
-            <artifactId>connectors</artifactId>
-            <version>2.0.1</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.glassfish.jersey.core</groupId>
-                    <artifactId>jersey-core</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.glassfish.jersey.core</groupId>
-                    <artifactId>jersey-client</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>javax.xml.bind</groupId>
-                    <artifactId>jaxb-api</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.glassfish.hk2</groupId>
-                    <artifactId>hk2-api</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.glassfish.hk2</groupId>
-                    <artifactId>hk2-locator</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.glassfish.jersey.media</groupId>
-                    <artifactId>jersey-media-jaxb</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>eu.clarin.weblicht</groupId>
-            <artifactId>bindings</artifactId>
-            <version>1.0.4</version>
-        </dependency>
 
         <dependency>
             <groupId>org.glassfish.jersey.media</groupId>
             <artifactId>jersey-media-jaxb</artifactId>
-            <version>2.36</version>
+            <version>2.46</version>
         </dependency>
 
         <!-- language detection -->
@@ -354,6 +248,19 @@
             <groupId>org.jopendocument</groupId>
             <artifactId>jOpenDocument</artifactId>
             <version>1.3</version>
+        </dependency>
+
+        <!-- TCF -->
+        <dependency>
+            <groupId>eu.clarin.weblicht</groupId>
+            <artifactId>wlfxb</artifactId>
+            <version>1.4.3</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>eu.clarin.weblicht</groupId>
+                    <artifactId>oaipmh-cmdi-bindings</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <!-- test -->
