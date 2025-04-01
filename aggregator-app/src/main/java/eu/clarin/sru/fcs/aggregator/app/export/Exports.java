@@ -32,12 +32,13 @@ import org.slf4j.LoggerFactory;
  * @author ljo
  */
 public class Exports {
-
     private static final org.slf4j.Logger log = LoggerFactory.getLogger(Exports.class);
+
     private static final Color HIT_BACKGROUND = new Color(230, 242, 254);
     private static final Color CQL_BACKGROUND = new Color(255, 240, 225);
     private static final Color FCS_BACKGROUND = new Color(240, 255, 225);
 
+    @SuppressWarnings("deprecation")
     public static String getExportCSV(List<Result> resultsProcessed, String filterLanguage, String separator) {
         boolean noResult = true;
         boolean firstRow = true;
@@ -150,6 +151,7 @@ public class Exports {
         return sb;
     }
 
+    @SuppressWarnings("deprecation")
     public static byte[] getExportExcel(List<Result> resultsProcessed, String filterLanguage) throws ExportException {
         SXSSFWorkbook workbook = null;
         ByteArrayOutputStream excelStream = new ByteArrayOutputStream();
@@ -261,6 +263,7 @@ public class Exports {
         }
     }
 
+    @SuppressWarnings("deprecation")
     public static byte[] getExportODS(List<Result> resultsProcessed, String filterLanguage) throws ExportException {
         SpreadSheet spreadSheet = null;
         org.jopendocument.dom.spreadsheet.Sheet sheet = null;
@@ -412,4 +415,5 @@ public class Exports {
             return text.toString();
         }
     }
+
 }

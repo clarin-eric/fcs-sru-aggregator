@@ -146,7 +146,7 @@ public class ScanCrawler {
 
                 if (response != null && response.hasDiagnostics()) {
                     for (SRUDiagnostic d : response.getDiagnostics()) {
-                        SRUExplainRequest request = response.getRequest();
+                        // SRUExplainRequest request = response.getRequest();
                         Diagnostic diag = new Diagnostic(d.getURI(), d.getMessage(), d.getDetails());
                         statistics.addEndpointDiagnostic(institution, endpoint, diag,
                                 response.getRequest().getRequestedURI().toString());

@@ -8,8 +8,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import org.slf4j.LoggerFactory;
-
 import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescription.DataView;
 import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescription.Layer;
 import eu.clarin.sru.client.fcs.DataViewAdvanced;
@@ -23,8 +21,6 @@ import eu.clarin.sru.fcs.aggregator.util.LanguagesISO693;
  * @author Yana Panchenko
  */
 public class Resource {
-    private static final org.slf4j.Logger log = LoggerFactory.getLogger(Resource.class);
-
     public static final String ROOT_HANDLE = "root";
     public static final Pattern HANDLE_WITH_SPECIAL_CHARS = Pattern.compile(".*[<>=/()\\s].*");
 
@@ -198,32 +194,37 @@ public class Resource {
 
     @Override
     public int hashCode() {
-        int hash = 3;
-        hash = 29 * hash + (this.endpoint != null ? this.endpoint.hashCode() : 0);
-        hash = 29 * hash + (this.handle != null ? this.handle.hashCode() : 0);
-        return hash;
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((endpoint == null) ? 0 : endpoint.hashCode());
+        result = prime * result + ((handle == null) ? 0 : handle.hashCode());
+        return result;
     }
 
     @Override
     public boolean equals(Object obj) {
-        if (obj == null) {
+        if (this == obj)
+            return true;
+        if (obj == null)
             return false;
-        }
-        if (getClass() != obj.getClass()) {
+        if (getClass() != obj.getClass())
             return false;
-        }
-        final Resource other = (Resource) obj;
-        if ((this.endpoint == null) ? (other.endpoint != null) : !this.endpoint.equals(other.endpoint)) {
+        Resource other = (Resource) obj;
+        if (endpoint == null) {
+            if (other.endpoint != null)
+                return false;
+        } else if (!endpoint.equals(other.endpoint))
             return false;
-        }
-        if ((this.handle == null) ? (other.handle != null) : !this.handle.equals(other.handle)) {
+        if (handle == null) {
+            if (other.handle != null)
+                return false;
+        } else if (!handle.equals(other.handle))
             return false;
-        }
         return true;
     }
 
     @Override
     public String toString() {
-        return "Resource{" + "endpoint=" + endpoint + ", handle=" + handle + '}';
+        return "Resource [endpoint=" + endpoint + ", handle=" + handle + "]";
     }
 }

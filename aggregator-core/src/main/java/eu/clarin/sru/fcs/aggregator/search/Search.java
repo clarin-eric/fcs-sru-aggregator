@@ -85,6 +85,7 @@ public class Search {
         return false;
     }
 
+    @SuppressWarnings("deprecation")
     private void executeSearch(final Result result, SRUVersion version, String queryType, String searchString,
             int startRecord, int maxRecords) {
         final Resource resource = result.getResource();

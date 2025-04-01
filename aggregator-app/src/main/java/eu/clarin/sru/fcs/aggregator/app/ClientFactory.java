@@ -33,6 +33,7 @@ import org.glassfish.jersey.client.ClientProperties;
  *         Shamelessly copied from the weblicht Harvester by emanueldima
  */
 public class ClientFactory {
+    @SuppressWarnings("unused")
     private static final org.slf4j.Logger log = LoggerFactory.getLogger(ClientFactory.class);
 
     public static Client create(int connectTimeout, int readTimeout, Environment env) {
@@ -63,6 +64,7 @@ public class ClientFactory {
         return client;
     }
 
+    @SuppressWarnings("unused")
     private static TrustManager[] trustAllCerts = { new X509TrustManager() {
         @Override
         public void checkClientTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {

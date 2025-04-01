@@ -5,7 +5,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import org.slf4j.LoggerFactory;
 
 /**
  * Implementation of the cached scan data (endpoints descriptions) that stores
@@ -16,9 +15,6 @@ import org.slf4j.LoggerFactory;
  * @author edima
  */
 public class Resources {
-
-    private static final org.slf4j.Logger log = LoggerFactory.getLogger(Resources.class);
-
     private List<Institution> institutions = Collections.synchronizedList(new ArrayList<Institution>());
     private List<Resource> resources = new ArrayList<Resource>();
 
@@ -109,8 +105,6 @@ public class Resources {
 
     @Override
     public String toString() {
-        return "resources{\n" + "institutions=" + institutions + "\n"
-                + "\n resources=" + resources + "\n}";
+        return "Resources [institutions=" + institutions + ", resources=" + resources + "]";
     }
-
 }
