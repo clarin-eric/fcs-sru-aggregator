@@ -135,6 +135,7 @@ public class AggregatorApp extends Application<AggregatorConfiguration> {
     public final static String NAME = "CLARIN FCS Aggregator";
 
     // aggregator core
+    // TODO: does it need AtomicReference?
     private final static Aggregator aggregator = new Aggregator();
     private static AggregatorParams aggregatorParams;
 

@@ -2,18 +2,14 @@ package eu.clarin.sru.fcs.aggregator.core;
 
 import java.net.URI;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
-
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
 
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
 
 import eu.clarin.sru.client.SRUVersion;
+import eu.clarin.sru.fcs.aggregator.client.ThrottledClient;
 import eu.clarin.sru.fcs.aggregator.scan.Endpoint;
-import eu.clarin.sru.fcs.aggregator.scan.EndpointConfig;
 import eu.clarin.sru.fcs.aggregator.scan.FCSProtocolVersion;
 import eu.clarin.sru.fcs.aggregator.scan.Institution;
 import eu.clarin.sru.fcs.aggregator.scan.Resource;
@@ -27,17 +23,15 @@ public class AggregatorSearchOnceTest {
 
     @Test
     public void testSearchOnce() throws Exception {
-        final Client jerseyClient = ClientBuilder.newClient();
-
-        final AggregatorParams params = new AggregatorParams() {
+        final SRUFCSClientParams sruClientParams = new SRUFCSClientParams() {
             @Override
             public int getEndpointScanTimeout() {
-                return 1000;
+                return 3000;
             }
 
             @Override
             public int getEndpointSearchTimeout() {
-                return 5000;
+                return 3000;
             }
 
             @Override
@@ -59,65 +53,10 @@ public class AggregatorSearchOnceTest {
             public List<URI> getSlowEndpoints() {
                 return null;
             }
-
-            @Override
-            public String getCenterRegistryUrl() {
-                throw new UnsupportedOperationException("Unimplemented method 'getCenterRegistryUrl'");
-            }
-
-            @Override
-            public int getScanMaxDepth() {
-                throw new UnsupportedOperationException("Unimplemented method 'getScanMaxDepth'");
-            }
-
-            @Override
-            public List<EndpointConfig> getAdditionalCQLEndpoints() {
-                throw new UnsupportedOperationException("Unimplemented method 'getAdditionalCQLEndpoints'");
-            }
-
-            @Override
-            public List<EndpointConfig> getAdditionalFCSEndpoints() {
-                throw new UnsupportedOperationException("Unimplemented method 'getAdditionalFCSEndpoints'");
-            }
-
-            @Override
-            public long getScanTaskInitialDelay() {
-                throw new UnsupportedOperationException("Unimplemented method 'getScanTaskInitialDelay'");
-            }
-
-            @Override
-            public long getScanTaskInterval() {
-                throw new UnsupportedOperationException("Unimplemented method 'getScanTaskInterval'");
-            }
-
-            @Override
-            public TimeUnit getScanTaskTimeUnit() {
-                throw new UnsupportedOperationException("Unimplemented method 'getScanTaskTimeUnit'");
-            }
-
-            @Override
-            public long getExecutorShutdownTimeout() {
-                throw new UnsupportedOperationException("Unimplemented method 'getExecutorShutdownTimeout'");
-            }
-
-            @Override
-            public int getSearchesSizeThreshold() {
-                return 1000;
-            }
-
-            @Override
-            public int getSearchesAgeThreshold() {
-                return 50;
-            }
-
-            @Override
-            public boolean enableScanCrawlTask() {
-                return false;
-            }
-
         };
-        final Aggregator aggregator = new Aggregator();
-        aggregator.init(jerseyClient, params, null, null);
+        final ThrottledClient sruClient = AggregatorBase.createClient(sruClientParams);
+
+        final Statistics stats = new Statistics();
 
         final Institution institution = new Institution("SAW Leipzig", null);
         final Endpoint endpoint = new Endpoint("https://fcs.data.saw-leipzig.de/lcc", FCSProtocolVersion.VERSION_2);
@@ -126,26 +65,33 @@ public class AggregatorSearchOnceTest {
         resource.setTitle("eng_news_2013_1M");
 
         final String query = "the";
-        final Search search = aggregator.startSearch(SRUVersion.VERSION_2_0, List.of(resource), "cql", query, null, 1,
-                10);
+        final Search search = AggregatorBase.startSearch(sruClient, stats, null, SRUVersion.VERSION_2_0,
+                List.of(resource), "cql", query, null, 1, 10);
         final Result result = search.getResults(resource.getId()).get(0);
 
-        log.info("Wait for search results ... (max 3s)");
-        for (int i = 0; i < 30; i++) {
-            if (!result.getInProgress()) {
-                break;
-            }
-            Thread.sleep(100);
-        }
+        log.info("Wait for search results ... (max 7s)");
+        boolean isFinished = waitForSearchResultToFinish(result, 100, 70);
+        log.info("Stopped waiting for search results. Is finished: {}", isFinished);
+
+        // shutdown search/client
+        search.shutdown();
+        sruClient.shutdown();
 
         log.info("Number of results for '{}': {}", query, result.getNumberOfRecordsLoaded());
 
         // log.info("Statistics:{}",aggregator.getSearchStatistics().getInstitutions());
-        Statistics.EndpointStats stats = aggregator.getSearchStatistics()
-                .getInstitutions()
-                .get(institution.getName())
-                .get(endpoint.getUrl());
-        log.info("Statistics: {}", stats);
+        Statistics.EndpointStats epStats = stats.getInstitutions().get(institution.getName()).get(endpoint.getUrl());
+        log.info("Statistics: {}", epStats);
+    }
+
+    static boolean waitForSearchResultToFinish(Result result, long delay, int times) throws InterruptedException {
+        for (int i = 0; i < times; i++) {
+            if (!result.getInProgress()) {
+                break;
+            }
+            Thread.sleep(delay);
+        }
+        return !result.getInProgress();
     }
 
     static {

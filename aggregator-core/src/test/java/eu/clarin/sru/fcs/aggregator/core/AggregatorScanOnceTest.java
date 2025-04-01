@@ -57,7 +57,7 @@ public class AggregatorScanOnceTest {
                 return null;
             }
         };
-        final ThrottledClient sruClient = Aggregator.createClient(sruClientParams);
+        final ThrottledClient sruClient = AggregatorBase.createClient(sruClientParams);
 
         final ScanCrawlTaskCompletedCallback scanCrawlTaskCompletedCallback = new ScanCrawlTaskCompletedCallback() {
             @Override
@@ -109,8 +109,8 @@ public class AggregatorScanOnceTest {
             }
         };
 
-        final ScanCrawlTask task = Aggregator.createScanCrawlTask(sruClient, jerseyClient, scanScrawlTaskParams, null,
-                scanCrawlTaskCompletedCallback);
+        final ScanCrawlTask task = AggregatorBase.createScanCrawlTask(sruClient, jerseyClient, scanScrawlTaskParams,
+                null, scanCrawlTaskCompletedCallback);
         log.info("Start ScanCrawlTask ...");
         task.run();
     }
