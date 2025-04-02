@@ -66,7 +66,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
  */
 @Produces(MediaType.APPLICATION_JSON)
 @Path("/rest")
-@OpenAPIDefinition(info = @Info(title = AggregatorApp.NAME + " REST API", version = "1.3.0", description = "The "
+@OpenAPIDefinition(info = @Info(title = AggregatorApp.NAME + " REST API", version = "2.0.0", description = "The "
         + AggregatorApp.NAME + " REST API is documented following the open API specification."
         + "<br />Code repository is hosted on <a href=\"https://github.com/clarin-eric/fcs-sru-aggregator\">GitHub</a>.", license = @License(name = "GNU General Public License Version 3 (GPLv3)", url = "https://www.gnu.org/licenses/gpl-3.0.txt")))
 public class RestService {
