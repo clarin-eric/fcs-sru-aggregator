@@ -123,34 +123,42 @@ public class AggregatorConfiguration extends Configuration {
             return TimeUnit.valueOf(SCAN_TASK_TIME_UNIT);
         }
 
+        @JsonIgnore
         public String getCENTER_REGISTRY_URL() {
             return CENTER_REGISTRY_URL;
         }
 
+        @JsonIgnore
         public int getSCAN_MAX_DEPTH() {
             return SCAN_MAX_DEPTH;
         }
 
+        @JsonIgnore
         public long getSCAN_TASK_INITIAL_DELAY() {
             return SCAN_TASK_INITIAL_DELAY;
         }
 
+        @JsonIgnore
         public int getSCAN_TASK_INTERVAL() {
             return SCAN_TASK_INTERVAL;
         }
 
+        @JsonIgnore
         public String getSCAN_TASK_TIME_UNIT() {
             return SCAN_TASK_TIME_UNIT;
         }
 
+        @JsonIgnore
         public long getEXECUTOR_SHUTDOWN_TIMEOUT_MS() {
             return EXECUTOR_SHUTDOWN_TIMEOUT_MS;
         }
 
+        @JsonIgnore
         public String getAGGREGATOR_FILE_PATH() {
             return AGGREGATOR_FILE_PATH;
         }
 
+        @JsonIgnore
         public String getAGGREGATOR_FILE_PATH_BACKUP() {
             return AGGREGATOR_FILE_PATH_BACKUP;
         }
@@ -237,6 +245,7 @@ public class AggregatorConfiguration extends Configuration {
     }
 
     @Valid
+    @JsonProperty
     public Params aggregatorParams = new Params();
 
     @JsonIgnore
