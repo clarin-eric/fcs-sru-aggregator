@@ -143,6 +143,7 @@ public class Search {
                     try {
                         statistics.addEndpointDatapoint(resource.getEndpointInstitution(), resource.getEndpoint(),
                                 stats.getQueueTime(), stats.getExecutionTime());
+                        log.debug("searchRetrieve request url: {}", response.getRequest().getRequestedURI());
                         result.addResponse(response);
                         List<Diagnostic> diagnostics = result.getDiagnostics();
                         if (diagnostics != null && !diagnostics.isEmpty()) {

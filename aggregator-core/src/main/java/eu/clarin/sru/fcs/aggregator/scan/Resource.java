@@ -10,8 +10,10 @@ import java.util.regex.Pattern;
 
 import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescription.DataView;
 import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescription.Layer;
+import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescription.LexField;
 import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescription.ResourceInfo.AvailabilityRestriction;
 import eu.clarin.sru.client.fcs.DataViewAdvanced;
+import eu.clarin.sru.client.fcs.DataViewLex;
 import eu.clarin.sru.fcs.aggregator.util.LanguagesISO693;
 
 /**
@@ -41,6 +43,7 @@ public class Resource {
     private AvailabilityRestriction availabilityRestriction = AvailabilityRestriction.NONE;
     private List<DataView> availableDataViews;
     private List<Layer> availableLayers;
+    private List<LexField> availableLexFields;
 
     public List<Resource> subResources = Collections.synchronizedList(new ArrayList<Resource>());
 
@@ -116,6 +119,14 @@ public class Resource {
         this.availableLayers = availableLayers;
     }
 
+    public List<LexField> getAvailableLexFields() {
+        return availableLexFields;
+    }
+
+    public void setAvailableLexFields(List<LexField> availableLexFields) {
+        this.availableLexFields = availableLexFields;
+    }
+
     public void setAvailabilityRestriction(AvailabilityRestriction restriction) {
         this.availabilityRestriction = restriction;
     }
@@ -145,8 +156,11 @@ public class Resource {
                 // // NOTE: this dataview is required
                 // resolvedSearchCapabilities.add(FCSSearchCapabilities.BASIC_SEARCH);
                 // } else
+
                 if (availableDataView.getMimeType().equals(DataViewAdvanced.TYPE)) {
                     resolvedSearchCapabilities.add(FCSSearchCapabilities.ADVANCED_SEARCH);
+                } else if (availableDataView.getMimeType().equals(DataViewLex.TYPE)) {
+                    resolvedSearchCapabilities.add(FCSSearchCapabilities.LEX_SEARCH);
                 }
             }
         }

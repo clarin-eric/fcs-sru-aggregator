@@ -35,6 +35,7 @@ import com.optimaize.langdetect.text.TextObjectFactory;
 import de.mpg.aai.shhaa.AuthFilter;
 import eu.clarin.sru.client.SRUVersion;
 import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescription;
+import eu.clarin.sru.client.fcs.DataViewLex;
 import eu.clarin.sru.fcs.aggregator.app.auth.AuthConfigContextListener;
 import eu.clarin.sru.fcs.aggregator.app.auth.JWKSResource;
 import eu.clarin.sru.fcs.aggregator.app.auth.LoginResource;
@@ -45,6 +46,11 @@ import eu.clarin.sru.fcs.aggregator.app.export.WeblichtExportCache;
 import eu.clarin.sru.fcs.aggregator.app.rest.RestService;
 import eu.clarin.sru.fcs.aggregator.app.serialization.ClarinFCSEndpointDescriptionDataViewMixin;
 import eu.clarin.sru.fcs.aggregator.app.serialization.ClarinFCSEndpointDescriptionLayerMixin;
+import eu.clarin.sru.fcs.aggregator.app.serialization.ClarinFCSEndpointDescriptionLexFieldMixin;
+import eu.clarin.sru.fcs.aggregator.app.serialization.DataViewLexFieldMixin;
+import eu.clarin.sru.fcs.aggregator.app.serialization.DataViewLexFieldTypeMixin;
+import eu.clarin.sru.fcs.aggregator.app.serialization.DataViewLexMixin;
+import eu.clarin.sru.fcs.aggregator.app.serialization.DataViewLexValueMixin;
 import eu.clarin.sru.fcs.aggregator.app.serialization.InstitutionMixin;
 import eu.clarin.sru.fcs.aggregator.app.serialization.ResourcesMixin;
 import eu.clarin.sru.fcs.aggregator.app.serialization.ResultMetaMixin;
@@ -275,6 +281,11 @@ public class AggregatorApp extends Application<AggregatorConfiguration> {
 
         // custom serialization of POJOs
         environment.getObjectMapper()
+                .addMixIn(DataViewLex.class, DataViewLexMixin.class)
+                .addMixIn(DataViewLex.FieldType.class, DataViewLexFieldTypeMixin.class)
+                .addMixIn(DataViewLex.Field.class, DataViewLexFieldMixin.class)
+                .addMixIn(DataViewLex.Value.class, DataViewLexValueMixin.class)
+                .addMixIn(ClarinFCSEndpointDescription.LexField.class, ClarinFCSEndpointDescriptionLexFieldMixin.class)
                 .addMixIn(Statistics.EndpointStats.class, StatisticsEndpointStatsMixin.class)
                 .addMixIn(Institution.class, InstitutionMixin.class)
                 .addMixIn(ResultMeta.class, ResultMetaMixin.class);
@@ -583,6 +594,7 @@ public class AggregatorApp extends Application<AggregatorConfiguration> {
                 .addMixIn(ClarinFCSEndpointDescription.DataView.class,
                         ClarinFCSEndpointDescriptionDataViewMixin.class)
                 .addMixIn(ClarinFCSEndpointDescription.Layer.class, ClarinFCSEndpointDescriptionLayerMixin.class)
+                .addMixIn(ClarinFCSEndpointDescription.LexField.class, ClarinFCSEndpointDescriptionLexFieldMixin.class)
                 .addMixIn(Resources.class, ResourcesMixin.class)
                 .addMixIn(Institution.class, InstitutionMixin.class)
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);

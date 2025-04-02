@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 
 import eu.clarin.sru.client.fcs.DataViewAdvanced;
 import eu.clarin.sru.client.fcs.DataViewHits;
+import eu.clarin.sru.client.fcs.DataViewLex;
 import eu.clarin.sru.fcs.aggregator.scan.Resource;
 
 /**
@@ -31,6 +32,7 @@ public final class Result extends ResultMeta {
     private List<Kwic> kwics = Collections.synchronizedList(new ArrayList<Kwic>());
     private List<List<AdvancedLayer>> advancedLayers = Collections
             .synchronizedList(new ArrayList<List<AdvancedLayer>>());
+    private List<LexEntry> lexEntries = Collections.synchronizedList(new ArrayList<LexEntry>());
 
     public Result(Resource resource, PerformLanguageDetectionCallback langDetectCallback) {
         super(resource);
@@ -48,6 +50,10 @@ public final class Result extends ResultMeta {
 
     public List<List<AdvancedLayer>> getAdvancedLayers() {
         return advancedLayers;
+    }
+
+    public List<LexEntry> getLexEntries() {
+        return lexEntries;
     }
 
     // ----------------------------------------------------------------------
@@ -76,6 +82,13 @@ public final class Result extends ResultMeta {
             advLayersSingleGroup.add(aLayer);
         }
         advancedLayers.add(advLayersSingleGroup);
+    }
+
+    @Override
+    protected void processDataViewLex(DataViewLex dataview, String pid, String reference) {
+        final LexEntry entry = new LexEntry(dataview, pid, reference);
+        lexEntries.add(entry);
+        log.debug("DataViewLex fields {}", entry.getFields().size());
     }
 
 }

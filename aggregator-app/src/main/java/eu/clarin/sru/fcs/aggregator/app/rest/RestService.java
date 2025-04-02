@@ -181,6 +181,7 @@ public class RestService {
         }
         List<Resource> resources = AggregatorApp.getInstance().getResources()
                 .getResourcesByIds(new HashSet<String>(resourceIds));
+        // TODO: update for ClarinFCSConstants.QUERY_TYPE_FCS...
         if ("fcs".equals(queryType)) {
             List<Resource> tmp = new ArrayList<Resource>();
             for (Resource resource : resources) {
@@ -190,6 +191,14 @@ public class RestService {
                 }
             }
             resources = tmp;
+        } else if ("lex".equals(queryType)) {
+            List<Resource> tmp = new ArrayList<Resource>();
+            for (Resource resource : resources) {
+                if (resource.getEndpoint().getProtocol().equals(FCSProtocolVersion.VERSION_2)
+                        && resource.getEndpoint().getSearchCapabilities().contains(FCSSearchCapabilities.LEX_SEARCH)) {
+                    tmp.add(resource);
+                }
+            }
         }
         if (resources == null || resources.isEmpty()) {
             return Response.status(503).entity("No resources, please wait for the server to finish scanning").build();
@@ -215,7 +224,7 @@ public class RestService {
         String userid = authInfo.isAuthenticated() ? authInfo.getUsername() : null;
 
         Search search = AggregatorApp.getInstance().startSearch(
-                "fcs".equals(queryType) ? SRUVersion.VERSION_2_0 : null,
+                ("fcs".equals(queryType) || "lex".equals(queryType)) ? SRUVersion.VERSION_2_0 : null,
                 resources, queryType, query, language, firstResultIndex, numberOfResults, userid);
         if (search == null) {
             return Response.status(500).entity("Initiating search failed").build();

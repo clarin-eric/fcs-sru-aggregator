@@ -6,6 +6,7 @@ import java.util.List;
 import org.apache.commons.text.StringEscapeUtils;
 
 import eu.clarin.sru.client.fcs.DataViewHits;
+import eu.clarin.sru.client.fcs.DataViewHitsWithLexAnnotations;
 
 /**
  * Represents keyword in context data view and information about its PID and
@@ -19,10 +20,16 @@ public class Kwic {
 
         private final String text;
         private final boolean isHit;
+        private final String hitKind;
 
         public TextFragment(String text, boolean isHit) {
+            this(text, isHit, null);
+        }
+
+        public TextFragment(String text, boolean isHit, String hitKind) {
             this.text = text;
             this.isHit = isHit;
+            this.hitKind = hitKind;
         }
 
         public String getText() {
@@ -31,6 +38,14 @@ public class Kwic {
 
         public boolean isHit() {
             return isHit;
+        }
+
+        public String getHitKind() {
+            return hitKind;
+        }
+
+        public boolean hasHitKind() {
+            return hitKind != null;
         }
 
         @Override
@@ -61,7 +76,10 @@ public class Kwic {
             }
             if (offsets[0] < offsets[1]) {
                 String text = StringEscapeUtils.unescapeXml(str.substring(offsets[0], offsets[1]));
-                fragments.add(new TextFragment(text, true));
+                fragments.add(new TextFragment(text, true,
+                        (hits instanceof DataViewHitsWithLexAnnotations)
+                                ? ((DataViewHitsWithLexAnnotations) hits).getHitKind(i)
+                                : null));
             }
             lastOffset = offsets[1];
         }

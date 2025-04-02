@@ -3,6 +3,7 @@ package eu.clarin.sru.fcs.aggregator.search;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -20,6 +21,8 @@ import eu.clarin.sru.client.fcs.DataViewAdvanced;
 import eu.clarin.sru.client.fcs.DataViewGenericDOM;
 import eu.clarin.sru.client.fcs.DataViewGenericString;
 import eu.clarin.sru.client.fcs.DataViewHits;
+import eu.clarin.sru.client.fcs.DataViewHitsWithLexAnnotations;
+import eu.clarin.sru.client.fcs.DataViewLex;
 import eu.clarin.sru.fcs.aggregator.scan.Diagnostic;
 import eu.clarin.sru.fcs.aggregator.scan.JavaException;
 import eu.clarin.sru.fcs.aggregator.scan.Resource;
@@ -37,6 +40,8 @@ public class ResultMeta {
     protected AtomicInteger numberOfRecordsLoaded = new AtomicInteger(0);
 
     protected AtomicBoolean hasAdvancedResults = new AtomicBoolean(false);
+    protected AtomicBoolean hasLexicalResults = new AtomicBoolean(false);
+    protected AtomicBoolean isLexHits = new AtomicBoolean(false);
 
     protected AtomicReference<JavaException> exception = new AtomicReference<JavaException>();
     protected List<Diagnostic> diagnostics = Collections.synchronizedList(new ArrayList<Diagnostic>());
@@ -105,6 +110,14 @@ public class ResultMeta {
 
     public boolean hasAdvancedResults() {
         return hasAdvancedResults.get();
+    }
+
+    public boolean hasLexicalResults() {
+        return hasLexicalResults.get();
+    }
+
+    public boolean isLexHits() {
+        return isLexHits.get();
     }
 
     // ----------------------------------------------------------------------
@@ -180,10 +193,25 @@ public class ResultMeta {
                         view.getContent());
             } else if (dataview instanceof DataViewHits) {
                 numberOfRecordsLoaded.incrementAndGet();
+
+                // detection if Lex Hits Data View
+                if (dataview instanceof DataViewHitsWithLexAnnotations) {
+                    final Kwic kwic = new Kwic((DataViewHits) dataview, pid, reference);
+                    // if we find any hit with a hitKind with "lex-" prefix
+                    // then we probably have a LexHits Data View
+                    kwic.getFragments().stream().filter(f -> f.isHit())
+                            .filter(f -> Optional.ofNullable(f.getHitKind()).orElse("").toLowerCase()
+                                    .startsWith("lex-"))
+                            .findAny().ifPresent((k) -> isLexHits.set(true));
+                }
+
                 processDataViewHits((DataViewHits) dataview, pid, reference);
             } else if (dataview instanceof DataViewAdvanced) {
                 hasAdvancedResults.set(true);
                 processDataViewAdvanced((DataViewAdvanced) dataview, pid, reference);
+            } else if (dataview instanceof DataViewLex) {
+                hasLexicalResults.set(true);
+                processDataViewLex((DataViewLex) dataview, pid, reference);
             }
         }
     }
@@ -195,6 +223,10 @@ public class ResultMeta {
     }
 
     protected void processDataViewAdvanced(final DataViewAdvanced dataview, final String pid, final String reference) {
+        // empty
+    }
+
+    protected void processDataViewLex(final DataViewLex dataview, final String pid, final String reference) {
         // empty
     }
 

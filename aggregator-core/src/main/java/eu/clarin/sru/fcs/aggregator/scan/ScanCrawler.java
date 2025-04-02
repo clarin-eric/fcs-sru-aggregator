@@ -131,6 +131,9 @@ public class ScanCrawler {
                                 if (desc.getCapabilities().contains(ClarinFCSConstants.CAPABILITY_ADVANCED_SEARCH)) {
                                     endpoint.addSearchCapability(FCSSearchCapabilities.ADVANCED_SEARCH);
                                 }
+                                if (desc.getCapabilities().contains(ClarinFCSConstants.CAPABILITY_LEX_SEARCH)) {
+                                    endpoint.addSearchCapability(FCSSearchCapabilities.LEX_SEARCH);
+                                }
 
                                 // check if auth requirements
                                 if (desc.getCapabilities()
@@ -217,6 +220,7 @@ public class ScanCrawler {
             r.setSearchCapabilities(endpoint.getSearchCapabilities());
             r.setAvailableDataViews(ri.getAvailableDataViews());
             r.setAvailableLayers(ri.getAvailableLayers());
+            r.setAvailableLexFields(ri.getAvailableLexFields());
 
             // check for requirements on resource
             if (endpoint.getSearchCapabilities().contains(FCSSearchCapabilities.AUTHENTICATED_SEARCH)
