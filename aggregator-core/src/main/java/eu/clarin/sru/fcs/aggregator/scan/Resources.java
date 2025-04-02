@@ -30,14 +30,14 @@ public class Resources {
         institutions.add(institution);
     }
 
-    public synchronized boolean addResource(Resource r, Resource parentResource) {
-        if (findByHandle(r.getHandle()) != null) {
+    public synchronized boolean addResource(Resource resource, Resource parentResource) {
+        if (findByHandle(resource.getHandle()) != null) {
             return false;
         }
         if (parentResource == null) { // i.e it's a root resource
-            resources.add(r);
+            resources.add(resource);
         } else {
-            parentResource.addResource(r);
+            parentResource.addResource(resource);
         }
         return true;
     }
@@ -46,8 +46,8 @@ public class Resources {
         final Set<String> languages = new HashSet<String>();
         visit(resources, new CallResource() {
             @Override
-            public void call(Resource r) {
-                languages.addAll(r.getLanguages());
+            public void call(Resource resource) {
+                languages.addAll(resource.getLanguages());
             }
         });
         return languages;
@@ -57,9 +57,9 @@ public class Resources {
         final List<Resource> found = new ArrayList<Resource>();
         visit(resources, new CallResource() {
             @Override
-            public void call(Resource r) {
-                if (resourceIds.contains(r.getId())) {
-                    found.add(r);
+            public void call(Resource resource) {
+                if (resourceIds.contains(resource.getId())) {
+                    found.add(resource);
                 }
             }
         });
@@ -70,9 +70,9 @@ public class Resources {
         final List<Resource> found = new ArrayList<Resource>();
         visit(resources, new CallResource() {
             @Override
-            public void call(Resource r) {
-                if (r.getEndpoint().getUrl().equals(endpointUrl)) {
-                    found.add(r);
+            public void call(Resource resource) {
+                if (resource.getEndpoint().getUrl().equals(endpointUrl)) {
+                    found.add(resource);
                 }
             }
         });
@@ -83,9 +83,9 @@ public class Resources {
         final List<Resource> found = new ArrayList<Resource>();
         visit(resources, new CallResource() {
             @Override
-            public void call(Resource r) {
-                if (r.getHandle() != null && r.getHandle().equals(handle)) {
-                    found.add(r);
+            public void call(Resource resource) {
+                if (resource.getHandle() != null && resource.getHandle().equals(handle)) {
+                    found.add(resource);
                 }
             }
         });
@@ -93,13 +93,13 @@ public class Resources {
     }
 
     public static interface CallResource {
-        void call(Resource r);
+        void call(Resource resource);
     }
 
     private static void visit(List<Resource> resources, CallResource clb) {
-        for (Resource r : resources) {
-            clb.call(r);
-            visit(r.getSubResources(), clb);
+        for (Resource resource : resources) {
+            clb.call(resource);
+            visit(resource.getSubResources(), clb);
         }
     }
 

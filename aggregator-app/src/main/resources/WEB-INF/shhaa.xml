@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<ROOT>
+    <shhaa>
+
+        <webapp>
+            <!-- shib host, DO NOT LEAVE A TRAILING SLASH! -->
+            <host>https://contentsearch.clarin.eu</host>
+        </webapp>
+
+        <authentication>
+            <shibheader>
+                <!-- shib attributes used to computed the username (first only) -->
+                <username>oid-eppn</username>
+                <username>mace-eppn</username>
+                <username>eppn</username>
+
+                <username>oid-eduPersonPrincipalName</username>
+                <username>mace-eduPersonPrincipalName</username>
+                <username>eduPersonPrincipalName</username>
+
+                <username>oid-eduPersonTargetedID</username>
+                <username>mace-eduPersonTargetedID</username>
+                <username>eduPersonTargetedID</username>
+
+                <username>mail</username>
+
+                <!-- some usefull defaults, required -->
+                <session>Shib-Session-ID</session>
+                <idp>Shib-Identity-Provider</idp>
+                <timestamp>Shib-Authentication-Instant</timestamp>
+            </shibheader>
+            <fallback>
+                <!-- fallback username when not logged in -->
+                <username>anonymous</username>
+            </fallback>
+            <!-- sign-in/log-out action -->
+            <sso action="lI">https://contentsearch.clarin.eu/Shibboleth.sso/Login</sso>
+            <slo action="lO">https://contentsearch.clarin.eu/Shibboleth.sso/Logout</slo>
+        </authentication>
+
+        <composition action="rF">
+            <shibheader>
+                <!-- shib attributes that should be populated for access -->
+                <attribute>displayName</attribute>
+                <attribute>commonName</attribute>
+                <attribute>cn</attribute>
+
+                <attribute>organizationName</attribute>
+
+                <attribute>mail</attribute>
+
+                <username>oid-eppn</username>
+                <username>mace-eppn</username>
+                <username>eppn</username>
+                
+                <attribute>oid-eduPersonPrincipalName</attribute>
+                <attribute>mace-eduPersonPrincipalName</attribute>
+                <attribute>eduPersonPrincipalName</attribute>
+
+                <attribute>oid-eduPersonTargetedID</attribute>
+                <attribute>mace-eduPersonTargetedID</attribute>
+                <attribute>eduPersonTargetedID</attribute>
+            </shibheader>
+        </composition>
+
+        <authorization>
+            <!-- when/where to trigger login (lI) action -->
+            <location target="/login" methods="POST" />
+        </authorization>
+
+        <handler>
+            <!-- what to ignore for AAI handling, skip processing -->
+            <ignore>
+                <location target="/css/*" />
+                <location target="/img/*" />
+                <location target="/lib/*" />
+                <location target="/clarinservices/*" />
+                <location target="/.well-known/*" />
+            </ignore>
+
+            <!-- url parameter name to recognize flags for actions shhaa shall perform -->
+            <!-- <actionparam>shhaaDo</actionparam> -->
+
+            <!-- configures the view-control targets -->
+            <!--
+            <pages>
+                <info action="dI">/protected/info.jsp</info>
+                <denied action="dD">/pages/noaccess.jsp</denied>
+            </pages>
+            -->
+
+        </handler>
+
+    </shhaa>
+</ROOT>

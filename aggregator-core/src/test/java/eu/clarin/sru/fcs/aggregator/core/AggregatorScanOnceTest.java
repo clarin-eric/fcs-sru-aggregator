@@ -57,7 +57,7 @@ public class AggregatorScanOnceTest {
                 return null;
             }
         };
-        final ThrottledClient sruClient = AggregatorBase.createClient(sruClientParams);
+        final ThrottledClient sruClient = AggregatorBase.createClient(sruClientParams, null);
 
         final ScanCrawlTaskCompletedCallback scanCrawlTaskCompletedCallback = new ScanCrawlTaskCompletedCallback() {
             @Override

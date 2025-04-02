@@ -13,9 +13,11 @@ import eu.clarin.sru.client.SRUClientException;
 import eu.clarin.sru.client.SRUSearchRetrieveRequest;
 import eu.clarin.sru.client.SRUSearchRetrieveResponse;
 import eu.clarin.sru.client.SRUVersion;
+import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescription.ResourceInfo.AvailabilityRestriction;
 import eu.clarin.sru.client.fcs.ClarinFCSRecordData;
 import eu.clarin.sru.client.fcs.LegacyClarinFCSRecordData;
 import eu.clarin.sru.fcs.aggregator.client.ThrottledClient;
+import eu.clarin.sru.fcs.aggregator.core.AggregatorConstants;
 import eu.clarin.sru.fcs.aggregator.scan.Diagnostic;
 import eu.clarin.sru.fcs.aggregator.scan.FCSProtocolVersion;
 import eu.clarin.sru.fcs.aggregator.scan.Resource;
@@ -53,7 +55,8 @@ public class Search {
             SRUVersion version,
             Statistics statistics, List<Resource> resources,
             String queryType, String searchString,
-            String searchLanguage, int startRecord, int maxRecords) {
+            String searchLanguage, int startRecord, int maxRecords,
+            final String userid) {
         this.searchClient = searchClient;
 
         this.version = version;
@@ -69,16 +72,16 @@ public class Search {
         for (Resource resource : resources) {
             SRUVersion versionForResource = computeVersion(version, queryType, resource);
             Result result = new Result(resource, langDetectCallback);
-            executeSearch(result, versionForResource, queryType, query, startRecord, maxRecords);
+            executeSearch(result, versionForResource, queryType, query, startRecord, maxRecords, userid);
             results.add(result);
         }
     }
 
-    public boolean searchForNextResults(String resourceId, int maxRecords) {
+    public boolean searchForNextResults(String resourceId, int maxRecords, final String userid) {
         for (Result r : results) {
             if (r.getResource().getId().equals(resourceId)) {
                 SRUVersion versionForResource = computeVersion(version, queryType, r.getResource());
-                executeSearch(r, versionForResource, queryType, query, r.getNextRecordPosition(), maxRecords);
+                executeSearch(r, versionForResource, queryType, query, r.getNextRecordPosition(), maxRecords, userid);
                 return true;
             }
         }
@@ -87,7 +90,7 @@ public class Search {
 
     @SuppressWarnings("deprecation")
     private void executeSearch(final Result result, SRUVersion version, String queryType, String searchString,
-            int startRecord, int maxRecords) {
+            int startRecord, int maxRecords, final String userid) {
         final Resource resource = result.getResource();
         log.info("Executing search in '{}' version='{}' queryType ='{}' query='{}' maxRecords='{}'",
                 resource, version, queryType, searchString, maxRecords);
@@ -108,6 +111,25 @@ public class Search {
                     ? SRUCQL.SEARCH_RESOURCE_HANDLE_LEGACY_PARAMETER
                     : SRUCQL.SEARCH_RESOURCE_HANDLE_PARAMETER,
                     resource.getHandle());
+        }
+
+        if (resource.hasAvailabilityRestriction()) {
+            // if the resource has an availability restriction, then add details for
+            // authentication, otherwise we will not set it, to let the library not send
+            // more information than neccessary
+            // TODO: or check endpoint caps and always send auth info?
+            if (userid != null) {
+                // only if 'userid' is set, do we have an authenticated user, otherwise
+                // the user is 'anonymous' (unauthenticated) and we do not want to send auth
+                // infos that might confuse an endpoint to assume a user is authenticated
+                searchRequest.setSendAuthentication(true);
+
+                if (AvailabilityRestriction.PERSONAL_IDENTIFIER.equals(resource.getAvailabilityRestriction())) {
+                    // and we only set the 'userid' if 'PERSONAL_IDENTIFIER' is requested, otherwise
+                    // a valid JWT authentication signals a valid authentication at the aggregator
+                    searchRequest.setAuthenticationContext(AggregatorConstants.PARAM_AUTHINFO_USERID, userid);
+                }
+            }
         }
 
         statistics.initEndpoint(resource.getEndpointInstitution(), resource.getEndpoint(),

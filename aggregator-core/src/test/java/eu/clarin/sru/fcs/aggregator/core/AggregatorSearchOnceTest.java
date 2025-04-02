@@ -54,7 +54,7 @@ public class AggregatorSearchOnceTest {
                 return null;
             }
         };
-        final ThrottledClient sruClient = AggregatorBase.createClient(sruClientParams);
+        final ThrottledClient sruClient = AggregatorBase.createClient(sruClientParams, null);
 
         final Statistics stats = new Statistics();
 
@@ -66,7 +66,7 @@ public class AggregatorSearchOnceTest {
 
         final String query = "the";
         final Search search = AggregatorBase.startSearch(sruClient, stats, null, SRUVersion.VERSION_2_0,
-                List.of(resource), "cql", query, null, 1, 10);
+                List.of(resource), "cql", query, null, 1, 10, null);
         final Result result = search.getResults(resource.getId()).get(0);
 
         log.info("Wait for search results ... (max 7s)");

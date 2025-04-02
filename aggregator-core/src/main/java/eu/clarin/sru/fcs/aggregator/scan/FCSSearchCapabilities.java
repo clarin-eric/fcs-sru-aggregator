@@ -10,4 +10,5 @@ package eu.clarin.sru.fcs.aggregator.scan;
 public enum FCSSearchCapabilities {
     BASIC_SEARCH, // basic search (required), cql?
     ADVANCED_SEARCH, // FCS 2.0 advanced search
+    AUTHENTICATED_SEARCH, // FCS 2.0 authenticated search
 }

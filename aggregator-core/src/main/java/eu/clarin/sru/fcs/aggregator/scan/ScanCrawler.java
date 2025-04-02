@@ -1,7 +1,16 @@
 package eu.clarin.sru.fcs.aggregator.scan;
 
-import eu.clarin.sru.fcs.aggregator.util.CounterLatch;
-import eu.clarin.sru.fcs.aggregator.util.MultilingualString;
+import java.net.SocketTimeoutException;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+
+import org.slf4j.LoggerFactory;
+import org.w3c.dom.DocumentFragment;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
 import eu.clarin.sru.client.SRUClientException;
 import eu.clarin.sru.client.SRUDiagnostic;
 import eu.clarin.sru.client.SRUExplainRequest;
@@ -10,21 +19,14 @@ import eu.clarin.sru.client.SRUExtraResponseData;
 import eu.clarin.sru.client.SRUScanRequest;
 import eu.clarin.sru.client.SRUScanResponse;
 import eu.clarin.sru.client.SRUTerm;
+import eu.clarin.sru.client.fcs.ClarinFCSConstants;
 import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescription;
 import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescription.ResourceInfo;
 import eu.clarin.sru.fcs.aggregator.client.ThrottledClient;
+import eu.clarin.sru.fcs.aggregator.util.CounterLatch;
+import eu.clarin.sru.fcs.aggregator.util.MultilingualString;
 import eu.clarin.sru.fcs.aggregator.util.SRUCQL;
 import eu.clarin.sru.fcs.aggregator.util.Throw;
-import java.net.SocketTimeoutException;
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import org.slf4j.LoggerFactory;
-import org.w3c.dom.DocumentFragment;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 
 /**
  * Crawler for collecting endpoint scan operation responses of FCS
@@ -43,9 +45,6 @@ public class ScanCrawler {
     private final CounterLatch latch;
     private final ThrottledClient sruClient;
     private final Statistics statistics = new Statistics();
-
-    // TODO: use from CLARIN FCS lib
-    private static final URI advSearchCap = URI.create("http://clarin.eu/fcs/capability/advanced-search");
 
     public ScanCrawler(List<Institution> institutions, ThrottledClient sruClient, int maxDepth) {
         this.institutions = institutions;
@@ -129,8 +128,14 @@ public class ScanCrawler {
                             ClarinFCSEndpointDescription desc = (ClarinFCSEndpointDescription) data;
                             if (desc.getVersion() == 2) {
                                 endpoint.setProtocol(FCSProtocolVersion.VERSION_2);
-                                if (desc.getCapabilities().contains(advSearchCap)) {
+                                if (desc.getCapabilities().contains(ClarinFCSConstants.CAPABILITY_ADVANCED_SEARCH)) {
                                     endpoint.addSearchCapability(FCSSearchCapabilities.ADVANCED_SEARCH);
+                                }
+
+                                // check if auth requirements
+                                if (desc.getCapabilities()
+                                        .contains(ClarinFCSConstants.CAPABILITY_AUTHENTICATED_SEARCH)) {
+                                    endpoint.addSearchCapability(FCSSearchCapabilities.AUTHENTICATED_SEARCH);
                                 }
                             } else {
                                 endpoint.setProtocol(FCSProtocolVersion.VERSION_1);
@@ -212,6 +217,13 @@ public class ScanCrawler {
             r.setSearchCapabilities(endpoint.getSearchCapabilities());
             r.setAvailableDataViews(ri.getAvailableDataViews());
             r.setAvailableLayers(ri.getAvailableLayers());
+
+            // check for requirements on resource
+            if (endpoint.getSearchCapabilities().contains(FCSSearchCapabilities.AUTHENTICATED_SEARCH)
+                    && ri.hasAvailabilityRestriction()) {
+                r.setAvailabilityRestriction(ri.getAvailabilityRestriction());
+                // TODO: should populate up/down the hierarchy?
+            }
 
             if (resources.addResource(r, parentResource)) {
                 if (rootResources != null) {

@@ -2,6 +2,7 @@ package eu.clarin.sru.fcs.aggregator.core;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -10,8 +11,10 @@ import javax.ws.rs.client.Client;
 
 import org.slf4j.LoggerFactory;
 
+import eu.clarin.sru.client.SRURequestAuthenticator;
 import eu.clarin.sru.client.SRUThreadedClient;
 import eu.clarin.sru.client.SRUVersion;
+import eu.clarin.sru.client.auth.ClarinFCSRequestAuthenticator;
 import eu.clarin.sru.client.fcs.ClarinFCSClientBuilder;
 import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescriptionParser;
 import eu.clarin.sru.fcs.aggregator.client.MaxConcurrentRequestsCallback;
@@ -31,19 +34,51 @@ public abstract class AggregatorBase {
     // ----------------------------------------------------------------------
     // creators
 
-    public static ThrottledClient createClient(SRUFCSClientParams params) {
+    public static SRURequestAuthenticator createSRURequestAuthenticator(FCSAuthenticationParams params) {
+        final SRURequestAuthenticator requestAuthStrategy;
+
+        if (params.enableAAI()) {
+            final ClarinFCSRequestAuthenticator.AuthenticationInfoProvider authInfoPovider = new ClarinFCSRequestAuthenticator.AuthenticationInfoProvider() {
+                @Override
+                public String getAudience(String endpointURI, Map<String, String> context) {
+                    return endpointURI; // default behaviour, aud is endpoint url
+                }
+
+                @Override
+                public String getSubject(String endpointURI, Map<String, String> context) {
+                    if (context != null) {
+                        return context.get(AggregatorConstants.PARAM_AUTHINFO_USERID);
+                    }
+                    return null;
+                }
+            };
+
+            requestAuthStrategy = ClarinFCSRequestAuthenticator.Builder.create()
+                    .withIssuer(params.getServerUrl())
+                    // TODO: change to Public|PrivateKey interfaces (should be more secure!)
+                    .withKeyPairStrings(params.getPublicKey(), params.getPrivateKey())
+                    .withAuthenticationInfoProvider(authInfoPovider)
+                    .build();
+        } else {
+            requestAuthStrategy = null;
+        }
+
+        return requestAuthStrategy;
+    }
+
+    public static ThrottledClient createClient(SRUFCSClientParams params, SRURequestAuthenticator requestAuthStrategy) {
         return createClient(params.getEndpointScanTimeout(),
                 params.getEndpointSearchTimeout(),
                 params.getMaxConcurrentScanRequestsPerEndpoint(),
                 params.getMaxConcurrentSearchRequestsPerEndpoint(),
                 params.getMaxConcurrentSearchRequestsPerSlowEndpoint(),
-                params.getSlowEndpoints());
+                params.getSlowEndpoints(), requestAuthStrategy);
     }
 
     public static ThrottledClient createClient(int endpointScanTimeout, int endpointSearchTimeout,
             int maxConcurrentScanRequestsPerEndpoint,
             int maxConcurrentSearchRequestsPerEndpoint, int maxConcurrentSearchRequestsPerSlowEndpoint,
-            List<URI> slowEndpoints) {
+            List<URI> slowEndpoints, SRURequestAuthenticator requestAuthStrategy) {
 
         final SRUThreadedClient sruScanClient = new ClarinFCSClientBuilder()
                 .setConnectTimeout(endpointScanTimeout)
@@ -52,6 +87,7 @@ public abstract class AggregatorBase {
                 .registerExtraResponseDataParser(
                         new ClarinFCSEndpointDescriptionParser())
                 .enableLegacySupport()
+                .setRequestAuthenticator(requestAuthStrategy)
                 .buildThreadedClient();
 
         final SRUThreadedClient sruSearchClient = new ClarinFCSClientBuilder()
@@ -61,6 +97,7 @@ public abstract class AggregatorBase {
                 .registerExtraResponseDataParser(
                         new ClarinFCSEndpointDescriptionParser())
                 .enableLegacySupport()
+                .setRequestAuthenticator(requestAuthStrategy)
                 .buildThreadedClient();
 
         final MaxConcurrentRequestsCallback maxScanConcurrentRequestsCallback = new MaxConcurrentRequestsCallback() {
@@ -147,7 +184,7 @@ public abstract class AggregatorBase {
     public static Search startSearch(ThrottledClient sruClient, Statistics stats,
             PerformLanguageDetectionCallback performLanguageDetectionCallback, SRUVersion version,
             List<Resource> resources, String queryType, String searchString, String searchLang, int startRecord,
-            int maxRecords) {
+            int maxRecords, final String userid) {
         if (resources == null || resources.isEmpty()) {
             // No resources
             return null;
@@ -156,7 +193,7 @@ public abstract class AggregatorBase {
             return null;
         } else {
             return new Search(sruClient, performLanguageDetectionCallback, version, stats, resources, queryType,
-                    searchString, searchLang, startRecord, maxRecords);
+                    searchString, searchLang, startRecord, maxRecords, userid);
         }
     }
 

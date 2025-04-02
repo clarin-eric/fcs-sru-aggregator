@@ -10,6 +10,7 @@ import javax.ws.rs.client.Client;
 
 import org.slf4j.LoggerFactory;
 
+import eu.clarin.sru.client.SRURequestAuthenticator;
 import eu.clarin.sru.client.SRUVersion;
 import eu.clarin.sru.fcs.aggregator.client.ThrottledClient;
 import eu.clarin.sru.fcs.aggregator.scan.EndpointFilter;
@@ -46,7 +47,8 @@ public class Aggregator extends AggregatorBase {
         }
 
         // create SRU client for scan/search requests
-        sruClient = createClient(params);
+        final SRURequestAuthenticator requestAuthenticator = createSRURequestAuthenticator(params);
+        sruClient = createClient(params, requestAuthenticator);
 
         if (params.enableScanCrawlTask()) {
             // create and schedule scan crawl task
@@ -118,18 +120,18 @@ public class Aggregator extends AggregatorBase {
 
     // this function should be thread-safe
     public Search startSearch(SRUVersion version, List<Resource> resources, String queryType, String searchString,
-            String searchLang, int startRecord, int maxRecords) {
+            String searchLang, int startRecord, int maxRecords, final String userid) {
         if (sruClient == null) {
             throw new IllegalStateException("Aggregator has not been initialized yet! Call init() first!");
         }
-        // NOTE: calls after shutdown will eventually throw in the clients executor ...
+        // NOTE: calls after shutdown will eventually throw in the client's executor ...
 
         final Statistics stats = searchStatsAtom.get();
         final PerformLanguageDetectionCallback performLanguageDetectionCallback = performLanguageDetectionCallbackAtom
                 .get();
 
         final Search sr = startSearch(sruClient, stats, performLanguageDetectionCallback, version, resources, queryType,
-                searchString, searchLang, startRecord, maxRecords);
+                searchString, searchLang, startRecord, maxRecords, userid);
         activeSearches.addSearch(sr);
         return sr;
     }

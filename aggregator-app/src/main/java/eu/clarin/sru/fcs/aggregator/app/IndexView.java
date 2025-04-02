@@ -1,6 +1,6 @@
 package eu.clarin.sru.fcs.aggregator.app;
 
-import eu.clarin.sru.fcs.aggregator.app.AggregatorConfiguration.Params.PiwikConfig;
+import eu.clarin.sru.fcs.aggregator.app.configuration.PiwikConfig;
 import io.dropwizard.views.common.View;
 
 /**
@@ -12,12 +12,14 @@ public class IndexView extends View {
     final PiwikConfig piwikConfig;
     final boolean showSearchResultLink;
     final String validatorUrl;
+    final String username;
 
-    protected IndexView(PiwikConfig config, boolean showSearchResultLink, String validatorUrl) {
+    protected IndexView(PiwikConfig config, boolean showSearchResultLink, String validatorUrl, String username) {
         super("index.mustache");
         this.piwikConfig = config;
         this.showSearchResultLink = showSearchResultLink;
         this.validatorUrl = validatorUrl;
+        this.username = username;
     }
 
     public PiwikConfig getPiwikConfig() {

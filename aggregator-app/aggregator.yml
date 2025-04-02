@@ -36,6 +36,9 @@ aggregatorParams:
 
   prettyPrintJSON: false
 
+  aaiConfig:
+    enabled: ${SHIB_ENABLED:-false}
+
   piwikConfig:
     enabled: ${PIWIK_ENABLED:-true}
     url: ${PIWIK_URL:-https://stats.clarin.eu/}

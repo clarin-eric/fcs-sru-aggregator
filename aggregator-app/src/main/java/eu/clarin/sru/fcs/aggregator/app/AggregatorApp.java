@@ -4,15 +4,16 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 
+import javax.servlet.DispatcherType;
 import javax.ws.rs.client.Client;
 
 import org.eclipse.jetty.server.session.SessionHandler;
@@ -30,8 +31,14 @@ import com.optimaize.langdetect.profiles.LanguageProfileReader;
 import com.optimaize.langdetect.text.CommonTextObjectFactories;
 import com.optimaize.langdetect.text.TextObjectFactory;
 
+import de.mpg.aai.shhaa.AuthFilter;
 import eu.clarin.sru.client.SRUVersion;
 import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescription;
+import eu.clarin.sru.fcs.aggregator.app.auth.AuthConfigContextListener;
+import eu.clarin.sru.fcs.aggregator.app.auth.JWKSResource;
+import eu.clarin.sru.fcs.aggregator.app.auth.LoginResource;
+import eu.clarin.sru.fcs.aggregator.app.configuration.AAIConfig;
+import eu.clarin.sru.fcs.aggregator.app.configuration.AggregatorConfiguration;
 import eu.clarin.sru.fcs.aggregator.app.export.WeblichtExportCache;
 import eu.clarin.sru.fcs.aggregator.app.rest.RestService;
 import eu.clarin.sru.fcs.aggregator.app.serialization.ClarinFCSEndpointDescriptionDataViewMixin;
@@ -39,6 +46,7 @@ import eu.clarin.sru.fcs.aggregator.app.serialization.ClarinFCSEndpointDescripti
 import eu.clarin.sru.fcs.aggregator.app.serialization.ResourcesMixin;
 import eu.clarin.sru.fcs.aggregator.app.serialization.ResultMetaMixin;
 import eu.clarin.sru.fcs.aggregator.app.serialization.StatisticsEndpointStatsMixin;
+import eu.clarin.sru.fcs.aggregator.app.util.ClientFactory;
 import eu.clarin.sru.fcs.aggregator.core.Aggregator;
 import eu.clarin.sru.fcs.aggregator.core.AggregatorParams;
 import eu.clarin.sru.fcs.aggregator.scan.CenterRegistryLive;
@@ -222,10 +230,10 @@ public class AggregatorApp extends Application<AggregatorConfiguration> {
         instance = this;
 
         List<String> wll = new ArrayList<String>();
-        for (String l : config.aggregatorParams.weblichtConfig.getAcceptedTcfLanguages()) {
+        for (String l : config.aggregatorParams.getWeblichtConfig().getAcceptedTcfLanguages()) {
             wll.add(LanguagesISO693.getInstance().code_3ForCode(l));
         }
-        config.aggregatorParams.weblichtConfig.acceptedTcfLanguages = wll;
+        config.aggregatorParams.getWeblichtConfig().setAcceptedTcfLanguages(wll);
 
         System.out.println("Using parameters: ");
         try {
@@ -240,8 +248,24 @@ public class AggregatorApp extends Application<AggregatorConfiguration> {
         environment.jersey().register(new IndexResource());
         environment.jersey().register(new RestService());
 
+        // AAI - MPG SHHAA
+        final AAIConfig aaiConfig = config.aggregatorParams.getAAIConfig();
+        if (aaiConfig != null && aaiConfig.isAAIEnabled()) {
+            // add resources (routes) for AAI and JWKS
+            environment.jersey().register(new LoginResource());
+            environment.jersey().register(new JWKSResource());
+
+            // add AAI filters
+            environment.servlets().addFilter("AAIFilter", AuthFilter.class)
+                    .addMappingForUrlPatterns(EnumSet.allOf(DispatcherType.class), true, "/*");
+            environment.servlets().setInitParameter("ShhaaConfigLocation", "/WEB-INF/shhaa.xml");
+            // de.mpg.aai.shhaa.config.ConfigContextListener.ConfigContextListener
+            environment.servlets().addServletListeners(new AuthConfigContextListener(aaiConfig.getShibWebappHost(),
+                    aaiConfig.getShibLogin(), aaiConfig.getShibLogout()));
+        }
+
         // pretty printing
-        if (config.aggregatorParams.prettyPrintJSON) {
+        if (config.aggregatorParams.getPrettyPrintJSON()) {
             environment.getObjectMapper().configure(SerializationFeature.INDENT_OUTPUT, true);
         }
 
@@ -251,15 +275,21 @@ public class AggregatorApp extends Application<AggregatorConfiguration> {
                 .addMixIn(ResultMeta.class, ResultMetaMixin.class);
 
         // swagger
-        if (config.aggregatorParams.openapiEnabled) {
-            final String[] resourceClasses = { "eu.clarin.sru.fcs.aggregator.app.IndexResource",
-                    "eu.clarin.sru.fcs.aggregator.rest.RestService" };
+        if (config.aggregatorParams.isOpenAPIEnabled()) {
+            List<String> resourceClasses = new ArrayList<>(List.of("eu.clarin.sru.fcs.aggregator.app.IndexResource",
+                    "eu.clarin.sru.fcs.aggregator.app.rest.RestService"));
+
+            if (aaiConfig != null && aaiConfig.isAAIEnabled()) {
+                resourceClasses.addAll(List.of("eu.clarin.sru.fcs.aggregator.app.auth.LoginResource",
+                        "eu.clarin.sru.fcs.aggregator.app.auth.JWKSResource"));
+            }
             final SwaggerConfiguration oasConfiguration = new SwaggerConfiguration()
                     .openAPI(new OpenAPI().addServersItem(
-                            new Server().url(config.aggregatorParams.SERVER_URL).description("Local API endpoint")))
+                            new Server().url(config.aggregatorParams.getSERVER_URL())
+                                    .description("Local API endpoint")))
                     .prettyPrint(true)
                     .readAllResources(true)
-                    .resourceClasses(Arrays.stream(resourceClasses).collect(Collectors.toSet()));
+                    .resourceClasses(Set.copyOf(resourceClasses));
             environment.jersey().register(new OpenApiResource().openApiConfiguration(oasConfiguration));
             environment.jersey().register(new SwaggerSerializers());
         }
@@ -279,62 +309,62 @@ public class AggregatorApp extends Application<AggregatorConfiguration> {
         aggregatorParams = new AggregatorParams() {
             @Override
             public int getEndpointScanTimeout() {
-                return params.ENDPOINTS_SCAN_TIMEOUT_MS;
+                return params.getENDPOINTS_SCAN_TIMEOUT_MS();
             }
 
             @Override
             public int getEndpointSearchTimeout() {
-                return params.ENDPOINTS_SEARCH_TIMEOUT_MS;
+                return params.getENDPOINTS_SEARCH_TIMEOUT_MS();
             }
 
             @Override
             public int getMaxConcurrentScanRequestsPerEndpoint() {
-                return params.SCAN_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT;
+                return params.getSCAN_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT();
             }
 
             @Override
             public int getMaxConcurrentSearchRequestsPerEndpoint() {
-                return params.SEARCH_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT;
+                return params.getSEARCH_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT();
             }
 
             @Override
             public int getMaxConcurrentSearchRequestsPerSlowEndpoint() {
-                return params.SEARCH_MAX_CONCURRENT_REQUESTS_PER_SLOW_ENDPOINT;
+                return params.getSEARCH_MAX_CONCURRENT_REQUESTS_PER_SLOW_ENDPOINT();
             }
 
             @Override
             public List<URI> getSlowEndpoints() {
-                return params.slowEndpoints;
+                return params.getSlowEndpoints();
             }
 
             @Override
             public String getCenterRegistryUrl() {
-                return params.CENTER_REGISTRY_URL;
+                return params.getCENTER_REGISTRY_URL();
             }
 
             @Override
             public int getScanMaxDepth() {
-                return params.SCAN_MAX_DEPTH;
+                return params.getSCAN_MAX_DEPTH();
             }
 
             @Override
             public List<EndpointConfig> getAdditionalCQLEndpoints() {
-                return params.additionalCQLEndpoints;
+                return params.getAdditionalCQLEndpoints();
             }
 
             @Override
             public List<EndpointConfig> getAdditionalFCSEndpoints() {
-                return params.additionalFCSEndpoints;
+                return params.getAdditionalFCSEndpoints();
             }
 
             @Override
             public long getScanTaskInitialDelay() {
-                return params.SCAN_TASK_INITIAL_DELAY;
+                return params.getSCAN_TASK_INITIAL_DELAY();
             }
 
             @Override
             public long getScanTaskInterval() {
-                return params.SCAN_TASK_INTERVAL;
+                return params.getSCAN_TASK_INTERVAL();
             }
 
             @Override
@@ -344,7 +374,7 @@ public class AggregatorApp extends Application<AggregatorConfiguration> {
 
             @Override
             public long getExecutorShutdownTimeout() {
-                return params.EXECUTOR_SHUTDOWN_TIMEOUT_MS;
+                return params.getEXECUTOR_SHUTDOWN_TIMEOUT_MS();
             }
 
             @Override
@@ -361,11 +391,48 @@ public class AggregatorApp extends Application<AggregatorConfiguration> {
             public boolean enableScanCrawlTask() {
                 return true;
             }
+
+            @Override
+            public boolean enableAAI() {
+                final AAIConfig aaiConfig = params.getAAIConfig();
+                return (aaiConfig != null) ? aaiConfig.isAAIEnabled() : false;
+            }
+
+            @Override
+            public String getServerUrl() {
+                return params.getSERVER_URL();
+            }
+
+            @Override
+            public String getPublicKey() {
+                final AAIConfig aaiConfig = params.getAAIConfig();
+                if (aaiConfig == null) {
+                    return null;
+                }
+                final AAIConfig.KeyConfig key = aaiConfig.getKey();
+                if (key == null) {
+                    return null;
+                }
+                return key.getPublicKey();
+            }
+
+            @Override
+            public String getPrivateKey() {
+                final AAIConfig aaiConfig = params.getAAIConfig();
+                if (aaiConfig == null) {
+                    return null;
+                }
+                final AAIConfig.KeyConfig key = aaiConfig.getKey();
+                if (key == null) {
+                    return null;
+                }
+                return key.getPrivateKey();
+            }
         };
 
         // cached resources loading
-        final File resourcesCacheFile = new File(params.AGGREGATOR_FILE_PATH);
-        final File resourcesOldCacheFile = new File(params.AGGREGATOR_FILE_PATH_BACKUP);
+        final File resourcesCacheFile = new File(params.getAGGREGATOR_FILE_PATH());
+        final File resourcesOldCacheFile = new File(params.getAGGREGATOR_FILE_PATH_BACKUP());
 
         // init resources from file
         {
@@ -448,7 +515,7 @@ public class AggregatorApp extends Application<AggregatorConfiguration> {
     // this function should be thread-safe
     public Search startSearch(SRUVersion version, List<Resource> resources,
             String queryType, String searchString, String searchLang,
-            int startRecord, int maxRecords) throws Exception {
+            int startRecord, int maxRecords, String userid) throws Exception {
         // first some cleanup
         List<String> prunedSearchIds = aggregator.gcSearches(aggregatorParams);
         for (String searchId : prunedSearchIds) {
@@ -456,7 +523,8 @@ public class AggregatorApp extends Application<AggregatorConfiguration> {
         }
 
         // then the search
-        return aggregator.startSearch(version, resources, queryType, searchString, searchLang, startRecord, maxRecords);
+        return aggregator.startSearch(version, resources, queryType, searchString, searchLang, startRecord, maxRecords,
+                userid);
     }
 
     public Search getSearchById(String id) {

@@ -1,4 +1,4 @@
-package eu.clarin.sru.fcs.aggregator.app;
+package eu.clarin.sru.fcs.aggregator.app.util;
 
 /*
 import com.sun.jersey.api.client.Client;

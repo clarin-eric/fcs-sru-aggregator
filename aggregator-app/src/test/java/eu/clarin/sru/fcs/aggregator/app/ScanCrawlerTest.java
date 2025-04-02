@@ -21,6 +21,8 @@ import com.codahale.metrics.MetricFilter;
 
 import eu.clarin.sru.client.SRUThreadedClient;
 import eu.clarin.sru.client.fcs.ClarinFCSClientBuilder;
+import eu.clarin.sru.fcs.aggregator.app.configuration.AggregatorConfiguration;
+import eu.clarin.sru.fcs.aggregator.app.util.ClientFactory;
 import eu.clarin.sru.fcs.aggregator.client.MaxConcurrentRequestsCallback;
 import eu.clarin.sru.fcs.aggregator.client.ThrottledClient;
 import eu.clarin.sru.fcs.aggregator.scan.CenterRegistryLive;
@@ -83,7 +85,7 @@ public class ScanCrawlerTest {
             // InitialContext context = new InitialContext();
             // String centerRegistryUrl = (String)
             // context.lookup("java:comp/env/center-registry-url");
-            String centerRegistryUrl = RULE.getConfiguration().aggregatorParams.CENTER_REGISTRY_URL;
+            String centerRegistryUrl = RULE.getConfiguration().aggregatorParams.getCENTER_REGISTRY_URL();
             ScanCrawler crawler = new ScanCrawler(
                     new CenterRegistryLive(centerRegistryUrl, filter, jerseyClient).getCQLInstitutions(),
                     sruClient, 2);

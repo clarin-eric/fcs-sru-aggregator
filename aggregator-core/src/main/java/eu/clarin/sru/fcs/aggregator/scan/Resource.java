@@ -10,6 +10,7 @@ import java.util.regex.Pattern;
 
 import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescription.DataView;
 import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescription.Layer;
+import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescription.ResourceInfo.AvailabilityRestriction;
 import eu.clarin.sru.client.fcs.DataViewAdvanced;
 import eu.clarin.sru.fcs.aggregator.util.LanguagesISO693;
 
@@ -37,6 +38,7 @@ public class Resource {
     private String institution;
 
     private EnumSet<FCSSearchCapabilities> searchCapabilities = EnumSet.of(FCSSearchCapabilities.BASIC_SEARCH);
+    private AvailabilityRestriction availabilityRestriction = AvailabilityRestriction.NONE;
     private List<DataView> availableDataViews;
     private List<Layer> availableLayers;
 
@@ -54,8 +56,8 @@ public class Resource {
         return endpoint.getUrl() + "#" + handle;
     }
 
-    public void addResource(Resource r) {
-        subResources.add(r);
+    public void addResource(Resource resource) {
+        subResources.add(resource);
     }
 
     public List<Resource> getSubResources() {
@@ -112,6 +114,18 @@ public class Resource {
 
     public void setAvailableLayers(List<Layer> availableLayers) {
         this.availableLayers = availableLayers;
+    }
+
+    public void setAvailabilityRestriction(AvailabilityRestriction restriction) {
+        this.availabilityRestriction = restriction;
+    }
+
+    public AvailabilityRestriction getAvailabilityRestriction() {
+        return availabilityRestriction;
+    }
+
+    public boolean hasAvailabilityRestriction() {
+        return !AvailabilityRestriction.NONE.equals(availabilityRestriction);
     }
 
     public void setSearchCapabilities(EnumSet<FCSSearchCapabilities> searchCapabilities) {

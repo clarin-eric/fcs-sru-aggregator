@@ -13,10 +13,12 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.SecurityContext;
 
 import org.slf4j.LoggerFactory;
 
-import eu.clarin.sru.fcs.aggregator.app.AggregatorConfiguration.Params.PiwikConfig;
+import eu.clarin.sru.fcs.aggregator.app.auth.AuthenticationInfo;
+import eu.clarin.sru.fcs.aggregator.app.configuration.PiwikConfig;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.links.Link;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -30,9 +32,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 public class IndexResource {
     private static final org.slf4j.Logger log = LoggerFactory.getLogger(IndexResource.class);
 
-    PiwikConfig config;
-    boolean searchResultLinkEnabled;
-    String validatorUrl;
+    final PiwikConfig config;
+    final boolean searchResultLinkEnabled;
+    final String validatorUrl;
 
     public IndexResource() {
         config = AggregatorApp.getInstance().getParams().getPiwikConfig();
@@ -43,8 +45,10 @@ public class IndexResource {
     @GET
     @Produces({ MediaType.TEXT_HTML })
     @Operation(description = "Start page of \"" + AggregatorApp.NAME + "\".", hidden = true)
-    public IndexView getIndex() {
-        return new IndexView(config, searchResultLinkEnabled, validatorUrl);
+    public IndexView getIndex(@Context final SecurityContext security) {
+        final AuthenticationInfo authInfo = AuthenticationInfo.fromPrincipal(security.getUserPrincipal());
+        final String username = authInfo.getDisplayName(); // TODO: what to show the user?
+        return new IndexView(config, searchResultLinkEnabled, validatorUrl, username);
     }
 
     @POST
@@ -56,7 +60,8 @@ public class IndexResource {
                             @Link(name = "Initial JS page load", operationId = "getInit") }) }, tags = { "search" })
     public IndexView postExternalSearchRequest(@Context final HttpServletRequest request,
             @FormParam(PARAM_QUERY) String query, @FormParam(PARAM_MODE) String mode,
-            @FormParam(PARAM_AGGREGATION_CONTEXT) String aggregationContext) {
+            @FormParam(PARAM_AGGREGATION_CONTEXT) String aggregationContext,
+            @Context final SecurityContext security) {
         log.warn("Received external search request");
 
         if (query != null && !query.isEmpty()) {
@@ -73,6 +78,9 @@ public class IndexResource {
             log.info("Param {}: {}", PARAM_AGGREGATION_CONTEXT, aggregationContext);
         }
 
-        return new IndexView(config, searchResultLinkEnabled, validatorUrl);
+        final AuthenticationInfo authInfo = AuthenticationInfo.fromPrincipal(security.getUserPrincipal());
+        final String username = authInfo.getDisplayName(); // TODO: what to show the user?
+
+        return new IndexView(config, searchResultLinkEnabled, validatorUrl, username);
     }
 }

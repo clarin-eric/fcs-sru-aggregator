@@ -2,6 +2,7 @@ package eu.clarin.sru.fcs.aggregator.app.rest;
 
 import java.io.IOException;
 import java.net.URI;
+import java.security.Principal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -21,6 +22,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.SecurityContext;
 import javax.ws.rs.core.UriBuilder;
 
 import org.slf4j.LoggerFactory;
@@ -31,8 +33,9 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 
 import eu.clarin.sru.client.SRUVersion;
 import eu.clarin.sru.fcs.aggregator.app.AggregatorApp;
-import eu.clarin.sru.fcs.aggregator.app.AggregatorConfiguration;
-import eu.clarin.sru.fcs.aggregator.app.AggregatorConfiguration.Params.WeblichtConfig;
+import eu.clarin.sru.fcs.aggregator.app.auth.AuthenticationInfo;
+import eu.clarin.sru.fcs.aggregator.app.configuration.AggregatorConfiguration;
+import eu.clarin.sru.fcs.aggregator.app.configuration.WeblichtConfig;
 import eu.clarin.sru.fcs.aggregator.app.export.Exports;
 import eu.clarin.sru.fcs.aggregator.app.export.WeblichtExportCache;
 import eu.clarin.sru.fcs.aggregator.scan.FCSProtocolVersion;
@@ -167,7 +170,8 @@ public class RestService {
             @FormParam("firstResultIndex") Integer firstResultIndex,
             @FormParam("numberOfResults") Integer numberOfResults,
             @FormParam("language") String language,
-            @FormParam("resourceIds[]") List<String> resourceIds) throws Exception {
+            @FormParam("resourceIds[]") List<String> resourceIds,
+            @Context final SecurityContext security) throws Exception {
         if (query == null || query.isEmpty()) {
             return Response.status(400).entity("'query' parameter expected").build();
         }
@@ -204,9 +208,15 @@ public class RestService {
         if (numberOfResults > 250) {
             numberOfResults = 250;
         }
+
+        // TODO: move check to front?
+        final AuthenticationInfo authInfo = AuthenticationInfo.fromPrincipal(security.getUserPrincipal());
+        // TODO: check if resource selection all require auth, then fail early
+        String userid = authInfo.isAuthenticated() ? authInfo.getUsername() : null;
+
         Search search = AggregatorApp.getInstance().startSearch(
                 "fcs".equals(queryType) ? SRUVersion.VERSION_2_0 : null,
-                resources, queryType, query, language, firstResultIndex, numberOfResults);
+                resources, queryType, query, language, firstResultIndex, numberOfResults, userid);
         if (search == null) {
             return Response.status(500).entity("Initiating search failed").build();
         }
@@ -223,6 +233,8 @@ public class RestService {
             @ApiResponse(responseCode = "404", description = "Search job not found.") }, tags = { "search" })
     public Response getSearch(@PathParam("id") String searchId,
             @QueryParam("resourceId") String resourceId) throws Exception {
+        // TODO: check if download of auth restricted resource?
+
         Search search = AggregatorApp.getInstance().getSearchById(searchId);
         if (search == null) {
             return Response.status(Response.Status.NOT_FOUND).entity("Search job not found").build();
@@ -246,6 +258,8 @@ public class RestService {
             @ApiResponse(responseCode = "404", description = "Search job not found.") }, tags = { "search" })
     public Response getSearchMetaOnly(@PathParam("id") String searchId,
             @QueryParam("resourceId") String resourceId) throws Exception {
+        // TODO: check if download of auth restricted resource?
+
         Search search = AggregatorApp.getInstance().getSearchById(searchId);
         if (search == null) {
             return Response.status(Response.Status.NOT_FOUND).entity("Search job not found").build();
@@ -275,7 +289,8 @@ public class RestService {
             @ApiResponse(responseCode = "500", description = "Initiating subSearch failed.") }, tags = { "search" })
     public Response postSearchNextResults(@PathParam("id") String searchId,
             @FormParam("resourceId") String resourceId,
-            @FormParam("numberOfResults") Integer numberOfResults) throws Exception {
+            @FormParam("numberOfResults") Integer numberOfResults,
+            @Context final SecurityContext security) throws Exception {
         log.info("POST /search/{id}, searchId: {}, resourceId: {}", searchId, resourceId);
         if (resourceId == null || resourceId.isEmpty()) {
             return Response.status(400).entity("'resourceId' parameter expected").build();
@@ -291,7 +306,13 @@ public class RestService {
             numberOfResults = 250;
         }
 
-        boolean ret = search.searchForNextResults(resourceId, numberOfResults);
+        // TODO: move check to front?
+        // check if resource requires authentification info
+        final AuthenticationInfo authInfo = AuthenticationInfo.fromPrincipal(security.getUserPrincipal());
+        // TODO: check if resource requires auth, then fail early
+        String userid = authInfo.isAuthenticated() ? authInfo.getUsername() : null;
+
+        boolean ret = search.searchForNextResults(resourceId, numberOfResults, userid);
         if (ret == false) {
             return Response.status(500).entity("Initiating subSearch failed").build();
         }
@@ -316,6 +337,8 @@ public class RestService {
             @QueryParam("resourceId") String resourceId,
             @QueryParam("filterLanguage") String filterLanguage,
             @QueryParam("format") String format) throws Exception {
+        // TODO: check if download of auth restricted resource?
+
         Search search = AggregatorApp.getInstance().getSearchById(searchId);
         if (search == null) {
             return Response.status(Response.Status.NOT_FOUND).entity("Search job not found").build();
@@ -369,6 +392,9 @@ public class RestService {
                     @ApiResponse(responseCode = "404", description = "Weblicht export data not found.")
             })
     public Response getWeblichtExport(@PathParam("id") String searchId, @PathParam("eid") String exportId) {
+        // TODO: check if download of auth restricted resource? or is tis allowed
+        // always?
+
         WeblichtExportCache cache = AggregatorApp.getInstance().getWeblichtExportCacheBySearchId(searchId, false);
         if (cache == null) {
             return Response.status(Response.Status.NOT_FOUND).entity("Search job not found").build();
@@ -392,6 +418,8 @@ public class RestService {
     public Response sendSearchResultsToWeblicht(@PathParam("id") String searchId,
             @QueryParam("filterLanguage") String filterLanguage,
             @QueryParam("resourceId") String resourceId) throws Exception {
+        // TODO: check if download of auth restricted resource?
+
         Search search = AggregatorApp.getInstance().getSearchById(searchId);
         if (search == null) {
             return Response.status(Response.Status.NOT_FOUND).entity("Search job not found").build();
@@ -454,4 +482,16 @@ public class RestService {
         };
         return Response.ok(j).build();
     }
+
+    @GET
+    @Path("user")
+    public Response getUser(@Context final SecurityContext security) throws IOException {
+        log.debug("Authentication information requested. Security context {}.", security);
+        final Principal userPrincipal = security.getUserPrincipal();
+        log.debug("User principal: {}", userPrincipal);
+        final AuthenticationInfo authInfo = AuthenticationInfo.fromPrincipal(userPrincipal);
+        log.debug("Authentication info: {}", authInfo);
+        return Response.ok(authInfo).build();
+    }
+
 }
