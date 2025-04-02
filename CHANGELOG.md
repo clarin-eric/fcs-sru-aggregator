@@ -1,5 +1,34 @@
 # Changelog
 
+# [4.0.0] - 2025-04-xx
+
+- Added:
+  - Support of AAI (authenticated search, authentication using Shibboleth)
+    - a new JWKS `/.well-known/jwks.json` API route for FCS endpoints to self-configure with the public RSA key
+    - `aggregator-app` configurations for public/private keys as well as shibboleth configs
+  - Support of LexFCS (lexical resources search)
+  - Support to `await()` search results (`Result`, `Search`)
+  - Tests for `aggregator-core`
+
+- Changed:
+  - **Breaking**: Refactored `aggregator` into multi-module project:
+    - `aggregator-core` as standalone core aggregation component
+    - `aggregator-app` as dropwizard server application with all the REST API interfaces etc.
+    - Mode core aggregation functionality more reusable (e.g., retrieving endpoints from centre, creating SRU/FCS clients for searching/scanning, running searches)
+
+- Dependencies:
+  - Bump `org.slf4j` to `2.0.17`
+  - Bump `org.glassfish.jersey.*` to `2.30.1`
+  - Bump `io.dropwizard` to `3.0.13`
+  - Bump `org.junit.jupiter` to `5.11.0`
+  - Bump `io.swagger.core.v3` to `2.2.29`
+  - Bump `javax.servlet:javax.servlet-api` to `4.0.1` (same as dropwizard)
+  - Bump `com.optimaize.languagedetector:language-detector` to `0.6`
+  - Bump `fcs-simple-client` to `2.4.0`, `sru-client` to `2.3.0`
+  - Add `de.mpg.mpgaai:mpgaai-shhaa:1.0.13` (Shibboleth AAI)
+  - Bump various maven plugins to most recent stable versions
+  - Reorganize dependencies across `aggregator-core` and `aggregator-app`
+
 # [3.13.0] - 2024-09-05
 
 - Changed:
