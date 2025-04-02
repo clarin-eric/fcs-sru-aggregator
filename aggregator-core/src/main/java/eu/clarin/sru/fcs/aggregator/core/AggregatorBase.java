@@ -56,7 +56,7 @@ public abstract class AggregatorBase {
             requestAuthStrategy = ClarinFCSRequestAuthenticator.Builder.create()
                     .withIssuer(params.getServerUrl())
                     // TODO: change to Public|PrivateKey interfaces (should be more secure!)
-                    .withKeyPairStrings(params.getPublicKey(), params.getPrivateKey())
+                    .withKeyPairContents(params.getPublicKey(), params.getPrivateKey())
                     .withAuthenticationInfoProvider(authInfoPovider)
                     .build();
         } else {
