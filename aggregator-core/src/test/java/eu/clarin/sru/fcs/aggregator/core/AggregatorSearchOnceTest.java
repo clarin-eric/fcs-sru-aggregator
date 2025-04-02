@@ -2,6 +2,7 @@ package eu.clarin.sru.fcs.aggregator.core;
 
 import java.net.URI;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -69,9 +70,15 @@ public class AggregatorSearchOnceTest {
                 List.of(resource), "cql", query, null, 1, 10, null);
         final Result result = search.getResults(resource.getId()).get(0);
 
-        log.info("Wait for search results ... (max 7s)");
-        boolean isFinished = waitForSearchResultToFinish(result, 100, 70);
-        log.info("Stopped waiting for search results. Is finished: {}", isFinished);
+        log.info("Wait for search results ... (max 5s)");
+        boolean finishedAwaiting = false;
+        try {
+            finishedAwaiting = result.await(5, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            log.warn("Awaiting of results interrupted", e);
+        }
+        log.info("Stopped waiting for search results. Is finished: {}. In progress: {}", finishedAwaiting,
+                result.getInProgress());
 
         // shutdown search/client
         search.shutdown();
@@ -82,16 +89,6 @@ public class AggregatorSearchOnceTest {
         // log.info("Statistics:{}",aggregator.getSearchStatistics().getInstitutions());
         Statistics.EndpointStats epStats = stats.getInstitutions().get(institution.getName()).get(endpoint.getUrl());
         log.info("Statistics: {}", epStats);
-    }
-
-    static boolean waitForSearchResultToFinish(Result result, long delay, int times) throws InterruptedException {
-        for (int i = 0; i < times; i++) {
-            if (!result.getInProgress()) {
-                break;
-            }
-            Thread.sleep(delay);
-        }
-        return !result.getInProgress();
     }
 
     static {

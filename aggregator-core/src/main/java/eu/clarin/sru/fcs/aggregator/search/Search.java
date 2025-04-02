@@ -3,6 +3,8 @@ package eu.clarin.sru.fcs.aggregator.search;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -157,7 +159,7 @@ public class Search {
                     } catch (Throwable xc) {
                         log.error("search.onSuccess exception:", xc);
                     } finally {
-                        result.setInProgress(false);
+                        result.setDone();
                     }
                 }
 
@@ -174,7 +176,7 @@ public class Search {
                     } catch (Throwable xxc) {
                         log.error("search.onError exception:", xxc);
                     } finally {
-                        result.setInProgress(false);
+                        result.setDone();
                     }
                 }
             });
@@ -201,6 +203,41 @@ public class Search {
 
     public void shutdown() {
         // nothing to do
+    }
+
+    // ----------------------------------------------------------------------
+
+    public void await() throws InterruptedException {
+        // this should basically await all results
+        // if a result is finished, await() should immediately return
+        // if interrupted, we re-throw
+        for (final Result result : results) {
+            result.await();
+        }
+    }
+
+    public boolean await(long timeout, TimeUnit unit) throws InterruptedException {
+        // from: https://stackoverflow.com/a/18668479/9360161
+        // start await-ing each result
+        final CountDownLatch metaLatch = new CountDownLatch(results.size());
+        for (final Result result : results) {
+            new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        // if result finished (not a timeout)
+                        if (result.await(timeout, unit)) {
+                            // then decrement our search results counter
+                            metaLatch.countDown();
+                        }
+                    } catch (InterruptedException e) {
+                        // do nothing?
+                    }
+                }
+            }.run();
+        }
+        // return true if all results have finished
+        return metaLatch.await(timeout, unit);
     }
 
     // ----------------------------------------------------------------------

@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -34,6 +36,7 @@ public class ResultMeta {
     protected AtomicReference<String> endpointUrl = new AtomicReference<String>();
 
     protected AtomicBoolean inProgress = new AtomicBoolean(true);
+    private final CountDownLatch inProgressLatch = new CountDownLatch(1);
 
     protected AtomicInteger nextRecordPosition = new AtomicInteger(1);
     protected AtomicInteger numberOfRecords = new AtomicInteger(-1);
@@ -118,6 +121,21 @@ public class ResultMeta {
 
     public boolean isLexHits() {
         return isLexHits.get();
+    }
+
+    // ----------------------------------------------------------------------
+
+    public void setDone() {
+        setInProgress(false);
+        inProgressLatch.countDown();
+    }
+
+    public void await() throws InterruptedException {
+        inProgressLatch.await();
+    }
+
+    public boolean await(long timeout, TimeUnit unit) throws InterruptedException {
+        return inProgressLatch.await(timeout, unit);
     }
 
     // ----------------------------------------------------------------------
