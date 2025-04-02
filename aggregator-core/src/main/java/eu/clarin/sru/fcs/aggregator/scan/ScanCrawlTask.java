@@ -68,7 +68,7 @@ public class ScanCrawlTask implements Runnable {
                     if (ep.getName() == null || ep.getName().isEmpty()) {
                         continue;
                     }
-                    institutions.add(0, new Institution(ep.getName() + ", legacy", ep.getWebsite()) {
+                    institutions.add(0, new Institution(ep.getName() + ", legacy", ep.getWebsite(), true) {
                         {
                             addEndpoint(ep.getUrl().toExternalForm(), FCSProtocolVersion.LEGACY);
                         }
@@ -76,7 +76,7 @@ public class ScanCrawlTask implements Runnable {
                 }
                 // Add sideloaded endpoints that have no name
                 institutions.add(0,
-                        new Institution("Unknown Institution, legacy", null) {
+                        new Institution("Unknown Institution, legacy", null, true) {
                             {
                                 for (final EndpointConfig ep : additionalCQLEndpoints) {
                                     if (ep.getName() != null && !ep.getName().isEmpty()) {
@@ -93,7 +93,7 @@ public class ScanCrawlTask implements Runnable {
                     if (ep.getName() == null || ep.getName().isEmpty()) {
                         continue;
                     }
-                    institutions.add(0, new Institution(ep.getName() + ", FCS v2.0", ep.getWebsite()) {
+                    institutions.add(0, new Institution(ep.getName(), ep.getWebsite(), true) {
                         {
                             addEndpoint(ep.getUrl().toExternalForm(), FCSProtocolVersion.VERSION_2);
                         }
@@ -101,7 +101,7 @@ public class ScanCrawlTask implements Runnable {
                 }
                 // Add sideloaded endpoints that have no name
                 institutions.add(0,
-                        new Institution("Unknown Institution, FCS v2.0", null) {
+                        new Institution("Unknown Institution, FCS v2.0", null, true) {
                             {
                                 for (final EndpointConfig ep : additionalFCSEndpoints) {
                                     if (ep.getName() != null && !ep.getName().isEmpty()) {

@@ -43,6 +43,7 @@ import eu.clarin.sru.fcs.aggregator.app.export.WeblichtExportCache;
 import eu.clarin.sru.fcs.aggregator.app.rest.RestService;
 import eu.clarin.sru.fcs.aggregator.app.serialization.ClarinFCSEndpointDescriptionDataViewMixin;
 import eu.clarin.sru.fcs.aggregator.app.serialization.ClarinFCSEndpointDescriptionLayerMixin;
+import eu.clarin.sru.fcs.aggregator.app.serialization.InstitutionMixin;
 import eu.clarin.sru.fcs.aggregator.app.serialization.ResourcesMixin;
 import eu.clarin.sru.fcs.aggregator.app.serialization.ResultMetaMixin;
 import eu.clarin.sru.fcs.aggregator.app.serialization.StatisticsEndpointStatsMixin;
@@ -51,6 +52,7 @@ import eu.clarin.sru.fcs.aggregator.core.Aggregator;
 import eu.clarin.sru.fcs.aggregator.core.AggregatorParams;
 import eu.clarin.sru.fcs.aggregator.scan.CenterRegistryLive;
 import eu.clarin.sru.fcs.aggregator.scan.EndpointConfig;
+import eu.clarin.sru.fcs.aggregator.scan.Institution;
 import eu.clarin.sru.fcs.aggregator.scan.Resource;
 import eu.clarin.sru.fcs.aggregator.scan.Resources;
 import eu.clarin.sru.fcs.aggregator.scan.ScanCrawlTask.ScanCrawlTaskCompletedCallback;
@@ -272,6 +274,7 @@ public class AggregatorApp extends Application<AggregatorConfiguration> {
         // custom serialization of POJOs
         environment.getObjectMapper()
                 .addMixIn(Statistics.EndpointStats.class, StatisticsEndpointStatsMixin.class)
+                .addMixIn(Institution.class, InstitutionMixin.class)
                 .addMixIn(ResultMeta.class, ResultMetaMixin.class);
 
         // swagger
@@ -571,6 +574,7 @@ public class AggregatorApp extends Application<AggregatorConfiguration> {
                         ClarinFCSEndpointDescriptionDataViewMixin.class)
                 .addMixIn(ClarinFCSEndpointDescription.Layer.class, ClarinFCSEndpointDescriptionLayerMixin.class)
                 .addMixIn(Resources.class, ResourcesMixin.class)
+                .addMixIn(Institution.class, InstitutionMixin.class)
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
 

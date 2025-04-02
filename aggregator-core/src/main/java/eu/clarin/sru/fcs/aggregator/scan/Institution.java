@@ -13,15 +13,21 @@ public class Institution {
     private String name;
     private String link;
     private Set<Endpoint> endpoints;
+    private boolean sideloaded = false;
 
     // for JSON deserialization
     public Institution() {
     }
 
     public Institution(String name, String link) {
+        this(name, link, false);
+    }
+
+    public Institution(String name, String link, boolean sideloaded) {
         this.name = name;
         this.link = link;
         this.endpoints = new LinkedHashSet<Endpoint>();
+        this.sideloaded = sideloaded;
     }
 
     public String addEndpoint(String endpointUrl) {
@@ -52,6 +58,10 @@ public class Institution {
 
     public Set<Endpoint> getEndpoints() {
         return this.endpoints;
+    }
+
+    public boolean isSideloaded() {
+        return sideloaded;
     }
 
     @Override
