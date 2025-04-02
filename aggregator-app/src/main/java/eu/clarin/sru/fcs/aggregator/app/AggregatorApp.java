@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 import javax.servlet.DispatcherType;
 import javax.ws.rs.client.Client;
@@ -39,6 +40,7 @@ import eu.clarin.sru.fcs.aggregator.app.auth.JWKSResource;
 import eu.clarin.sru.fcs.aggregator.app.auth.LoginResource;
 import eu.clarin.sru.fcs.aggregator.app.configuration.AAIConfig;
 import eu.clarin.sru.fcs.aggregator.app.configuration.AggregatorConfiguration;
+import eu.clarin.sru.fcs.aggregator.app.configuration.EndpointConfigImpl;
 import eu.clarin.sru.fcs.aggregator.app.export.WeblichtExportCache;
 import eu.clarin.sru.fcs.aggregator.app.rest.RestService;
 import eu.clarin.sru.fcs.aggregator.app.serialization.ClarinFCSEndpointDescriptionDataViewMixin;
@@ -352,12 +354,20 @@ public class AggregatorApp extends Application<AggregatorConfiguration> {
 
             @Override
             public List<EndpointConfig> getAdditionalCQLEndpoints() {
-                return params.getAdditionalCQLEndpoints();
+                List<EndpointConfigImpl> endpoints = params.getAdditionalCQLEndpoints();
+                if (endpoints == null) {
+                    return null;
+                }
+                return endpoints.stream().map(e -> (EndpointConfig) e).collect(Collectors.toList());
             }
 
             @Override
             public List<EndpointConfig> getAdditionalFCSEndpoints() {
-                return params.getAdditionalFCSEndpoints();
+                List<EndpointConfigImpl> endpoints = params.getAdditionalFCSEndpoints();
+                if (endpoints == null) {
+                    return null;
+                }
+                return endpoints.stream().map(e -> (EndpointConfig) e).collect(Collectors.toList());
             }
 
             @Override

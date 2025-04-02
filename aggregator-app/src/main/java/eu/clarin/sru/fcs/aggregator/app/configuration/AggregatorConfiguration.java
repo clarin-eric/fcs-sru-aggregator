@@ -13,7 +13,6 @@ import org.hibernate.validator.constraints.Range;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import eu.clarin.sru.fcs.aggregator.scan.EndpointConfig;
 import io.dropwizard.core.Configuration;
 
 public class AggregatorConfiguration extends Configuration {
@@ -25,11 +24,11 @@ public class AggregatorConfiguration extends Configuration {
 
         @Valid
         @JsonProperty
-        List<EndpointConfig> additionalCQLEndpoints;
+        List<EndpointConfigImpl> additionalCQLEndpoints;
 
         @Valid
         @JsonProperty
-        List<EndpointConfig> additionalFCSEndpoints;
+        List<EndpointConfigImpl> additionalFCSEndpoints;
 
         @JsonProperty
         List<URI> slowEndpoints;
@@ -189,12 +188,12 @@ public class AggregatorConfiguration extends Configuration {
         }
 
         @JsonIgnore
-        public List<EndpointConfig> getAdditionalCQLEndpoints() {
+        public List<EndpointConfigImpl> getAdditionalCQLEndpoints() {
             return additionalCQLEndpoints;
         }
 
         @JsonIgnore
-        public List<EndpointConfig> getAdditionalFCSEndpoints() {
+        public List<EndpointConfigImpl> getAdditionalFCSEndpoints() {
             return additionalFCSEndpoints;
         }
 
