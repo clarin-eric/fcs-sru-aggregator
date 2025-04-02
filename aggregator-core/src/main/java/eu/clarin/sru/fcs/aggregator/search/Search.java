@@ -273,10 +273,14 @@ public class Search {
         if (version != null) {
             return version;
         }
-        // use SRU 2.0 if query type is FCS (required)
+
+        // use SRU 2.0 if query type is FCS/LexFCS (required)
         if ("fcs".equals(queryType)) {
             return SRUVersion.VERSION_2_0;
+        } else if ("lex".equals(queryType)) {
+            return SRUVersion.VERSION_2_0;
         }
+
         // otherwise go by resource->endpoint version (version of endpoint description,
         // not SRU Server Config!)
         if (resource.getEndpoint().getProtocol() == FCSProtocolVersion.VERSION_2) {
@@ -284,16 +288,19 @@ public class Search {
         } else if (resource.getEndpoint().getProtocol() == FCSProtocolVersion.VERSION_1) {
             return SRUVersion.VERSION_1_2;
         }
+
         // TODO: what to do with FCSProtocolVersion.LEGACY ? --> SRU 1.1 / SRU 1.2
         // default to 1.2
         return SRUVersion.VERSION_1_2;
     }
 
     static String quoteIfQuotableExpression(final String queryString, final String queryType) {
-        Matcher matcher = QUOTE_PATTERN.matcher(queryString.trim());
-        boolean quotableFound = matcher.find();
-        if ("cql".equals(queryType) && quotableFound && '"' != queryString.charAt(0)) {
-            return "\"" + queryString + "\"";
+        if ("cql".equals(queryType)) {
+            Matcher matcher = QUOTE_PATTERN.matcher(queryString.trim());
+            boolean quotableFound = matcher.find();
+            if (quotableFound && '"' != queryString.charAt(0)) {
+                return "\"" + queryString + "\"";
+            }
         }
         return queryString;
     }

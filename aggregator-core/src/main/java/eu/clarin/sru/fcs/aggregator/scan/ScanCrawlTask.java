@@ -50,68 +50,84 @@ public class ScanCrawlTask implements Runnable {
         this.callback = callback;
     }
 
+    public static List<Institution> retrieveInstitutions(Client jerseyClient, String centerRegistryUrl,
+            List<EndpointConfig> additionalCQLEndpoints, List<EndpointConfig> additionalFCSEndpoints,
+            EndpointFilter filter) {
+        List<Institution> institutions = new ArrayList<>();
+
+        // Query endpoints from centre registry
+        if (centerRegistryUrl != null && !centerRegistryUrl.isEmpty()) {
+            institutions = new CenterRegistryLive(centerRegistryUrl, filter, jerseyClient).getCQLInstitutions();
+        }
+
+        // Add sideloaded endpoints
+        if (additionalCQLEndpoints != null && !additionalCQLEndpoints.isEmpty()) {
+            // Add sideloaded endpoints with own name
+            for (final EndpointConfig ep : additionalCQLEndpoints) {
+                if (ep.getName() == null || ep.getName().isEmpty()) {
+                    continue;
+                }
+                institutions.add(0, new Institution(ep.getName() + ", legacy", ep.getWebsite(), true) {
+                    {
+                        addEndpoint(ep.getUrl().toExternalForm(), FCSProtocolVersion.LEGACY);
+                    }
+                });
+            }
+            // Add sideloaded endpoints that have no name
+            institutions.add(0,
+                    new Institution("Unknown Institution, legacy", null, true) {
+                        {
+                            for (final EndpointConfig ep : additionalCQLEndpoints) {
+                                if (ep.getName() != null && !ep.getName().isEmpty()) {
+                                    continue;
+                                }
+                                addEndpoint(ep.getUrl().toExternalForm(), FCSProtocolVersion.LEGACY);
+                            }
+                        }
+                    });
+        }
+
+        if (additionalFCSEndpoints != null && !additionalFCSEndpoints.isEmpty()) {
+            // Add sideloaded endpoints with own name
+            for (final EndpointConfig ep : additionalFCSEndpoints) {
+                if (ep.getName() == null || ep.getName().isEmpty()) {
+                    continue;
+                }
+                institutions.add(0, new Institution(ep.getName(), ep.getWebsite(), true) {
+                    {
+                        addEndpoint(ep.getUrl().toExternalForm(), FCSProtocolVersion.VERSION_2);
+                    }
+                });
+            }
+            // Add sideloaded endpoints that have no name
+            institutions.add(0,
+                    new Institution("Unknown Institution, FCS v2.0", null, true) {
+                        {
+                            for (final EndpointConfig ep : additionalFCSEndpoints) {
+                                if (ep.getName() != null && !ep.getName().isEmpty()) {
+                                    continue;
+                                }
+                                addEndpoint(ep.getUrl().toExternalForm(), FCSProtocolVersion.VERSION_2);
+                            }
+                        }
+                    });
+        }
+
+        return institutions;
+    }
+
+    private List<Institution> retrieveInstitutions() {
+        return retrieveInstitutions(jerseyClient, centerRegistryUrl, additionalCQLEndpoints, additionalFCSEndpoints,
+                filter);
+    }
+
     @Override
     public void run() {
         try {
             long time0 = System.currentTimeMillis();
 
             log.info("ScanCrawlTask: Initiating crawl");
-            List<Institution> institutions = new ArrayList<Institution>();
-            // Query endpoints from centre registry
-            if (centerRegistryUrl != null && !centerRegistryUrl.isEmpty()) {
-                institutions = new CenterRegistryLive(centerRegistryUrl, filter, jerseyClient).getCQLInstitutions();
-            }
-            // Add sideloaded endpoints
-            if (additionalCQLEndpoints != null && !additionalCQLEndpoints.isEmpty()) {
-                // Add sideloaded endpoints with own name
-                for (final EndpointConfig ep : additionalCQLEndpoints) {
-                    if (ep.getName() == null || ep.getName().isEmpty()) {
-                        continue;
-                    }
-                    institutions.add(0, new Institution(ep.getName() + ", legacy", ep.getWebsite(), true) {
-                        {
-                            addEndpoint(ep.getUrl().toExternalForm(), FCSProtocolVersion.LEGACY);
-                        }
-                    });
-                }
-                // Add sideloaded endpoints that have no name
-                institutions.add(0,
-                        new Institution("Unknown Institution, legacy", null, true) {
-                            {
-                                for (final EndpointConfig ep : additionalCQLEndpoints) {
-                                    if (ep.getName() != null && !ep.getName().isEmpty()) {
-                                        continue;
-                                    }
-                                    addEndpoint(ep.getUrl().toExternalForm(), FCSProtocolVersion.LEGACY);
-                                }
-                            }
-                        });
-            }
-            if (additionalFCSEndpoints != null && !additionalFCSEndpoints.isEmpty()) {
-                // Add sideloaded endpoints with own name
-                for (final EndpointConfig ep : additionalFCSEndpoints) {
-                    if (ep.getName() == null || ep.getName().isEmpty()) {
-                        continue;
-                    }
-                    institutions.add(0, new Institution(ep.getName(), ep.getWebsite(), true) {
-                        {
-                            addEndpoint(ep.getUrl().toExternalForm(), FCSProtocolVersion.VERSION_2);
-                        }
-                    });
-                }
-                // Add sideloaded endpoints that have no name
-                institutions.add(0,
-                        new Institution("Unknown Institution, FCS v2.0", null, true) {
-                            {
-                                for (final EndpointConfig ep : additionalFCSEndpoints) {
-                                    if (ep.getName() != null && !ep.getName().isEmpty()) {
-                                        continue;
-                                    }
-                                    addEndpoint(ep.getUrl().toExternalForm(), FCSProtocolVersion.VERSION_2);
-                                }
-                            }
-                        });
-            }
+            List<Institution> institutions = retrieveInstitutions();
 
             ScanCrawler scanCrawler = new ScanCrawler(institutions, sruClient, cacheMaxDepth);
 
