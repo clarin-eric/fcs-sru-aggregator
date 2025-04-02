@@ -33,7 +33,7 @@ public class Resource {
     private String handle;
     private Integer numberOfRecords;
 
-    private Set<String> languages = new HashSet<String>();
+    private Set<String> languages = new HashSet<>();
     private String landingPage;
     private String title;
     private String description;
@@ -45,7 +45,7 @@ public class Resource {
     private List<Layer> availableLayers;
     private List<LexField> availableLexFields;
 
-    public List<Resource> subResources = Collections.synchronizedList(new ArrayList<Resource>());
+    public List<Resource> subResources = Collections.synchronizedList(new ArrayList<>());
 
     public Resource() {
     }
@@ -108,7 +108,11 @@ public class Resource {
     }
 
     public void setAvailableDataViews(List<DataView> availableDataViews) {
-        this.availableDataViews = availableDataViews;
+        if (availableDataViews != null && !availableDataViews.isEmpty()) {
+            this.availableDataViews = availableDataViews;
+        } else {
+            this.availableDataViews = null;
+        }
     }
 
     public List<Layer> getAvailableLayers() {
@@ -116,7 +120,11 @@ public class Resource {
     }
 
     public void setAvailableLayers(List<Layer> availableLayers) {
-        this.availableLayers = availableLayers;
+        if (availableLayers != null && !availableLayers.isEmpty()) {
+            this.availableLayers = availableLayers;
+        } else {
+            this.availableLayers = null;
+        }
     }
 
     public List<LexField> getAvailableLexFields() {
@@ -124,7 +132,11 @@ public class Resource {
     }
 
     public void setAvailableLexFields(List<LexField> availableLexFields) {
-        this.availableLexFields = availableLexFields;
+        if (availableLexFields != null && !availableLexFields.isEmpty()) {
+            this.availableLexFields = availableLexFields;
+        } else {
+            this.availableLexFields = null;
+        }
     }
 
     public void setAvailabilityRestriction(AvailabilityRestriction restriction) {

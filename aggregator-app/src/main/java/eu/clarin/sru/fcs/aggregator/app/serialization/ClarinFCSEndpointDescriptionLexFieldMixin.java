@@ -5,6 +5,11 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 @JsonPropertyOrder({ "id", "type" })
 public abstract class ClarinFCSEndpointDescriptionLexFieldMixin {
+
+    ClarinFCSEndpointDescriptionLexFieldMixin(@JsonProperty("id") String identifier,
+            @JsonProperty("type") String fieldType) {
+    }
+
     @JsonProperty(value = "id", required = true)
     String identifier;
 

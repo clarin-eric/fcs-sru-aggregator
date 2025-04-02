@@ -47,7 +47,6 @@ public class AdvancedLayer {
     private DataViewAdvanced.Layer layer;
     private String pid;
     private String reference;
-    private String language;
     private List<Span> spans = new ArrayList<Span>();
 
     public AdvancedLayer(DataViewAdvanced.Layer layer, String pid, String reference) {
@@ -71,10 +70,6 @@ public class AdvancedLayer {
 
     public String getReference() {
         return reference;
-    }
-
-    public String getLanguage() {
-        return language;
     }
 
 }

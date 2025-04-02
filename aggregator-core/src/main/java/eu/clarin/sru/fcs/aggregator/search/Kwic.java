@@ -56,7 +56,6 @@ public class Kwic {
 
     private final String pid;
     private final String reference;
-    private String language;
     private List<TextFragment> fragments = new ArrayList<TextFragment>();
 
     public Kwic(DataViewHits hits, String pid, String reference) {
@@ -99,14 +98,6 @@ public class Kwic {
 
     public String getReference() {
         return reference;
-    }
-
-    public String getLanguage() {
-        return language;
-    }
-
-    public void setLanguage(String language) {
-        this.language = language;
     }
 
     @Deprecated

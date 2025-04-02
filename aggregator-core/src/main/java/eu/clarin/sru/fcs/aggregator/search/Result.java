@@ -7,9 +7,11 @@ package eu.clarin.sru.fcs.aggregator.search;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.slf4j.LoggerFactory;
 
+import eu.clarin.sru.client.SRURecord;
 import eu.clarin.sru.client.fcs.DataViewAdvanced;
 import eu.clarin.sru.client.fcs.DataViewHits;
 import eu.clarin.sru.client.fcs.DataViewLex;
@@ -29,10 +31,7 @@ public final class Result extends ResultMeta {
     private final Resource resource;
     private final PerformLanguageDetectionCallback langDetectCallback;
 
-    private List<Kwic> kwics = Collections.synchronizedList(new ArrayList<Kwic>());
-    private List<List<AdvancedLayer>> advancedLayers = Collections
-            .synchronizedList(new ArrayList<List<AdvancedLayer>>());
-    private List<LexEntry> lexEntries = Collections.synchronizedList(new ArrayList<LexEntry>());
+    public List<Record> records = Collections.synchronizedList(new ArrayList<>());
 
     public Result(Resource resource, PerformLanguageDetectionCallback langDetectCallback) {
         super(resource);
@@ -44,50 +43,71 @@ public final class Result extends ResultMeta {
         return resource;
     }
 
+    // ----------------------------------------------------------------------
+
+    public List<Record> getRecords() {
+        return records;
+    }
+
     public List<Kwic> getKwics() {
-        return kwics;
+        return records.stream().map(r -> (r instanceof ResultRecord) ? ((ResultRecord) r).getKwic() : null)
+                .filter(r -> r != null).collect(Collectors.toList());
     }
 
     public List<List<AdvancedLayer>> getAdvancedLayers() {
-        return advancedLayers;
+        return records.stream().map(r -> (r instanceof ResultRecord) ? ((ResultRecord) r).getAdvancedLayers() : null)
+                .filter(r -> r != null).collect(Collectors.toList());
     }
 
     public List<LexEntry> getLexEntries() {
-        return lexEntries;
+        return records.stream().map(r -> (r instanceof ResultRecord) ? ((ResultRecord) r).getLexEntry() : null)
+                .filter(r -> r != null).collect(Collectors.toList());
     }
 
     // ----------------------------------------------------------------------
 
     @Override
-    protected void processDataViewHits(DataViewHits dataview, String pid, String reference) {
+    protected Record addRecord(final SRURecord record) {
+        // use default processing but let's store the record
+        // we populate with the processDataView* methods below
+        final Record resultRecord = super.addRecord(record);
+        records.add(resultRecord);
+        return resultRecord;
+    }
+
+    @Override
+    protected void processDataViewHits(final ResultRecord record, final DataViewHits dataview, String pid,
+            String reference) {
         final Kwic kwic = new Kwic(dataview, pid, reference);
 
         // auto-detect language for KWIC
         if (langDetectCallback != null) {
             String dvText = dataview.getText();
             String language = langDetectCallback.detect(dvText);
-            kwic.setLanguage(language);
+            record.setLanguage(language);
         }
 
-        kwics.add(kwic);
+        record.setKwic(kwic);
         log.debug("DataViewHits: {}", kwic.getFragments());
     }
 
     @Override
-    protected void processDataViewAdvanced(DataViewAdvanced dataview, String pid, String reference) {
+    protected void processDataViewAdvanced(final ResultRecord record, final DataViewAdvanced dataview, String pid,
+            String reference) {
         List<AdvancedLayer> advLayersSingleGroup = new ArrayList<>();
         for (DataViewAdvanced.Layer layer : dataview.getLayers()) {
             log.debug("DataViewAdvanced layer: {}", dataview.getUnit(), layer.getId());
             final AdvancedLayer aLayer = new AdvancedLayer(layer, pid, reference);
             advLayersSingleGroup.add(aLayer);
         }
-        advancedLayers.add(advLayersSingleGroup);
+        record.setAdvancedLayers(advLayersSingleGroup);
     }
 
     @Override
-    protected void processDataViewLex(DataViewLex dataview, String pid, String reference) {
+    protected void processDataViewLex(final ResultRecord record, final DataViewLex dataview, String pid,
+            String reference) {
         final LexEntry entry = new LexEntry(dataview, pid, reference);
-        lexEntries.add(entry);
+        record.setLexEntry(entry);
         log.debug("DataViewLex fields {}", entry.getFields().size());
     }
 

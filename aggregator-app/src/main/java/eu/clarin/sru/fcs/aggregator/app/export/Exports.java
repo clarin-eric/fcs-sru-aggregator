@@ -1,19 +1,10 @@
 package eu.clarin.sru.fcs.aggregator.app.export;
 
-import eu.clarin.sru.fcs.aggregator.search.AdvancedLayer;
-import eu.clarin.sru.fcs.aggregator.search.Kwic;
-import eu.clarin.sru.fcs.aggregator.search.Result;
-import eu.clarin.sru.fcs.aggregator.util.LanguagesISO693;
-import eu.clarin.weblicht.wlfxb.io.WLDObjector;
-import eu.clarin.weblicht.wlfxb.io.WLFormatException;
-import eu.clarin.weblicht.wlfxb.md.xb.MetaData;
-import eu.clarin.weblicht.wlfxb.tc.xb.TextCorpusStored;
-import eu.clarin.weblicht.wlfxb.xb.WLData;
-
 import java.awt.Color;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.List;
+
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CellType;
@@ -21,9 +12,20 @@ import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
-
 import org.jopendocument.dom.spreadsheet.SpreadSheet;
 import org.slf4j.LoggerFactory;
+
+import eu.clarin.sru.fcs.aggregator.search.AdvancedLayer;
+import eu.clarin.sru.fcs.aggregator.search.Kwic;
+import eu.clarin.sru.fcs.aggregator.search.Record;
+import eu.clarin.sru.fcs.aggregator.search.Result;
+import eu.clarin.sru.fcs.aggregator.search.ResultRecord;
+import eu.clarin.sru.fcs.aggregator.util.LanguagesISO693;
+import eu.clarin.weblicht.wlfxb.io.WLDObjector;
+import eu.clarin.weblicht.wlfxb.io.WLFormatException;
+import eu.clarin.weblicht.wlfxb.md.xb.MetaData;
+import eu.clarin.weblicht.wlfxb.tc.xb.TextCorpusStored;
+import eu.clarin.weblicht.wlfxb.xb.WLData;
 
 /**
  * Utility for representing SearchResult data in different formats.
@@ -45,93 +47,115 @@ public class Exports {
         StringBuilder csv = new StringBuilder();
         if (resultsProcessed != null && !resultsProcessed.isEmpty()) {
             for (Result result : resultsProcessed) {
-                if (result.getAdvancedLayers().size() == 0) {
-                    for (Kwic kwic : result.getKwics()) {
+                if (!result.hasAdvancedResults()) {
+                    // write KWIC
+                    for (Record record : result.getRecords()) {
+                        if (!record.hasResult()) {
+                            continue;
+                        }
+                        if (filterLanguage != null && !filterLanguage.equals(((ResultRecord) record).getLanguage())) {
+                            continue;
+                        }
+
                         if (firstRow) {
                             String[] headers = new String[] { "PID", "REFERENCE", "LEFT CONTEXT", "KEYWORD",
                                     "RIGHT CONTEXT" };
                             for (String header : headers) {
-                                csv.append("\"");
+                                csv.append('"');
                                 csv.append(header);
-                                csv.append("\"");
+                                csv.append('"');
                                 csv.append(separator);
                             }
-                            csv.append("\n");
+                            csv.append('\n');
                             firstRow = false;
                         }
-                        if (filterLanguage != null && !filterLanguage.equals(kwic.getLanguage())) {
-                            continue;
-                        }
-                        csv.append("\"");
+
+                        Kwic kwic = ((ResultRecord) record).getKwic();
+                        csv.append('"');
                         if (kwic.getPid() != null) {
                             csv.append(escapeQuotes(kwic.getPid()));
                         }
-                        csv.append("\"");
+                        csv.append('"');
                         csv.append(separator);
-                        csv.append("\"");
+                        csv.append('"');
                         if (kwic.getReference() != null) {
                             csv.append(escapeQuotes(kwic.getReference()));
                         }
-                        csv.append("\"");
+                        csv.append('"');
                         csv.append(separator);
-                        csv.append("\"");
+                        csv.append('"');
                         csv.append(escapeQuotes(kwic.getLeft()));
-                        csv.append("\"");
+                        csv.append('"');
                         csv.append(separator);
-                        csv.append("\"");
+                        csv.append('"');
                         csv.append(escapeQuotes(kwic.getKeyword()));
-                        csv.append("\"");
+                        csv.append('"');
                         csv.append(separator);
-                        csv.append("\"");
+                        csv.append('"');
                         csv.append(escapeQuotes(kwic.getRight()));
-                        csv.append("\"");
-                        csv.append("\n");
+                        csv.append('"');
+                        csv.append('\n');
                         noResult = false;
                     }
-                }
-                firstRow = true;
-                for (List<AdvancedLayer> layers : result.getAdvancedLayers()) {
-                    for (AdvancedLayer layer : layers) {
-                        if (firstRow) {
-                            String[] headers = new String[] { "PID", "REFERENCE", "SPANS" };
-                            for (String header : headers) {
-                                csv.append("\"");
-                                csv.append(header);
-                                csv.append("\"");
-                                csv.append(separator);
-                            }
-                            csv.append("\n");
-                            firstRow = false;
-                        }
-                        if (filterLanguage != null && !filterLanguage.equals(layer.getLanguage())) {
+                } else {
+                    // write ADV
+                    firstRow = true;
+                    for (Record record : result.getRecords()) {
+                        if (!record.hasResult()) {
                             continue;
                         }
-                        csv.append("\"");
-                        if (layer.getPid() != null) {
-                            csv.append(escapeQuotes(layer.getPid()));
+                        if (filterLanguage != null && !filterLanguage.equals(((ResultRecord) record).getLanguage())) {
+                            continue;
                         }
-                        csv.append("\"");
-                        csv.append(separator);
-                        csv.append("\"");
-                        if (layer.getReference() != null) {
-                            csv.append(escapeQuotes(layer.getReference()));
+
+                        List<AdvancedLayer> layers = ((ResultRecord) record).getAdvancedLayers();
+                        if (layers == null) {
+                            continue;
                         }
-                        csv.append("\"");
-                        csv.append(separator);
-                        for (AdvancedLayer.Span span : layer.getSpans()) {
-                            csv.append("\"");
-                            if (span.getText() != null) {
-                                csv.append(escapeQuotes(span.getText()));
+
+                        for (AdvancedLayer layer : layers) {
+                            // TODO: check layer language?
+
+                            if (firstRow) {
+                                String[] headers = new String[] { "PID", "REFERENCE", "SPANS" };
+                                for (String header : headers) {
+                                    csv.append('"');
+                                    csv.append(header);
+                                    csv.append('"');
+                                    csv.append(separator);
+                                }
+                                csv.append('\n');
+                                firstRow = false;
                             }
-                            csv.append("\"");
+
+                            csv.append('"');
+                            if (layer.getPid() != null) {
+                                csv.append(escapeQuotes(layer.getPid()));
+                            }
+                            csv.append('"');
                             csv.append(separator);
+                            csv.append('"');
+                            if (layer.getReference() != null) {
+                                csv.append(escapeQuotes(layer.getReference()));
+                            }
+                            csv.append('"');
+                            csv.append(separator);
+                            for (AdvancedLayer.Span span : layer.getSpans()) {
+                                csv.append('"');
+                                if (span.getText() != null) {
+                                    csv.append(escapeQuotes(span.getText()));
+                                }
+                                csv.append('"');
+                                csv.append(separator);
+                            }
+                            csv.append('\n');
+                            noResult = false;
                         }
-                        csv.append("\n");
-                        noResult = false;
                     }
                 }
             }
         }
+
         if (noResult) {
             return null;
         } else {
@@ -174,8 +198,16 @@ public class Exports {
 
                 Cell cell;
                 for (Result result : resultsProcessed) {
-                    if (result.getAdvancedLayers().size() == 0) {
-                        for (Kwic kwic : result.getKwics()) {
+                    if (!result.hasAdvancedResults()) {
+                        for (Record record : result.getRecords()) {
+                            if (!record.hasResult()) {
+                                continue;
+                            }
+                            if (filterLanguage != null
+                                    && !filterLanguage.equals(((ResultRecord) record).getLanguage())) {
+                                continue;
+                            }
+
                             if (firstRow) {
                                 String[] headers = new String[] { "PID", "REFERENCE", "LEFT CONTEXT", "KEYWORD",
                                         "RIGHT CONTEXT" };
@@ -186,10 +218,9 @@ public class Exports {
                                 }
                                 firstRow = false;
                             }
+
                             // Body
-                            if (filterLanguage != null && !filterLanguage.equals(kwic.getLanguage())) {
-                                continue;
-                            }
+                            Kwic kwic = ((ResultRecord) record).getKwic();
                             row = sheet.createRow(rownum++);
                             cell = row.createCell(0, CellType.STRING);
                             if (kwic.getPid() != null) {
@@ -207,40 +238,54 @@ public class Exports {
                             cell = row.createCell(4, CellType.STRING);
                             cell.setCellValue(kwic.getRight());
                         }
-                    }
-                    for (List<AdvancedLayer> layers : result.getAdvancedLayers()) {
-                        for (AdvancedLayer layer : layers) {
-                            if (firstRow) {
-                                String[] headers = new String[] { "PID", "REFERENCE", "SPANS" };
-                                for (int j = 0; j < headers.length; ++j) {
-                                    cell = row.createCell(j, CellType.STRING);
-                                    cell.setCellValue(headers[j]);
-                                    cell.setCellStyle(headerStyle);
-                                }
-                                firstRow = false;
-                            }
-                            if (filterLanguage != null && !filterLanguage.equals(layer.getLanguage())) {
+                    } else {
+                        for (Record record : result.getRecords()) {
+                            if (!record.hasResult()) {
                                 continue;
                             }
-                            row = sheet.createRow(rownum++);
-                            int j = 0;
-                            cell = row.createCell(j, CellType.STRING);
-                            if (layer.getPid() != null) {
-                                cell.setCellValue(layer.getPid());
+                            if (filterLanguage != null
+                                    && !filterLanguage.equals(((ResultRecord) record).getLanguage())) {
+                                continue;
                             }
-                            j++;
-                            cell = row.createCell(j, CellType.STRING);
-                            if (layer.getReference() != null) {
-                                cell.setCellValue(layer.getReference());
+
+                            List<AdvancedLayer> layers = ((ResultRecord) record).getAdvancedLayers();
+                            if (layers == null) {
+                                continue;
                             }
-                            j++;
-                            for (AdvancedLayer.Span span : layer.getSpans()) {
+
+                            for (AdvancedLayer layer : layers) {
+                                // TODO: check language here?
+
+                                if (firstRow) {
+                                    String[] headers = new String[] { "PID", "REFERENCE", "SPANS" };
+                                    for (int j = 0; j < headers.length; ++j) {
+                                        cell = row.createCell(j, CellType.STRING);
+                                        cell.setCellValue(headers[j]);
+                                        cell.setCellStyle(headerStyle);
+                                    }
+                                    firstRow = false;
+                                }
+
+                                row = sheet.createRow(rownum++);
+                                int j = 0;
                                 cell = row.createCell(j, CellType.STRING);
-                                cell.setCellValue(span.getText());
-                                if (span.isHit()) {
-                                    cell.setCellStyle(headerStyle);
+                                if (layer.getPid() != null) {
+                                    cell.setCellValue(layer.getPid());
                                 }
                                 j++;
+                                cell = row.createCell(j, CellType.STRING);
+                                if (layer.getReference() != null) {
+                                    cell.setCellValue(layer.getReference());
+                                }
+                                j++;
+                                for (AdvancedLayer.Span span : layer.getSpans()) {
+                                    cell = row.createCell(j, CellType.STRING);
+                                    cell.setCellValue(span.getText());
+                                    if (span.isHit()) {
+                                        cell.setCellStyle(headerStyle);
+                                    }
+                                    j++;
+                                }
                             }
                         }
                     }
@@ -256,6 +301,7 @@ public class Exports {
                 }
             }
         }
+
         if (rownum <= 1) {
             return null;
         } else {
@@ -275,7 +321,8 @@ public class Exports {
             sheet = spreadSheet.getSheet(0);
             int largestColumnCount = 5;
             for (Result result : resultsProcessed) {
-                if (result.getAdvancedLayers().size() == 0) {
+                if (!result.hasAdvancedResults()) {
+                    // KWIC
                     if (firstRow) {
                         String[] headers = new String[] { "PID", "REFERENCE", "LEFT CONTEXT", "KEYWORD",
                                 "RIGHT CONTEXT" };
@@ -285,12 +332,19 @@ public class Exports {
                         }
                         firstRow = false;
                     }
+
                     sheet.ensureRowCount(rownum + result.getKwics().size() + 2);
-                    for (Kwic kwic : result.getKwics()) {
-                        // Body
-                        if (filterLanguage != null && !filterLanguage.equals(kwic.getLanguage())) {
+
+                    for (Record record : result.getRecords()) {
+                        if (!record.hasResult()) {
                             continue;
                         }
+                        if (filterLanguage != null && !filterLanguage.equals(((ResultRecord) record).getLanguage())) {
+                            continue;
+                        }
+
+                        // Body
+                        Kwic kwic = ((ResultRecord) record).getKwic();
                         rownum++;
                         if (kwic.getPid() != null) {
                             sheet.setValueAt(kwic.getPid(), 0, rownum);
@@ -304,7 +358,8 @@ public class Exports {
                         sheet.getCellAt(3, rownum).setBackgroundColor(HIT_BACKGROUND);
                         sheet.setValueAt(kwic.getRight(), 4, rownum);
                     }
-                } else { // ADV
+                } else {
+                    // ADV
                     if (firstRow) {
                         String[] headers = new String[] { "PID", "REFERENCE", "SPANS" };
                         for (int j = 0; j < headers.length; ++j) {
@@ -313,16 +368,29 @@ public class Exports {
                         }
                         firstRow = false;
                     }
-                    int numAdvancedLayers = 0;
-                    for (List<AdvancedLayer> layers : result.getAdvancedLayers()) {
-                        numAdvancedLayers += layers.size();
-                    }
+
+                    int numAdvancedLayers = result.getRecords().stream()
+                            .filter(r -> r instanceof ResultRecord).map(r -> ((ResultRecord) r))
+                            .map(r -> r.getAdvancedLayers()).map(l -> l != null ? l.size() : 0)
+                            .mapToInt(Integer::intValue).sum();
                     sheet.ensureRowCount(rownum + numAdvancedLayers + 2);
-                    for (List<AdvancedLayer> layers : result.getAdvancedLayers()) {
+
+                    for (Record record : result.getRecords()) {
+                        if (!record.hasResult()) {
+                            continue;
+                        }
+                        if (filterLanguage != null && !filterLanguage.equals(((ResultRecord) record).getLanguage())) {
+                            continue;
+                        }
+
+                        List<AdvancedLayer> layers = ((ResultRecord) record).getAdvancedLayers();
+                        if (layers == null) {
+                            continue;
+                        }
+
                         for (AdvancedLayer layer : layers) {
-                            if (filterLanguage != null && !filterLanguage.equals(layer.getLanguage())) {
-                                continue;
-                            }
+                            // TODO: check layer language?
+
                             rownum++;
                             if (layer.getPid() != null) {
                                 sheet.setValueAt(layer.getPid(), 0, rownum);
@@ -346,6 +414,7 @@ public class Exports {
                     }
                 }
             }
+
             try {
                 spreadSheet.getPackage().save(odsStream);
             } catch (IOException ex) {
@@ -357,6 +426,7 @@ public class Exports {
                 }
             }
         }
+
         if (rownum <= 1) {
             return null;
         } else {
@@ -374,9 +444,11 @@ public class Exports {
             if (filterLanguage != null) {
                 lang = LanguagesISO693.getInstance().code_1ForCode_3(filterLanguage);
             }
+
             TextCorpusStored tc = new TextCorpusStored(lang);
             tc.createTextLayer().addText(text);
             WLData data = new WLData(new MetaData(), tc);
+
             ByteArrayOutputStream os = new ByteArrayOutputStream();
             try {
                 WLDObjector.write(data, os);
@@ -392,10 +464,15 @@ public class Exports {
         StringBuilder text = new StringBuilder();
         if (resultsProcessed != null && !resultsProcessed.isEmpty()) {
             for (Result result : resultsProcessed) {
-                for (Kwic kwic : result.getKwics()) {
-                    if (filterLanguage != null && !filterLanguage.equals(kwic.getLanguage())) {
+                for (Record record : result.getRecords()) {
+                    if (!record.hasResult()) {
                         continue;
                     }
+                    if (filterLanguage != null && !filterLanguage.equals(((ResultRecord) record).getLanguage())) {
+                        continue;
+                    }
+
+                    final Kwic kwic = ((ResultRecord) record).getKwic();
                     int i = kwic.getFragments().size() - 1;
                     for (Kwic.TextFragment tf : kwic.getFragments()) {
                         text.append(tf.getText());
@@ -405,10 +482,11 @@ public class Exports {
                         }
                         i--;
                     }
-                    text.append("\n");
+                    text.append('\n');
                 }
             }
         }
+
         if (text.length() == 0) {
             return null;
         } else {

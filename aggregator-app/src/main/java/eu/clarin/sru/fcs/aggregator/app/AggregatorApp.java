@@ -51,9 +51,12 @@ import eu.clarin.sru.fcs.aggregator.app.serialization.DataViewLexFieldMixin;
 import eu.clarin.sru.fcs.aggregator.app.serialization.DataViewLexFieldTypeMixin;
 import eu.clarin.sru.fcs.aggregator.app.serialization.DataViewLexMixin;
 import eu.clarin.sru.fcs.aggregator.app.serialization.DataViewLexValueMixin;
+import eu.clarin.sru.fcs.aggregator.app.serialization.DiagnosticRecordMixin;
 import eu.clarin.sru.fcs.aggregator.app.serialization.InstitutionMixin;
 import eu.clarin.sru.fcs.aggregator.app.serialization.ResourcesMixin;
 import eu.clarin.sru.fcs.aggregator.app.serialization.ResultMetaMixin;
+import eu.clarin.sru.fcs.aggregator.app.serialization.ResultMixin;
+import eu.clarin.sru.fcs.aggregator.app.serialization.ResultRecordMixin;
 import eu.clarin.sru.fcs.aggregator.app.serialization.StatisticsEndpointStatsMixin;
 import eu.clarin.sru.fcs.aggregator.app.util.ClientFactory;
 import eu.clarin.sru.fcs.aggregator.core.Aggregator;
@@ -65,8 +68,11 @@ import eu.clarin.sru.fcs.aggregator.scan.Resource;
 import eu.clarin.sru.fcs.aggregator.scan.Resources;
 import eu.clarin.sru.fcs.aggregator.scan.ScanCrawlTask.ScanCrawlTaskCompletedCallback;
 import eu.clarin.sru.fcs.aggregator.scan.Statistics;
+import eu.clarin.sru.fcs.aggregator.search.DiagnosticRecord;
 import eu.clarin.sru.fcs.aggregator.search.PerformLanguageDetectionCallback;
+import eu.clarin.sru.fcs.aggregator.search.Result;
 import eu.clarin.sru.fcs.aggregator.search.ResultMeta;
+import eu.clarin.sru.fcs.aggregator.search.ResultRecord;
 import eu.clarin.sru.fcs.aggregator.search.Search;
 import eu.clarin.sru.fcs.aggregator.util.LanguagesISO693;
 import io.dropwizard.assets.AssetsBundle;
@@ -281,14 +287,27 @@ public class AggregatorApp extends Application<AggregatorConfiguration> {
 
         // custom serialization of POJOs
         environment.getObjectMapper()
+                // rename fields, block serialization of empty fields
                 .addMixIn(DataViewLex.class, DataViewLexMixin.class)
+                // required?
                 .addMixIn(DataViewLex.FieldType.class, DataViewLexFieldTypeMixin.class)
+                // required?
                 .addMixIn(DataViewLex.Field.class, DataViewLexFieldMixin.class)
+                // block serialization of empty/unchanged fields
                 .addMixIn(DataViewLex.Value.class, DataViewLexValueMixin.class)
+                // rename fields
                 .addMixIn(ClarinFCSEndpointDescription.LexField.class, ClarinFCSEndpointDescriptionLexFieldMixin.class)
+                // define what to serialize
                 .addMixIn(Statistics.EndpointStats.class, StatisticsEndpointStatsMixin.class)
+                // block serialization of unset field
                 .addMixIn(Institution.class, InstitutionMixin.class)
-                .addMixIn(ResultMeta.class, ResultMetaMixin.class);
+                // rename fields
+                .addMixIn(ResultMeta.class, ResultMetaMixin.class)
+                // block serialization of unwanted fields
+                .addMixIn(Result.class, ResultMixin.class)
+                // rename fields
+                .addMixIn(ResultRecord.class, ResultRecordMixin.class)
+                .addMixIn(DiagnosticRecord.class, DiagnosticRecordMixin.class);
 
         // swagger
         if (config.aggregatorParams.isOpenAPIEnabled()) {

@@ -140,15 +140,15 @@ public class ResultMeta {
 
     // ----------------------------------------------------------------------
 
-    public void addResponse(SRUSearchRetrieveResponse response) {
+    public void addResponse(final SRUSearchRetrieveResponse response) {
         if (response != null) {
             if (response.hasRecords()) {
-                for (SRURecord record : response.getRecords()) {
+                for (final SRURecord record : response.getRecords()) {
                     addRecord(record);
                 }
             }
             if (response.hasDiagnostics()) {
-                for (SRUDiagnostic d : response.getDiagnostics()) {
+                for (final SRUDiagnostic d : response.getDiagnostics()) {
                     diagnostics.add(new Diagnostic(d.getURI(), d.getMessage(), d.getDetails()));
                 }
             }
@@ -160,28 +160,34 @@ public class ResultMeta {
         }
     }
 
-    private void addRecord(SRURecord record) {
+    protected Record addRecord(final SRURecord record) {
         nextRecordPosition.incrementAndGet();
         if (record.isRecordSchema(ClarinFCSRecordData.RECORD_SCHEMA)) {
             ClarinFCSRecordData rd = (ClarinFCSRecordData) record.getRecordData();
             eu.clarin.sru.client.fcs.Resource resource = rd.getResource();
-            setClarinRecord(resource);
+            final Record resultRecord = setClarinRecord(resource);
             log.debug("Resource ref={}, pid={}, dataViews={}", resource.getRef(), resource.getPid(),
                     resource.hasDataViews());
+            return resultRecord;
         } else if (record.isRecordSchema(SRUSurrogateRecordData.RECORD_SCHEMA)) {
-            SRUSurrogateRecordData r = (SRUSurrogateRecordData) record.getRecordData();
+            final SRUSurrogateRecordData r = (SRUSurrogateRecordData) record.getRecordData();
             log.info("Surrogate diagnostic: uri={}, message={}, detail={}", r.getURI(), r.getMessage(), r.getDetails());
+            final SRUDiagnostic d = r.getDiagnostic();
+            return new DiagnosticRecord(new Diagnostic(d.getURI(), d.getMessage(), d.getDetails()));
         } else {
             log.info("Unsupported schema: {}", record.getRecordSchema());
+            return null;
         }
     }
 
-    private void setClarinRecord(eu.clarin.sru.client.fcs.Resource resource) {
+    private ResultRecord setClarinRecord(final eu.clarin.sru.client.fcs.Resource resource) {
         String pid = resource.getPid();
         String reference = resource.getRef();
 
+        final ResultRecord record = new ResultRecord();
+
         if (resource.hasDataViews()) {
-            processDataViews(resource.getDataViews(), pid, reference);
+            processDataViews(record, resource.getDataViews(), pid, reference);
         }
 
         if (resource.hasResourceFragments()) {
@@ -189,15 +195,17 @@ public class ResultMeta {
                 log.debug("ResourceFragment: ref={}, pid={}, dataViews={}", fragment.getRef(), fragment.getPid(),
                         fragment.hasDataViews());
                 if (fragment.hasDataViews()) {
-                    processDataViews(fragment.getDataViews(),
+                    processDataViews(record, fragment.getDataViews(),
                             fragment.getPid() != null ? fragment.getPid() : pid,
                             fragment.getRef() != null ? fragment.getRef() : reference);
                 }
             }
         }
+
+        return record;
     }
 
-    private void processDataViews(List<DataView> dataViews, String pid, String reference) {
+    private void processDataViews(final ResultRecord record, List<DataView> dataViews, String pid, String reference) {
         for (DataView dataview : dataViews) {
             if (dataview instanceof DataViewGenericDOM) {
                 final DataViewGenericDOM view = (DataViewGenericDOM) dataview;
@@ -223,28 +231,31 @@ public class ResultMeta {
                             .findAny().ifPresent((k) -> isLexHits.set(true));
                 }
 
-                processDataViewHits((DataViewHits) dataview, pid, reference);
+                processDataViewHits(record, (DataViewHits) dataview, pid, reference);
             } else if (dataview instanceof DataViewAdvanced) {
                 hasAdvancedResults.set(true);
-                processDataViewAdvanced((DataViewAdvanced) dataview, pid, reference);
+                processDataViewAdvanced(record, (DataViewAdvanced) dataview, pid, reference);
             } else if (dataview instanceof DataViewLex) {
                 hasLexicalResults.set(true);
-                processDataViewLex((DataViewLex) dataview, pid, reference);
+                processDataViewLex(record, (DataViewLex) dataview, pid, reference);
             }
         }
     }
 
     // for overriding
 
-    protected void processDataViewHits(final DataViewHits dataview, final String pid, final String reference) {
+    protected void processDataViewHits(final ResultRecord record, final DataViewHits dataview, final String pid,
+            final String reference) {
         // empty
     }
 
-    protected void processDataViewAdvanced(final DataViewAdvanced dataview, final String pid, final String reference) {
+    protected void processDataViewAdvanced(final ResultRecord record, final DataViewAdvanced dataview, final String pid,
+            final String reference) {
         // empty
     }
 
-    protected void processDataViewLex(final DataViewLex dataview, final String pid, final String reference) {
+    protected void processDataViewLex(final ResultRecord record, final DataViewLex dataview, final String pid,
+            final String reference) {
         // empty
     }
 
