@@ -222,7 +222,7 @@ public class ResultMeta {
 
                 // detection if Lex Hits Data View
                 if (dataview instanceof DataViewHitsWithLexAnnotations) {
-                    final Kwic kwic = new Kwic((DataViewHits) dataview, pid, reference);
+                    final Kwic kwic = new Kwic((DataViewHits) dataview);
                     // if we find any hit with a hitKind with "lex-" prefix
                     // then we probably have a LexHits Data View
                     kwic.getFragments().stream().filter(f -> f.isHit())
@@ -230,6 +230,13 @@ public class ResultMeta {
                                     .startsWith("lex-"))
                             .findAny().ifPresent((k) -> isLexHits.set(true));
                 }
+
+                // NOTE: assume(!) that all result data views are on same level,
+                // e.g., KWIC + ADV (+ LEX)
+                // so, we only store the pid/reference where the KWIC is defined
+                // which can be in <Resource> or nested in <ResourceFragment>
+                record.setPid(pid);
+                record.setReference(reference);
 
                 processDataViewHits(record, (DataViewHits) dataview, pid, reference);
             } else if (dataview instanceof DataViewAdvanced) {

@@ -72,14 +72,14 @@ public class Exports {
 
                         Kwic kwic = ((ResultRecord) record).getKwic();
                         csv.append('"');
-                        if (kwic.getPid() != null) {
-                            csv.append(escapeQuotes(kwic.getPid()));
+                        if (((ResultRecord) record).getPid() != null) {
+                            csv.append(escapeQuotes(((ResultRecord) record).getPid()));
                         }
                         csv.append('"');
                         csv.append(separator);
                         csv.append('"');
-                        if (kwic.getReference() != null) {
-                            csv.append(escapeQuotes(kwic.getReference()));
+                        if (((ResultRecord) record).getReference() != null) {
+                            csv.append(escapeQuotes(((ResultRecord) record).getReference()));
                         }
                         csv.append('"');
                         csv.append(separator);
@@ -117,7 +117,7 @@ public class Exports {
                             // TODO: check layer language?
 
                             if (firstRow) {
-                                String[] headers = new String[] { "PID", "REFERENCE", "SPANS" };
+                                String[] headers = new String[] { "PID", "REFERENCE", "LAYERID", "SPANS" };
                                 for (String header : headers) {
                                     csv.append('"');
                                     csv.append(header);
@@ -129,15 +129,19 @@ public class Exports {
                             }
 
                             csv.append('"');
-                            if (layer.getPid() != null) {
-                                csv.append(escapeQuotes(layer.getPid()));
+                            if (((ResultRecord) record).getPid() != null) {
+                                csv.append(escapeQuotes(((ResultRecord) record).getPid()));
                             }
                             csv.append('"');
                             csv.append(separator);
                             csv.append('"');
-                            if (layer.getReference() != null) {
-                                csv.append(escapeQuotes(layer.getReference()));
+                            if (((ResultRecord) record).getReference() != null) {
+                                csv.append(escapeQuotes(((ResultRecord) record).getReference()));
                             }
+                            csv.append('"');
+                            csv.append(separator);
+                            csv.append('"');
+                            csv.append(escapeQuotes(layer.getId()));
                             csv.append('"');
                             csv.append(separator);
                             for (AdvancedLayer.Span span : layer.getSpans()) {
@@ -223,12 +227,12 @@ public class Exports {
                             Kwic kwic = ((ResultRecord) record).getKwic();
                             row = sheet.createRow(rownum++);
                             cell = row.createCell(0, CellType.STRING);
-                            if (kwic.getPid() != null) {
-                                cell.setCellValue(kwic.getPid());
+                            if (((ResultRecord) record).getPid() != null) {
+                                cell.setCellValue(((ResultRecord) record).getPid());
                             }
                             cell = row.createCell(1, CellType.STRING);
-                            if (kwic.getReference() != null) {
-                                cell.setCellValue(kwic.getReference());
+                            if (((ResultRecord) record).getReference() != null) {
+                                cell.setCellValue(((ResultRecord) record).getReference());
                             }
                             cell = row.createCell(2, CellType.STRING);
                             cell.setCellValue(kwic.getLeft());
@@ -257,7 +261,7 @@ public class Exports {
                                 // TODO: check language here?
 
                                 if (firstRow) {
-                                    String[] headers = new String[] { "PID", "REFERENCE", "SPANS" };
+                                    String[] headers = new String[] { "PID", "REFERENCE", "LAYERID", "SPANS" };
                                     for (int j = 0; j < headers.length; ++j) {
                                         cell = row.createCell(j, CellType.STRING);
                                         cell.setCellValue(headers[j]);
@@ -269,14 +273,17 @@ public class Exports {
                                 row = sheet.createRow(rownum++);
                                 int j = 0;
                                 cell = row.createCell(j, CellType.STRING);
-                                if (layer.getPid() != null) {
-                                    cell.setCellValue(layer.getPid());
+                                if (((ResultRecord) record).getPid() != null) {
+                                    cell.setCellValue(((ResultRecord) record).getPid());
                                 }
                                 j++;
                                 cell = row.createCell(j, CellType.STRING);
-                                if (layer.getReference() != null) {
-                                    cell.setCellValue(layer.getReference());
+                                if (((ResultRecord) record).getReference() != null) {
+                                    cell.setCellValue(((ResultRecord) record).getReference());
                                 }
+                                j++;
+                                cell = row.createCell(j, CellType.STRING);
+                                cell.setCellValue(layer.getId());
                                 j++;
                                 for (AdvancedLayer.Span span : layer.getSpans()) {
                                     cell = row.createCell(j, CellType.STRING);
@@ -346,11 +353,11 @@ public class Exports {
                         // Body
                         Kwic kwic = ((ResultRecord) record).getKwic();
                         rownum++;
-                        if (kwic.getPid() != null) {
-                            sheet.setValueAt(kwic.getPid(), 0, rownum);
+                        if (((ResultRecord) record).getPid() != null) {
+                            sheet.setValueAt(((ResultRecord) record).getPid(), 0, rownum);
                         }
-                        if (kwic.getReference() != null) {
-                            sheet.setValueAt(kwic.getReference(), 1, rownum);
+                        if (((ResultRecord) record).getReference() != null) {
+                            sheet.setValueAt(((ResultRecord) record).getReference(), 1, rownum);
                         }
 
                         sheet.setValueAt(kwic.getLeft(), 2, rownum);
@@ -361,7 +368,7 @@ public class Exports {
                 } else {
                     // ADV
                     if (firstRow) {
-                        String[] headers = new String[] { "PID", "REFERENCE", "SPANS" };
+                        String[] headers = new String[] { "PID", "REFERENCE", "LAYERID", "SPANS" };
                         for (int j = 0; j < headers.length; ++j) {
                             sheet.setValueAt(headers[j], j, rownum);
                             sheet.getCellAt(j, rownum).setBackgroundColor(FCS_BACKGROUND);
@@ -392,17 +399,18 @@ public class Exports {
                             // TODO: check layer language?
 
                             rownum++;
-                            if (layer.getPid() != null) {
-                                sheet.setValueAt(layer.getPid(), 0, rownum);
+                            if (((ResultRecord) record).getPid() != null) {
+                                sheet.setValueAt(((ResultRecord) record).getPid(), 0, rownum);
                             }
-                            if (layer.getReference() != null) {
-                                sheet.setValueAt(layer.getReference(), 1, rownum);
+                            if (((ResultRecord) record).getReference() != null) {
+                                sheet.setValueAt(((ResultRecord) record).getReference(), 1, rownum);
                             }
-                            if (layer.getSpans().size() + 2 > largestColumnCount) {
-                                largestColumnCount = layer.getSpans().size() + 2;
+                            sheet.setValueAt(layer.getId(), 2, rownum);
+                            if (layer.getSpans().size() + 3 > largestColumnCount) {
+                                largestColumnCount = layer.getSpans().size() + 3;
                                 sheet.ensureColumnCount(largestColumnCount);
                             }
-                            int j = 2;
+                            int j = 3;
                             for (AdvancedLayer.Span span : layer.getSpans()) {
                                 sheet.setValueAt(span.getText(), j, rownum);
                                 if (span.isHit()) {

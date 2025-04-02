@@ -78,7 +78,7 @@ public final class Result extends ResultMeta {
     @Override
     protected void processDataViewHits(final ResultRecord record, final DataViewHits dataview, String pid,
             String reference) {
-        final Kwic kwic = new Kwic(dataview, pid, reference);
+        final Kwic kwic = new Kwic(dataview);
 
         // auto-detect language for KWIC
         if (langDetectCallback != null) {

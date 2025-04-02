@@ -17,15 +17,12 @@ import java.util.List;
 public class AdvancedLayer {
 
     public static class Span {
+        private String text;
+        private boolean isHit;
+        private DataViewAdvanced.Segment segment;
 
-        String text;
-        String ref;
-        boolean isHit;
-        DataViewAdvanced.Segment segment;
-
-        public Span(String text, String ref, boolean isHit, DataViewAdvanced.Segment segment) {
+        public Span(String text, boolean isHit, DataViewAdvanced.Segment segment) {
             this.text = text;
-            this.ref = ref;
             this.isHit = isHit;
             this.segment = segment;
         }
@@ -38,24 +35,25 @@ public class AdvancedLayer {
             return isHit;
         }
 
+        public long[] getRange() {
+            return new long[] { segment.getStartOffset(), segment.getEndOffset() };
+        }
+
         @Override
         public String toString() {
-            return (isHit ? "[" : "") + text + (isHit ? "]" : "");
+            return (isHit ? "[" : "") + text + (isHit ? "]" : "") + "@" + segment.getStartOffset() + ":"
+                    + segment.getEndOffset();
         }
     }
 
-    private DataViewAdvanced.Layer layer;
-    private String pid;
-    private String reference;
+    private String id;
     private List<Span> spans = new ArrayList<Span>();
 
     public AdvancedLayer(DataViewAdvanced.Layer layer, String pid, String reference) {
-        this.layer = layer;
-        this.pid = pid;
-        this.reference = layer.getId();
+        this.id = layer.getId();
 
         for (DataViewAdvanced.Span span : layer.getSpans()) {
-            spans.add(new Span(span.getContent(), reference,
+            spans.add(new Span(span.getContent(),
                     ("".equals(span.getHighlight()) || span.getHighlight() == null) ? false : true, span.getSegment()));
         }
     }
@@ -64,12 +62,8 @@ public class AdvancedLayer {
         return spans;
     }
 
-    public String getPid() {
-        return pid;
-    }
-
-    public String getReference() {
-        return reference;
+    public String getId() {
+        return id;
     }
 
 }

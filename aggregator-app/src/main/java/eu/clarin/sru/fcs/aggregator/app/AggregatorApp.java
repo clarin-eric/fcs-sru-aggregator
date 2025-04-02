@@ -44,6 +44,7 @@ import eu.clarin.sru.fcs.aggregator.app.configuration.AggregatorConfiguration;
 import eu.clarin.sru.fcs.aggregator.app.configuration.EndpointConfigImpl;
 import eu.clarin.sru.fcs.aggregator.app.export.WeblichtExportCache;
 import eu.clarin.sru.fcs.aggregator.app.rest.RestService;
+import eu.clarin.sru.fcs.aggregator.app.serialization.AdvancedLayerSpanMixin;
 import eu.clarin.sru.fcs.aggregator.app.serialization.ClarinFCSEndpointDescriptionDataViewMixin;
 import eu.clarin.sru.fcs.aggregator.app.serialization.ClarinFCSEndpointDescriptionLayerMixin;
 import eu.clarin.sru.fcs.aggregator.app.serialization.ClarinFCSEndpointDescriptionLexFieldMixin;
@@ -68,6 +69,7 @@ import eu.clarin.sru.fcs.aggregator.scan.Resource;
 import eu.clarin.sru.fcs.aggregator.scan.Resources;
 import eu.clarin.sru.fcs.aggregator.scan.ScanCrawlTask.ScanCrawlTaskCompletedCallback;
 import eu.clarin.sru.fcs.aggregator.scan.Statistics;
+import eu.clarin.sru.fcs.aggregator.search.AdvancedLayer;
 import eu.clarin.sru.fcs.aggregator.search.DiagnosticRecord;
 import eu.clarin.sru.fcs.aggregator.search.PerformLanguageDetectionCallback;
 import eu.clarin.sru.fcs.aggregator.search.Result;
@@ -304,10 +306,12 @@ public class AggregatorApp extends Application<AggregatorConfiguration> {
                 // rename fields
                 .addMixIn(ResultMeta.class, ResultMetaMixin.class)
                 // block serialization of unwanted fields
-                .addMixIn(Result.class, ResultMixin.class)
+                //.addMixIn(Result.class, ResultMixin.class) // TODO: for testing, so that UI does not crash
                 // rename fields
                 .addMixIn(ResultRecord.class, ResultRecordMixin.class)
-                .addMixIn(DiagnosticRecord.class, DiagnosticRecordMixin.class);
+                .addMixIn(DiagnosticRecord.class, DiagnosticRecordMixin.class)
+                // expose fields
+                .addMixIn(AdvancedLayer.Span.class, AdvancedLayerSpanMixin.class);
 
         // swagger
         if (config.aggregatorParams.isOpenAPIEnabled()) {

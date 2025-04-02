@@ -22,4 +22,10 @@ public abstract class ResultRecordMixin {
     @JsonProperty("lang")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private String language;
+    
+    @JsonProperty("pid")
+    private String pid;
+
+    @JsonProperty("ref")
+    private String reference;
 }

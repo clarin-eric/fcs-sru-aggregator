@@ -3,11 +3,16 @@ package eu.clarin.sru.fcs.aggregator.search;
 import java.util.List;
 
 public class ResultRecord implements Record {
+    private String pid;
+    private String reference;
+
     private Kwic kwic;
     private List<AdvancedLayer> advancedLayers;
     private LexEntry lexEntry;
 
     private String language;
+
+    // ----------------------------------------------------------------------
 
     @Override
     public boolean hasResult() {
@@ -19,6 +24,26 @@ public class ResultRecord implements Record {
         return false;
     }
 
+    // ----------------------------------------------------------------------
+
+    public String getPid() {
+        return pid;
+    }
+
+    public void setPid(String pid) {
+        this.pid = pid;
+    }
+
+    public String getReference() {
+        return reference;
+    }
+
+    public void setReference(String reference) {
+        this.reference = reference;
+    }
+
+    // ----------------------------------------------------------------------
+
     public String getLanguage() {
         return language;
     }
@@ -26,6 +51,8 @@ public class ResultRecord implements Record {
     public void setLanguage(String language) {
         this.language = language;
     }
+
+    // ----------------------------------------------------------------------
 
     public Kwic getKwic() {
         return kwic;

@@ -17,7 +17,6 @@ import eu.clarin.sru.client.fcs.DataViewHitsWithLexAnnotations;
 public class Kwic {
 
     public static class TextFragment {
-
         private final String text;
         private final boolean isHit;
         private final String hitKind;
@@ -54,14 +53,9 @@ public class Kwic {
         }
     }
 
-    private final String pid;
-    private final String reference;
     private List<TextFragment> fragments = new ArrayList<TextFragment>();
 
-    public Kwic(DataViewHits hits, String pid, String reference) {
-        this.pid = pid;
-        this.reference = reference;
-
+    public Kwic(DataViewHits hits) {
         // warning: the client library doesn't unescape the xml
         // so the text can still contains &lt; and &amp; codes
         final String str = hits.getText();
@@ -90,14 +84,6 @@ public class Kwic {
 
     public List<TextFragment> getFragments() {
         return fragments;
-    }
-
-    public String getPid() {
-        return pid;
-    }
-
-    public String getReference() {
-        return reference;
     }
 
     @Deprecated
