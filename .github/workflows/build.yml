@@ -23,15 +23,19 @@ jobs:
         node-version: ${{ matrix.node-version }}
 
     - name: Update npm dependencies
-      run: ./build.sh --npm
+      run: |
+        cd aggregator-app
+        ./build.sh --npm
 
     - name: Build jsx
-      run: ./build.sh --jsx-force
+      run: |
+        cd aggregator-app
+        ./build.sh --jsx-force
 
     - uses: actions/upload-artifact@v4
       with:
         name: frontend-artifact
-        path: src/main/resources/assets
+        path: cd aggregator-app/src/main/resources/assets
 
   build-backend:
     needs: build-frontend
@@ -64,8 +68,8 @@ jobs:
     - name: Prepare build artifact for packaging
       run: |
         mkdir -p staging/target
-        cp aggregator.yml staging/
-        cp target/aggregator-*.jar staging/target/
+        cp cd aggregator-app/aggregator.yml staging/
+        cp cd aggregator-app/target/aggregator-*.jar staging/target/
 
     - uses: actions/upload-artifact@v4
       with:
