@@ -85,7 +85,7 @@
         <dependency>
             <groupId>eu.clarin.sru</groupId>
             <artifactId>sru-client</artifactId>
-            <version>2.3.0</version>
+            <version>2.4.0</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
@@ -100,7 +100,7 @@
         <dependency>
             <groupId>eu.clarin.sru.fcs</groupId>
             <artifactId>fcs-simple-client</artifactId>
-            <version>2.4.0</version>
+            <version>2.5.0</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
