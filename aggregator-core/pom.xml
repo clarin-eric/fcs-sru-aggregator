@@ -5,155 +5,59 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <artifactId>aggregator</artifactId>
         <groupId>eu.clarin.sru.fcs</groupId>
+        <artifactId>aggregator</artifactId>
         <version>4.0.0-SNAPSHOT</version>
     </parent>
 
-    <groupId>eu.clarin.sru.fcs</groupId>
     <artifactId>aggregator-core</artifactId>
-    <version>4.0.0-SNAPSHOT</version>
-
     <name>FCS Aggregator Core</name>
-    <url>https://contentsearch.clarin.eu/</url>
-    <organization>
-        <name>CLARIN</name>
-        <url>https://www.clarin.eu</url>
-    </organization>
 
-    <licenses>
-        <license>
-            <name>GNU General Public License Version 3 (GPLv3)</name>
-            <url>https://www.gnu.org/licenses/gpl-3.0.txt</url>
-        </license>
-    </licenses>
-
-    <properties>
-        <!-- project settings -->
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <!-- plug-in settings -->
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
-        <!-- dependencies -->
-        <slf4j.version>2.0.17</slf4j.version>
-        <junit.version>5.11.0</junit.version>
-        <jersey.version>2.30.1</jersey.version>
-    </properties>
-
-    <repositories>
-        <repository>
-            <id>CLARIN</id>
-            <name>CLARIN Repository</name>
-            <url>https://nexus.clarin.eu/content/repositories/Clarin</url>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
-
-        <repository>
-            <id>CLARIN-snapshot</id>
-            <name>CLARIN Snapshot Repository</name>
-            <url>https://nexus.clarin.eu/content/repositories/clarin-snapshot</url>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-        </repository>
-
-        <repository>
-            <id>sonatype-nexus-snapshots</id>
-            <name>Sonatype Nexus Snapshots</name>
-            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-        </repository>
-    </repositories>
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>${project.parent.groupId}</groupId>
+                <artifactId>${project.parent.artifactId}</artifactId>
+                <version>${project.parent.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <dependencies>
         <!-- logging -->
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <version>${slf4j.version}</version>
         </dependency>
 
         <!-- CLARIN SRU/FCS -->
         <dependency>
             <groupId>eu.clarin.sru</groupId>
             <artifactId>sru-client</artifactId>
-            <version>2.4.0</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-api</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>commons-codec</groupId>
-                    <artifactId>commons-codec</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>eu.clarin.sru.fcs</groupId>
             <artifactId>fcs-simple-client</artifactId>
-            <version>2.5.0</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-api</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>commons-codec</groupId>
-                    <artifactId>commons-codec</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
         <!-- CLARIN weblicht -->
         <dependency>
             <groupId>eu.clarin.weblicht</groupId>
             <artifactId>connectors</artifactId>
-            <version>2.0.1</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.glassfish.jersey.core</groupId>
-                    <artifactId>jersey-core</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>javax.xml.bind</groupId>
-                    <artifactId>jaxb-api</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.glassfish.hk2</groupId>
-                    <artifactId>hk2-api</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.glassfish.hk2</groupId>
-                    <artifactId>hk2-locator</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.glassfish.jersey.media</groupId>
-                    <artifactId>jersey-media-jaxb</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
         <!-- utils (StringEscapeUtils.unescapeXml) -->
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-text</artifactId>
-            <version>1.13.0</version>
         </dependency>
 
         <!-- test -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
-            <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
 
@@ -161,7 +65,6 @@
         <dependency>
             <groupId>org.glassfish.jersey.media</groupId>
             <artifactId>jersey-media-jaxb</artifactId>
-            <version>${jersey.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -173,7 +76,6 @@
         <dependency>
             <groupId>org.glassfish.jersey.inject</groupId>
             <artifactId>jersey-hk2</artifactId>
-            <version>${jersey.version}</version>
             <scope>test</scope>
         </dependency>
 
@@ -181,52 +83,7 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-reload4j</artifactId>
-            <version>${slf4j.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
-
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <source>${maven.compiler.source}</source>
-                    <target>${maven.compiler.target}</target>
-                    <encoding>${project.build.sourceEncoding}</encoding>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
-
-    <reporting>
-        <!-- mvn site -->
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-project-info-reports-plugin</artifactId>
-                <version>3.4.2</version>
-            </plugin>
-            <!-- test report -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-report-plugin</artifactId>
-                <version>2.22.2</version>
-            </plugin>
-            <!-- dependency check -->
-            <plugin>
-                <groupId>org.owasp</groupId>
-                <artifactId>dependency-check-maven</artifactId>
-                <version>8.1.2</version>
-                <reportSets>
-                    <reportSet>
-                        <reports>
-                            <report>aggregate</report>
-                        </reports>
-                    </reportSet>
-                </reportSets>
-            </plugin>
-        </plugins>
-    </reporting>
 </project>
