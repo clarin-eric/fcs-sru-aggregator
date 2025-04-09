@@ -1,5 +1,13 @@
 package eu.clarin.sru.fcs.aggregator.scan;
 
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.ws.rs.client.Client;
+
+import org.slf4j.LoggerFactory;
+
 import eu.clarin.weblicht.bindings.cmd.StringBinding;
 import eu.clarin.weblicht.bindings.cmd.cp.CenterExtendedInformation;
 import eu.clarin.weblicht.bindings.cmd.cp.CenterProfile;
@@ -7,11 +15,6 @@ import eu.clarin.weblicht.bindings.cmd.cp.WebReference;
 import eu.clarin.weblicht.bindings.cr.Center;
 import eu.clarin.weblicht.connectors.ConnectorException;
 import eu.clarin.weblicht.connectors.cr.CenterRegistryConnector;
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.List;
-import javax.ws.rs.client.Client;
-import org.slf4j.LoggerFactory;
 
 public class CenterRegistryLive implements CenterRegistry {
 
@@ -23,13 +26,24 @@ public class CenterRegistryLive implements CenterRegistry {
     private String centerRegistryUrl;
     private boolean hasInstitutionsLoaded = false;
     private List<Institution> centers = new ArrayList<Institution>();
-    private final EndpointFilter filter;
+    private final EndpointFilter endpointFilter;
+    private final CentreFilter centreFilter;
     private final Client client;
 
-    public CenterRegistryLive(String centerRegistryUrl, EndpointFilter filter, Client jerseyClient) {
+    public CenterRegistryLive(String centerRegistryUrl, Client jerseyClient) {
+        this(centerRegistryUrl, null, null, jerseyClient);
+    }
+
+    public CenterRegistryLive(String centerRegistryUrl, EndpointFilter endpointFilter, Client jerseyClient) {
+        this(centerRegistryUrl, endpointFilter, null, jerseyClient);
+    }
+
+    public CenterRegistryLive(String centerRegistryUrl, EndpointFilter endpointFilter, CentreFilter centreFilter,
+            Client jerseyClient) {
         super();
         this.centerRegistryUrl = centerRegistryUrl;
-        this.filter = filter;
+        this.endpointFilter = endpointFilter;
+        this.centreFilter = centreFilter;
         this.client = jerseyClient;
     }
 
@@ -57,6 +71,9 @@ public class CenterRegistryLive implements CenterRegistry {
             for (Center regCenter : regCenters) {
                 // display in the tree only those institutions that have CQL endpoints:
                 CenterProfile profile = connector.retrieveCenterProfile(regCenter);
+                if (centreFilter != null && !centreFilter.filter(profile)) {
+                    continue;
+                }
                 CenterExtendedInformation info = profile.getCenterExtendedInformation();
 
                 String institutionUrl = info.getWebsite();
@@ -70,7 +87,7 @@ public class CenterRegistryLive implements CenterRegistry {
                         for (StringBinding sb : sbs) {
                             if ("CQL".equals(sb.getValue())) {
                                 String endpoint = webRef.getWebsite();
-                                if (filter == null || filter.filter(endpoint)) {
+                                if (endpointFilter == null || endpointFilter.filter(endpoint)) {
                                     institution.addEndpoint(endpoint);
                                 }
                                 break;
