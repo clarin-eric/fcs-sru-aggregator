@@ -12,30 +12,34 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [16.x]
+        node-version: [20.x]
     
     steps:
     - uses: actions/checkout@v4
+      with:
+        submodules: true
 
     - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v4
       with:
         node-version: ${{ matrix.node-version }}
+        cache: npm
+        cache-dependency-path: aggregator-webui/package-lock.json
 
     - name: Update npm dependencies
       run: |
-        cd aggregator-app
-        ./build.sh --npm
+        cd aggregator-webui
+        npm install
 
     - name: Build jsx
       run: |
-        cd aggregator-app
-        ./build.sh --jsx-force
+        cd aggregator-webui
+        npm run build
 
     - uses: actions/upload-artifact@v4
       with:
         name: frontend-artifact
-        path: cd aggregator-app/src/main/resources/assets
+        path: aggregator-webui/dist
 
   build-backend:
     needs: build-frontend
@@ -60,16 +64,28 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         name: frontend-artifact
+        path: aggregator-webui/dist
 
-    - name: Build jar
-      #run: ./build.sh --jar
-      run: mvn -ntp clean package
+    - name: Prepare build environment
+      run: mvn -B dependency:resolve-plugins dependency:resolve
+
+    - name: Build aggregator-core
+      run: mvn -B -pl aggregator-core clean package install
+
+    - name: Copy aggregator-webui build artifacts for embedding
+      run: |
+        rm -r aggregator-app/src/main/resources/assets/webapp
+        mkdir aggregator-app/src/main/resources/assets/webapp
+        cp -R aggregator-webui/dist/lib/. aggregator-app/src/main/resources/assets/webapp/
+
+    - name: Build aggregator-app
+      run: mvn -B -pl aggregator-app clean package
 
     - name: Prepare build artifact for packaging
       run: |
         mkdir -p staging/target
-        cp cd aggregator-app/aggregator.yml staging/
-        cp cd aggregator-app/target/aggregator-*.jar staging/target/
+        cp aggregator-app/aggregator.yml staging/
+        cp aggregator-app/target/aggregator-app-*.jar staging/target/
 
     - uses: actions/upload-artifact@v4
       with:
@@ -89,8 +105,6 @@ jobs:
         java-version: '11'
         distribution: 'temurin'
         cache: maven
-
-    # XXX: for _now_ does not need access to built frontend artifact, e.g. for tests or similar
 
     - name: Generate report
       run: |
