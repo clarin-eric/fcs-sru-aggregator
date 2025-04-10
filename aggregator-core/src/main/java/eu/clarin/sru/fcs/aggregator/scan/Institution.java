@@ -1,10 +1,11 @@
 package eu.clarin.sru.fcs.aggregator.scan;
 
-import java.util.*;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 /**
  * Institution. Contains information about institution name and link (url). Can
- * have information about its CQL Endpoints.
+ * have information about its CQL Endpoints. May contain the country code.
  *
  * @author Yana Panchenko
  */
@@ -12,7 +13,8 @@ public class Institution {
 
     private String name;
     private String link;
-    private Set<Endpoint> endpoints;
+    private String countryCode;
+    private Set<Endpoint> endpoints = new LinkedHashSet<>();
     private boolean sideloaded = false;
 
     // for JSON deserialization
@@ -20,13 +22,21 @@ public class Institution {
     }
 
     public Institution(String name, String link) {
-        this(name, link, false);
+        this(name, link, null, false);
+    }
+
+    public Institution(String name, String link, String countryCode) {
+        this(name, link, countryCode, false);
     }
 
     public Institution(String name, String link, boolean sideloaded) {
+        this(name, link, null, sideloaded);
+    }
+
+    public Institution(String name, String link, String countryCode, boolean sideloaded) {
         this.name = name;
         this.link = link;
-        this.endpoints = new LinkedHashSet<Endpoint>();
+        this.countryCode = countryCode;
         this.sideloaded = sideloaded;
     }
 
@@ -54,6 +64,10 @@ public class Institution {
 
     public String getLink() {
         return link;
+    }
+
+    public String getCountryCode() {
+        return countryCode;
     }
 
     public Set<Endpoint> getEndpoints() {

@@ -4,10 +4,10 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 import org.slf4j.LoggerFactory;
 
@@ -131,7 +131,7 @@ public class LanguagesISO693 {
         return l.name;
     }
 
-    public Map<String, String> getLanguageMap(Set<String> codes) {
+    public Map<String, String> getLanguageMap(Collection<String> codes) {
         Map<String, String> languages = new HashMap<String, String>();
         for (String code : codes) {
             String name = LanguagesISO693.getInstance().nameForCode(code);

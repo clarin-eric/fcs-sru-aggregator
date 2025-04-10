@@ -3,14 +3,17 @@ package eu.clarin.sru.fcs.aggregator.scan;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import javax.ws.rs.client.Client;
 
 import org.slf4j.LoggerFactory;
 
 import eu.clarin.weblicht.bindings.cmd.StringBinding;
+import eu.clarin.weblicht.bindings.cmd.cp.CenterBasicInformation;
 import eu.clarin.weblicht.bindings.cmd.cp.CenterExtendedInformation;
 import eu.clarin.weblicht.bindings.cmd.cp.CenterProfile;
+import eu.clarin.weblicht.bindings.cmd.cp.Country;
 import eu.clarin.weblicht.bindings.cmd.cp.WebReference;
 import eu.clarin.weblicht.bindings.cr.Center;
 import eu.clarin.weblicht.connectors.ConnectorException;
@@ -74,13 +77,24 @@ public class CenterRegistryLive implements CenterRegistry {
                 if (centreFilter != null && !centreFilter.filter(profile)) {
                     continue;
                 }
-                CenterExtendedInformation info = profile.getCenterExtendedInformation();
 
-                String institutionUrl = info.getWebsite();
+                CenterBasicInformation infoBa = profile.getCenterBasicInformation();
+                String countryCode = Optional.of(infoBa)
+                        .map(CenterBasicInformation::getCountry)
+                        .map(Country::getCode)
+                        .map(codes -> codes.stream()
+                                .map(c -> c.getValue()).filter(c -> c != null)
+                                .map(c -> c.value())
+                                .findFirst().orElse(null))
+                        .orElse(null);
+
+                CenterExtendedInformation infoEx = profile.getCenterExtendedInformation();
+                String institutionUrl = infoEx.getWebsite();
                 String institutionName = regCenter.getCenterName();
-                Institution institution = new Institution(institutionName, institutionUrl);
 
-                List<WebReference> webRefs = info.getWebReference();
+                Institution institution = new Institution(institutionName, institutionUrl, countryCode);
+
+                List<WebReference> webRefs = infoEx.getWebReference();
                 if (webRefs != null) {
                     for (WebReference webRef : webRefs) {
                         List<StringBinding> sbs = webRef.getDescription();

@@ -78,7 +78,9 @@ public class AggregatorScanOnceTest {
 
         List<Institution> institutions = ScanCrawlTask.retrieveInstitutions(jerseyClient, centreRegistryUrl);
         long numberOfEndpoints = institutions.stream().map(i -> i.getEndpoints()).flatMap(Set::stream).count();
-        log.info("Found {} institutions with {} endpoints.", institutions.size(), numberOfEndpoints);
+        long numberOfCountries = institutions.stream().map(i -> i.getCountryCode()).distinct().count();
+        log.info("Found {} institutions with {} endpoints from {} countries.", institutions.size(), numberOfEndpoints,
+                numberOfCountries);
     }
 
     @Test

@@ -1,6 +1,7 @@
 package eu.clarin.sru.fcs.aggregator.app;
 
 import static eu.clarin.sru.fcs.aggregator.app.rest.RestService.PARAM_AGGREGATION_CONTEXT;
+import static eu.clarin.sru.fcs.aggregator.app.rest.RestService.PARAM_CENTRE_COUNTRIES;
 import static eu.clarin.sru.fcs.aggregator.app.rest.RestService.PARAM_MODE;
 import static eu.clarin.sru.fcs.aggregator.app.rest.RestService.PARAM_QUERY;
 
@@ -20,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import eu.clarin.sru.fcs.aggregator.app.auth.AuthenticationInfo;
 import eu.clarin.sru.fcs.aggregator.app.configuration.PiwikConfig;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.links.Link;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 
@@ -59,8 +61,10 @@ public class IndexResource {
                     @ApiResponse(description = "Returns default Aggregator 'index.html'.", links = {
                             @Link(name = "Initial JS page load", operationId = "getInit") }) }, tags = { "search" })
     public IndexView postExternalSearchRequest(@Context final HttpServletRequest request,
-            @FormParam(PARAM_QUERY) String query, @FormParam(PARAM_MODE) String mode,
-            @FormParam(PARAM_AGGREGATION_CONTEXT) String aggregationContext,
+            @Parameter(required = false) @FormParam(PARAM_QUERY) String query,
+            @Parameter(required = false) @FormParam(PARAM_MODE) String mode,
+            @Parameter(required = false) @FormParam(PARAM_AGGREGATION_CONTEXT) String aggregationContext,
+            @Parameter(description = "Comma-separated list of centre country codes (two letter, upper case) to filter institutions, endpoints and finally resources", required = false) @FormParam(PARAM_CENTRE_COUNTRIES) String countryCodes,
             @Context final SecurityContext security) {
         log.warn("Received external search request");
 
@@ -76,6 +80,11 @@ public class IndexResource {
         if (aggregationContext != null && !aggregationContext.isEmpty()) {
             request.getSession().setAttribute(PARAM_AGGREGATION_CONTEXT, aggregationContext);
             log.info("Param {}: {}", PARAM_AGGREGATION_CONTEXT, aggregationContext);
+        }
+
+        if (countryCodes != null && !countryCodes.trim().isEmpty()) {
+            request.getSession().setAttribute(PARAM_CENTRE_COUNTRIES, countryCodes);
+            log.info("Param {}: {}", PARAM_CENTRE_COUNTRIES, countryCodes);
         }
 
         final AuthenticationInfo authInfo = AuthenticationInfo.fromPrincipal(security.getUserPrincipal());

@@ -1,6 +1,7 @@
 package eu.clarin.sru.fcs.aggregator.scan;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -43,8 +44,15 @@ public class Resources {
     }
 
     public Set<String> getLanguages() {
+        return getLanguagesByCentreCountryCodes(null);
+    }
+
+    public Set<String> getLanguagesByCentreCountryCodes(final Collection<String> countryCodes) {
+        // all if countryCodes == null, else subset
+        final List<Resource> resourcesWithCountryCodes = getResourcesByCentreCountryCodes(countryCodes);
+
         final Set<String> languages = new HashSet<String>();
-        visit(resources, new CallResource() {
+        visit(resourcesWithCountryCodes, new CallResource() {
             @Override
             public void call(Resource resource) {
                 languages.addAll(resource.getLanguages());
@@ -59,6 +67,29 @@ public class Resources {
             @Override
             public void call(Resource resource) {
                 if (resourceIds.contains(resource.getId())) {
+                    found.add(resource);
+                }
+            }
+        });
+        return found;
+    }
+
+    /**
+     * Gather resources where the endpoint institution's country code is included in
+     * the provided set of <code>countryCodes</code>. If
+     * <code>countryCodes == null</code> then return all resources.
+     * 
+     * @param countryCodes the list of centre country codes (two letter, upper case)
+     *                     to filter resources with
+     * @return all resources if <code>countryCodes == null</code> else a subset of
+     *         resources where the endpoint's institution's country code matches
+     */
+    public List<Resource> getResourcesByCentreCountryCodes(final Collection<String> countryCodes) {
+        final List<Resource> found = new ArrayList<Resource>();
+        visit(resources, new CallResource() {
+            @Override
+            public void call(Resource resource) {
+                if (countryCodes == null || countryCodes.contains(resource.getEndpointInstitution().getCountryCode())) {
                     found.add(resource);
                 }
             }

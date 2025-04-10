@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.security.Principal;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -48,6 +49,7 @@ import eu.clarin.sru.fcs.aggregator.search.Search;
 import eu.clarin.sru.fcs.aggregator.util.LanguagesISO693;
 import io.swagger.v3.oas.annotations.OpenAPIDefinition;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.info.Info;
 import io.swagger.v3.oas.annotations.info.License;
 import io.swagger.v3.oas.annotations.links.Link;
@@ -74,6 +76,7 @@ public class RestService {
     public static final String PARAM_QUERY = "query";
     public static final String PARAM_MODE = "mode";
     public static final String PARAM_AGGREGATION_CONTEXT = "x-aggregation-context";
+    public static final String PARAM_CENTRE_COUNTRIES = "x-centre-countries";
 
     private static final String EXPORT_FILENAME_PREFIX = "ClarinFederatedContentSearch-";
     private static final String TCF_MEDIA_TYPE = "text/tcf+xml";
@@ -95,8 +98,16 @@ public class RestService {
     @Operation(description = "Get all resources.", tags = { "web" }, responses = {
             @ApiResponse(description = "List of resource objects.", content = {
                     @Content(mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Resource.class))) }) })
-    public Response getResources() throws IOException {
+    public Response getResources(
+            @Parameter(description = "Comma-separated list of centre country codes (two letter, upper case) to filter institutions, endpoints and finally resources", required = false) @QueryParam(PARAM_CENTRE_COUNTRIES) String countryCode)
+            throws IOException {
         List<Resource> resources = AggregatorApp.getInstance().getResources().getResources();
+
+        if (countryCode != null && !countryCode.trim().isEmpty()) {
+            List<String> countryCodes = Arrays.asList(countryCode.replaceAll("\\s+", "").toUpperCase().split(","));
+            resources = AggregatorApp.getInstance().getResources().getResourcesByCentreCountryCodes(countryCodes);
+        }
+
         return Response.ok(resources).build();
     }
 
@@ -105,10 +116,19 @@ public class RestService {
     @Path("languages")
     @Operation(description = "Get all languages (code --> name) from all resources.", tags = { "web" }, responses = {
             @ApiResponse(description = "Mapping of language ISO code to English name.", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = LanguageMap.class), examples = @ExampleObject(value = "{\n  \"deu\": \"German\",\n  \"eng\": \"English\"}"))) })
-    public Response getLanguages() throws IOException {
+    public Response getLanguages(
+            @Parameter(description = "Comma-separated list of centre country codes (two letter, upper case) to filter institutions, endpoints and finally resources", required = false) @QueryParam(PARAM_CENTRE_COUNTRIES) String countryCode)
+            throws IOException {
         Set<String> codes = AggregatorApp.getInstance().getResources().getLanguages();
+
+        if (countryCode != null && !countryCode.trim().isEmpty()) {
+            List<String> countryCodes = Arrays.asList(countryCode.replaceAll("\\s+", "").toUpperCase().split(","));
+            codes = AggregatorApp.getInstance().getResources().getLanguagesByCentreCountryCodes(countryCodes);
+        }
+
         log.info("get language codes: {}", codes);
         Map<String, String> languages = LanguagesISO693.getInstance().getLanguageMap(codes);
+
         return Response.ok(languages).build();
     }
 
@@ -120,17 +140,31 @@ public class RestService {
             + " Optional 'x-aggregation-context' for pre-selecting resources "
             + "and/or 'mode' and 'query' for starting a search.", tags = { "web" }, responses = {
                     @ApiResponse(description = "Initial page data (resources, languages)", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = InitData.class))) })
-    public Response getInit(@Context final HttpServletRequest request) throws IOException {
+    public Response getInit(@Context final HttpServletRequest request,
+            @Parameter(description = "Comma-separated list of centre country codes (two letter, upper case) to filter institutions, endpoints and finally resources", required = false) @QueryParam(PARAM_CENTRE_COUNTRIES) String countryCode)
+            throws IOException {
         log.info("get initial data");
         final Resources resources = AggregatorApp.getInstance().getResources();
         final Object query = request.getSession().getAttribute(PARAM_QUERY);
         final Object mode = request.getSession().getAttribute(PARAM_MODE);
         final Object contextString = request.getSession().getAttribute(PARAM_AGGREGATION_CONTEXT);
+        final Object countryCodesSession = request.getSession().getAttribute(PARAM_CENTRE_COUNTRIES);
+
+        List<String> countryCodes = null;
+        if (countryCodesSession != null && countryCodesSession instanceof String
+                && !((String) countryCodesSession).trim().isEmpty()) {
+            countryCodes = Arrays
+                    .asList(((String) countryCodesSession).replaceAll("\\s+", "").toUpperCase().split(","));
+        } else if (countryCode != null && !countryCode.trim().isEmpty()) {
+            countryCodes = Arrays
+                    .asList(((String) countryCodesSession).replaceAll("\\s+", "").toUpperCase().split(","));
+        }
 
         InitData data = new InitData();
 
-        data.resources = resources.getResources();
-        data.languages = LanguagesISO693.getInstance().getLanguageMap(resources.getLanguages());
+        data.resources = resources.getResourcesByCentreCountryCodes(countryCodes);
+        data.languages = LanguagesISO693.getInstance()
+                .getLanguageMap(resources.getLanguagesByCentreCountryCodes(countryCodes));
         data.weblichtLanguages = AggregatorApp.getInstance().getParams().getWeblichtConfig().getAcceptedTcfLanguages();
 
         if (query != null) {
