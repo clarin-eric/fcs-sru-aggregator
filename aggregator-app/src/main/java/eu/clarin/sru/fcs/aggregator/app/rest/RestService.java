@@ -155,7 +155,8 @@ public class RestService {
                 && !((String) countryCodesSession).trim().isEmpty()) {
             countryCodes = Arrays
                     .asList(((String) countryCodesSession).replaceAll("\\s+", "").toUpperCase().split(","));
-        } else if (countryCode != null && !countryCode.trim().isEmpty()) {
+        }
+        if (countryCode != null && !countryCode.trim().isEmpty()) {
             countryCodes = Arrays
                     .asList(((String) countryCodesSession).replaceAll("\\s+", "").toUpperCase().split(","));
         }
