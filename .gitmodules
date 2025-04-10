@@ -1,0 +1,3 @@
+[submodule "aggregator-webui"]
+	path = aggregator-webui
+	url = https://github.com/clarin-eric/fcs-sru-aggregator-ui/

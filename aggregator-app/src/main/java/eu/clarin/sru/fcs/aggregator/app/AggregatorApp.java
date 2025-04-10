@@ -220,11 +220,7 @@ public class AggregatorApp extends Application<AggregatorConfiguration> {
 
         // Static assets (available at root but need to be prefixed for jersey
         // resources otherwise path conflict at "/*")
-        bootstrap.addBundle(new AssetsBundle("/assets/js", "/js", null, "static-js"));
-        bootstrap.addBundle(new AssetsBundle("/assets/css", "/css", null, "static-css"));
-        bootstrap.addBundle(new AssetsBundle("/assets/fonts", "/fonts", null, "static-fonts"));
-        bootstrap.addBundle(new AssetsBundle("/assets/img", "/img", null, "static-img"));
-        bootstrap.addBundle(new AssetsBundle("/assets/lib", "/lib", null, "static-lib"));
+        bootstrap.addBundle(new AssetsBundle("/assets/webapp", "/r", null, "static-webapp"));
         bootstrap.addBundle(
                 new AssetsBundle("/assets/clarinservices", "/clarinservices", null, "static-clarinservices"));
 
