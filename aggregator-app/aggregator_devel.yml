@@ -1,5 +1,5 @@
 aggregatorParams:
-  CENTER_REGISTRY_URL: https://centres.clarin.eu/restxml/
+  CENTER_REGISTRY_URL: https://centres.clarin.eu/
   #additionalCQLEndpoints:
     # - https://clarin.ids-mannheim.de/digibibsru-new
     #- http://localhost:8080/korp-endpoint/sru

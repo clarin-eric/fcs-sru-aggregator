@@ -62,12 +62,12 @@ import eu.clarin.sru.fcs.aggregator.app.serialization.StatisticsEndpointStatsMix
 import eu.clarin.sru.fcs.aggregator.app.util.ClientFactory;
 import eu.clarin.sru.fcs.aggregator.core.Aggregator;
 import eu.clarin.sru.fcs.aggregator.core.AggregatorParams;
-import eu.clarin.sru.fcs.aggregator.scan.CenterRegistryLive;
 import eu.clarin.sru.fcs.aggregator.scan.EndpointConfig;
 import eu.clarin.sru.fcs.aggregator.scan.Institution;
 import eu.clarin.sru.fcs.aggregator.scan.Resource;
 import eu.clarin.sru.fcs.aggregator.scan.Resources;
 import eu.clarin.sru.fcs.aggregator.scan.ScanCrawlTask.ScanCrawlTaskCompletedCallback;
+import eu.clarin.sru.fcs.aggregator.scan.centre_registry.CenterRegistry;
 import eu.clarin.sru.fcs.aggregator.scan.Statistics;
 import eu.clarin.sru.fcs.aggregator.search.AdvancedLayer;
 import eu.clarin.sru.fcs.aggregator.search.DiagnosticRecord;
@@ -514,8 +514,7 @@ public class AggregatorApp extends Application<AggregatorConfiguration> {
         };
 
         // client for CLARIN registry
-        final Client jerseyClient = ClientFactory.create(CenterRegistryLive.CONNECT_TIMEOUT,
-                CenterRegistryLive.READ_TIMEOUT, environment);
+        final Client jerseyClient = ClientFactory.create(CenterRegistry.CONNECT_TIMEOUT, CenterRegistry.READ_TIMEOUT, environment);
 
         final ScanCrawlTaskCompletedCallback scanCrawlTaskCompletedCallback = new ScanCrawlTaskCompletedCallback() {
             @Override

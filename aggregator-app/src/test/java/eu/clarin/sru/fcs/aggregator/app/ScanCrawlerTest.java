@@ -25,11 +25,11 @@ import eu.clarin.sru.fcs.aggregator.app.configuration.AggregatorConfiguration;
 import eu.clarin.sru.fcs.aggregator.app.util.ClientFactory;
 import eu.clarin.sru.fcs.aggregator.client.MaxConcurrentRequestsCallback;
 import eu.clarin.sru.fcs.aggregator.client.ThrottledClient;
-import eu.clarin.sru.fcs.aggregator.scan.CenterRegistryLive;
 import eu.clarin.sru.fcs.aggregator.scan.EndpointUrlFilterAllow;
 import eu.clarin.sru.fcs.aggregator.scan.Resource;
 import eu.clarin.sru.fcs.aggregator.scan.Resources;
 import eu.clarin.sru.fcs.aggregator.scan.ScanCrawler;
+import eu.clarin.sru.fcs.aggregator.scan.centre_registry.CenterRegistry;
 import io.dropwizard.core.setup.Environment;
 import io.dropwizard.testing.ResourceHelpers;
 import io.dropwizard.testing.junit5.DropwizardAppExtension;
@@ -60,7 +60,7 @@ public class ScanCrawlerTest {
             }
         });
 
-        jerseyClient = ClientFactory.create(CenterRegistryLive.CONNECT_TIMEOUT, CenterRegistryLive.READ_TIMEOUT, env);
+        jerseyClient = ClientFactory.create(CenterRegistry.CONNECT_TIMEOUT, CenterRegistry.READ_TIMEOUT, env);
     }
 
     @Test
@@ -87,7 +87,7 @@ public class ScanCrawlerTest {
             // context.lookup("java:comp/env/center-registry-url");
             String centerRegistryUrl = RULE.getConfiguration().aggregatorParams.getCENTER_REGISTRY_URL();
             ScanCrawler crawler = new ScanCrawler(
-                    new CenterRegistryLive(centerRegistryUrl, filter, jerseyClient).getCQLInstitutions(),
+                    new CenterRegistry(jerseyClient, centerRegistryUrl).retrieveInstitutionsWithFCSEndpoints(),
                     sruClient, 2);
             Resources cache = crawler.crawl();
             Resource tueRootResource = cache.findByEndpoint("http://weblicht.sfs.uni-tuebingen.de/rws/sru/").get(0);

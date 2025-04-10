@@ -44,15 +44,15 @@ public class Resources {
     }
 
     public Set<String> getLanguages() {
-        return getLanguagesByCentreCountryCodes(null);
+        return getLanguagesByConsortia(null);
     }
 
-    public Set<String> getLanguagesByCentreCountryCodes(final Collection<String> countryCodes) {
-        // all if countryCodes == null, else subset
-        final List<Resource> resourcesWithCountryCodes = getResourcesByCentreCountryCodes(countryCodes);
+    public Set<String> getLanguagesByConsortia(final Collection<String> consortia) {
+        // all if consortia == null, else subset
+        final List<Resource> resourcesWithConsortium = getResourcesByConsortia(consortia);
 
         final Set<String> languages = new HashSet<String>();
-        visit(resourcesWithCountryCodes, new CallResource() {
+        visit(resourcesWithConsortium, new CallResource() {
             @Override
             public void call(Resource resource) {
                 languages.addAll(resource.getLanguages());
@@ -75,21 +75,20 @@ public class Resources {
     }
 
     /**
-     * Gather resources where the endpoint institution's country code is included in
-     * the provided set of <code>countryCodes</code>. If
-     * <code>countryCodes == null</code> then return all resources.
+     * Gather resources where the endpoint institution's consortium is included in
+     * the provided set of <code>consortia</code>. If <code>consortia == null</code>
+     * then return all resources.
      * 
-     * @param countryCodes the list of centre country codes (two letter, upper case)
-     *                     to filter resources with
-     * @return all resources if <code>countryCodes == null</code> else a subset of
-     *         resources where the endpoint's institution's country code matches
+     * @param consortia the list of centre consortia to filter resources with
+     * @return all resources if <code>consortia == null</code> else a subset of
+     *         resources where the endpoint's institution's consortium matches
      */
-    public List<Resource> getResourcesByCentreCountryCodes(final Collection<String> countryCodes) {
+    public List<Resource> getResourcesByConsortia(final Collection<String> consortia) {
         final List<Resource> found = new ArrayList<Resource>();
         visit(resources, new CallResource() {
             @Override
             public void call(Resource resource) {
-                if (countryCodes == null || countryCodes.contains(resource.getEndpointInstitution().getCountryCode())) {
+                if (consortia == null || consortia.contains(resource.getEndpointInstitution().getConsortium())) {
                     found.add(resource);
                 }
             }

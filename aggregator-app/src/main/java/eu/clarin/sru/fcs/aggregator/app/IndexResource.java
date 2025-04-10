@@ -1,7 +1,7 @@
 package eu.clarin.sru.fcs.aggregator.app;
 
 import static eu.clarin.sru.fcs.aggregator.app.rest.RestService.PARAM_AGGREGATION_CONTEXT;
-import static eu.clarin.sru.fcs.aggregator.app.rest.RestService.PARAM_CENTRE_COUNTRIES;
+import static eu.clarin.sru.fcs.aggregator.app.rest.RestService.PARAM_CONSORTIA;
 import static eu.clarin.sru.fcs.aggregator.app.rest.RestService.PARAM_MODE;
 import static eu.clarin.sru.fcs.aggregator.app.rest.RestService.PARAM_QUERY;
 
@@ -64,7 +64,7 @@ public class IndexResource {
             @Parameter(required = false) @FormParam(PARAM_QUERY) String query,
             @Parameter(required = false) @FormParam(PARAM_MODE) String mode,
             @Parameter(required = false) @FormParam(PARAM_AGGREGATION_CONTEXT) String aggregationContext,
-            @Parameter(description = "Comma-separated list of centre country codes (two letter, upper case) to filter institutions, endpoints and finally resources", required = false) @FormParam(PARAM_CENTRE_COUNTRIES) String countryCodes,
+            @Parameter(description = "Comma-separated list of consortia to filter institutions/centres, endpoints and finally resources", required = false) @FormParam(PARAM_CONSORTIA) String consortia,
             @Context final SecurityContext security) {
         log.warn("Received external search request");
 
@@ -82,9 +82,9 @@ public class IndexResource {
             log.info("Param {}: {}", PARAM_AGGREGATION_CONTEXT, aggregationContext);
         }
 
-        if (countryCodes != null && !countryCodes.trim().isEmpty()) {
-            request.getSession().setAttribute(PARAM_CENTRE_COUNTRIES, countryCodes);
-            log.info("Param {}: {}", PARAM_CENTRE_COUNTRIES, countryCodes);
+        if (consortia != null && !consortia.trim().isEmpty()) {
+            request.getSession().setAttribute(PARAM_CONSORTIA, consortia);
+            log.info("Param {}: {}", PARAM_CONSORTIA, consortia);
         }
 
         final AuthenticationInfo authInfo = AuthenticationInfo.fromPrincipal(security.getUserPrincipal());

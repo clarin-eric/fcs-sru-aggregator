@@ -13,7 +13,7 @@ public class Institution {
 
     private String name;
     private String link;
-    private String countryCode;
+    private String consortium;
     private Set<Endpoint> endpoints = new LinkedHashSet<>();
     private boolean sideloaded = false;
 
@@ -25,18 +25,18 @@ public class Institution {
         this(name, link, null, false);
     }
 
-    public Institution(String name, String link, String countryCode) {
-        this(name, link, countryCode, false);
+    public Institution(String name, String link, String consortium) {
+        this(name, link, consortium, false);
     }
 
     public Institution(String name, String link, boolean sideloaded) {
         this(name, link, null, sideloaded);
     }
 
-    public Institution(String name, String link, String countryCode, boolean sideloaded) {
+    public Institution(String name, String link, String consortium, boolean sideloaded) {
         this.name = name;
         this.link = link;
-        this.countryCode = countryCode;
+        this.consortium = consortium;
         this.sideloaded = sideloaded;
     }
 
@@ -66,8 +66,8 @@ public class Institution {
         return link;
     }
 
-    public String getCountryCode() {
-        return countryCode;
+    public String getConsortium() {
+        return consortium;
     }
 
     public Set<Endpoint> getEndpoints() {

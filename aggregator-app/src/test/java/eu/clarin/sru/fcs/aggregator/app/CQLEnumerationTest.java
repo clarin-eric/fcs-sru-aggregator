@@ -20,10 +20,9 @@ import com.codahale.metrics.MetricFilter;
 
 import eu.clarin.sru.fcs.aggregator.app.configuration.AggregatorConfiguration;
 import eu.clarin.sru.fcs.aggregator.app.util.ClientFactory;
-import eu.clarin.sru.fcs.aggregator.scan.CenterRegistry;
-import eu.clarin.sru.fcs.aggregator.scan.CenterRegistryLive;
 import eu.clarin.sru.fcs.aggregator.scan.Endpoint;
 import eu.clarin.sru.fcs.aggregator.scan.Institution;
+import eu.clarin.sru.fcs.aggregator.scan.centre_registry.CenterRegistry;
 import io.dropwizard.core.setup.Environment;
 import io.dropwizard.testing.ResourceHelpers;
 import io.dropwizard.testing.junit5.DropwizardAppExtension;
@@ -37,8 +36,8 @@ import io.dropwizard.testing.junit5.DropwizardExtensionsSupport;
 @ExtendWith(DropwizardExtensionsSupport.class)
 public class CQLEnumerationTest {
 
-    public static final String CENTER_REGISTRY_OFFICIAL = "https://centres.clarin.eu/restxml/";
-    public static final String CENTER_REGISTRY_TESTING = "https://centres-staging.clarin.eu/restxml/";
+    public static final String CENTER_REGISTRY_OFFICIAL = "https://centres.clarin.eu/";
+    public static final String CENTER_REGISTRY_TESTING = "https://centres-staging.clarin.eu/";
 
     @RegisterExtension
     public static final DropwizardAppExtension<AggregatorConfiguration> RULE = new DropwizardAppExtension<>(
@@ -71,13 +70,13 @@ public class CQLEnumerationTest {
                 return name.contains(ClientFactory.class.getName());
             }
         });
-        jerseyClient = ClientFactory.create(CenterRegistryLive.CONNECT_TIMEOUT, CenterRegistryLive.READ_TIMEOUT, env);
+        jerseyClient = ClientFactory.create(CenterRegistry.CONNECT_TIMEOUT, CenterRegistry.READ_TIMEOUT, env);
     }
 
     public void printAll(String centerRegistryUrl) throws NamingException {
         try {
-            CenterRegistry centerRegistry = new CenterRegistryLive(centerRegistryUrl, null, jerseyClient);
-            List<Institution> list = centerRegistry.getCQLInstitutions();
+            CenterRegistry centerRegistry = new CenterRegistry(jerseyClient, centerRegistryUrl);
+            List<Institution> list = centerRegistry.retrieveInstitutionsWithFCSEndpoints();
             for (Institution institution : list) {
                 System.out.println("1: " + institution.getName() + ": ");
                 for (Endpoint e : institution.getEndpoints()) {
@@ -104,17 +103,17 @@ public class CQLEnumerationTest {
         try {
             Set<Endpoint> list1, list2;
             {
-                CenterRegistry centerRegistry = new CenterRegistryLive(CENTER_REGISTRY_OFFICIAL, null, jerseyClient);
+                CenterRegistry centerRegistry = new CenterRegistry(jerseyClient, CENTER_REGISTRY_OFFICIAL);
                 list1 = new HashSet<Endpoint>();
-                for (Institution i : centerRegistry.getCQLInstitutions()) {
+                for (Institution i : centerRegistry.retrieveInstitutionsWithFCSEndpoints()) {
                     list1.addAll(i.getEndpoints());
                 }
             }
 
             {
-                CenterRegistry centerRegistry = new CenterRegistryLive(CENTER_REGISTRY_TESTING, null, jerseyClient);
+                CenterRegistry centerRegistry = new CenterRegistry(jerseyClient, CENTER_REGISTRY_TESTING);
                 list2 = new HashSet<Endpoint>();
-                for (Institution i : centerRegistry.getCQLInstitutions()) {
+                for (Institution i : centerRegistry.retrieveInstitutionsWithFCSEndpoints()) {
                     list2.addAll(i.getEndpoints());
                 }
             }

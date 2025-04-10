@@ -8,6 +8,7 @@ import javax.ws.rs.client.Client;
 import org.slf4j.LoggerFactory;
 
 import eu.clarin.sru.fcs.aggregator.client.ThrottledClient;
+import eu.clarin.sru.fcs.aggregator.scan.centre_registry.CenterRegistry;
 
 /**
  * This task is run by an executor every now and then to scan for new endpoints.
@@ -21,9 +22,9 @@ public class ScanCrawlTask implements Runnable {
 
     private final ThrottledClient sruClient;
     private final Client jerseyClient;
+
     private int cacheMaxDepth;
     private EndpointFilter endpointFilter;
-    private CentreFilter centreFilter;
     private String centerRegistryUrl;
     private List<EndpointConfig> additionalCQLEndpoints;
     private List<EndpointConfig> additionalFCSEndpoints;
@@ -41,17 +42,6 @@ public class ScanCrawlTask implements Runnable {
             List<EndpointConfig> additionalFCSEndpoints,
             EndpointFilter endpointFilter,
             ScanCrawlTaskCompletedCallback callback) {
-        this(sruClient, jerseyClient, centerRegistryUrl, cacheMaxDepth, additionalCQLEndpoints, additionalFCSEndpoints,
-                endpointFilter, null, callback);
-    }
-
-    public ScanCrawlTask(ThrottledClient sruClient, Client jerseyClient, String centerRegistryUrl,
-            int cacheMaxDepth,
-            List<EndpointConfig> additionalCQLEndpoints,
-            List<EndpointConfig> additionalFCSEndpoints,
-            EndpointFilter endpointFilter,
-            CentreFilter centreFilter,
-            ScanCrawlTaskCompletedCallback callback) {
         this.sruClient = sruClient;
         this.jerseyClient = jerseyClient;
         this.centerRegistryUrl = centerRegistryUrl;
@@ -59,36 +49,25 @@ public class ScanCrawlTask implements Runnable {
         this.additionalCQLEndpoints = additionalCQLEndpoints;
         this.additionalFCSEndpoints = additionalFCSEndpoints;
         this.endpointFilter = endpointFilter;
-        this.centreFilter = centreFilter;
         this.callback = callback;
     }
 
     public static List<Institution> retrieveInstitutions(Client jerseyClient, String centerRegistryUrl) {
-        return retrieveInstitutions(jerseyClient, centerRegistryUrl, null, null, null, null);
-    }
-
-    public static List<Institution> retrieveInstitutions(Client jerseyClient, String centerRegistryUrl,
-            List<EndpointConfig> additionalCQLEndpoints, List<EndpointConfig> additionalFCSEndpoints) {
-        return retrieveInstitutions(jerseyClient, centerRegistryUrl, additionalCQLEndpoints, additionalFCSEndpoints,
-                null, null);
+        return retrieveInstitutions(jerseyClient, centerRegistryUrl, null, null, null);
     }
 
     public static List<Institution> retrieveInstitutions(Client jerseyClient, String centerRegistryUrl,
             List<EndpointConfig> additionalCQLEndpoints, List<EndpointConfig> additionalFCSEndpoints,
             EndpointFilter endpointFilter) {
-        return retrieveInstitutions(jerseyClient, centerRegistryUrl, additionalCQLEndpoints, additionalFCSEndpoints,
-                endpointFilter, null);
-    }
-
-    public static List<Institution> retrieveInstitutions(Client jerseyClient, String centerRegistryUrl,
-            List<EndpointConfig> additionalCQLEndpoints, List<EndpointConfig> additionalFCSEndpoints,
-            EndpointFilter endpointFilter, CentreFilter centreFilter) {
-        List<Institution> institutions = new ArrayList<>();
+        List<Institution> institutions = null;
 
         // Query endpoints from centre registry
         if (centerRegistryUrl != null && !centerRegistryUrl.isEmpty()) {
-            institutions = new CenterRegistryLive(centerRegistryUrl, endpointFilter, centreFilter, jerseyClient)
-                    .getCQLInstitutions();
+            institutions = new CenterRegistry(jerseyClient, centerRegistryUrl, endpointFilter).retrieveInstitutionsWithFCSEndpoints();
+        }
+
+        if (institutions == null) {
+            institutions = new ArrayList<>();
         }
 
         // Add sideloaded endpoints
@@ -149,7 +128,7 @@ public class ScanCrawlTask implements Runnable {
 
     private List<Institution> retrieveInstitutions() {
         return retrieveInstitutions(jerseyClient, centerRegistryUrl, additionalCQLEndpoints, additionalFCSEndpoints,
-                endpointFilter, centreFilter);
+                endpointFilter);
     }
 
     @Override

@@ -42,11 +42,17 @@
             <artifactId>fcs-simple-client</artifactId>
         </dependency>
 
-        <!-- CLARIN weblicht -->
+        <!-- CLARIN Centre Registry: add jackson as json provider -->
         <dependency>
-            <groupId>eu.clarin.weblicht</groupId>
-            <artifactId>connectors</artifactId>
+            <groupId>org.glassfish.jersey.media</groupId>
+            <artifactId>jersey-media-json-jackson</artifactId>
         </dependency>
+        <!-- (transitive)
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+        </dependency>
+        -->
 
         <!-- utils (StringEscapeUtils.unescapeXml) -->
         <dependency>
@@ -57,20 +63,14 @@
         <!-- test -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-engine</artifactId>
+            <artifactId>junit-jupiter</artifactId>
             <scope>test</scope>
         </dependency>
 
-        <!-- test: XML response parser stuff -->
+        <!-- test: XML/JSON client -->
         <dependency>
-            <groupId>org.glassfish.jersey.media</groupId>
-            <artifactId>jersey-media-jaxb</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.glassfish.jaxb</groupId>
-            <artifactId>jaxb-runtime</artifactId>
-            <version>2.3.2</version>
+            <groupId>org.glassfish.jersey.core</groupId>
+            <artifactId>jersey-client</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

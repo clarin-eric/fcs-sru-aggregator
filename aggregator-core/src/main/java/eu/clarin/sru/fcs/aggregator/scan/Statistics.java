@@ -194,7 +194,7 @@ public class Statistics {
             }
             Map<String, EndpointStats> esmap = institutions.get(institution.getName());
             if (!esmap.containsKey(endpoint.getUrl())) {
-                EndpointStats es = new EndpointStats();
+                final EndpointStats es = new EndpointStats();
                 es.version = endpoint.getProtocol();
                 es.searchCapabilities = EnumSet.copyOf(endpoint.getSearchCapabilities());
                 esmap.put(endpoint.getUrl(), es);
