@@ -69,17 +69,14 @@ jobs:
     - name: Prepare build environment
       run: mvn -B dependency:resolve-plugins dependency:resolve
 
-    - name: Build aggregator-core
-      run: mvn -B -pl aggregator-core clean package install
-
     - name: Copy aggregator-webui build artifacts for embedding
       run: |
         rm -r aggregator-app/src/main/resources/assets/webapp
         mkdir aggregator-app/src/main/resources/assets/webapp
         cp -R aggregator-webui/dist/lib/. aggregator-app/src/main/resources/assets/webapp/
 
-    - name: Build aggregator-app
-      run: mvn -B -pl aggregator-app clean package
+    - name: Build aggregator-core + aggregator-app
+      run: mvn -B -pl aggregator-core,aggregator-app clean package
 
     - name: Prepare build artifact for packaging
       run: |

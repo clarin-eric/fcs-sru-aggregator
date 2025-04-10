@@ -6,14 +6,11 @@ set -eu
 mvn dependency:resolve-plugins
 mvn dependency:resolve
 
+# build webui
 pushd aggregator-webui
 npm install
 popd
 
-# build core
-mvn -pl aggregator-core clean package
-
-# build webui
 pushd aggregator-webui
 npm run build
 popd
@@ -26,5 +23,5 @@ cp -R aggregator-webui/dist/lib/. aggregator-app/src/main/resources/assets/webap
 # manual update
 # ls -1 aggregator-webui/dist/index.html
 
-# build app
-mvn -pl aggregator-app clean package
+# build core + app
+mvn clean package
