@@ -1,16 +1,16 @@
 # Development
 
-The FCS Aggregator consists of a frontend (ReactJS, JS) and backend (Dropwizard, Java) component. Both will be bundled into a single `aggregator-X.Y.Z.jar` file for deployment.
+The FCS Aggregator consists of a frontend (ReactJS, JS) and backend (Dropwizard, Java) component. Both will be bundled into a single `aggregator-app-X.Y.Z.jar` file for deployment.
 
 ## Versions
 
 - Java: 11 JDK (for building)  
-  `java -version`: `11.0.17`  
+  `java -version`: `21.0.6` (should still work with Java 11)  
   `mvn -version`: `3.6.3`
-  - Java version of source code is `1.8` (`1.7`?) and compiled to `1.8` (see [`pom.xml`](pom.xml))
+  - Java version of source code is `1.8` and compiled to `1.8` (see [`pom.xml`](pom.xml))
 - NodeJS:  
-  `npm --version`: `8.19.3`  
-  `node --version`: `v16.19.1`
+  `npm --version`: `10.8.1`  
+  `node --version`: `v20.14.0`
 
 Note that maven (3.6.3 on Ubuntu) may not work with Java 17! Either setup maven manually, use a docker container for building or use Java 11.
 
@@ -57,25 +57,26 @@ There is an OpenAPI (Swagger) endpoint at: [`/openapi.json`](http://localhost:40
 
 A [`build.sh`](build.sh) script is included to handle common tasks such as building and running the application.
 
-To do a full build of the application perform the following steps:
-1. `./build.sh --npm`  
-   _Downloads all node dependencies from [`package.json`](package.json) and puts relevant sources to [`src/main/resources/assets/`](src/main/resources/assets/)._
-2. `./build.sh --jsx`  
-   _If source `*.jsx` files are not newer than the [`main.js`](src/main/resources/assets/js/main.js) file, building is skipped. Use `./build.sh --jsx-force` if you want to force recompiling the React sources._
-3. `./build.sh --jar`  
-   _Runs tests with maven and then bundles frontend and backend into a single JAR file._
-
-Running only step 3. is enough for minor changes to the frontend (React) or backend (jersey servlet) code.
+To do a full build of the application perform the following steps:  
+... (WIP)
 
 ## Workflow: Running the Application
 
 Check the [`aggregator_devel.yml`](aggregator_devel.yml) (development) or [`aggregator.yml`](aggregator.yml) (production) configuration file. If you want to sideload your enpoint simply add the endpoint to either `additionalCQLEndpoints` or `additionalFCSEndpoints`.
 
 To run the application in debug mode:
-`./build.sh --run`
+```sh
+JAR=`find target -iname 'aggregator-app-*.jar'`
+java $DEBUGGER_OPTS -cp src/main/resources:$JAR -Xmx4096m eu.clarin.sru.fcs.aggregator.app.AggregatorApp server aggregator_devel.yml
+```
 
 For production run:
-`./build.sh --run-production`
+```sh
+JAR=`find target -iname 'aggregator-app-*.jar'`
+java $DEBUGGER_OPTS -Xmx4096m -jar $JAR server aggregator.yml
+```
+
+With `DEBUGGER_OPTS="-agentlib:jdwp=transport=dt_socket,server=y,address=0.0.0.0:5005"` for VSCode debugging.
 
 You might also want to change the path to your cache files in `AGGREGATOR_FILE_PATH` and `AGGREGATOR_FILE_PATH_BACKUP` respectively.
 
@@ -88,10 +89,8 @@ See [`DEPLOYMENT.md`](DEPLOYMENT.md) for example deployment configurations.
 - add changes to [`CHANGELOG.md`](CHANGELOG.md)
 - update version number in:
   - [`pom.xml`](pom.xml) at `<project...><version>`
-  - [`package.json`](package.json) at `"version":`
-  - [`src/main/resources/assets/js/main.jsx`](src/main/resources/assets/js/main.jsx) at `var VERSION = window.MyAggregator.VERSION`
-- run full build: `./build.sh --npm --jsx-force --jar`
-- add changes: `git add CHANGELOG.md pom.xml package.json package-lock.json src/main/resources/assets/js/main.jsx src/main/resources/assets/js/main.js`
+- run full build: `./build.sh`
+- add changes: `git add CHANGELOG.md pom.xml`
 - commit: `git commit -m "Bump version to <new-version>"`
 - tag release: `git tag -a <new-version> -m "<new-version-description>"`
 - publish: `git push origin <new-version> <working-branch>`
@@ -114,7 +113,7 @@ An example configuration `.vscode/launch.json` (auto-generated) looks like the f
     ]
 ```
 
-The [`build.sh`](build.sh) script contains a `--with-debugger` flag to automatically start the aggregator with `-agentlib:jdwp=transport=dt_socket,server=y,address=0.0.0.0:5005`. The aggregator will wait until connected with the VSCode debugger (probably a `suspend=y` default).
+To start aggregator waiting for the VSCode debugger to connect (probably a `suspend=y` default) add `-agentlib:jdwp=transport=dt_socket,server=y,address=0.0.0.0:5005`. See below.
 
 If _somehow_, _somewhat_, a local debugging session does not work, it may help to run the aggregator in docker container:
 ```bash
@@ -129,11 +128,13 @@ apt update
 apt install -y --no-install-recommends maven
 
 cd code/
-./build.sh --jar
+mvn clean package
 # you may want to update the owner/group since it is directly mapped to the host
 chown -R 1000:1000 dependency-reduced-pom.xml target/
 
 # run:
-./build.sh --run-production --with-debugger
+DEBUGGER_OPTS="-agentlib:jdwp=transport=dt_socket,server=y,address=0.0.0.0:5005"
+JAR=`find target -iname 'aggregator-app-*.jar'`
+java $DEBUGGER_OPTS -Xmx4096m -jar $JAR server aggregator.yml
 ```
 _NOTE: this might also help with other issues, like some jersey SSL stuff._

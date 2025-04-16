@@ -14,6 +14,7 @@
   - **Breaking**: Refactored `aggregator` into multi-module project:
     - `aggregator-core` as standalone core aggregation component
     - `aggregator-app` as dropwizard server application with all the REST API interfaces etc.
+    - `aggregator-webui` as git submodule to [fcs-sru-aggregator-ui](https://github.com/clarin-eric/fcs-sru-aggregator-ui/) frontend ReactJS SPA; commit dist files for easier build
     - Mode core aggregation functionality more reusable (e.g., retrieving endpoints from centre, creating SRU/FCS clients for searching/scanning, running searches)
 
 - Dependencies:
@@ -24,7 +25,7 @@
   - Bump `io.swagger.core.v3` to `2.2.29`
   - Bump `javax.servlet:javax.servlet-api` to `4.0.1` (same as dropwizard)
   - Bump `com.optimaize.languagedetector:language-detector` to `0.6`
-  - Bump `fcs-simple-client` to `2.4.0`, `sru-client` to `2.3.0`
+  - Bump `fcs-simple-client` to `2.5.1`, `sru-client` to `2.3.0`
   - Add `de.mpg.mpgaai:mpgaai-shhaa:1.0.13` (Shibboleth AAI)
   - Bump various maven plugins to most recent stable versions
   - Reorganize dependencies across `aggregator-core` and `aggregator-app`
