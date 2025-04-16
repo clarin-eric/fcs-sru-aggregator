@@ -100,6 +100,9 @@ logging:
   loggers:
     eu.clarin.sru.fcs.aggregator: INFO
     eu.clarin.sru.client: WARN
+    # DEBUG log print request URLs
+    eu.clarin.sru.fcs.aggregator.scan.ScanCrawler: DEBUG
+    eu.clarin.sru.fcs.aggregator.search.Search: DEBUG
 
   appenders:
     - type: console

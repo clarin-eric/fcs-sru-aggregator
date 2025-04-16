@@ -17,6 +17,12 @@ cd $DIR/..
 
 set -eu
 
+# --------------------------------------------------------------------------
+
+#git submodule update --remote aggregator-webui/
+
+# --------------------------------------------------------------------------
+
 pushd aggregator-webui
 
 # build webui
@@ -32,6 +38,8 @@ cp -R aggregator-webui/dist/lib/. aggregator-app/src/main/resources/assets/webap
 
 # manual update
 # ls -1 aggregator-webui/dist/index.html
+
+# --------------------------------------------------------------------------
 
 # build core + app
 # mvn clean package
