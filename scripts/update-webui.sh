@@ -19,6 +19,7 @@ set -eu
 
 # --------------------------------------------------------------------------
 
+# update WebUI submodule
 #git submodule update --remote aggregator-webui/
 
 # --------------------------------------------------------------------------
@@ -37,9 +38,9 @@ mkdir aggregator-app/src/main/resources/assets/webapp
 cp -R aggregator-webui/dist/lib/. aggregator-app/src/main/resources/assets/webapp/
 
 # manual update
-# ls -1 aggregator-webui/dist/index.html
+#ls -1 aggregator-webui/dist/index.html
 
 # --------------------------------------------------------------------------
 
 # build core + app
-# mvn clean package
+#mvn clean package
