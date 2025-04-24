@@ -13,21 +13,46 @@
     window._paq = window._paq || [];
 
     // window.MyAggregator.API_URL = "rest/";
-    // window.MyAggregator.DEPLOY_PATH = null; // null for default ("/")
+    // window.MyAggregator.DEPLOY_PATH = null;
 
-    {{#validatorUrl}}
-    window.MyAggregator.VALIDATOR_URL = "{{validatorUrl}}";
-    {{/validatorUrl}}
-    {{^validatorUrl}}
-    window.MyAggregator.VALIDATOR_URL = undefined;
-    {{/validatorUrl}}
-
+    // UI (updatable)
+    window.MyAggregator.VALIDATOR_URL = {{#validatorUrl}}"{{validatorUrl}}"{{/validatorUrl}}{{^validatorUrl}}undefined{{/validatorUrl}};
     window.MyAggregator.SHOW_SEARCH_RESULT_LINK = {{showSearchResultLink}};
 
+    // UI
+    // window.MyAggregator.APP_TITLE = "Content Search"
+    // window.MyAggregator.APP_TITLE_HEAD = "FCS Aggregator – Content Search"
+    // window.MyAggregator.TERMS_AND_DISCLAIMER_ADDRESS = "https://www.clarin.eu/content/terms-use-and-disclaimer"
+    // window.MyAggregator.CONTACT_ADDRESS = "mailto:fcs@clarin.eu"
+
+    // user authentication status
+    window.MyAggregator.AUTH_USERNAME = {{#username}}"{{.}}"{{/username}}{{^username}}null{{/username}};
+
+    
+    // matomo, set to null to disable
+    {{#piwikConfig}}
+    {{#enabled}}
+    window.MyAggregator.MATOMO_TRACKING_PARAMS = {
+      srcUrl: "{{{url}}}",
+      // trackerUrl: "{{{url}}}" + "piwik.php",
+      siteId: {{siteID}},
+      userId: window.MyAggregator.AUTH_USERNAME,
+      domains: [
+        {{#setDomains}}
+            "{{{.}}}",
+        {{/setDomains}}
+      ]
+    };
+    {{/enabled}}
+    {{^enabled}}
+    window.MyAggregator.MATOMO_TRACKING_PARAMS = null;
+    {{/enabled}}
+    {{/piwikConfig}}
+
+    // via REST API: /rest/init
     // window.MyAggregator.mode
     // window.MyAggregator.resources
     // window.MyAggregator.xAggregationContext
-    window.MyAggregator.isLoggedIn = false;
   </script>
 
   <script type="module" crossorigin src="./r/fcs-sru-aggregator-ui-0.0.0.js"></script>
