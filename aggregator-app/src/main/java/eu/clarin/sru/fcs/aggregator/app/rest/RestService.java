@@ -503,7 +503,7 @@ public class RestService {
 
         Object j = new HashMap<String, Object>() {
             {
-                put("Last Scan", new HashMap<String, Object>() {
+                put("last-scan", new HashMap<String, Object>() {
                     {
                         put("timeout", params.getENDPOINTS_SCAN_TIMEOUT_MS() / 1000.);
                         put("isScan", true);
@@ -511,12 +511,12 @@ public class RestService {
                         put("date", scan.getDate());
                     }
                 });
-                put("Recent Searches", new HashMap<String, Object>() {
+                put("recent-searches", new HashMap<String, Object>() {
                     {
                         put("timeout", params.getENDPOINTS_SEARCH_TIMEOUT_MS() / 1000.);
                         put("isScan", false);
                         put("institutions", search.getInstitutions());
-                        put("date", scan.getDate());
+                        put("date", search.getDate());
                     }
                 });
             }

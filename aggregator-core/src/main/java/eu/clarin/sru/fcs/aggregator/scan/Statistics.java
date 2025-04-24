@@ -22,43 +22,17 @@ public class Statistics {
         private final Object lock = new Object();
 
         FCSProtocolVersion version = FCSProtocolVersion.LEGACY;
-
         EnumSet<FCSSearchCapabilities> searchCapabilities = EnumSet.of(FCSSearchCapabilities.BASIC_SEARCH);
 
-        List<String> rootResources = new ArrayList<String>();
+        final List<ResourceInfo> rootResources = new ArrayList<>();
 
-        List<Long> queueTimes = Collections.synchronizedList(new ArrayList<Long>());
-        List<Long> executionTimes = Collections.synchronizedList(new ArrayList<Long>());
+        final List<Long> queueTimes = Collections.synchronizedList(new ArrayList<>());
+        final List<Long> executionTimes = Collections.synchronizedList(new ArrayList<>());
 
         int maxConcurrentRequests;
 
-        public static class DiagPair {
-            public final Diagnostic diagnostic;
-            public final String context;
-            public int counter;
-
-            public DiagPair(Diagnostic diagnostic, String context, int counter) {
-                this.diagnostic = diagnostic;
-                this.context = context;
-                this.counter = counter;
-            }
-        }
-
-        Map<String, DiagPair> diagnostics = Collections.synchronizedMap(new HashMap<String, DiagPair>());
-
-        public static class ExcPair {
-            public final JavaException exception;
-            public final String context;
-            public int counter;
-
-            public ExcPair(JavaException exception, String context, int counter) {
-                this.exception = exception;
-                this.context = context;
-                this.counter = counter;
-            }
-        }
-
-        Map<String, ExcPair> errors = Collections.synchronizedMap(new HashMap<String, ExcPair>());
+        final Map<String, DiagPair> diagnostics = Collections.synchronizedMap(new HashMap<>());
+        final Map<String, ExcPair> errors = Collections.synchronizedMap(new HashMap<>());
 
         double avg(List<Long> q) {
             double sum = 0;
@@ -104,19 +78,82 @@ public class Statistics {
                     + ", getAvgExecutionTime()=" + getAvgExecutionTime() + ", getMaxExecutionTime()="
                     + getMaxExecutionTime() + ", getNumberOfRequests()=" + getNumberOfRequests() + "]";
         }
-    };
+
+        /**
+         * Represents a SRU Diagnostics with some context. It has a counter for repeated
+         * occurrences.
+         */
+        public static class DiagPair {
+            public final Diagnostic diagnostic;
+            public final String context;
+            public int counter;
+
+            public DiagPair(Diagnostic diagnostic, String context, int counter) {
+                this.diagnostic = diagnostic;
+                this.context = context;
+                this.counter = counter;
+            }
+        }
+
+        /**
+         * Represents a Java exception with some context. It has a counter for repeated
+         * occurrences.
+         */
+        public static class ExcPair {
+            public final JavaException exception;
+            public final String context;
+            public int counter;
+
+            public ExcPair(JavaException exception, String context, int counter) {
+                this.exception = exception;
+                this.context = context;
+                this.counter = counter;
+            }
+        }
+
+        /**
+         * Mini class to encapsulate a resource with its handle/id and title.
+         */
+        public static class ResourceInfo {
+            public final String handle;
+            public final String title;
+
+            public boolean valid;
+            public final List<String> notes = Collections.synchronizedList(new ArrayList<>());
+
+            // TODO: handle special flags (e.g., access restricted) on the client side using
+            // the handle to retrieve additional information on demand only
+
+            public ResourceInfo(String handle, String title) {
+                this.handle = handle;
+                this.title = title;
+                this.valid = true;
+            }
+
+            public ResourceInfo(String handle, String title, boolean valid, String note) {
+                this.handle = handle;
+                this.title = title;
+
+                this.valid = valid;
+                if (note != null && !note.isEmpty()) {
+                    this.notes.add(note);
+                }
+            }
+        }
+
+    }
 
     private final Object lock = new Object();
 
-    Date date = new Date();
-
-    public Date getDate() {
-        return date;
-    }
+    final Date date = new Date();
 
     // institution to endpoint to statistics_per_endpoint map
     Map<String, Map<String, EndpointStats>> institutions = Collections
             .synchronizedMap(new HashMap<String, Map<String, EndpointStats>>());
+
+    public Date getDate() {
+        return date;
+    }
 
     public Map<String, Map<String, EndpointStats>> getInstitutions() {
         return institutions;
@@ -171,14 +208,15 @@ public class Statistics {
         }
     }
 
-    public void addEndpointResource(Institution institution, Endpoint endpoint, String resourceName) {
+    public void addEndpointResource(Institution institution, Endpoint endpoint, EndpointStats.ResourceInfo resource) {
         EndpointStats stats = getEndpointStats(institution, endpoint);
         synchronized (stats.lock) {
-            stats.rootResources.add(resourceName);
+            stats.rootResources.add(resource);
         }
     }
 
-    public void addEndpointResources(Institution institution, Endpoint endpoint, List<String> resources) {
+    public void addEndpointResources(Institution institution, Endpoint endpoint,
+            List<EndpointStats.ResourceInfo> resources) {
         EndpointStats stats = getEndpointStats(institution, endpoint);
         synchronized (stats.lock) {
             stats.rootResources.addAll(resources);

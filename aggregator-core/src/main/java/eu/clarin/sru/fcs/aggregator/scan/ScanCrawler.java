@@ -120,7 +120,7 @@ public class ScanCrawler {
             try {
                 statistics.addEndpointDatapoint(institution, endpoint, stats.getQueueTime(), stats.getExecutionTime());
 
-                List<String> rootResources = new ArrayList<String>();
+                List<Statistics.EndpointStats.ResourceInfo> rootResources = new ArrayList<>();
                 if (response != null && response.hasExtraResponseData()) {
                     for (SRUExtraResponseData data : response.getExtraResponseData()) {
                         if (data instanceof ClarinFCSEndpointDescription) {
@@ -203,7 +203,7 @@ public class ScanCrawler {
 
     private static void addResources(Resources resources,
             Institution institution, Endpoint endpoint,
-            List<String> rootResources,
+            List<Statistics.EndpointStats.ResourceInfo> rootResources,
             List<ResourceInfo> resourceInfos, Resource parentResource) {
         if (resourceInfos == null) {
             return;
@@ -231,7 +231,7 @@ public class ScanCrawler {
 
             if (resources.addResource(r, parentResource)) {
                 if (rootResources != null) {
-                    rootResources.add(r.getTitle());
+                    rootResources.add(new Statistics.EndpointStats.ResourceInfo(r.getHandle(), r.getTitle()));
                 }
                 addResources(resources, institution, endpoint, null, ri.getSubResources(), r);
             } else {
@@ -239,10 +239,15 @@ public class ScanCrawler {
                 if (otherResource != null && endpoint.equals(otherResource.getEndpoint())) {
                     log.warn("Found multiple resources with same handle '{}' at endpoint {}", r.getHandle(),
                             endpoint.getUrl());
+                    rootResources.add(new Statistics.EndpointStats.ResourceInfo(r.getHandle(), r.getTitle(), false,
+                            "Found multiple resources with same handle at endpoint!"));
                 } else {
                     log.warn("Found existing resource with same handle '{}' at endpoint {}. Skip for this endpoint {}.",
                             r.getHandle(), (otherResource != null) ? otherResource.getEndpoint().getUrl() : null,
                             endpoint.getUrl());
+                    rootResources.add(new Statistics.EndpointStats.ResourceInfo(r.getHandle(), r.getTitle(), false,
+                            "Found multiple resources with same handle at another endpoint "
+                                    + ((otherResource != null) ? otherResource.getEndpoint().getUrl() : null) + " !"));
                 }
             }
         }
@@ -303,7 +308,8 @@ public class ScanCrawler {
                             if (resources.addResource(r, parentResource)) {
                                 new ScanTask(institution, endpoint, r, resources, depth + 1).start();
                                 if (parentResource == null) {
-                                    statistics.addEndpointResource(institution, endpoint, r.getTitle());
+                                    statistics.addEndpointResource(institution, endpoint,
+                                            new Statistics.EndpointStats.ResourceInfo(r.getHandle(), r.getTitle()));
                                 }
                             }
                         }

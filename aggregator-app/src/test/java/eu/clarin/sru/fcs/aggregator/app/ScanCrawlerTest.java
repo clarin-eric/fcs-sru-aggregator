@@ -81,13 +81,14 @@ public class ScanCrawlerTest {
         try {
             EndpointUrlFilterAllow filter = new EndpointUrlFilterAllow("uni-tuebingen.de");
             // , "leipzig", ".mpi.nl", "dspin.dwds.de", "lindat."
+            filter = null; // disable
 
             // InitialContext context = new InitialContext();
             // String centerRegistryUrl = (String)
             // context.lookup("java:comp/env/center-registry-url");
             String centerRegistryUrl = RULE.getConfiguration().aggregatorParams.getCENTER_REGISTRY_URL();
             ScanCrawler crawler = new ScanCrawler(
-                    new CenterRegistry(jerseyClient, centerRegistryUrl).retrieveInstitutionsWithFCSEndpoints(),
+                    new CenterRegistry(jerseyClient, centerRegistryUrl, filter).retrieveInstitutionsWithFCSEndpoints(),
                     sruClient, 2);
             Resources cache = crawler.crawl();
             Resource tueRootResource = cache.findByEndpoint("http://weblicht.sfs.uni-tuebingen.de/rws/sru/").get(0);
