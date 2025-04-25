@@ -12,8 +12,9 @@
     window.MyAggregator = window.MyAggregator || {};
     window._paq = window._paq || [];
 
-    window.MyAggregator.API_URL = "rest/";
-    // window.MyAggregator.DEPLOY_PATH = null;
+    // NOTE: that paths need to account for different deployments, e.g., sub-paths
+    window.MyAggregator.DEPLOY_PATH = "/";
+    window.MyAggregator.API_URL = "/rest/";
 
     // UI (updatable)
     window.MyAggregator.VALIDATOR_URL = {{#validatorUrl}}"{{validatorUrl}}"{{/validatorUrl}}{{^validatorUrl}}undefined{{/validatorUrl}};
