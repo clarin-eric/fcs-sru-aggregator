@@ -10,6 +10,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
@@ -44,6 +45,7 @@ import eu.clarin.sru.fcs.aggregator.scan.FCSSearchCapabilities;
 import eu.clarin.sru.fcs.aggregator.scan.Resource;
 import eu.clarin.sru.fcs.aggregator.scan.Resources;
 import eu.clarin.sru.fcs.aggregator.scan.Statistics;
+import eu.clarin.sru.fcs.aggregator.scan.Statistics.EndpointStats;
 import eu.clarin.sru.fcs.aggregator.search.Result;
 import eu.clarin.sru.fcs.aggregator.search.Search;
 import eu.clarin.sru.fcs.aggregator.util.LanguagesISO693;
@@ -130,6 +132,16 @@ public class RestService {
         Map<String, String> languages = LanguagesISO693.getInstance().getLanguageMap(codes);
 
         return Response.ok(languages).build();
+    }
+
+    @GET
+    @Produces({ MediaType.APPLICATION_JSON })
+    @Path("consortia")
+    @Operation(description = "Get all consorita from all resources.", tags = { "web" }, responses = {
+            @ApiResponse(description = "List of consortia names.", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ConsortiaList.class), examples = @ExampleObject(value = "[ null, \"CLARIN-D\", \"LINDAT/CLARIAH-CZ\" ]"))) })
+    public Response getConsortia() throws IOException {
+        Set<String> consortia = AggregatorApp.getInstance().getResources().getConsortia();
+        return Response.ok(consortia).build();
     }
 
     @SuppressWarnings({ "unchecked" })
@@ -496,12 +508,14 @@ public class RestService {
     @Path("statistics")
     @Operation(description = "Get scan and search statistics.", tags = { "web" }, responses = {
             @ApiResponse(description = "Scan and Search statistics for each endpoint.", content = @Content(schema = @Schema(implementation = ScanSearchStatisticsSchema.class))) })
-    public Response getStatistics() throws IOException {
+    public Response getStatistics(
+            @Parameter(description = "Comma-separated list of consortia to filter institutions/centres, endpoints and finally resources", required = false) @QueryParam(PARAM_CONSORTIA) String consortiaRaw)
+            throws IOException {
         final Statistics scan = AggregatorApp.getInstance().getScanStatistics();
         final Statistics search = AggregatorApp.getInstance().getSearchStatistics();
         final AggregatorConfiguration.Params params = AggregatorApp.getInstance().getParams();
 
-        Object j = new HashMap<String, Object>() {
+        Object info = new HashMap<String, Object>() {
             {
                 put("last-scan", new HashMap<String, Object>() {
                     {
@@ -521,7 +535,61 @@ public class RestService {
                 });
             }
         };
-        return Response.ok(j).build();
+
+        if (consortiaRaw != null && !consortiaRaw.trim().isEmpty()) {
+            List<String> consortia = Arrays.asList(consortiaRaw.replaceAll("\\s+", "").toUpperCase().split(","));
+            List<Resource> resources = AggregatorApp.getInstance().getResources().getResourcesByConsortia(consortia);
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> statsScan = ((Map<String, Object>) ((Map<String, Object>) info).get("last-scan"));
+            @SuppressWarnings("unchecked")
+            Map<String, Map<String, EndpointStats>> institutionsScan = ((Map<String, Map<String, EndpointStats>>) statsScan
+                    .get("institutions"));
+
+            statsScan.put("institutions", filterInstitutionStatsByConsortia(institutionsScan, resources, consortia));
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> statsSearch = ((Map<String, Object>) ((Map<String, Object>) info)
+                    .get("recent-searches"));
+            @SuppressWarnings("unchecked")
+            Map<String, Map<String, EndpointStats>> institutionsSearch = ((Map<String, Map<String, EndpointStats>>) statsSearch
+                    .get("institutions"));
+
+            statsSearch.put("institutions",
+                    filterInstitutionStatsByConsortia(institutionsSearch, resources, consortia));
+        }
+
+        return Response.ok(info).build();
+    }
+
+    private Map<String, Map<String, EndpointStats>> filterInstitutionStatsByConsortia(
+            Map<String, Map<String, EndpointStats>> institutions, List<Resource> resources, List<String> consortia) {
+        return institutions.entrySet().stream()
+                // check each endpoint of the institution
+                // filter institutions that have at least one endpoint with at least on resource
+                // where we can use the handle to find the Institution object to check the
+                // consortium
+                .filter(e -> e.getValue().entrySet().stream()
+                        // filter all stats that have do have resources belonging to the consortium
+                        .filter(e2 -> e2.getValue().getRootResources().stream()
+                                // filter for resources belonging to the consortia
+                                .filter(rr -> resources.stream()
+                                        // check to retrieve the correct resource
+                                        .filter(res -> res.getHandle().equals(rr.handle)
+                                                && res.getEndpoint().getUrl().equals(e2.getKey())
+                                                && res.getEndpointInstitution().getName().equals(e.getKey()))
+                                        // check if in resource -> institution in consortia
+                                        .filter(res -> consortia.contains(res.getEndpointInstitution().getConsortium()))
+                                        // if we find at least one that we are happy
+                                        // NOTE: assumption that all resources at this endpoint belong to the same
+                                        // consortium anyway
+                                        .findAny().isPresent())
+                                // if at least one of the resources is valid then endpoint is OK
+                                .findAny().isPresent())
+                        // if at least one endpoint is valid then institution is OK
+                        .findAny().isPresent())
+                // only those institutions left that are in the consortia
+                .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
     }
 
     @GET

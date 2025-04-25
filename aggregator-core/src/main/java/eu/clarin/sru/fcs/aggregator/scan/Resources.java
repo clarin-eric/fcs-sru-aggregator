@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Implementation of the cached scan data (endpoints descriptions) that stores
@@ -16,8 +17,8 @@ import java.util.Set;
  * @author edima
  */
 public class Resources {
-    private List<Institution> institutions = Collections.synchronizedList(new ArrayList<Institution>());
-    private List<Resource> resources = new ArrayList<Resource>();
+    private List<Institution> institutions = Collections.synchronizedList(new ArrayList<>());
+    private List<Resource> resources = new ArrayList<>();
 
     public List<Institution> getInstitutions() {
         return Collections.unmodifiableList(institutions);
@@ -51,7 +52,7 @@ public class Resources {
         // all if consortia == null, else subset
         final List<Resource> resourcesWithConsortium = getResourcesByConsortia(consortia);
 
-        final Set<String> languages = new HashSet<String>();
+        final Set<String> languages = new HashSet<>();
         visit(resourcesWithConsortium, new CallResource() {
             @Override
             public void call(Resource resource) {
@@ -61,8 +62,12 @@ public class Resources {
         return languages;
     }
 
+    public Set<String> getConsortia() {
+        return institutions.stream().map(Institution::getConsortium).collect(Collectors.toSet());
+    }
+
     public List<Resource> getResourcesByIds(final Set<String> resourceIds) {
-        final List<Resource> found = new ArrayList<Resource>();
+        final List<Resource> found = new ArrayList<>();
         visit(resources, new CallResource() {
             @Override
             public void call(Resource resource) {
@@ -84,7 +89,7 @@ public class Resources {
      *         resources where the endpoint's institution's consortium matches
      */
     public List<Resource> getResourcesByConsortia(final Collection<String> consortia) {
-        final List<Resource> found = new ArrayList<Resource>();
+        final List<Resource> found = new ArrayList<>();
         visit(resources, new CallResource() {
             @Override
             public void call(Resource resource) {
@@ -97,7 +102,7 @@ public class Resources {
     }
 
     public List<Resource> findByEndpoint(final String endpointUrl) {
-        final List<Resource> found = new ArrayList<Resource>();
+        final List<Resource> found = new ArrayList<>();
         visit(resources, new CallResource() {
             @Override
             public void call(Resource resource) {
@@ -110,7 +115,7 @@ public class Resources {
     }
 
     public Resource findByHandle(final String handle) {
-        final List<Resource> found = new ArrayList<Resource>();
+        final List<Resource> found = new ArrayList<>();
         visit(resources, new CallResource() {
             @Override
             public void call(Resource resource) {

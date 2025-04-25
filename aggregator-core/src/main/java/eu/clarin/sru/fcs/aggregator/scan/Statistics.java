@@ -70,6 +70,10 @@ public class Statistics {
             return executionTimes.size();
         }
 
+        public List<ResourceInfo> getRootResources() {
+            return rootResources;
+        }
+
         @Override
         public String toString() {
             return "EndpointStats [version=" + version + ", searchCapabilities=" + searchCapabilities
