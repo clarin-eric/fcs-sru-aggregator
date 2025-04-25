@@ -295,6 +295,8 @@ public class AggregatorApp extends Application<AggregatorConfiguration> {
                 .addMixIn(DataViewLex.Value.class, DataViewLexValueMixin.class)
                 // rename fields
                 .addMixIn(ClarinFCSEndpointDescription.LexField.class, ClarinFCSEndpointDescriptionLexFieldMixin.class)
+                // block serialization of empty fields
+                .addMixIn(ClarinFCSEndpointDescription.Layer.class, ClarinFCSEndpointDescriptionLayerMixin.class)
                 // define what to serialize
                 .addMixIn(Statistics.EndpointStats.class, StatisticsEndpointStatsMixin.class)
                 // block serialization of unset field
@@ -510,7 +512,8 @@ public class AggregatorApp extends Application<AggregatorConfiguration> {
         };
 
         // client for CLARIN registry
-        final Client jerseyClient = ClientFactory.create(CenterRegistry.CONNECT_TIMEOUT, CenterRegistry.READ_TIMEOUT, environment);
+        final Client jerseyClient = ClientFactory.create(CenterRegistry.CONNECT_TIMEOUT, CenterRegistry.READ_TIMEOUT,
+                environment);
 
         final ScanCrawlTaskCompletedCallback scanCrawlTaskCompletedCallback = new ScanCrawlTaskCompletedCallback() {
             @Override
