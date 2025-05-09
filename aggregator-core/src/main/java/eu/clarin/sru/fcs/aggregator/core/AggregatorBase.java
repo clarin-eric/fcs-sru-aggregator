@@ -53,12 +53,21 @@ public abstract class AggregatorBase {
                 }
             };
 
-            requestAuthStrategy = ClarinFCSRequestAuthenticator.Builder.create()
+            ClarinFCSRequestAuthenticator.Builder requestAuthStrategyBuilder = ClarinFCSRequestAuthenticator.Builder
+                    .create()
                     .withIssuer(params.getServerUrl())
-                    // TODO: change to Public|PrivateKey interfaces (should be more secure!)
-                    .withKeyPairContents(params.getPublicKey(), params.getPrivateKey())
-                    .withAuthenticationInfoProvider(authInfoPovider)
-                    .build();
+                    .withAuthenticationInfoProvider(authInfoPovider);
+
+            // TODO: change to Public|PrivateKey interfaces (should be more secure!)
+            if (params.getPublicKey() != null && params.getPrivateKey() != null) {
+                requestAuthStrategyBuilder = requestAuthStrategyBuilder
+                        .withKeyPairContents(params.getPublicKey(), params.getPrivateKey());
+            } else if (params.getPublicKeyFile() != null && params.getPrivateKeyFile() != null) {
+                requestAuthStrategyBuilder = requestAuthStrategyBuilder
+                        .withKeyPair(params.getPublicKeyFile(), params.getPrivateKeyFile());
+            }
+
+            requestAuthStrategy = requestAuthStrategyBuilder.build();
         } else {
             requestAuthStrategy = null;
         }

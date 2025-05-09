@@ -473,6 +473,32 @@ public class AggregatorApp extends Application<AggregatorConfiguration> {
                 }
                 return key.getPrivateKey();
             }
+
+            @Override
+            public String getPublicKeyFile() {
+                final AAIConfig aaiConfig = params.getAAIConfig();
+                if (aaiConfig == null) {
+                    return null;
+                }
+                final AAIConfig.KeyConfig key = aaiConfig.getKey();
+                if (key == null) {
+                    return null;
+                }
+                return key.getPublicKeyFile();
+            }
+
+            @Override
+            public String getPrivateKeyFile() {
+                final AAIConfig aaiConfig = params.getAAIConfig();
+                if (aaiConfig == null) {
+                    return null;
+                }
+                final AAIConfig.KeyConfig key = aaiConfig.getKey();
+                if (key == null) {
+                    return null;
+                }
+                return key.getPrivateKeyFile();
+            }
         };
 
         // cached resources loading

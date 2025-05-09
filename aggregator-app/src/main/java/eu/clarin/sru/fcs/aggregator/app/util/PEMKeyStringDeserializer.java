@@ -20,6 +20,11 @@ public final class PEMKeyStringDeserializer extends JsonDeserializer<String> {
     public String deserialize(JsonParser p, DeserializationContext ctxt)
             throws IOException, JacksonException {
         String contents = p.getText().strip();
+        // special escape hatch, to not require a key if aai is disabled
+        if (contents.isEmpty()) {
+            return null;
+        }
+        // validate correct format
         if (!contents.startsWith(MARKER_DELIMS) || !contents.endsWith(MARKER_DELIMS)) {
             throw new JsonParseException(p, "Expected PEM key block with '-----' delimiters!");
         }

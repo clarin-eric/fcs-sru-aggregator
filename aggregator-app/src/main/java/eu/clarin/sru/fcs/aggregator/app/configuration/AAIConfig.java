@@ -70,6 +70,12 @@ public final class AAIConfig {
         @JsonDeserialize(using = PEMKeyStringDeserializer.class)
         String privateKey;
 
+        @JsonProperty
+        String publicKeyFile;
+        
+        @JsonProperty
+        String privateKeyFile;
+
         @JsonIgnore
         public String getPublicKey() {
             return publicKey;
@@ -80,7 +86,16 @@ public final class AAIConfig {
             return privateKey;
         }
 
-        // TODO: maybe key path properties?
+        @JsonIgnore
+        public String getPublicKeyFile() {
+            return publicKeyFile;
+        }
+
+        @JsonIgnore
+        public String getPrivateKeyFile() {
+            return privateKeyFile;
+        }
+
         // TODO: validation?
 
     }

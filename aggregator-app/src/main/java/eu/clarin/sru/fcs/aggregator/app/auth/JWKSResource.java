@@ -1,5 +1,6 @@
 package eu.clarin.sru.fcs.aggregator.app.auth;
 
+import java.io.File;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.NoSuchAlgorithmException;
@@ -139,12 +140,8 @@ public class JWKSResource {
             return Response.status(Status.NOT_FOUND).entity("No authentication support enabled at server!").build();
         }
 
-        final RSAPublicKey publicKey;
-        try {
-            final String publicKeyContent = aaiConfig.getKey().getPublicKey();
-            publicKey = KeyReaderUtils.readPublicKey(publicKeyContent);
-        } catch (NoSuchAlgorithmException | InvalidKeySpecException | IOException e) {
-            log.error("Failed to load public key, no JWKS possible.", e);
+        final RSAPublicKey publicKey = loadPublicKey(aaiConfig);
+        if (publicKey == null) {
             return Response.status(Status.INTERNAL_SERVER_ERROR).entity("Error loading key!").build();
         }
 
@@ -155,4 +152,28 @@ public class JWKSResource {
                                 .withKid("jwt")))
                 .build();
     }
+
+    private static RSAPublicKey loadPublicKey(AAIConfig aaiConfig) {
+        try {
+            // try to load from PEM key file contents
+            final String publicKeyContent = aaiConfig.getKey().getPublicKey();
+            if (publicKeyContent != null) {
+                return KeyReaderUtils.readPublicKey(publicKeyContent);
+            }
+
+            // otherwise try to load from file
+            final String publicKeyFilename = aaiConfig.getKey().getPublicKeyFile();
+            if (publicKeyFilename != null) {
+                File publicKeyFile = new File(publicKeyFilename);
+                return KeyReaderUtils.readPublicKey(publicKeyFile);
+            }
+
+            log.error("Missing public key configuration!");
+        } catch (NoSuchAlgorithmException | InvalidKeySpecException | IOException e) {
+            log.error("Failed to load public key, no JWKS possible.", e);
+        }
+
+        return null;
+    }
+
 }

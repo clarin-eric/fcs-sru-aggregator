@@ -8,4 +8,8 @@ public interface FCSAuthenticationParams {
     String getPublicKey();
 
     String getPrivateKey();
+
+    String getPublicKeyFile();
+
+    String getPrivateKeyFile();
 }
