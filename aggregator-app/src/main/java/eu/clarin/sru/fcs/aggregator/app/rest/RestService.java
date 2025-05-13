@@ -412,7 +412,7 @@ public class RestService {
             return download(bytes, ODS_MEDIA_TYPE, search.getQuery() + ".ods");
         } else if (format.equals("excel")) {
             byte[] bytes = Exports.getExportExcel(search.getResults(resourceId), filterLanguage);
-            return download(bytes, EXCEL_MEDIA_TYPE, search.getQuery() + ".xls");
+            return download(bytes, EXCEL_MEDIA_TYPE, search.getQuery() + ".xlsx");
         } else if (format.equals("csv")) {
             String csv = Exports.getExportCSV(search.getResults(resourceId), filterLanguage, ";");
             return download(csv, MediaType.TEXT_PLAIN, search.getQuery() + ".csv");
