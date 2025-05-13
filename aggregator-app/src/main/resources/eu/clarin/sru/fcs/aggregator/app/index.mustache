@@ -34,10 +34,10 @@
     {{#piwikConfig}}
     {{#enabled}}
     window.MyAggregator.MATOMO_TRACKING_PARAMS = {
-      srcUrl: "{{{url}}}",
-      // trackerUrl: "{{{url}}}" + "piwik.php",
+      srcUrl: "{{{url}}}" + "matomo.js",
+      trackerUrl: "{{{url}}}" + "matomo.php",
       siteId: {{siteID}},
-      userId: window.MyAggregator.AUTH_USERNAME,
+      {{#username}}userId: "{{.}}",{{/username}}
       domains: [
         {{#setDomains}}
             "{{{.}}}",
