@@ -16,9 +16,11 @@ import eu.clarin.sru.client.SRUDiagnostic;
 import eu.clarin.sru.client.SRUExplainRequest;
 import eu.clarin.sru.client.SRUExplainResponse;
 import eu.clarin.sru.client.SRUExtraResponseData;
+import eu.clarin.sru.client.SRUInvalidVersionException;
 import eu.clarin.sru.client.SRUScanRequest;
 import eu.clarin.sru.client.SRUScanResponse;
 import eu.clarin.sru.client.SRUTerm;
+import eu.clarin.sru.client.SRUVersion;
 import eu.clarin.sru.client.fcs.ClarinFCSConstants;
 import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescription;
 import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescription.ResourceInfo;
@@ -88,6 +90,9 @@ public class ScanCrawler {
         final Endpoint endpoint;
         final Resources resources;
 
+        private int numAttemptedRequests = 0;
+        private final static int MAX_REQUEST_ATTEMPTS = 2;
+
         ExplainTask(final Institution institution, final Endpoint endpoint, final Resources resources) {
             this.institution = institution;
             this.endpoint = endpoint;
@@ -112,6 +117,7 @@ public class ScanCrawler {
 
             log.info("{} Start explain: {}", latch.get(), endpoint.getUrl());
             latch.increment();
+            numAttemptedRequests++;
             sruClient.explain(explainRequest, this);
         }
 
@@ -185,6 +191,50 @@ public class ScanCrawler {
 
         @Override
         public void onError(SRUExplainRequest request, SRUClientException error, ThrottledClient.Stats stats) {
+
+            // try-again handler
+            if (error instanceof SRUInvalidVersionException && numAttemptedRequests < MAX_REQUEST_ATTEMPTS) {
+                // The SRU endpoint has responded with another SRU version incompatible with the
+                // one from the SRU request. So, we will try to again send a request but now
+                // with an SRU version that hopefully is being supported by the SRU endpoint.
+                SRUInvalidVersionException ive = (SRUInvalidVersionException) error;
+                SRUVersion version = ive.getDetectedVersion();
+                if (version == null) {
+                    // SRU client was unable to parse the SRU version in the SRU response?
+                    if (request.getVersion().compareTo(SRUVersion.VERSION_2_0) < 0) {
+                        // request was with SRU 1.1/1.2, so next try with SRU 2.0
+                        version = SRUVersion.VERSION_2_0;
+                    } else {
+                        // request was with SRU 2.0, so next try SRU 1.2
+                        version = SRUVersion.VERSION_1_2;
+                    }
+                }
+
+                if (!request.getRequestedVersion().equals(version)) {
+                    // only if the new SRU version to try is different to the one used in the
+                    // original SRU request, will we try to send a new SRU request
+
+                    // let's create a new request to send
+                    try {
+                        SRUExplainRequest explainRequest = new SRUExplainRequest(endpoint.getUrl());
+                        explainRequest.setExtraRequestData(SRUCQL.EXPLAIN_ASK_FOR_RESOURCES_PARAM, "true");
+                        explainRequest.setParseRecordDataEnabled(true);
+                        // and now set the SRU version!
+                        explainRequest.setVersion(version);
+
+                        log.info("{} Start explain: {} (version = {})", latch.get(), endpoint.getUrl(), version);
+                        latch.increment();
+                        numAttemptedRequests++;
+                        sruClient.explain(explainRequest, this);
+                    } catch (Throwable ex) {
+                        // it should not throw an exception at this point...
+                        log.error("Exception creating explain request for {}: {}", endpoint.getUrl(), ex.getMessage());
+                        log.error("--> ", ex);
+                    }
+                }
+            }
+
+            // default error handler
             try {
                 log.error("{} Error while explaining {}: {}", latch.get(), endpoint.getUrl(), error.getMessage());
                 statistics.addEndpointDatapoint(institution, endpoint, stats.getQueueTime(), stats.getExecutionTime());
