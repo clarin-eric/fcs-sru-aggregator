@@ -18,6 +18,7 @@ import javax.servlet.DispatcherType;
 import javax.ws.rs.client.Client;
 
 import org.eclipse.jetty.server.session.SessionHandler;
+import org.glassfish.jersey.CommonProperties;
 import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -261,6 +262,12 @@ public class AggregatorApp extends Application<AggregatorConfiguration> {
         environment.jersey().setUrlPattern("/*");
         environment.jersey().register(new IndexResource());
         environment.jersey().register(new RestService());
+
+        // let jersey use the dropwizard ObjectMapper, we configured here
+        // https://github.com/dropwizard/dropwizard/issues/1341#issuecomment-251503011
+        // something about JacksonJaxbJsonProvider / auto-registration by
+        // jersey-media-json-jackson
+        environment.jersey().property(CommonProperties.FEATURE_AUTO_DISCOVERY_DISABLE, Boolean.TRUE);
 
         // AAI - MPG SHHAA
         final AAIConfig aaiConfig = config.aggregatorParams.getAAIConfig();

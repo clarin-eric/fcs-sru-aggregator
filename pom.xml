@@ -47,7 +47,7 @@
 
         <jersey.version>2.46</jersey.version>
 
-        <dropwizard.version>3.0.13</dropwizard.version>
+        <dropwizard.version>3.0.14</dropwizard.version>
         <swagger.version>2.2.29</swagger.version>
         <commons-text.version>1.13.0</commons-text.version>
     </properties>
