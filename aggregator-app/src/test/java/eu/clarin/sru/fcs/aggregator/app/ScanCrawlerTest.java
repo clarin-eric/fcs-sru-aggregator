@@ -103,9 +103,11 @@ public class ScanCrawlerTest {
             tueLangs.add("deu");
             assertEquals(tueLangs, tueRootResource.getLanguages());
             String tueDescSubstring = "Tübingen Treebank";
-            assertTrue(tueRootResource.getDescription().contains(tueDescSubstring), "Description problem");
+            assertTrue(tueRootResource.getDescription().values().stream()
+                    .anyMatch(title -> title.contains(tueDescSubstring)), "Description problem");
             String tueNameSubstring = "TuebaDDC";
-            assertTrue(tueRootResource.getTitle().contains(tueNameSubstring), "Name problem");
+            assertTrue(tueRootResource.getTitle().values().stream().anyMatch(title -> title.contains(tueNameSubstring)),
+                    "Name problem");
             String tuePageSubstring = "sfs.uni-tuebingen.de";
             assertTrue(tueRootResource.getLandingPage().contains(tuePageSubstring), "Landing page problem");
             assertTrue(mpiRootResource.getNumberOfRecords() > 10, "Number of records problem");

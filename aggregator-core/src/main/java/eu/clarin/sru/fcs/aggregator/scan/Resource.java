@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -35,9 +36,9 @@ public class Resource {
 
     private Set<String> languages = new HashSet<>();
     private String landingPage;
-    private String title;
-    private String description;
-    private String institution;
+    private Map<String, String> title;
+    private Map<String, String> description;
+    private Map<String, String> institution;
 
     private EnumSet<FCSSearchCapabilities> searchCapabilities = EnumSet.of(FCSSearchCapabilities.BASIC_SEARCH);
     private AvailabilityRestriction availabilityRestriction = AvailabilityRestriction.NONE;
@@ -208,28 +209,40 @@ public class Resource {
         this.landingPage = landingPage;
     }
 
-    public String getTitle() {
+    public Map<String, String> getTitle() {
         return title;
     }
 
-    public void setTitle(String title) {
+    public void setTitle(Map<String, String> title) {
         this.title = title;
     }
 
-    public String getDescription() {
+    public void setTitle(String title) {
+        this.title = Map.of("en", title);
+    }
+
+    public Map<String, String> getDescription() {
         return description;
     }
 
-    public void setDescription(String description) {
+    public void setDescription(Map<String, String> description) {
         this.description = description;
     }
 
-    public String getInstitution() {
+    public void setDescription(String description) {
+        this.description = Map.of("en", description);
+    }
+
+    public Map<String, String> getInstitution() {
         return institution;
     }
 
-    public void setInstitution(String institution) {
+    public void setInstitution(Map<String, String> institution) {
         this.institution = institution;
+    }
+
+    public void setInstitution(String institution) {
+        this.institution = Map.of("en", institution);
     }
 
     @Override

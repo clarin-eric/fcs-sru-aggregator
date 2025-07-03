@@ -4,6 +4,7 @@ import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.DocumentFragment;
@@ -261,9 +262,12 @@ public class ScanCrawler {
         for (ResourceInfo ri : resourceInfos) {
             Resource r = new Resource(institution, endpoint);
             r.setHandle(ri.getPid());
-            r.setTitle(MultilingualString.getBestValueFrom(ri.getTitle()));
-            r.setDescription(MultilingualString.getBestValueFromNullable(ri.getDescription()));
-            r.setInstitution(MultilingualString.getBestValueFromNullable(ri.getInstitution(), institution.getName()));
+            r.setTitle((ri.getTitle()));
+            r.setDescription(ri.getDescription());
+            r.setInstitution(ri.getInstitution());
+            if (r.getInstitution() == null || r.getInstitution().isEmpty()) {
+                r.setInstitution(institution.getName());
+            }
             r.setLandingPage(ri.getLandingPageURI());
             r.setLanguages(new HashSet<String>(ri.getLanguages()));
 
@@ -281,7 +285,8 @@ public class ScanCrawler {
 
             if (resources.addResource(r, parentResource)) {
                 if (rootResources != null) {
-                    rootResources.add(new Statistics.EndpointStats.ResourceInfo(r.getHandle(), r.getTitle()));
+                    rootResources.add(new Statistics.EndpointStats.ResourceInfo(r.getHandle(),
+                            MultilingualString.getBestValueFrom(r.getTitle())));
                 }
                 addResources(resources, institution, endpoint, null, ri.getSubResources(), r);
             } else {
@@ -289,13 +294,15 @@ public class ScanCrawler {
                 if (otherResource != null && endpoint.equals(otherResource.getEndpoint())) {
                     log.warn("Found multiple resources with same handle '{}' at endpoint {}", r.getHandle(),
                             endpoint.getUrl());
-                    rootResources.add(new Statistics.EndpointStats.ResourceInfo(r.getHandle(), r.getTitle(), false,
+                    rootResources.add(new Statistics.EndpointStats.ResourceInfo(r.getHandle(),
+                            MultilingualString.getBestValueFrom(r.getTitle()), false,
                             "Found multiple resources with same handle at endpoint!"));
                 } else {
                     log.warn("Found existing resource with same handle '{}' at endpoint {}. Skip for this endpoint {}.",
                             r.getHandle(), (otherResource != null) ? otherResource.getEndpoint().getUrl() : null,
                             endpoint.getUrl());
-                    rootResources.add(new Statistics.EndpointStats.ResourceInfo(r.getHandle(), r.getTitle(), false,
+                    rootResources.add(new Statistics.EndpointStats.ResourceInfo(r.getHandle(),
+                            MultilingualString.getBestValueFrom(r.getTitle()), false,
                             "Found multiple resources with same handle at another endpoint "
                                     + ((otherResource != null) ? otherResource.getEndpoint().getUrl() : null) + " !"));
                 }
@@ -359,7 +366,8 @@ public class ScanCrawler {
                                 new ScanTask(institution, endpoint, r, resources, depth + 1).start();
                                 if (parentResource == null) {
                                     statistics.addEndpointResource(institution, endpoint,
-                                            new Statistics.EndpointStats.ResourceInfo(r.getHandle(), r.getTitle()));
+                                            new Statistics.EndpointStats.ResourceInfo(r.getHandle(),
+                                                    MultilingualString.getBestValueFrom(r.getTitle())));
                                 }
                             }
                         }
