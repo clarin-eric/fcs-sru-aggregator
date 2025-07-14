@@ -4,7 +4,6 @@ import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.DocumentFragment;
@@ -27,6 +26,7 @@ import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescription;
 import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescription.ResourceInfo;
 import eu.clarin.sru.fcs.aggregator.client.ThrottledClient;
 import eu.clarin.sru.fcs.aggregator.util.CounterLatch;
+import eu.clarin.sru.fcs.aggregator.util.LanguagesISO693;
 import eu.clarin.sru.fcs.aggregator.util.MultilingualString;
 import eu.clarin.sru.fcs.aggregator.util.SRUCQL;
 import eu.clarin.sru.fcs.aggregator.util.Throw;
@@ -259,12 +259,13 @@ public class ScanCrawler {
         if (resourceInfos == null) {
             return;
         }
+        LanguagesISO693 langInfo = LanguagesISO693.getInstance();
         for (ResourceInfo ri : resourceInfos) {
             Resource r = new Resource(institution, endpoint);
             r.setHandle(ri.getPid());
-            r.setTitle((ri.getTitle()));
-            r.setDescription(ri.getDescription());
-            r.setInstitution(ri.getInstitution());
+            r.setTitle(MultilingualString.mapLanguageCodes3To1(ri.getTitle(), langInfo));
+            r.setDescription(MultilingualString.mapLanguageCodes3To1(ri.getDescription(), langInfo));
+            r.setInstitution(MultilingualString.mapLanguageCodes3To1(ri.getInstitution(), langInfo));
             if (r.getInstitution() == null || r.getInstitution().isEmpty()) {
                 r.setInstitution(institution.getName());
             }

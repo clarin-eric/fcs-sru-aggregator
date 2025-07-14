@@ -55,6 +55,7 @@ import eu.clarin.sru.fcs.aggregator.app.serialization.DataViewLexMixin;
 import eu.clarin.sru.fcs.aggregator.app.serialization.DataViewLexValueMixin;
 import eu.clarin.sru.fcs.aggregator.app.serialization.DiagnosticRecordMixin;
 import eu.clarin.sru.fcs.aggregator.app.serialization.InstitutionMixin;
+import eu.clarin.sru.fcs.aggregator.app.serialization.ResourceMixin;
 import eu.clarin.sru.fcs.aggregator.app.serialization.ResourcesMixin;
 import eu.clarin.sru.fcs.aggregator.app.serialization.ResultMetaMixin;
 import eu.clarin.sru.fcs.aggregator.app.serialization.ResultMixin;
@@ -650,6 +651,7 @@ public class AggregatorApp extends Application<AggregatorConfiguration> {
                 .addMixIn(ClarinFCSEndpointDescription.Layer.class, ClarinFCSEndpointDescriptionLayerMixin.class)
                 .addMixIn(ClarinFCSEndpointDescription.LexField.class, ClarinFCSEndpointDescriptionLexFieldMixin.class)
                 .addMixIn(Resources.class, ResourcesMixin.class)
+                .addMixIn(Resource.class, ResourceMixin.class)
                 .addMixIn(Institution.class, InstitutionMixin.class)
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
