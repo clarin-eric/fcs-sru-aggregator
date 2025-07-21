@@ -49,7 +49,8 @@
 
         <dropwizard.version>3.0.14</dropwizard.version>
         <swagger.version>2.2.29</swagger.version>
-        <commons-text.version>1.13.0</commons-text.version>
+        <commons-text.version>1.13.1</commons-text.version>
+        <commons-lang3.version>3.18.0</commons-lang3.version>
     </properties>
 
     <repositories>
@@ -196,6 +197,17 @@
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-text</artifactId>
                 <version>${commons-text.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.commons</groupId>
+                        <artifactId>commons-lang3</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+                <version>${commons-lang3.version}</version>
             </dependency>
 
             <!-- logging dependencies -->
