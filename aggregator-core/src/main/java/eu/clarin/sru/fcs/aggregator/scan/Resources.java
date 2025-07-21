@@ -66,19 +66,6 @@ public class Resources {
         return institutions.stream().map(Institution::getConsortium).collect(Collectors.toSet());
     }
 
-    public List<Resource> getResourcesByIds(final Set<String> resourceIds) {
-        final List<Resource> found = new ArrayList<>();
-        visit(resources, new CallResource() {
-            @Override
-            public void call(Resource resource) {
-                if (resourceIds.contains(resource.getId())) {
-                    found.add(resource);
-                }
-            }
-        });
-        return found;
-    }
-
     /**
      * Gather resources where the endpoint institution's consortium is included in
      * the provided set of <code>consortia</code>. If <code>consortia == null</code>
@@ -90,23 +77,30 @@ public class Resources {
      */
     public List<Resource> getResourcesByConsortia(final Collection<String> consortia) {
         final List<Resource> found = new ArrayList<>();
-        visit(resources, new CallResource() {
-            @Override
-            public void call(Resource resource) {
-                if (consortia == null || consortia.contains(resource.getEndpointInstitution().getConsortium())) {
-                    found.add(resource);
-                }
+        for (Resource resource : resources) {
+            if (consortia == null || consortia.contains(resource.getEndpointInstitution().getConsortium())) {
+                found.add(resource);
             }
-        });
+        }
         return found;
     }
 
-    public List<Resource> findByEndpoint(final String endpointUrl) {
+    public List<Resource> findByEndpointUrl(final String endpointUrl) {
+        final List<Resource> found = new ArrayList<>();
+        for (Resource resource : resources) {
+            if (resource.getEndpoint().getUrl().equals(endpointUrl)) {
+                found.add(resource);
+            }
+        }
+        return found;
+    }
+
+    public List<Resource> getResourcesByIds(final Set<String> resourceIds) {
         final List<Resource> found = new ArrayList<>();
         visit(resources, new CallResource() {
             @Override
             public void call(Resource resource) {
-                if (resource.getEndpoint().getUrl().equals(endpointUrl)) {
+                if (resourceIds.contains(resource.getId())) {
                     found.add(resource);
                 }
             }

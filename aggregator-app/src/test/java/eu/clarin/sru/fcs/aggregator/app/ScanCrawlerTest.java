@@ -91,8 +91,8 @@ public class ScanCrawlerTest {
                     new CenterRegistry(jerseyClient, centerRegistryUrl, filter).retrieveInstitutionsWithFCSEndpoints(),
                     sruClient, 2);
             Resources cache = crawler.crawl();
-            Resource tueRootResource = cache.findByEndpoint("http://weblicht.sfs.uni-tuebingen.de/rws/sru/").get(0);
-            Resource mpiRootResource = cache.findByEndpoint("http://cqlservlet.mpi.nl/").get(0);
+            Resource tueRootResource = cache.findByEndpointUrl("http://weblicht.sfs.uni-tuebingen.de/rws/sru/").get(0);
+            Resource mpiRootResource = cache.findByEndpointUrl("http://cqlservlet.mpi.nl/").get(0);
             assertEquals("http://hdl.handle.net/11858/00-1778-0000-0001-DDAF-D",
                     tueRootResource.getHandle());
             Resource mpiResource = cache.findByHandle("hdl:1839/00-0000-0000-0001-53A5-2@format=cmdi");
