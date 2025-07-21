@@ -37,6 +37,9 @@ rm -r aggregator-app/src/main/resources/assets/webapp
 mkdir aggregator-app/src/main/resources/assets/webapp
 cp -R aggregator-webui/dist/lib/. aggregator-app/src/main/resources/assets/webapp/
 
+# cleanup map files
+find aggregator-app/src/main/resources/assets/webapp/ -name "*.map" -delete
+
 # manual update
 #ls -1 aggregator-webui/dist/index.html
 
