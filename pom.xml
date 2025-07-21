@@ -43,14 +43,13 @@
         <mpgaai.version>1.0.13</mpgaai.version>
 
         <slf4j.version>2.0.17</slf4j.version>
-        <junit5.version>5.11.0</junit5.version>
+        <junit5.version>5.13.3</junit5.version>
 
-        <jersey.version>2.46</jersey.version>
+        <jersey.version>2.47</jersey.version>
 
         <dropwizard.version>3.0.14</dropwizard.version>
-        <swagger.version>2.2.29</swagger.version>
+        <swagger.version>2.2.34</swagger.version>
         <commons-text.version>1.13.1</commons-text.version>
-        <commons-lang3.version>3.18.0</commons-lang3.version>
     </properties>
 
     <repositories>
@@ -197,17 +196,6 @@
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-text</artifactId>
                 <version>${commons-text.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.apache.commons</groupId>
-                        <artifactId>commons-lang3</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.commons</groupId>
-                <artifactId>commons-lang3</artifactId>
-                <version>${commons-lang3.version}</version>
             </dependency>
 
             <!-- logging dependencies -->
