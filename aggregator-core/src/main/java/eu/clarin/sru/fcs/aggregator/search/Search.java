@@ -35,7 +35,10 @@ import eu.clarin.sru.fcs.aggregator.util.UniqueId;
  * @author ljo
  */
 public class Search {
+
     private static final org.slf4j.Logger log = LoggerFactory.getLogger(Search.class);
+    private static final org.slf4j.Logger logstatsSearch = LoggerFactory.getLogger("fcsstats.search");
+    private static final org.slf4j.Logger logstatsResult = LoggerFactory.getLogger("fcsstats.result");
 
     private static final Pattern QUOTE_PATTERN = Pattern.compile("[\\s<>=/\\(\\)]");
 
@@ -71,9 +74,15 @@ public class Search {
             startRecord = 1;
         }
 
+        logstatsSearch.trace("[{}] queryType='{}' query='{}' language='{}'",
+                this.id, this.queryType, this.query, this.searchLanguage);
         for (Resource resource : resources) {
             SRUVersion versionForResource = computeVersion(version, queryType, resource);
             Result result = new Result(resource, langDetectCallback);
+            logstatsSearch.trace(
+                    "[{}] endpoint='{}' resource='{}' sruversion='{}' batch={}+{} queryType='{}' query='{}'",
+                    this.id, resource.getEndpoint().getUrl(), resource.getHandle(), versionForResource,
+                    1, maxRecords, queryType, query);
             executeSearch(result, versionForResource, queryType, query, startRecord, maxRecords, userid);
             results.add(result);
         }
@@ -83,6 +92,10 @@ public class Search {
         for (Result r : results) {
             if (r.getResource().getId().equals(resourceId)) {
                 SRUVersion versionForResource = computeVersion(version, queryType, r.getResource());
+                logstatsSearch.trace(
+                        "[{}] endpoint='{}' resource='{}' sruversion='{}' batch={}+{} queryType='{}' query='{}'",
+                        this.id, r.getResource().getEndpoint().getUrl(), r.getResource().getHandle(),
+                        versionForResource, r.getNextRecordPosition(), maxRecords, queryType, query);
                 executeSearch(r, versionForResource, queryType, query, r.getNextRecordPosition(), maxRecords, userid);
                 return true;
             }
@@ -146,6 +159,10 @@ public class Search {
                         statistics.addEndpointDatapoint(resource.getEndpointInstitution(), resource.getEndpoint(),
                                 stats.getQueueTime(), stats.getExecutionTime());
                         log.debug("searchRetrieve request url: {}", response.getRequest().getRequestedURI());
+                        logstatsResult.trace("[{}] endpoint='{}' resource='{}' numberOfRecords={} nextRecord={}",
+                                id, result.getResource().getEndpoint().getUrl(), result.getResource().getHandle(),
+                                (response != null) ? response.getNumberOfRecords() : null,
+                                (response != null) ? response.getNextRecordPosition() : null);
                         result.addResponse(response);
                         List<Diagnostic> diagnostics = result.getDiagnostics();
                         if (diagnostics != null && !diagnostics.isEmpty()) {

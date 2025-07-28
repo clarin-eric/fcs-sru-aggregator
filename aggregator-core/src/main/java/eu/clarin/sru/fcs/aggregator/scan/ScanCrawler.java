@@ -42,6 +42,7 @@ import eu.clarin.sru.fcs.aggregator.util.Throw;
 public class ScanCrawler {
 
     private static final org.slf4j.Logger log = LoggerFactory.getLogger(ScanCrawler.class);
+    private static final org.slf4j.Logger logstats = LoggerFactory.getLogger("fcsstats.explain");
 
     private final List<Institution> institutions;
     private final int maxDepth;
@@ -276,6 +277,9 @@ public class ScanCrawler {
             r.setAvailableDataViews(ri.getAvailableDataViews());
             r.setAvailableLayers(ri.getAvailableLayers());
             r.setAvailableLexFields(ri.getAvailableLexFields());
+
+            logstats.trace("endpoint='{}' resource='{}' languages={} capabilities={}",
+                    endpoint.getUrl(), ri.getPid(), r.getLanguages(), r.getSearchCapabilitiesResolved());
 
             // check for requirements on resource
             if (endpoint.getSearchCapabilities().contains(FCSSearchCapabilities.AUTHENTICATED_SEARCH)

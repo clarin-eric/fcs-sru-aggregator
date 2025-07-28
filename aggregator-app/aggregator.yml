@@ -69,6 +69,26 @@ logging:
     eu.clarin.sru.fcs.aggregator: INFO
     eu.clarin.sru.client: WARN
 
+    # scan/search statistics
+    # may be used to anonymously collect statistics about endpoint/resource usage
+    # intended use case: collection of usage statistics over longer time frames
+    # - to provide feedback to endpoint deployers about search behaviour (query type, "search more" requests, general result info (#records))
+    # - to improve user interface (do users use resource selection feature or simply keep default) and documentation/help
+    #fcsstats:
+    #  # explain/search/result sub loggers
+    #  # log requests will only be output at TRACE level, any other level will not log anything
+    #  level: TRACE
+    #  # do not output logs into main/default log
+    #  additive: false
+    #  # custom output, rotating for each day, for at most a year
+    #  appenders:
+    #    - type: file
+    #      currentLogFilename: /var/log/aggregator/stats/stats.log
+    #      archivedLogFilenamePattern: /var/log/aggregator/stats/stats-%d.log.gz
+    #      archivedFileCount: 365
+    # disabled by:
+    fcsstats: WARN
+
   appenders:
     - type: file
       #currentLogFilename: /var/log/aggregator/access.log
