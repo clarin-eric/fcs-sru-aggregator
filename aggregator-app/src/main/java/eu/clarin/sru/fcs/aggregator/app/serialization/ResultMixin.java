@@ -12,11 +12,11 @@ public abstract class ResultMixin {
     // suppress legacy fields
 
     @JsonIgnore
-    public abstract List<Kwic> getKwics();
+    abstract List<Kwic> getKwics();
 
     @JsonIgnore
-    public abstract List<List<AdvancedLayer>> getAdvancedLayers();
+    abstract List<List<AdvancedLayer>> getAdvancedLayers();
 
     @JsonIgnore
-    public abstract List<LexEntry> getLexEntries();
+    abstract List<LexEntry> getLexEntries();
 }

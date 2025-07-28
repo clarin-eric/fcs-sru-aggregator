@@ -4,11 +4,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public abstract class ResultMetaMixin {
     @JsonProperty("hasAdvResults")
-    public abstract boolean hasAdvancedResults();
+    abstract boolean hasAdvancedResults();
 
     @JsonProperty("hasLexResults")
-    public abstract boolean hasLexicalResults();
+    abstract boolean hasLexicalResults();
 
     @JsonProperty("isLexHits")
-    public abstract boolean isLexHits();
+    abstract boolean isLexHits();
 }

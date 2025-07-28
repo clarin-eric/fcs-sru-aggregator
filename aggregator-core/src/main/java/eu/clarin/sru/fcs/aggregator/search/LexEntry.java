@@ -12,7 +12,7 @@ public class LexEntry {
     private String lang;
     private String langUri;
 
-    public LexEntry(DataViewLex dv, String pid, String reference) {
+    public LexEntry(final DataViewLex dv, String pid, String reference) {
         this.fields = dv.getFields();
         this.lang = dv.getXmlLang();
         this.langUri = dv.getLangUri();

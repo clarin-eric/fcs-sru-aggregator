@@ -49,7 +49,7 @@ public class AdvancedLayer {
     private String id;
     private List<Span> spans = new ArrayList<Span>();
 
-    public AdvancedLayer(DataViewAdvanced.Layer layer, String pid, String reference) {
+    public AdvancedLayer(DataViewAdvanced.Layer layer) {
         this.id = layer.getId();
 
         for (DataViewAdvanced.Span span : layer.getSpans()) {

@@ -46,6 +46,7 @@ import eu.clarin.sru.fcs.aggregator.app.configuration.EndpointConfigImpl;
 import eu.clarin.sru.fcs.aggregator.app.export.WeblichtExportCache;
 import eu.clarin.sru.fcs.aggregator.app.rest.RestService;
 import eu.clarin.sru.fcs.aggregator.app.serialization.AdvancedLayerSpanMixin;
+import eu.clarin.sru.fcs.aggregator.app.serialization.AdvancedLayersMixin;
 import eu.clarin.sru.fcs.aggregator.app.serialization.ClarinFCSEndpointDescriptionDataViewMixin;
 import eu.clarin.sru.fcs.aggregator.app.serialization.ClarinFCSEndpointDescriptionLayerMixin;
 import eu.clarin.sru.fcs.aggregator.app.serialization.ClarinFCSEndpointDescriptionLexFieldMixin;
@@ -55,6 +56,7 @@ import eu.clarin.sru.fcs.aggregator.app.serialization.DataViewLexMixin;
 import eu.clarin.sru.fcs.aggregator.app.serialization.DataViewLexValueMixin;
 import eu.clarin.sru.fcs.aggregator.app.serialization.DiagnosticRecordMixin;
 import eu.clarin.sru.fcs.aggregator.app.serialization.InstitutionMixin;
+import eu.clarin.sru.fcs.aggregator.app.serialization.LexEntryMixin;
 import eu.clarin.sru.fcs.aggregator.app.serialization.ResourceMixin;
 import eu.clarin.sru.fcs.aggregator.app.serialization.ResourcesMixin;
 import eu.clarin.sru.fcs.aggregator.app.serialization.ResultMetaMixin;
@@ -72,7 +74,9 @@ import eu.clarin.sru.fcs.aggregator.scan.ScanCrawlTask.ScanCrawlTaskCompletedCal
 import eu.clarin.sru.fcs.aggregator.scan.centre_registry.CenterRegistry;
 import eu.clarin.sru.fcs.aggregator.scan.Statistics;
 import eu.clarin.sru.fcs.aggregator.search.AdvancedLayer;
+import eu.clarin.sru.fcs.aggregator.search.AdvancedLayers;
 import eu.clarin.sru.fcs.aggregator.search.DiagnosticRecord;
+import eu.clarin.sru.fcs.aggregator.search.LexEntry;
 import eu.clarin.sru.fcs.aggregator.search.PerformLanguageDetectionCallback;
 import eu.clarin.sru.fcs.aggregator.search.Result;
 import eu.clarin.sru.fcs.aggregator.search.ResultMeta;
@@ -312,7 +316,10 @@ public class AggregatorApp extends Application<AggregatorConfiguration> {
                 // rename fields
                 .addMixIn(ResultMeta.class, ResultMetaMixin.class)
                 // block serialization of unwanted fields
-                //.addMixIn(Result.class, ResultMixin.class) // TODO: for testing, so that UI does not crash
+                .addMixIn(Result.class, ResultMixin.class)
+                .addMixIn(LexEntry.class, LexEntryMixin.class)
+                // block serialization of unwanted fields + flatten complex object into list
+                .addMixIn(AdvancedLayers.class, AdvancedLayersMixin.class)
                 // rename fields
                 .addMixIn(ResultRecord.class, ResultRecordMixin.class)
                 .addMixIn(DiagnosticRecord.class, DiagnosticRecordMixin.class)

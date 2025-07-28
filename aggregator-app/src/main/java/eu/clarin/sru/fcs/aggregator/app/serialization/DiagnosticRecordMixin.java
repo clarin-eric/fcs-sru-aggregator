@@ -6,5 +6,5 @@ import eu.clarin.sru.fcs.aggregator.scan.Diagnostic;
 
 public abstract class DiagnosticRecordMixin {
     @JsonProperty("diag")
-    private Diagnostic diagnostic;
+    Diagnostic diagnostic;
 }

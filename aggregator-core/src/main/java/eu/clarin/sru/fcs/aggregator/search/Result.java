@@ -55,7 +55,8 @@ public final class Result extends ResultMeta {
     }
 
     public List<List<AdvancedLayer>> getAdvancedLayers() {
-        return records.stream().map(r -> (r instanceof ResultRecord) ? ((ResultRecord) r).getAdvancedLayers() : null)
+        return records.stream()
+                .map(r -> (r instanceof ResultRecord) ? ((ResultRecord) r).getAdvancedLayers().getLayers() : null)
                 .filter(r -> r != null).collect(Collectors.toList());
     }
 
@@ -88,19 +89,17 @@ public final class Result extends ResultMeta {
         }
 
         record.setKwic(kwic);
-        log.debug("DataViewHits: {}", kwic.getFragments());
+        log.debug("DataViewHits: #fragments={}", kwic.getFragments());
     }
 
     @Override
     protected void processDataViewAdvanced(final ResultRecord record, final DataViewAdvanced dataview, String pid,
             String reference) {
-        List<AdvancedLayer> advLayersSingleGroup = new ArrayList<>();
+        final AdvancedLayers layers = new AdvancedLayers(dataview, pid, reference);
+        record.setAdvancedLayers(layers);
         for (DataViewAdvanced.Layer layer : dataview.getLayers()) {
-            log.debug("DataViewAdvanced layer: {}", dataview.getUnit(), layer.getId());
-            final AdvancedLayer aLayer = new AdvancedLayer(layer, pid, reference);
-            advLayersSingleGroup.add(aLayer);
+            log.debug("DataViewAdvanced layer: unit='{}' id='{}'", dataview.getUnit(), layer.getId());
         }
-        record.setAdvancedLayers(advLayersSingleGroup);
     }
 
     @Override
@@ -108,7 +107,7 @@ public final class Result extends ResultMeta {
             String reference) {
         final LexEntry entry = new LexEntry(dataview, pid, reference);
         record.setLexEntry(entry);
-        log.debug("DataViewLex fields {}", entry.getFields().size());
+        log.debug("DataViewLex: #fields={}", entry.getFields().size());
     }
 
 }

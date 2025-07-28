@@ -9,7 +9,7 @@ import eu.clarin.sru.fcs.aggregator.scan.Resource;
 
 public abstract class ResourcesMixin {
     @JsonProperty
-    private List<Institution> institutions;
+    List<Institution> institutions;
     @JsonProperty
-    private List<Resource> resources;
+    List<Resource> resources;
 }

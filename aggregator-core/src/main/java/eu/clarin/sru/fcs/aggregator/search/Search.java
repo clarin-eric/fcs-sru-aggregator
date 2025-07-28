@@ -94,7 +94,7 @@ public class Search {
     private void executeSearch(final Result result, SRUVersion version, String queryType, String searchString,
             int startRecord, int maxRecords, final String userid) {
         final Resource resource = result.getResource();
-        log.info("Executing search in '{}' version='{}' queryType ='{}' query='{}' maxRecords='{}'",
+        log.info("Executing search in '{}' version='{}' queryType='{}' query='{}' maxRecords='{}'",
                 resource, version, queryType, searchString, maxRecords);
 
         SRUSearchRetrieveRequest searchRequest = new SRUSearchRetrieveRequest(resource.getEndpoint().getUrl());

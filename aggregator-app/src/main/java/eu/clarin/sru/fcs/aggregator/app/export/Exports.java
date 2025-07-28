@@ -108,7 +108,7 @@ public class Exports {
                             continue;
                         }
 
-                        List<AdvancedLayer> layers = ((ResultRecord) record).getAdvancedLayers();
+                        List<AdvancedLayer> layers = ((ResultRecord) record).getAdvancedLayers().getLayers();
                         if (layers == null) {
                             continue;
                         }
@@ -252,7 +252,7 @@ public class Exports {
                                 continue;
                             }
 
-                            List<AdvancedLayer> layers = ((ResultRecord) record).getAdvancedLayers();
+                            List<AdvancedLayer> layers = ((ResultRecord) record).getAdvancedLayers().getLayers();
                             if (layers == null) {
                                 continue;
                             }
@@ -378,7 +378,7 @@ public class Exports {
 
                     int numAdvancedLayers = result.getRecords().stream()
                             .filter(r -> r instanceof ResultRecord).map(r -> ((ResultRecord) r))
-                            .map(r -> r.getAdvancedLayers()).map(l -> l != null ? l.size() : 0)
+                            .map(r -> r.getAdvancedLayers().getLayers()).map(l -> l != null ? l.size() : 0)
                             .mapToInt(Integer::intValue).sum();
                     sheet.ensureRowCount(rownum + numAdvancedLayers + 2);
 
@@ -390,7 +390,7 @@ public class Exports {
                             continue;
                         }
 
-                        List<AdvancedLayer> layers = ((ResultRecord) record).getAdvancedLayers();
+                        List<AdvancedLayer> layers = ((ResultRecord) record).getAdvancedLayers().getLayers();
                         if (layers == null) {
                             continue;
                         }

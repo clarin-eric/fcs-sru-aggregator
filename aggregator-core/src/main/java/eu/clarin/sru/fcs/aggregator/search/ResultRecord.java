@@ -1,13 +1,12 @@
 package eu.clarin.sru.fcs.aggregator.search;
 
-import java.util.List;
-
 public class ResultRecord implements Record {
+
     private String pid;
     private String reference;
 
     private Kwic kwic;
-    private List<AdvancedLayer> advancedLayers;
+    private AdvancedLayers advancedLayers;
     private LexEntry lexEntry;
 
     private String language;
@@ -62,16 +61,16 @@ public class ResultRecord implements Record {
         this.kwic = kwic;
     }
 
-    public List<AdvancedLayer> getAdvancedLayers() {
+    public AdvancedLayers getAdvancedLayers() {
         return advancedLayers;
     }
 
-    public void setAdvancedLayers(List<AdvancedLayer> advancedLayers) {
+    public void setAdvancedLayers(AdvancedLayers advancedLayers) {
         this.advancedLayers = advancedLayers;
     }
 
     public boolean hasAdvancedLayers() {
-        return advancedLayers != null && !advancedLayers.isEmpty();
+        return advancedLayers != null && !advancedLayers.getLayers().isEmpty();
     }
 
     public LexEntry getLexEntry() {
@@ -83,6 +82,6 @@ public class ResultRecord implements Record {
     }
 
     public boolean hasLexEntry() {
-        return lexEntry != null;
+        return lexEntry != null && !lexEntry.getFields().isEmpty();
     }
 }
