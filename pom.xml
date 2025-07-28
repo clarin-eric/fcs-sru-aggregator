@@ -49,7 +49,7 @@
 
         <dropwizard.version>3.0.15</dropwizard.version>
         <swagger.version>2.2.34</swagger.version>
-        <commons-text.version>1.13.1</commons-text.version>
+        <commons-text.version>1.14.0</commons-text.version>
     </properties>
 
     <repositories>
