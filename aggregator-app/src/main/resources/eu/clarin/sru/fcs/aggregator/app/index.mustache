@@ -5,7 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>FCS Aggregator – Content Search</title>
-  <link rel="icon" type="image/png" sizes="40x40" href="./r/assets/icon-services-fcs.png">
+  <link rel="icon" type="image/png" sizes="40x40" href="/r/assets/icon-services-fcs.png" />
 
   <!-- global configuration -->
   <script>
@@ -17,7 +17,7 @@
     window.MyAggregator.API_URL = "/rest/";
 
     // UI (updatable)
-    window.MyAggregator.VALIDATOR_URL = {{#validatorUrl}}"{{validatorUrl}}"{{/validatorUrl}}{{^validatorUrl}}undefined{{/validatorUrl}};
+    window.MyAggregator.VALIDATOR_URL = {{#validatorUrl}}"{{.}}"{{/validatorUrl}}{{^validatorUrl}}undefined{{/validatorUrl}};
     window.MyAggregator.SHOW_SEARCH_RESULT_LINK = {{showSearchResultLink}};
 
     // UI
@@ -28,7 +28,6 @@
 
     // user authentication status
     window.MyAggregator.AUTH_USERNAME = {{#username}}"{{.}}"{{/username}}{{^username}}null{{/username}};
-
     
     // matomo, set to null to disable
     {{#piwikConfig}}
@@ -56,15 +55,15 @@
     // window.MyAggregator.xAggregationContext
   </script>
 
-  <script type="module" crossorigin src="./r/fcs-sru-aggregator-ui-0.0.0.js"></script>
-  <link rel="modulepreload" crossorigin href="./r/vendor/react.js">
-  <link rel="modulepreload" crossorigin href="./r/vendor/react-ext.js">
-  <link rel="modulepreload" crossorigin href="./r/vendor/bootstrap.js">
-  <link rel="modulepreload" crossorigin href="./r/vendor/prism.js">
-  <link rel="modulepreload" crossorigin href="./r/locales/en/default.js">
+  <script type="module" crossorigin src="/r/fcs-sru-aggregator-ui-0.0.0.js"></script>
+  <link rel="modulepreload" crossorigin href="/r/vendor/react.js">
+  <link rel="modulepreload" crossorigin href="/r/vendor/react-ext.js">
+  <link rel="modulepreload" crossorigin href="/r/vendor/bootstrap.js">
+  <link rel="modulepreload" crossorigin href="/r/vendor/prism.js">
+  <link rel="modulepreload" crossorigin href="/r/locales/en/default.js">
 
-  <link rel="stylesheet" crossorigin href="./r/vendor/bootstrap.css">
-  <link rel="stylesheet" crossorigin href="./r/fcs-sru-aggregator-ui-0.0.0.css">
+  <link rel="stylesheet" crossorigin href="/r/vendor/bootstrap.css">
+  <link rel="stylesheet" crossorigin href="/r/fcs-sru-aggregator-ui-0.0.0.css">
 </head>
 
 <body>

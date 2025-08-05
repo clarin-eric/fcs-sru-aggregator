@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 
 import eu.clarin.sru.fcs.aggregator.app.auth.AuthenticationInfo;
 import eu.clarin.sru.fcs.aggregator.app.configuration.PiwikConfig;
+import eu.clarin.sru.fcs.aggregator.app.configuration.AggregatorConfiguration.Params;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.links.Link;
@@ -39,9 +40,11 @@ public class IndexResource {
     final String validatorUrl;
 
     public IndexResource() {
-        config = AggregatorApp.getInstance().getParams().getPiwikConfig();
-        searchResultLinkEnabled = AggregatorApp.getInstance().getParams().getSearchResultLinkEnabled();
-        validatorUrl = AggregatorApp.getInstance().getParams().getVALIDATOR_URL();
+        Params params = AggregatorApp.getInstance().getParams();
+
+        config = params.getPiwikConfig();
+        searchResultLinkEnabled = params.getSearchResultLinkEnabled();
+        validatorUrl = params.getVALIDATOR_URL();
     }
 
     @GET
