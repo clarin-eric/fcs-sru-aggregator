@@ -1,3 +1,8 @@
+
+NOTICE: deprecated, needs to be updated!
+
+---
+
 # FCS-SRU-Aggregator
 CLARIN Federated Content Search v3.0 Aggregator – Augmenting your Search Engine
 

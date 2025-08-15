@@ -19,6 +19,9 @@ set -eu
 
 # --------------------------------------------------------------------------
 
+# init on first run
+#git submodule update --init --recursive aggregator-webui/
+
 # update WebUI submodule
 #git submodule update --remote aggregator-webui/
 

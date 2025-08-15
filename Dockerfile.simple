@@ -1,0 +1,39 @@
+# Dockerfile that build the application (without recreating the webui)
+# - build application (note that webui version MUST NOT change!)
+# - create minimal run image with default configuration
+
+# TODO: could re-use maven build artifacts and skip rebuild everything?
+
+# ---------------------------------------------------------------------------
+FROM maven:3.9.11-eclipse-temurin-21-noble AS jar
+
+WORKDIR /work
+
+# pre-install dependencies
+COPY pom.xml /work/
+COPY aggregator-core/pom.xml /work/aggregator-core/pom.xml
+COPY aggregator-app/pom.xml /work/aggregator-app/pom.xml
+
+RUN mvn -B dependency:resolve-plugins
+RUN mvn -B dependency:resolve
+
+# copy source code
+COPY aggregator-core/src /work/aggregator-core/src
+COPY aggregator-app/src /work/aggregator-app/src
+COPY scripts/build.sh /work/scripts/build.sh
+
+RUN ./scripts/build.sh
+
+# ---------------------------------------------------------------------------
+FROM eclipse-temurin:21-jre-noble AS run
+
+WORKDIR /app
+
+# application
+COPY --from=jar /work/aggregator-app/target/aggregator-app-*.jar /app/aggregator-app.jar
+# default configuration
+COPY aggregator-app/aggregator.yml /app/
+
+EXPOSE 4019
+
+ENTRYPOINT [ "java", "-Xmx4096m", "-jar", "aggregator-app.jar", "server", "aggregator.yml" ]
