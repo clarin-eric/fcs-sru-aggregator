@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -63,7 +64,10 @@ public class Resources {
     }
 
     public Set<String> getConsortia() {
-        return institutions.stream().map(Institution::getConsortium).collect(Collectors.toSet());
+        return institutions.stream()
+                .map(Institution::getConsortium)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
     }
 
     /**

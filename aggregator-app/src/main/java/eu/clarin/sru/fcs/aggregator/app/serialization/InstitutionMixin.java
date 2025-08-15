@@ -7,4 +7,8 @@ public abstract class InstitutionMixin {
     @JsonProperty(required = false)
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     boolean sideloaded;
+
+    @JsonProperty(required = false)
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    String consortium;
 }

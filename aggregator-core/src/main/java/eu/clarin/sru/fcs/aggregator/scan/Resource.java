@@ -178,6 +178,11 @@ public class Resource {
             }
         }
 
+        // if resource has availability restriction, add AUTHENTICATED_SEARCH
+        if (!this.availabilityRestriction.equals(AvailabilityRestriction.NONE)) {
+            resolvedSearchCapabilities.add(FCSSearchCapabilities.AUTHENTICATED_SEARCH);
+        }
+
         // build intersection
         resolvedSearchCapabilities.retainAll(this.searchCapabilities);
 
