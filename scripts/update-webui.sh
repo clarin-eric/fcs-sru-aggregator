@@ -24,6 +24,16 @@ set -eu
 
 # --------------------------------------------------------------------------
 
+# copy configuration (environment variables) to modify build
+FN_ENV=webui.env
+FN_CUSTOMIZATION_ENV=aggregator-webui/.env
+
+# TODO: clean up any .env file to avoid unwanted overrides?
+[[ -f "${FN_CUSTOMIZATION_ENV}" ]] && rm -v ${FN_CUSTOMIZATION_ENV}
+[[ -f "${FN_ENV}" ]] && cp -v "${FN_ENV}" ${FN_CUSTOMIZATION_ENV}
+
+# --------------------------------------------------------------------------
+
 pushd aggregator-webui
 
 # build webui
