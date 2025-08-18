@@ -1,3 +1,7 @@
+WIP: this is documentation of the old Aggregator (3.x.x)
+
+---
+
 # Development
 
 The FCS Aggregator consists of a frontend (ReactJS, JS) and backend (Dropwizard, Java) component. Both will be bundled into a single `aggregator-app-X.Y.Z.jar` file for deployment.
@@ -138,3 +142,10 @@ JAR=`find target -iname 'aggregator-app-*.jar'`
 java $DEBUGGER_OPTS -Xmx4096m -jar $JAR server aggregator.yml
 ```
 _NOTE: this might also help with other issues, like some jersey SSL stuff._
+
+---
+
+- `mvn -pl . clean package deploy`
+- `mvn -pl aggregator-core clean package deploy`
+- `mvn -pl aggregator-core,aggregator-app clean package`
+- `mvn -pl aggregator-core,aggregator-app dependency:tree`

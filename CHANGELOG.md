@@ -1,6 +1,6 @@
 # Changelog
 
-# [4.0.0] - 2025-04-xx
+# [4.0.0] - 2025-08-xx
 
 - Added:
   - Support of AAI (authenticated search, authentication using Shibboleth)
