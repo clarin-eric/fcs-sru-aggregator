@@ -1,4 +1,10 @@
-import{r as i,j as p,R as X,a as Me,i as Fa}from"./react-ext.js";import{g as pn}from"./react.js";var Wt={exports:{}};/*!
+import{r as i,j as p,R as X,a as Me,i as Fa}from"./react-ext.js";import{g as pn}from"./react.js";/*!
+ * FCS SRU Aggragator UI
+ * @module lib/vendor/bootstrap.js
+ * @version 0.0.0
+ * @license GPL-3.0-or-later
+ * @see {@link https://github.com/clarin-eric/fcs-sru-aggregator-ui.git}
+ */var Wt={exports:{}};/*!
 	Copyright (c) 2018 Jed Watson.
 	Licensed under the MIT License (MIT), see
 	http://jedwatson.github.io/classnames

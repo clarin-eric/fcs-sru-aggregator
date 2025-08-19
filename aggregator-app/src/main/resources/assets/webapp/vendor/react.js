@@ -1,4 +1,10 @@
-function Rc(R){return R&&R.__esModule&&Object.prototype.hasOwnProperty.call(R,"default")?R.default:R}var Si={exports:{}},hr={},ki={exports:{}},D={};/**
+/*!
+ * FCS SRU Aggragator UI
+ * @module lib/vendor/react.js
+ * @version 0.0.0
+ * @license GPL-3.0-or-later
+ * @see {@link https://github.com/clarin-eric/fcs-sru-aggregator-ui.git}
+ */function Rc(R){return R&&R.__esModule&&Object.prototype.hasOwnProperty.call(R,"default")?R.default:R}var Si={exports:{}},hr={},ki={exports:{}},D={};/**
  * @license React
  * react.production.min.js
  *
