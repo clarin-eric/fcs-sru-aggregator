@@ -49,6 +49,10 @@
             <groupId>io.dropwizard</groupId>
             <artifactId>dropwizard-client</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.dropwizard</groupId>
+            <artifactId>dropwizard-json-logging</artifactId>
+        </dependency>
 
         <!-- servlet stuff, e.g. request filtering -->
         <dependency>
