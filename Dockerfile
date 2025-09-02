@@ -9,6 +9,7 @@ FROM node:22.19.0-trixie-slim AS web
 RUN set -ex; \
     apt-get update; \
     apt-get install -y --no-install-recommends \
+        ca-certificates \
         git \
         xmlstarlet \
     ; \
