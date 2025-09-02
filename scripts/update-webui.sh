@@ -39,7 +39,8 @@ FN_CUSTOMIZATION_ENV=aggregator-webui/.env
 
 # inject some maven project info
 
-APPL_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+#APPL_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+APPL_VERSION=$(xmlstarlet sel -N "pom=http://maven.apache.org/POM/4.0.0" -t -m "/pom:project/pom:version" -v . pom.xml)
 
 # short commit hash
 GIT_SHORT_SHA=$(git rev-parse --short HEAD)

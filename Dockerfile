@@ -4,7 +4,15 @@
 # - create minimal run image with default configuration
 
 # ---------------------------------------------------------------------------
-FROM node:22.18.0-bookworm AS web
+FROM node:22.19.0-trixie-slim AS web
+
+RUN set -ex; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends \
+        git \
+        xmlstarlet \
+    ; \
+	rm -rf /var/lib/apt/lists/*
 
 WORKDIR /work
 
@@ -19,6 +27,7 @@ RUN git submodule update --init --recursive aggregator-webui/
 # copy source code
 RUN mkdir -p /work/aggregator-app/src/main/resources/assets/webapp/
 COPY scripts/update-webui.sh /work/scripts/update-webui.sh
+COPY pom.xml /work/
 # "conditional" copy, will not fail if file does not exist
 COPY webui.env* /work/
 
