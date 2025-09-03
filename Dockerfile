@@ -23,7 +23,10 @@ COPY .gitmodules /work/
 COPY aggregator-webui /work/aggregator-webui
 
 # submodule init (in case not yet done, why we also need the .git* stuff)
-RUN git submodule update --init --recursive aggregator-webui/
+RUN set -ex; \
+    git config --global --add safe.directory /work/ ; \
+    git submodule update --init --recursive aggregator-webui/ ; \
+    git config --global --add safe.directory /work/aggregator-webui
 
 # copy source code
 RUN mkdir -p /work/aggregator-app/src/main/resources/assets/webapp/
