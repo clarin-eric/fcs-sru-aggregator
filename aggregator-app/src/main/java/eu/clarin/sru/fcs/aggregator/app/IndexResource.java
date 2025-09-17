@@ -38,6 +38,7 @@ public class IndexResource {
     final PiwikConfig config;
     final boolean searchResultLinkEnabled;
     final String validatorUrl;
+    final boolean authEnabled;
 
     public IndexResource() {
         Params params = AggregatorApp.getInstance().getParams();
@@ -45,6 +46,7 @@ public class IndexResource {
         config = params.getPiwikConfig();
         searchResultLinkEnabled = params.getSearchResultLinkEnabled();
         validatorUrl = params.getVALIDATOR_URL();
+        authEnabled = params.getAAIConfig().isAAIEnabled();
     }
 
     @GET
@@ -53,7 +55,7 @@ public class IndexResource {
     public IndexView getIndex(@Context final SecurityContext security) {
         final AuthenticationInfo authInfo = AuthenticationInfo.fromPrincipal(security.getUserPrincipal());
         final String username = authInfo.getDisplayName(); // TODO: what to show the user?
-        return new IndexView(config, searchResultLinkEnabled, validatorUrl, username);
+        return new IndexView(config, searchResultLinkEnabled, validatorUrl, authEnabled, username);
     }
 
     @POST
@@ -93,6 +95,6 @@ public class IndexResource {
         final AuthenticationInfo authInfo = AuthenticationInfo.fromPrincipal(security.getUserPrincipal());
         final String username = authInfo.getDisplayName(); // TODO: what to show the user?
 
-        return new IndexView(config, searchResultLinkEnabled, validatorUrl, username);
+        return new IndexView(config, searchResultLinkEnabled, validatorUrl, authEnabled, username);
     }
 }

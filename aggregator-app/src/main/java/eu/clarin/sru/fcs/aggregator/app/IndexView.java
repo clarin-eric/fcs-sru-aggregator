@@ -12,13 +12,16 @@ public class IndexView extends View {
     final PiwikConfig piwikConfig;
     final boolean showSearchResultLink;
     final String validatorUrl;
+    final boolean authEnabled;
     final String username;
 
-    protected IndexView(PiwikConfig config, boolean showSearchResultLink, String validatorUrl, String username) {
+    protected IndexView(PiwikConfig config, boolean showSearchResultLink, String validatorUrl, boolean authEnabled,
+            String username) {
         super("index.mustache");
         this.piwikConfig = config;
         this.showSearchResultLink = showSearchResultLink;
         this.validatorUrl = validatorUrl;
+        this.authEnabled = authEnabled;
         this.username = username;
     }
 
