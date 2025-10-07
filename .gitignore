@@ -9,3 +9,5 @@ fcsAggregatorCorpora.json
 fcsAggregatorResources.backup.json
 fcsAggregatorResources.json
 singleResourceSelectedFromVLO.json
+
+docker-compose.override.yml

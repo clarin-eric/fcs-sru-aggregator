@@ -1,0 +1,23 @@
+services:
+  fcs-aggregator:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    container_name: fcs-aggregator
+    #ports:
+      # localhost only, e.g. if behind proxy
+      #- "127.0.0.1:4019:4019"
+      # default, public 4019 to docker container 4019
+      #- 4019:4019
+      #- 4019
+      # https://docs.docker.com/reference/compose-file/merge/#replace-value
+    restart: unless-stopped
+    #volumes:
+      # NOTE: ensure that files and folders were created before starting the container with volume mappings
+      # map custom configuration into container
+      #- ./aggregator-app/aggregator.yml:/work/aggregator.yml:ro
+      # cached scanned resources (for faster restarts)
+      #- ./fcsAggregatorResources.json:/var/lib/aggregator/fcsAggregatorResources.json
+      #- ./fcsAggregatorResources.backup.json:/var/lib/aggregator/fcsAggregatorResources.backup.json
+      # if stats logging enabled, you might want to save the log files to your host to persist restarts
+      #- ./stats:/var/log/aggregator/stats
