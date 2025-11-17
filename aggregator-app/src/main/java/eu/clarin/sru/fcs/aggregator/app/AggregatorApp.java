@@ -48,6 +48,7 @@ import eu.clarin.sru.fcs.aggregator.app.rest.RestService;
 import eu.clarin.sru.fcs.aggregator.app.serialization.AdvancedLayerSpanMixin;
 import eu.clarin.sru.fcs.aggregator.app.serialization.AdvancedLayersMixin;
 import eu.clarin.sru.fcs.aggregator.app.serialization.ClarinFCSEndpointDescriptionDataViewMixin;
+import eu.clarin.sru.fcs.aggregator.app.serialization.ClarinFCSEndpointDescriptionExampleQueryMixin;
 import eu.clarin.sru.fcs.aggregator.app.serialization.ClarinFCSEndpointDescriptionLayerMixin;
 import eu.clarin.sru.fcs.aggregator.app.serialization.ClarinFCSEndpointDescriptionLexFieldMixin;
 import eu.clarin.sru.fcs.aggregator.app.serialization.DataViewLexFieldMixin;
@@ -657,6 +658,7 @@ public class AggregatorApp extends Application<AggregatorConfiguration> {
                         ClarinFCSEndpointDescriptionDataViewMixin.class)
                 .addMixIn(ClarinFCSEndpointDescription.Layer.class, ClarinFCSEndpointDescriptionLayerMixin.class)
                 .addMixIn(ClarinFCSEndpointDescription.LexField.class, ClarinFCSEndpointDescriptionLexFieldMixin.class)
+                .addMixIn(ClarinFCSEndpointDescription.ExampleQuery.class, ClarinFCSEndpointDescriptionExampleQueryMixin.class)
                 .addMixIn(Resources.class, ResourcesMixin.class)
                 .addMixIn(Resource.class, ResourceMixin.class)
                 .addMixIn(Institution.class, InstitutionMixin.class)

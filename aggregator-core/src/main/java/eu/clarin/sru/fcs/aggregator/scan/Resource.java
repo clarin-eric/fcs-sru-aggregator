@@ -10,6 +10,7 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescription.DataView;
+import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescription.ExampleQuery;
 import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescription.Layer;
 import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescription.LexField;
 import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescription.ResourceInfo.AvailabilityRestriction;
@@ -45,6 +46,7 @@ public class Resource {
     private List<DataView> availableDataViews;
     private List<Layer> availableLayers;
     private List<LexField> availableLexFields;
+    private List<ExampleQuery> exampleQueries;
 
     public List<Resource> subResources = Collections.synchronizedList(new ArrayList<>());
 
@@ -137,6 +139,18 @@ public class Resource {
             this.availableLexFields = availableLexFields;
         } else {
             this.availableLexFields = null;
+        }
+    }
+
+    public List<ExampleQuery> getExampleQueries() {
+        return exampleQueries;
+    }
+
+    public void setExampleQueries(List<ExampleQuery> exampleQueries) {
+        if (exampleQueries != null && !exampleQueries.isEmpty()) {
+            this.exampleQueries = exampleQueries;
+        } else {
+            this.exampleQueries = null;
         }
     }
 

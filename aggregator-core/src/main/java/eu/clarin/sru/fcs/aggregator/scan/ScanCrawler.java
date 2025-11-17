@@ -277,6 +277,7 @@ public class ScanCrawler {
             r.setAvailableDataViews(ri.getAvailableDataViews());
             r.setAvailableLayers(ri.getAvailableLayers());
             r.setAvailableLexFields(ri.getAvailableLexFields());
+            r.setExampleQueries(ri.getExampleQueries());
 
             logstats.trace("endpoint='{}' resource='{}' languages={} capabilities={}",
                     endpoint.getUrl(), ri.getPid(), r.getLanguages(), r.getSearchCapabilitiesResolved());

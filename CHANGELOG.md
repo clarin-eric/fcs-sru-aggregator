@@ -1,12 +1,12 @@
 # Changelog
 
-# [4.0.0] - 2025-08-xx
+# [4.0.0] - 2025-11-xx
 
 - Added:
   - Support of AAI (authenticated search, authentication using Shibboleth)
     - a new JWKS `/.well-known/jwks.json` API route for FCS endpoints to self-configure with the public RSA key
     - `aggregator-app` configurations for public/private keys as well as shibboleth configs
-  - Support of LexFCS (lexical resources search)
+  - Support of LexFCS (lexical resources search), ExampleQuery elements
   - Support to `await()` search results (`Result`, `Search`)
   - Tests for `aggregator-core`
 
@@ -25,7 +25,7 @@
   - Bump `io.swagger.core.v3` to `2.2.29`
   - Bump `javax.servlet:javax.servlet-api` to `4.0.1` (same as dropwizard)
   - Bump `com.optimaize.languagedetector:language-detector` to `0.6`
-  - Bump `fcs-simple-client` to `2.5.1`, `sru-client` to `2.3.0`
+  - Bump `fcs-simple-client` to `2.7.0`, `sru-client` to `2.5.0`
   - Add `de.mpg.mpgaai:mpgaai-shhaa:1.0.13` (Shibboleth AAI)
   - Bump various maven plugins to most recent stable versions
   - Reorganize dependencies across `aggregator-core` and `aggregator-app`
