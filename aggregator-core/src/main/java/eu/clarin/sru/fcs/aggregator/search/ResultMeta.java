@@ -48,6 +48,7 @@ public class ResultMeta {
 
     protected AtomicReference<JavaException> exception = new AtomicReference<JavaException>();
     protected List<Diagnostic> diagnostics = Collections.synchronizedList(new ArrayList<Diagnostic>());
+    protected AtomicReference<String> requestUrl = new AtomicReference<String>();
 
     public ResultMeta(Resource resource) {
         endpointUrl.set(resource.getEndpoint().getUrl());
@@ -97,6 +98,14 @@ public class ResultMeta {
 
     public void setException(Exception xc) {
         exception.set(new JavaException(xc));
+    }
+
+    public void setRequestUrl(String url) {
+        requestUrl.set(url);
+    }
+
+    public String getRequestUrl() {
+        return requestUrl.get();
     }
 
     public int getNextRecordPosition() {

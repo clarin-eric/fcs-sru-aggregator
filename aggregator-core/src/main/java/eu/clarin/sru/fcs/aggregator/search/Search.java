@@ -159,6 +159,7 @@ public class Search {
                         statistics.addEndpointDatapoint(resource.getEndpointInstitution(), resource.getEndpoint(),
                                 stats.getQueueTime(), stats.getExecutionTime());
                         log.debug("searchRetrieve request url: {}", response.getRequest().getRequestedURI());
+                        result.setRequestUrl(response.getRequest().getRequestedURI().toString());
                         logstatsResult.trace("[{}] endpoint='{}' resource='{}' numberOfRecords={} nextRecord={}",
                                 id, result.getResource().getEndpoint().getUrl(), result.getResource().getHandle(),
                                 (response != null) ? response.getNumberOfRecords() : null,
@@ -188,6 +189,7 @@ public class Search {
                                 stats.getQueueTime(), stats.getExecutionTime());
                         statistics.addErrorDatapoint(resource.getEndpointInstitution(), resource.getEndpoint(), xc,
                                 srureq.getRequestedURI().toString());
+                        result.setRequestUrl(srureq.getRequestedURI().toString());
                         result.setException(xc);
                         log.error("search.onError:", xc);
                     } catch (Throwable xxc) {
