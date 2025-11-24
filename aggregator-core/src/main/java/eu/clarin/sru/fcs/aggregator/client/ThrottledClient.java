@@ -45,6 +45,8 @@ public class ThrottledClient {
         void onSuccess(SRUSearchRetrieveResponse response, Stats stats);
 
         void onError(SRUSearchRetrieveRequest request, SRUClientException error, Stats stats);
+
+        void onCancelled(SRUSearchRetrieveRequest request, Stats stats);
     }
 
     GenericClient scanClient;
@@ -65,8 +67,10 @@ public class ThrottledClient {
         scanClient.execute(request.getBaseURI(), new ScanOperation(request, callback));
     }
 
-    public void searchRetrieve(SRUSearchRetrieveRequest request, SearchCallback callback) {
-        searchClient.execute(request.getBaseURI(), new SearchOperation(request, callback));
+    public SearchOperation searchRetrieve(SRUSearchRetrieveRequest request, SearchCallback callback) {
+        SearchOperation operation = new SearchOperation(request, callback);
+        searchClient.execute(request.getBaseURI(), operation);
+        return operation;
     }
 
     public void shutdown() {

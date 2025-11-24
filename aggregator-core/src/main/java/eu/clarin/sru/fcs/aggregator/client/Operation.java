@@ -12,4 +12,5 @@ interface Operation<Request, Response> {
     void execute(SRUThreadedClient sruClient);
 
     OperationStats stats();
-}
+
+} // interface Operation

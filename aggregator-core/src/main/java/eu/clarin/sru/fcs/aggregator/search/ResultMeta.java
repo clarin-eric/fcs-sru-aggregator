@@ -1,5 +1,6 @@
 package eu.clarin.sru.fcs.aggregator.search;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -25,6 +26,7 @@ import eu.clarin.sru.client.fcs.DataViewGenericString;
 import eu.clarin.sru.client.fcs.DataViewHits;
 import eu.clarin.sru.client.fcs.DataViewHitsWithLexAnnotations;
 import eu.clarin.sru.client.fcs.DataViewLex;
+import eu.clarin.sru.fcs.aggregator.client.CancellableOperation;
 import eu.clarin.sru.fcs.aggregator.scan.Diagnostic;
 import eu.clarin.sru.fcs.aggregator.scan.JavaException;
 import eu.clarin.sru.fcs.aggregator.scan.Resource;
@@ -37,6 +39,9 @@ public class ResultMeta {
 
     protected AtomicBoolean inProgress = new AtomicBoolean(true);
     private final CountDownLatch inProgressLatch = new CountDownLatch(1);
+
+    protected AtomicBoolean cancelled = new AtomicBoolean(false);
+    protected AtomicReference<WeakReference<CancellableOperation<?, ?>>> searchOperation = new AtomicReference<>();
 
     protected AtomicInteger nextRecordPosition = new AtomicInteger(1);
     protected AtomicInteger numberOfRecords = new AtomicInteger(-1);
@@ -88,6 +93,14 @@ public class ResultMeta {
         return inProgress.get();
     }
 
+    public void setCancelled(boolean cancelled) {
+        this.cancelled.set(cancelled);
+    }
+
+    public boolean getCancelled() {
+        return cancelled.get();
+    }
+
     public List<Diagnostic> getDiagnostics() {
         return Collections.unmodifiableList(diagnostics);
     }
@@ -132,11 +145,49 @@ public class ResultMeta {
         return isLexHits.get();
     }
 
+    protected void setSearchOperation(CancellableOperation<?, ?> operation) {
+        searchOperation.set(new WeakReference<CancellableOperation<?, ?>>(operation));
+    }
+
     // ----------------------------------------------------------------------
 
     public void setDone() {
+        // overwrite set cancelled that was set for a few in-flight requests
+        setCancelled(false);
+
+        // done processing
+        finishAndCleanup();
+    }
+
+    public void setCancelled() {
+        WeakReference<CancellableOperation<?, ?>> ref = searchOperation.get();
+        if (ref != null) {
+            CancellableOperation<?, ?> operation = ref.get();
+            if (operation != null) {
+                operation.cancel();
+            }
+        }
+
+        // only set cancelled if in progress (might affect a few that are currently
+        // being processed?)
+        if (inProgress.get()) {
+            setCancelled(true);
+        }
+
+        // if cancelled then also done processing
+        finishAndCleanup();
+    }
+
+    protected void finishAndCleanup() {
         setInProgress(false);
         inProgressLatch.countDown();
+
+        // clear references
+        WeakReference<?> ref = searchOperation.get();
+        if (ref != null) {
+            ref.clear();
+        }
+        searchOperation.set(null);
     }
 
     public void await() throws InterruptedException {
@@ -275,4 +326,4 @@ public class ResultMeta {
         // empty
     }
 
-}
+} // class ResultMeta

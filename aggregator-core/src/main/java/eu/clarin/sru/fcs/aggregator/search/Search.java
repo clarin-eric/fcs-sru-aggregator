@@ -18,6 +18,7 @@ import eu.clarin.sru.client.SRUVersion;
 import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescription.ResourceInfo.AvailabilityRestriction;
 import eu.clarin.sru.client.fcs.ClarinFCSRecordData;
 import eu.clarin.sru.client.fcs.LegacyClarinFCSRecordData;
+import eu.clarin.sru.fcs.aggregator.client.CancellableOperation;
 import eu.clarin.sru.fcs.aggregator.client.ThrottledClient;
 import eu.clarin.sru.fcs.aggregator.core.AggregatorConstants;
 import eu.clarin.sru.fcs.aggregator.scan.Diagnostic;
@@ -152,72 +153,92 @@ public class Search {
         result.setInProgress(true);
 
         try {
-            searchClient.searchRetrieve(searchRequest, new ThrottledClient.SearchCallback() {
-                @Override
-                public void onSuccess(SRUSearchRetrieveResponse response, ThrottledClient.Stats stats) {
-                    try {
-                        statistics.addEndpointDatapoint(resource.getEndpointInstitution(), resource.getEndpoint(),
-                                stats.getQueueTime(), stats.getExecutionTime());
-                        log.debug("searchRetrieve request url: {}", response.getRequest().getRequestedURI());
-                        result.setRequestUrl(response.getRequest().getRequestedURI().toString());
-                        logstatsResult.trace("[{}] endpoint='{}' resource='{}' numberOfRecords={} nextRecord={}",
-                                id, result.getResource().getEndpoint().getUrl(), result.getResource().getHandle(),
-                                (response != null) ? response.getNumberOfRecords() : null,
-                                (response != null) ? response.getNextRecordPosition() : null);
-                        result.addResponse(response);
-                        List<Diagnostic> diagnostics = result.getDiagnostics();
-                        if (diagnostics != null && !diagnostics.isEmpty()) {
-                            log.error("diagnostic for url: {}", response.getRequest().getRequestedURI().toString());
-                            for (Diagnostic diagnostic : diagnostics) {
-                                statistics.addEndpointDiagnostic(resource.getEndpointInstitution(),
+            final CancellableOperation<?, ?> operation = searchClient.searchRetrieve(searchRequest,
+                    new ThrottledClient.SearchCallback() {
+                        @Override
+                        public void onSuccess(SRUSearchRetrieveResponse response, ThrottledClient.Stats stats) {
+                            try {
+                                statistics.addEndpointDatapoint(resource.getEndpointInstitution(),
                                         resource.getEndpoint(),
-                                        diagnostic, response.getRequest().getRequestedURI().toString());
+                                        stats.getQueueTime(), stats.getExecutionTime());
+                                log.debug("searchRetrieve request url: {}", response.getRequest().getRequestedURI());
+                                result.setRequestUrl(response.getRequest().getRequestedURI().toString());
+                                logstatsResult.trace(
+                                        "[{}] endpoint='{}' resource='{}' numberOfRecords={} nextRecord={}",
+                                        id, result.getResource().getEndpoint().getUrl(),
+                                        result.getResource().getHandle(),
+                                        (response != null) ? response.getNumberOfRecords() : null,
+                                        (response != null) ? response.getNextRecordPosition() : null);
+                                result.addResponse(response);
+                                List<Diagnostic> diagnostics = result.getDiagnostics();
+                                if (diagnostics != null && !diagnostics.isEmpty()) {
+                                    log.error("diagnostic for url: {}",
+                                            response.getRequest().getRequestedURI().toString());
+                                    for (Diagnostic diagnostic : diagnostics) {
+                                        statistics.addEndpointDiagnostic(resource.getEndpointInstitution(),
+                                                resource.getEndpoint(),
+                                                diagnostic, response.getRequest().getRequestedURI().toString());
+                                    }
+                                }
+                            } catch (Throwable xc) {
+                                log.error("search.onSuccess exception:", xc);
+                            } finally {
+                                result.setDone();
                             }
                         }
-                    } catch (Throwable xc) {
-                        log.error("search.onSuccess exception:", xc);
-                    } finally {
-                        result.setDone();
-                    }
-                }
 
-                @Override
-                public void onError(SRUSearchRetrieveRequest srureq, SRUClientException xc,
-                        ThrottledClient.Stats stats) {
-                    try {
-                        statistics.addEndpointDatapoint(resource.getEndpointInstitution(), resource.getEndpoint(),
-                                stats.getQueueTime(), stats.getExecutionTime());
-                        statistics.addErrorDatapoint(resource.getEndpointInstitution(), resource.getEndpoint(), xc,
-                                srureq.getRequestedURI().toString());
-                        result.setRequestUrl(srureq.getRequestedURI().toString());
-                        result.setException(xc);
-                        log.error("search.onError:", xc);
-                    } catch (Throwable xxc) {
-                        log.error("search.onError exception:", xxc);
-                    } finally {
-                        result.setDone();
-                    }
-                }
-            });
+                        @Override
+                        public void onError(SRUSearchRetrieveRequest srureq, SRUClientException xc,
+                                ThrottledClient.Stats stats) {
+                            try {
+                                statistics.addEndpointDatapoint(resource.getEndpointInstitution(),
+                                        resource.getEndpoint(),
+                                        stats.getQueueTime(), stats.getExecutionTime());
+                                statistics.addErrorDatapoint(resource.getEndpointInstitution(), resource.getEndpoint(),
+                                        xc,
+                                        srureq.getRequestedURI().toString());
+                                result.setRequestUrl(srureq.getRequestedURI().toString());
+                                result.setException(xc);
+                                log.error("search.onError:", xc);
+                            } catch (Throwable xxc) {
+                                log.error("search.onError exception:", xxc);
+                            } finally {
+                                result.setDone();
+                            }
+                        }
+
+                        @Override
+                        public void onCancelled(SRUSearchRetrieveRequest srureq, ThrottledClient.Stats stats) {
+                            try {
+                                // TODO: how to update statistics?
+                                // NOTE: the requested URI is not even set if no request happened...
+                                // result.setRequestUrl(srureq.getRequestedURI().toString());
+                                log.debug("search.onCancelled: [{}] endpoint='{}' resource='{}'", id,
+                                        result.getResource().getEndpoint().getUrl(),
+                                        result.getResource().getHandle());
+                            } catch (Throwable xc) {
+                                log.error("search.onCancelled exception:", xc);
+                            } finally {
+                                result.setCancelled();
+                            }
+                        }
+                    });
+            // store operation to allow cancellation
+            result.setSearchOperation(operation);
         } catch (Throwable xc) {
             log.error("SearchRetrieve error for " + resource.getEndpoint().getUrl(), xc);
         }
     }
 
-    public List<Result> getResults(String resourceId) {
-        List<Result> copy = new ArrayList<>();
+    public boolean stopSearch() {
+        // TODO: do we want to do a check beforehand to see if anything is even left to
+        // cancel?
         synchronized (results) {
-            if (resourceId == null || resourceId.isEmpty()) {
-                copy.addAll(results);
-            } else {
-                for (Result r : results) {
-                    if (resourceId.equals(r.getResource().getId())) {
-                        copy.add(r);
-                    }
-                }
+            for (final Result result : results) {
+                result.setCancelled();
             }
         }
-        return copy;
+        return true;
     }
 
     public void shutdown() {
@@ -261,6 +282,22 @@ public class Search {
 
     // ----------------------------------------------------------------------
 
+    public List<Result> getResults(String resourceId) {
+        List<Result> copy = new ArrayList<>();
+        synchronized (results) {
+            if (resourceId == null || resourceId.isEmpty()) {
+                copy.addAll(results);
+            } else {
+                for (Result r : results) {
+                    if (resourceId.equals(r.getResource().getId())) {
+                        copy.add(r);
+                    }
+                }
+            }
+        }
+        return copy;
+    }
+
     public String getId() {
         return id;
     }
@@ -283,6 +320,43 @@ public class Search {
 
     public String getSearchLanguage() {
         return searchLanguage;
+    }
+
+    // ----------------------------------------------------------------------
+    // TODO: do we need to synchronize here?
+
+    public int getNumberOfResources() {
+        synchronized (results) {
+            return results.size();
+        }
+    }
+
+    public int getNumberOfResourcesInProgress() {
+        int inProgress = 0;
+        synchronized (results) {
+            for (Result r : results) {
+                if (r.getInProgress()) {
+                    inProgress++;
+                }
+            }
+        }
+        return inProgress;
+    }
+
+    public int getNumberOfResourcesCancelled() {
+        int cancelled = 0;
+        synchronized (results) {
+            for (Result r : results) {
+                if (r.getCancelled()) {
+                    cancelled++;
+                }
+            }
+        }
+        return cancelled;
+    }
+
+    public boolean isFinished() {
+        return getNumberOfResourcesInProgress() == 0;
     }
 
     // ----------------------------------------------------------------------

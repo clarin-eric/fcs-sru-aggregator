@@ -70,7 +70,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
  */
 @Produces(MediaType.APPLICATION_JSON)
 @Path("/rest")
-@OpenAPIDefinition(info = @Info(title = AggregatorApp.NAME + " REST API", version = "2.0.0", description = "The "
+@OpenAPIDefinition(info = @Info(title = AggregatorApp.NAME + " REST API", version = "2.1.0", description = "The "
         + AggregatorApp.NAME + " REST API is documented following the open API specification."
         + "<br />Code repository is hosted on <a href=\"https://github.com/clarin-eric/fcs-sru-aggregator\">GitHub</a>.", license = @License(name = "GNU General Public License Version 3 (GPLv3)", url = "https://www.gnu.org/licenses/gpl-3.0.txt")))
 public class RestService {
@@ -298,6 +298,9 @@ public class RestService {
             if (r.getInProgress()) {
                 js.inProgress++;
             }
+            if (r.getCancelled()) {
+                js.cancelled++;
+            }
         }
         return Response.ok(js).build();
     }
@@ -322,6 +325,9 @@ public class RestService {
         for (Result r : js.results) {
             if (r.getInProgress()) {
                 js.inProgress++;
+            }
+            if (r.getCancelled()) {
+                js.cancelled++;
             }
         }
         JsonMetaOnlySearch jmos = JsonMetaOnlySearch.fromJsonSearch(js);
@@ -371,6 +377,35 @@ public class RestService {
         }
         URI uri = UriBuilder.fromMethod(RestService.class, "getSearch").resolveTemplate("id", search.getId()).build();
         return Response.created(uri).entity(toJson(search.getId())).build();
+    }
+
+    @POST
+    @Consumes({ MediaType.APPLICATION_FORM_URLENCODED })
+    @Produces({ MediaType.APPLICATION_JSON })
+    @Path("search/{id}/stop")
+    @Operation(description = "Stop an active search job", responses = {
+            @ApiResponse(responseCode = "202", description = "Will attempt to stop search job."),
+            @ApiResponse(responseCode = "204", description = "Search job has already finished."),
+            @ApiResponse(responseCode = "404", description = "Search job not found."),
+            @ApiResponse(responseCode = "500", description = "Search job couldn't be stopped or other error ocurred.") })
+    public Response postSearchStop(@PathParam("id") String searchId,
+            @Context final SecurityContext security) throws Exception {
+        log.info("POST /search/{id}/stop, searchId: {}", searchId);
+        Search search = AggregatorApp.getInstance().getSearchById(searchId);
+        if (search == null) {
+            return Response.status(Response.Status.NOT_FOUND).entity("Search job not found").build();
+        }
+        if (search.isFinished()) {
+            // TODO: or use other status: 406 Not Acceptable / 409 Conflict / 410 Gone
+            return Response.noContent().build();
+        }
+
+        boolean ret = search.stopSearch();
+        if (ret == false) {
+            return Response.status(500).entity("Attempting to stop search job failed").build();
+        }
+
+        return Response.accepted().build();
     }
 
     @GET
@@ -502,7 +537,6 @@ public class RestService {
                 : Response.seeOther(weblichtUri).entity(weblichtUri).build();
     }
 
-    @SuppressWarnings("serial")
     @GET
     @Produces({ MediaType.APPLICATION_JSON })
     @Path("statistics")
