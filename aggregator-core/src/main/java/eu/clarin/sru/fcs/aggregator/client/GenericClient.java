@@ -22,7 +22,9 @@ class GenericClient {
     private final SRUThreadedClient sruClient;
     final MaxConcurrentRequestsCallback maxConcurrentRequestsCallback;
 
-    // queue of operations waiting for execution
+    /**
+     * queue of operations waiting for execution
+     */
     static class ExecQueue {
         int maxConcurrentRequests = 0;
         int nowExecuting = 0;
@@ -36,6 +38,8 @@ class GenericClient {
         this.sruClient = sruClient;
         this.maxConcurrentRequestsCallback = maxConcurrentRequestsCallback;
     }
+
+    // ----------------------------------------------------------------------
 
     void execute(URI endpoint, Operation<?, ?> op) {
         op.setClient(this);
@@ -56,6 +60,7 @@ class GenericClient {
                 }
                 endpointMap.put(endpoint, eq);
             }
+
             op.stats().enqueuedTime = System.currentTimeMillis();
             eq.queue.add(op);
             eq.nowExecuting++; // counter the following decrement in executeNext
@@ -66,6 +71,7 @@ class GenericClient {
     void executeNextOperationOfEndpoint(URI endpoint) {
         synchronized (lock) {
             ExecQueue eq = endpointMap.get(endpoint);
+
             eq.nowExecuting--; // assume an operation just finished
             if (eq.queue.isEmpty()) {
                 return;
@@ -74,11 +80,14 @@ class GenericClient {
                 return;
             }
             eq.nowExecuting++;
+
             Operation<?, ?> op = eq.queue.poll();
             op.stats().startedTime = System.currentTimeMillis();
             op.execute(sruClient);
         }
     }
+
+    // ----------------------------------------------------------------------
 
     public void shutdown() {
         sruClient.shutdown();
@@ -87,4 +96,5 @@ class GenericClient {
     public void shutdownNow() {
         sruClient.shutdownNow();
     }
-}
+
+} // class GenericClient

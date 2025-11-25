@@ -7,6 +7,7 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Stores statistics information about scans or searches. The info is then sent
@@ -19,6 +20,70 @@ public class Statistics {
 
     public static class EndpointStats {
 
+        /**
+         * Represents a SRU Diagnostics with some context. It has a counter for repeated
+         * occurrences.
+         */
+        public static class DiagPair {
+            public final Diagnostic diagnostic;
+            public final String context;
+            public int counter;
+
+            public DiagPair(Diagnostic diagnostic, String context, int counter) {
+                this.diagnostic = diagnostic;
+                this.context = context;
+                this.counter = counter;
+            }
+        } // class DiagPair
+
+        /**
+         * Represents a Java exception with some context. It has a counter for repeated
+         * occurrences.
+         */
+        public static class ExcPair {
+            public final JavaException exception;
+            public final String context;
+            public int counter;
+
+            public ExcPair(JavaException exception, String context, int counter) {
+                this.exception = exception;
+                this.context = context;
+                this.counter = counter;
+            }
+        } // class ExcPair
+
+        /**
+         * Mini class to encapsulate a resource with its handle/id and title.
+         */
+        public static class ResourceInfo {
+            public final String handle;
+            public final String title;
+
+            public boolean valid;
+            public final List<String> notes = Collections.synchronizedList(new ArrayList<>());
+
+            // TODO: handle special flags (e.g., access restricted) on the client side using
+            // the handle to retrieve additional information on demand only
+
+            public ResourceInfo(String handle, String title) {
+                this.handle = handle;
+                this.title = title;
+                this.valid = true;
+            }
+
+            public ResourceInfo(String handle, String title, boolean valid, String note) {
+                this.handle = handle;
+                this.title = title;
+
+                this.valid = valid;
+                if (note != null && !note.isEmpty()) {
+                    this.notes.add(note);
+                }
+            }
+        } // class ResourceInfo
+
+        // ------------------------------------------------------------------
+
         private final Object lock = new Object();
 
         FCSProtocolVersion version = FCSProtocolVersion.LEGACY;
@@ -28,6 +93,12 @@ public class Statistics {
 
         final List<Long> queueTimes = Collections.synchronizedList(new ArrayList<>());
         final List<Long> executionTimes = Collections.synchronizedList(new ArrayList<>());
+
+        /**
+         * The number of operations currently queued (started, not finished) at this
+         * endpoint.
+         */
+        AtomicInteger numberOfRequestsActive = new AtomicInteger(0);
 
         int maxConcurrentRequests;
 
@@ -70,6 +141,10 @@ public class Statistics {
             return executionTimes.size();
         }
 
+        public int getNumberOfRequestsActive() {
+            return numberOfRequestsActive.get();
+        }
+
         public List<ResourceInfo> getRootResources() {
             return rootResources;
         }
@@ -83,69 +158,9 @@ public class Statistics {
                     + getMaxExecutionTime() + ", getNumberOfRequests()=" + getNumberOfRequests() + "]";
         }
 
-        /**
-         * Represents a SRU Diagnostics with some context. It has a counter for repeated
-         * occurrences.
-         */
-        public static class DiagPair {
-            public final Diagnostic diagnostic;
-            public final String context;
-            public int counter;
+    } // class EndpointStats
 
-            public DiagPair(Diagnostic diagnostic, String context, int counter) {
-                this.diagnostic = diagnostic;
-                this.context = context;
-                this.counter = counter;
-            }
-        }
-
-        /**
-         * Represents a Java exception with some context. It has a counter for repeated
-         * occurrences.
-         */
-        public static class ExcPair {
-            public final JavaException exception;
-            public final String context;
-            public int counter;
-
-            public ExcPair(JavaException exception, String context, int counter) {
-                this.exception = exception;
-                this.context = context;
-                this.counter = counter;
-            }
-        }
-
-        /**
-         * Mini class to encapsulate a resource with its handle/id and title.
-         */
-        public static class ResourceInfo {
-            public final String handle;
-            public final String title;
-
-            public boolean valid;
-            public final List<String> notes = Collections.synchronizedList(new ArrayList<>());
-
-            // TODO: handle special flags (e.g., access restricted) on the client side using
-            // the handle to retrieve additional information on demand only
-
-            public ResourceInfo(String handle, String title) {
-                this.handle = handle;
-                this.title = title;
-                this.valid = true;
-            }
-
-            public ResourceInfo(String handle, String title, boolean valid, String note) {
-                this.handle = handle;
-                this.title = title;
-
-                this.valid = valid;
-                if (note != null && !note.isEmpty()) {
-                    this.notes.add(note);
-                }
-            }
-        }
-
-    }
+    // ----------------------------------------------------------------------
 
     private final Object lock = new Object();
 
@@ -168,6 +183,16 @@ public class Statistics {
         synchronized (stats.lock) {
             stats.maxConcurrentRequests = maxConcurrentRequests;
         }
+    }
+
+    public void incrementOperationsCount(Institution institution, Endpoint endpoint) {
+        EndpointStats stats = getEndpointStats(institution, endpoint);
+        stats.numberOfRequestsActive.incrementAndGet();
+    }
+
+    public void decrementOperationsCount(Institution institution, Endpoint endpoint) {
+        EndpointStats stats = getEndpointStats(institution, endpoint);
+        stats.numberOfRequestsActive.decrementAndGet();
     }
 
     public void addEndpointDatapoint(Institution institution, Endpoint endpoint, long enqueuedTime,
@@ -246,4 +271,4 @@ public class Statistics {
         return stats;
     }
 
-}
+} // class Statistics

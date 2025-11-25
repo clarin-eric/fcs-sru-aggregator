@@ -12,6 +12,7 @@ import eu.clarin.sru.client.SRUThreadedClient;
  */
 class SearchOperation implements CancellableOperation<SRUSearchRetrieveRequest, SRUSearchRetrieveResponse>,
         CancellableSRUCallback<SRUSearchRetrieveRequest, SRUSearchRetrieveResponse> {
+
     SRUSearchRetrieveRequest request;
     ThrottledClient.SearchCallback callback;
     GenericClient client;

@@ -19,26 +19,30 @@ import java.net.URISyntaxException;
  * @author edima
  */
 public class ThrottledClient {
+
     public interface Stats {
 
         long getQueueTime();
 
         long getExecutionTime();
-    }
+
+    } // interface Stats
 
     public interface ExplainCallback {
 
         void onSuccess(SRUExplainResponse response, Stats stats);
 
         void onError(SRUExplainRequest request, SRUClientException error, Stats stats);
-    }
+
+    } // interface ExplainCallback
 
     public interface ScanCallback {
 
         void onSuccess(SRUScanResponse response, Stats stats);
 
         void onError(SRUScanRequest request, SRUClientException error, Stats stats);
-    }
+
+    } // interface ScanCallback
 
     public interface SearchCallback {
 
@@ -47,7 +51,10 @@ public class ThrottledClient {
         void onError(SRUSearchRetrieveRequest request, SRUClientException error, Stats stats);
 
         void onCancelled(SRUSearchRetrieveRequest request, Stats stats);
-    }
+
+    } // interface SearchCallback
+
+    // ----------------------------------------------------------------------
 
     GenericClient scanClient;
     GenericClient searchClient;
@@ -58,6 +65,8 @@ public class ThrottledClient {
         this.scanClient = new GenericClient(sruScanClient, scanConcurrentCallback);
         this.searchClient = new GenericClient(sruSearchClient, searchConcurrentCallback);
     }
+
+    // ----------------------------------------------------------------------
 
     public void explain(SRUExplainRequest request, ExplainCallback callback) {
         scanClient.execute(request.getBaseURI(), new ExplainOperation(request, callback));
@@ -83,6 +92,8 @@ public class ThrottledClient {
         searchClient.shutdownNow();
     }
 
+    // ----------------------------------------------------------------------
+
     public int getMaxConcurrentRequests(boolean isSearch, String url) {
         try {
             URI uri = new URI(url);
@@ -93,4 +104,5 @@ public class ThrottledClient {
             return -1;
         }
     }
-}
+
+} // class ThrottledClient

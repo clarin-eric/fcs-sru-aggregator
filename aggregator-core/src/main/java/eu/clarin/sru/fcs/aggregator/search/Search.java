@@ -153,6 +153,7 @@ public class Search {
         result.setInProgress(true);
 
         try {
+            statistics.incrementOperationsCount(resource.getEndpointInstitution(), resource.getEndpoint());
             final CancellableOperation<?, ?> operation = searchClient.searchRetrieve(searchRequest,
                     new ThrottledClient.SearchCallback() {
                         @Override
@@ -184,6 +185,8 @@ public class Search {
                                 log.error("search.onSuccess exception:", xc);
                             } finally {
                                 result.setDone();
+                                statistics.decrementOperationsCount(resource.getEndpointInstitution(),
+                                        resource.getEndpoint());
                             }
                         }
 
@@ -204,6 +207,8 @@ public class Search {
                                 log.error("search.onError exception:", xxc);
                             } finally {
                                 result.setDone();
+                                statistics.decrementOperationsCount(resource.getEndpointInstitution(),
+                                        resource.getEndpoint());
                             }
                         }
 
@@ -220,6 +225,8 @@ public class Search {
                                 log.error("search.onCancelled exception:", xc);
                             } finally {
                                 result.setCancelled();
+                                statistics.decrementOperationsCount(resource.getEndpointInstitution(),
+                                        resource.getEndpoint());
                             }
                         }
                     });
@@ -398,4 +405,4 @@ public class Search {
         return queryString;
     }
 
-}
+} // class Search
