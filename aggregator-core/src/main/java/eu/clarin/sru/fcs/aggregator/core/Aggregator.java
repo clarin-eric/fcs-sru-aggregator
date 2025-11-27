@@ -1,5 +1,6 @@
 package eu.clarin.sru.fcs.aggregator.core;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
@@ -113,6 +114,18 @@ public class Aggregator extends AggregatorBase {
 
     public Search getSearchById(String id) {
         return activeSearches.getSearchById(id);
+    }
+
+    public int getNumberOfSearches() {
+        return activeSearches.getNumberOfSearches();
+    }
+
+    public int getNumberOfSearchesCached(Duration maxAge, boolean onlyInProgress) {
+        return activeSearches.getNumberOfSearches(maxAge, onlyInProgress);
+    }
+
+    public int getNumberOfSearchesInProgress(Duration maxAge) {
+        return activeSearches.getNumberOfSearches(maxAge, true);
     }
 
     // ----------------------------------------------------------------------

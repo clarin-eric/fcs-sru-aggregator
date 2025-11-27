@@ -18,4 +18,5 @@ public abstract class ResultMetaMixin {
     @JsonProperty(required = false)
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     abstract String getRequestUrl();
-}
+
+} // abstract class ResultMetaMixin

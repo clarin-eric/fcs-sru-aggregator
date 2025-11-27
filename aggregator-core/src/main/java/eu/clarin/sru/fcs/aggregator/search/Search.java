@@ -289,6 +289,10 @@ public class Search {
 
     // ----------------------------------------------------------------------
 
+    public List<Result> getResults() {
+        return getResults(null);
+    }
+
     public List<Result> getResults(String resourceId) {
         List<Result> copy = new ArrayList<>();
         synchronized (results) {
@@ -364,6 +368,10 @@ public class Search {
 
     public boolean isFinished() {
         return getNumberOfResourcesInProgress() == 0;
+    }
+
+    public boolean isCancelled() {
+        return getNumberOfResourcesCancelled() == 0;
     }
 
     // ----------------------------------------------------------------------

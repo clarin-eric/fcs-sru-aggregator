@@ -149,6 +149,14 @@ public class ResultMeta {
         searchOperation.set(new WeakReference<CancellableOperation<?, ?>>(operation));
     }
 
+    protected CancellableOperation<?, ?> getSearchOperation() {
+        WeakReference<CancellableOperation<?, ?>> ref = searchOperation.get();
+        if (ref == null) {
+            return null;
+        }
+        return ref.get();
+    }
+
     // ----------------------------------------------------------------------
 
     public void setDone() {

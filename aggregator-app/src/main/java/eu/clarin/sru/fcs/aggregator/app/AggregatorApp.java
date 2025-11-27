@@ -201,6 +201,11 @@ public class AggregatorApp extends Application<AggregatorConfiguration> {
         return instance;
     }
 
+    // TODO: do we want to have this public or proxy relevant methods?
+    public Aggregator getAggregator() {
+        return aggregator;
+    }
+
     public AggregatorConfiguration.Params getParams() {
         return params;
     }
@@ -233,7 +238,6 @@ public class AggregatorApp extends Application<AggregatorConfiguration> {
 
         // Template index.html with environment variables
         bootstrap.addBundle(new ViewBundle<AggregatorConfiguration>() {
-            @SuppressWarnings("serial")
             @Override
             public Map<String, Map<String, String>> getViewConfiguration(AggregatorConfiguration config) {
                 return new HashMap<String, Map<String, String>>() {
@@ -329,6 +333,8 @@ public class AggregatorApp extends Application<AggregatorConfiguration> {
 
         // swagger
         if (config.aggregatorParams.isOpenAPIEnabled()) {
+            // TODO: swagger seems to expose some internal setter methods as "public" properties!
+
             List<String> resourceClasses = new ArrayList<>(List.of("eu.clarin.sru.fcs.aggregator.app.IndexResource",
                     "eu.clarin.sru.fcs.aggregator.app.rest.RestService"));
 

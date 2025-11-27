@@ -3,11 +3,14 @@ package eu.clarin.sru.fcs.aggregator.app.rest;
 import java.io.IOException;
 import java.net.URI;
 import java.security.Principal;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -40,6 +43,7 @@ import eu.clarin.sru.fcs.aggregator.app.configuration.AggregatorConfiguration;
 import eu.clarin.sru.fcs.aggregator.app.configuration.WeblichtConfig;
 import eu.clarin.sru.fcs.aggregator.app.export.Exports;
 import eu.clarin.sru.fcs.aggregator.app.export.WeblichtExportCache;
+import eu.clarin.sru.fcs.aggregator.core.Aggregator;
 import eu.clarin.sru.fcs.aggregator.scan.FCSProtocolVersion;
 import eu.clarin.sru.fcs.aggregator.scan.FCSSearchCapabilities;
 import eu.clarin.sru.fcs.aggregator.scan.Resource;
@@ -70,7 +74,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
  */
 @Produces(MediaType.APPLICATION_JSON)
 @Path("/rest")
-@OpenAPIDefinition(info = @Info(title = AggregatorApp.NAME + " REST API", version = "2.1.0", description = "The "
+@OpenAPIDefinition(info = @Info(title = AggregatorApp.NAME + " REST API", version = "2.2.0", description = "The "
         + AggregatorApp.NAME + " REST API is documented following the open API specification."
         + "<br />Code repository is hosted on <a href=\"https://github.com/clarin-eric/fcs-sru-aggregator\">GitHub</a>.", license = @License(name = "GNU General Public License Version 3 (GPLv3)", url = "https://www.gnu.org/licenses/gpl-3.0.txt")))
 public class RestService {
@@ -93,6 +97,7 @@ public class RestService {
     }
 
     // ----------------------------------------------------------------------
+    // aggregator/application state (static data)
 
     @GET
     @Produces({ MediaType.APPLICATION_JSON })
@@ -194,11 +199,14 @@ public class RestService {
         return Response.ok(data).build();
     }
 
+    // ----------------------------------------------------------------------
+    // search
+
     @POST
     @Consumes({ MediaType.APPLICATION_FORM_URLENCODED })
     @Produces({ MediaType.APPLICATION_JSON })
     @Path("search")
-    @Operation(description = "Start a new search.", responses = {
+    @Operation(description = "Start a new search.", tags = { "search" }, responses = {
             @ApiResponse(responseCode = "201", description = "Started search, return search ID.", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = Long.class)), links = {
                     @Link(name = "Get search results", operationId = "getSearch", parameters = {
                             @LinkParameter(name = "id", expression = "$response.body") }),
@@ -207,7 +215,7 @@ public class RestService {
             @ApiResponse(responseCode = "400", description = "Missing 'query' parameter."),
             @ApiResponse(responseCode = "400", description = "Missing 'resourceIds' parameter."),
             @ApiResponse(responseCode = "503", description = "No resources. Server might still be scanning. Please try again later."),
-            @ApiResponse(responseCode = "500", description = "Initiating search failed.") }, tags = { "search" })
+            @ApiResponse(responseCode = "500", description = "Initiating search failed.") })
     public Response postSearch(
             @FormParam("query") String query,
             @FormParam("queryType") String queryType,
@@ -280,10 +288,10 @@ public class RestService {
     @GET
     @Produces({ MediaType.APPLICATION_JSON })
     @Path("search/{id}")
-    @Operation(description = "Get (partial) search result.", responses = {
+    @Operation(description = "Get (partial) search result.", tags = { "search" }, responses = {
             @ApiResponse(responseCode = "200", description = "Search result with (partial) responses and number of outstanding responses.", content = {
                     @Content(schema = @Schema(implementation = JsonSearch.class)) }),
-            @ApiResponse(responseCode = "404", description = "Search job not found.") }, tags = { "search" })
+            @ApiResponse(responseCode = "404", description = "Search job not found.") })
     public Response getSearch(@PathParam("id") String searchId,
             @QueryParam("resourceId") String resourceId) throws Exception {
         // TODO: check if download of auth restricted resource?
@@ -308,10 +316,10 @@ public class RestService {
     @GET
     @Produces({ MediaType.APPLICATION_JSON })
     @Path("search/{id}/metaonly")
-    @Operation(description = "Get (partial) metadata-only search result.", responses = {
+    @Operation(description = "Get (partial) metadata-only search result.", tags = { "search" }, responses = {
             @ApiResponse(responseCode = "200", description = "Search result with (partial) responses and number of outstanding responses.", content = {
                     @Content(schema = @Schema(implementation = JsonMetaOnlySearch.class)) }),
-            @ApiResponse(responseCode = "404", description = "Search job not found.") }, tags = { "search" })
+            @ApiResponse(responseCode = "404", description = "Search job not found.") })
     public Response getSearchMetaOnly(@PathParam("id") String searchId,
             @QueryParam("resourceId") String resourceId) throws Exception {
         // TODO: check if download of auth restricted resource?
@@ -339,13 +347,13 @@ public class RestService {
     @Consumes({ MediaType.APPLICATION_FORM_URLENCODED })
     @Produces({ MediaType.APPLICATION_JSON })
     @Path("search/{id}")
-    @Operation(description = "Request more search results for a specific resource.", responses = {
+    @Operation(description = "Request more search results for a specific resource.", tags = { "search" }, responses = {
             @ApiResponse(responseCode = "201", description = "Started subSearch, return search ID.", content = @Content(schema = @Schema(implementation = Long.class)), links = {
                     @Link(name = "Get search results", operationId = "getSearch", parameters = {
                             @LinkParameter(name = "id", expression = "$response.body") }) }),
             @ApiResponse(responseCode = "400", description = "Missing 'resourceId' parameter."),
             @ApiResponse(responseCode = "404", description = "Search job not found."),
-            @ApiResponse(responseCode = "500", description = "Initiating subSearch failed.") }, tags = { "search" })
+            @ApiResponse(responseCode = "500", description = "Initiating subSearch failed.") })
     public Response postSearchNextResults(@PathParam("id") String searchId,
             @FormParam("resourceId") String resourceId,
             @FormParam("numberOfResults") Integer numberOfResults,
@@ -383,7 +391,7 @@ public class RestService {
     @Consumes({ MediaType.APPLICATION_FORM_URLENCODED })
     @Produces({ MediaType.APPLICATION_JSON })
     @Path("search/{id}/stop")
-    @Operation(description = "Stop an active search job", responses = {
+    @Operation(description = "Stop an active search job", tags = { "search" }, responses = {
             @ApiResponse(responseCode = "202", description = "Will attempt to stop search job."),
             @ApiResponse(responseCode = "204", description = "Search job has already finished."),
             @ApiResponse(responseCode = "404", description = "Search job not found."),
@@ -408,10 +416,13 @@ public class RestService {
         return Response.accepted().build();
     }
 
+    // ----------------------------------------------------------------------
+    // download/serialization of results
+
     @GET
     @Produces({ MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN, TCF_MEDIA_TYPE, ODS_MEDIA_TYPE, EXCEL_MEDIA_TYPE })
     @Path("search/{id}/download")
-    @Operation(description = "Download search results in various formats.", responses = {
+    @Operation(description = "Download search results in various formats.", tags = { "search" }, responses = {
             @ApiResponse(responseCode = "200", description = "Download: text", content = @Content(mediaType = MediaType.TEXT_PLAIN)),
             @ApiResponse(responseCode = "200", description = "Download: tcf", content = @Content(mediaType = TCF_MEDIA_TYPE)),
             @ApiResponse(responseCode = "200", description = "Download: ods", content = @Content(mediaType = ODS_MEDIA_TYPE)),
@@ -420,7 +431,7 @@ public class RestService {
             @ApiResponse(responseCode = "500", description = "Error while converting to the export format."),
             @ApiResponse(responseCode = "404", description = "Search job not found."),
             @ApiResponse(responseCode = "400", description = "format parameter must be one of: text, tcf, ods, excel, csv")
-    }, tags = { "search" })
+    })
     public Response downloadSearchResults(@PathParam("id") String searchId,
             @QueryParam("resourceId") String resourceId,
             @QueryParam("filterLanguage") String filterLanguage,
@@ -537,63 +548,216 @@ public class RestService {
                 : Response.seeOther(weblichtUri).entity(weblichtUri).build();
     }
 
+    // ----------------------------------------------------------------------
+    // statistics
+
+    @GET
+    @Produces({ MediaType.APPLICATION_JSON })
+    @Path("search/{id}/status")
+    @Operation(description = "Get status of search job.", tags = { "search" }, responses = {
+            @ApiResponse(description = "Search job status information.", content = @Content(schema = @Schema(implementation = SearchJobStatistics.class))),
+            @ApiResponse(responseCode = "404", description = "Search job not found.")
+    })
+    public Response getSearchStatus(@PathParam("id") String searchId) {
+        Search search = AggregatorApp.getInstance().getSearchById(searchId);
+        if (search == null) {
+            return Response.status(Response.Status.NOT_FOUND).entity("Search job not found").build();
+        }
+
+        final Statistics searchStats = AggregatorApp.getInstance().getSearchStatistics();
+
+        // find all searches that started before our search and that are not finished
+        // count inProgress=1 requests
+
+        // System.currentTimeMillis()
+        List<Search> otherActiveSearches = getActiveSearches(search.getCreatedAt());
+        Map<String, Integer> endpointsWithNumRequests = computeNumberOfActiveRequestsPerEndpoint(otherActiveSearches);
+        // log.debug("other searches = {}", endpointsWithNumRequests);
+
+        SearchJobStatistics info = SearchJobStatistics.fromSearch(search, searchStats, otherActiveSearches, endpointsWithNumRequests);
+
+        return Response.ok(info).build();
+    }
+
     @GET
     @Produces({ MediaType.APPLICATION_JSON })
     @Path("statistics")
     @Operation(description = "Get scan and search statistics.", tags = { "web" }, responses = {
-            @ApiResponse(description = "Scan and Search statistics for each endpoint.", content = @Content(schema = @Schema(implementation = ScanSearchStatisticsSchema.class))) })
+            @ApiResponse(description = "Scan and Search statistics for each endpoint.", content = @Content(schema = @Schema(implementation = ScanSearchStatistics.class))) })
     public Response getStatistics(
             @Parameter(description = "Comma-separated list of consortia to filter institutions/centres, endpoints and finally resources", required = false) @QueryParam(PARAM_CONSORTIA) String consortiaRaw)
             throws IOException {
-        final Statistics scan = AggregatorApp.getInstance().getScanStatistics();
-        final Statistics search = AggregatorApp.getInstance().getSearchStatistics();
-        final AggregatorConfiguration.Params params = AggregatorApp.getInstance().getParams();
+        ScanSearchStatistics info = new ScanSearchStatistics();
+        info.scans = buildStats(true, consortiaRaw);
+        info.searches = buildStats(false, consortiaRaw);
+        return Response.ok(info).build();
+    }
+
+    @GET
+    @Produces({ MediaType.APPLICATION_JSON })
+    @Path("statistics/{type}")
+    @Operation(description = "Get a specific search statistic.", tags = { "web" }, responses = {
+    // @formatter:off
+            // NOTE: does not seem to work?
+            // @ApiResponse(description = "Statistics based on type parameter.", content = @Content(oneOf = {
+            //         @Schema(description = "Response for 'last-scan'/'recent-searches' type", implementation = EndpointStatistics.class),
+            //         @Schema(description = "Response for 'search-stats' type", implementation = Map.class) })),
+    // @formatter:on
+            @ApiResponse(description = "Statistics based on type parameter.", content = @Content(schema = @Schema(oneOf = {
+                    EndpointStatistics.class, Map.class }))),
+            @ApiResponse(responseCode = "404", description = "Unknown/unsupported type of statistic.", content = @Content(schema = @Schema(implementation = String.class))),
+    })
+    public Response getStatisticsForType(
+            @PathParam("type") String type,
+            @Parameter(description = "Comma-separated list of consortia to filter institutions/centres, endpoints and finally resources", required = false) @QueryParam(PARAM_CONSORTIA) String consortiaRaw)
+            throws IOException {
+
+        if ("search-stats".equals(type)) {
+            Object info = buildSearchStats();
+            return Response.ok(info).build();
+        } else if ("last-scan".equals(type)) {
+            EndpointStatistics info = buildStats(true, consortiaRaw);
+            return Response.ok(info).build();
+        } else if ("recent-searches".equals(type)) {
+            EndpointStatistics info = buildStats(false, consortiaRaw);
+            return Response.ok(info).build();
+        }
+
+        return Response.status(Response.Status.NOT_FOUND).entity("type of statistics not found").build();
+    }
+
+    private List<Search> getActiveSearches(long dtBefore) {
+        // find all searches that started before our search/deadline and that are not
+        // finished
+        final Aggregator aggregator = AggregatorApp.getInstance().getAggregator();
+        List<Search> activeSearches = aggregator.getActiveSearches().values().stream()
+                .filter(s -> s.getCreatedAt() < dtBefore)
+                // .filter(s -> !s.equals(search))
+                .filter(s -> !s.isFinished())
+                .collect(Collectors.toList());
+
+        return activeSearches;
+    }
+
+    private Map<String, Integer> computeNumberOfActiveRequestsPerEndpoint(List<Search> activeSearches) {
+        // count inProgress=1 requests
+        Map<String, Integer> endpointsWithNumRequests = new HashMap<>();
+        activeSearches.forEach(s -> {
+            s.getResults().forEach(result -> {
+                if (result.getInProgress()) {
+                    String endpointUrl = result.getEndpointUrl();
+                    endpointsWithNumRequests.put(endpointUrl,
+                            endpointsWithNumRequests.getOrDefault(endpointUrl, 0) + 1);
+                }
+            });
+        });
+
+        return endpointsWithNumRequests;
+    }
+
+    private Object buildSearchStats() {
+        Aggregator aggregator = AggregatorApp.getInstance().getAggregator();
 
         Object info = new HashMap<String, Object>() {
             {
-                put("last-scan", new HashMap<String, Object>() {
+                // total number of searches since start
+                put("searchesTotal", aggregator.getNumberOfSearches());
+
+                // searches cached/in-progress in certain window
+                put("searchesInWindow", new HashMap<String, Object>() {
                     {
-                        put("timeout", params.getENDPOINTS_SCAN_TIMEOUT_MS() / 1000.);
-                        put("isScan", true);
-                        put("institutions", scan.getInstitutions());
-                        put("date", scan.getDate());
+                        Duration[] durations = new Duration[] {
+                                Duration.of(7, ChronoUnit.DAYS),
+                                Duration.of(1, ChronoUnit.DAYS),
+                                Duration.of(1, ChronoUnit.HOURS),
+                                Duration.of(10, ChronoUnit.MINUTES),
+                                Duration.of(5, ChronoUnit.MINUTES),
+                        };
+                        List<Search> searches = new ArrayList<Search>(aggregator.getActiveSearches().values());
+                        long t0 = System.currentTimeMillis();
+                        for (Duration duration : durations) {
+                            long maxAgeSeconds = duration.getSeconds();
+
+                            int numberOfSearches = 0;
+                            int numberOfSearchesLive = 0;
+                            int numberOfRequests = 0;
+
+                            ListIterator<Search> searchIter = searches.listIterator();
+                            while (searchIter.hasNext()) {
+                                Search search = searchIter.next();
+                                long dtsec = (t0 - search.getCreatedAt()) / 1000L;
+                                if (dtsec <= maxAgeSeconds) {
+                                    // NOTE: no filtering by consortium, it would make everything quite
+                                    // complicated...
+
+                                    numberOfSearches++;
+
+                                    int inProgress = search.getNumberOfResourcesInProgress();
+                                    if (inProgress > 0) {
+                                        numberOfSearchesLive++;
+                                    }
+                                    numberOfRequests += inProgress;
+                                } else {
+                                    searchIter.remove();
+                                }
+                            }
+
+                            final int numberOfSearchesF = numberOfSearches;
+                            final int numberOfSearchesLiveF = numberOfSearchesLive;
+                            final int numberOfRequestsF = numberOfRequests;
+
+                            final String name = duration.toDays() >= 1 ? duration.toDays() + "d"
+                                    : duration.toHours() >= 1 ? duration.toHours() + "h" : duration.toMinutes() + "m";
+
+                            put(name, new HashMap<String, Object>() {
+                                {
+                                    // put numeric duration
+                                    put("durationInMinutes", duration.toMinutes());
+                                    // number of searches (in cache) for given time
+                                    put("searches", numberOfSearchesF);
+                                    // number of live searches (inProgress)
+                                    put("searchesLive", numberOfSearchesLiveF);
+                                    put("requestsLive", numberOfRequestsF);
+                                }
+                            });
+                        }
                     }
                 });
-                put("recent-searches", new HashMap<String, Object>() {
-                    {
-                        put("timeout", params.getENDPOINTS_SEARCH_TIMEOUT_MS() / 1000.);
-                        put("isScan", false);
-                        put("institutions", search.getInstitutions());
-                        put("date", search.getDate());
-                    }
-                });
+
             }
         };
 
+        return info;
+    }
+
+    private EndpointStatistics buildStats(boolean isScan, String consortiaRaw) {
+        final AggregatorConfiguration.Params params = AggregatorApp.getInstance().getParams();
+
+        if (isScan) {
+            final Statistics scan = AggregatorApp.getInstance().getScanStatistics();
+            return new EndpointStatistics(true,
+                    filterInstitutionStatsByConsortiaMaybe(scan.getInstitutions(), consortiaRaw),
+                    scan.getDate(),
+                    params.getENDPOINTS_SCAN_TIMEOUT_MS() / 1000.);
+
+        } else {
+            final Statistics search = AggregatorApp.getInstance().getSearchStatistics();
+            return new EndpointStatistics(false,
+                    filterInstitutionStatsByConsortiaMaybe(search.getInstitutions(), consortiaRaw),
+                    search.getDate(),
+                    params.getENDPOINTS_SEARCH_TIMEOUT_MS() / 1000.);
+        }
+    }
+
+    private Map<String, Map<String, EndpointStats>> filterInstitutionStatsByConsortiaMaybe(
+            Map<String, Map<String, EndpointStats>> institutions, String consortiaRaw) {
         if (consortiaRaw != null && !consortiaRaw.trim().isEmpty()) {
             List<String> consortia = Arrays.asList(consortiaRaw.replaceAll("\\s+", "").toUpperCase().split(","));
             List<Resource> resources = AggregatorApp.getInstance().getResources().getResourcesByConsortia(consortia);
 
-            @SuppressWarnings("unchecked")
-            Map<String, Object> statsScan = ((Map<String, Object>) ((Map<String, Object>) info).get("last-scan"));
-            @SuppressWarnings("unchecked")
-            Map<String, Map<String, EndpointStats>> institutionsScan = ((Map<String, Map<String, EndpointStats>>) statsScan
-                    .get("institutions"));
-
-            statsScan.put("institutions", filterInstitutionStatsByConsortia(institutionsScan, resources, consortia));
-
-            @SuppressWarnings("unchecked")
-            Map<String, Object> statsSearch = ((Map<String, Object>) ((Map<String, Object>) info)
-                    .get("recent-searches"));
-            @SuppressWarnings("unchecked")
-            Map<String, Map<String, EndpointStats>> institutionsSearch = ((Map<String, Map<String, EndpointStats>>) statsSearch
-                    .get("institutions"));
-
-            statsSearch.put("institutions",
-                    filterInstitutionStatsByConsortia(institutionsSearch, resources, consortia));
+            return filterInstitutionStatsByConsortia(institutions, resources, consortia);
         }
-
-        return Response.ok(info).build();
+        return institutions;
     }
 
     private Map<String, Map<String, EndpointStats>> filterInstitutionStatsByConsortia(
@@ -626,6 +790,9 @@ public class RestService {
                 .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
     }
 
+    // ----------------------------------------------------------------------
+    // auth
+
     @GET
     @Path("user")
     public Response getUser(@Context final SecurityContext security) throws IOException {
@@ -636,5 +803,7 @@ public class RestService {
         log.debug("Authentication info: {}", authInfo);
         return Response.ok(authInfo).build();
     }
+
+    // ----------------------------------------------------------------------
 
 }

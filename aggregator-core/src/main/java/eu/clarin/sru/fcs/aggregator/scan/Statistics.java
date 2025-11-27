@@ -121,6 +121,10 @@ public class Statistics {
             return max;
         }
 
+        public boolean hasQueueTime() {
+            return !queueTimes.isEmpty();
+        }
+
         public double getAvgQueueTime() {
             return avg(queueTimes) / 1000.0;
         }
@@ -129,12 +133,20 @@ public class Statistics {
             return max(queueTimes) / 1000.0;
         }
 
+        public boolean hasExecutionTime() {
+            return !executionTimes.isEmpty();
+        }
+
         public double getAvgExecutionTime() {
             return avg(executionTimes) / 1000.0;
         }
 
         public double getMaxExecutionTime() {
             return max(executionTimes) / 1000.0;
+        }
+
+        public int getMaxConcurrentRequests() {
+            return maxConcurrentRequests;
         }
 
         public int getNumberOfRequests() {
