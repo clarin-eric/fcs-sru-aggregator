@@ -165,11 +165,10 @@ public class Search {
                                 log.debug("searchRetrieve request url: {}", response.getRequest().getRequestedURI());
                                 result.setRequestUrl(response.getRequest().getRequestedURI().toString());
                                 logstatsResult.trace(
-                                        "[{}] endpoint='{}' resource='{}' numberOfRecords={} nextRecord={}",
-                                        id, result.getResource().getEndpoint().getUrl(),
-                                        result.getResource().getHandle(),
-                                        (response != null) ? response.getNumberOfRecords() : null,
-                                        (response != null) ? response.getNextRecordPosition() : null);
+                                        "[{}] endpoint='{}' resource='{}' numberOfRecords={} nextRecord={} timeQueueMs={} timeExecMs={}",
+                                        id, resource.getEndpoint().getUrl(), resource.getHandle(),
+                                        response.getNumberOfRecords(), response.getNextRecordPosition(),
+                                        stats.getQueueTime(), stats.getExecutionTime());
                                 result.addResponse(response);
                                 List<Diagnostic> diagnostics = result.getDiagnostics();
                                 if (diagnostics != null && !diagnostics.isEmpty()) {
@@ -198,11 +197,14 @@ public class Search {
                                         resource.getEndpoint(),
                                         stats.getQueueTime(), stats.getExecutionTime());
                                 statistics.addErrorDatapoint(resource.getEndpointInstitution(), resource.getEndpoint(),
-                                        xc,
-                                        srureq.getRequestedURI().toString());
+                                        xc, srureq.getRequestedURI().toString());
                                 result.setRequestUrl(srureq.getRequestedURI().toString());
                                 result.setException(xc);
                                 log.error("search.onError:", xc);
+                                logstatsResult.trace(
+                                        "[{}] endpoint='{}' resource='{}' error='{}' timeQueueMs={} timeExecMs={}",
+                                        id, resource.getEndpoint().getUrl(), resource.getHandle(), xc.getMessage(),
+                                        stats.getQueueTime(), stats.getExecutionTime());
                             } catch (Throwable xxc) {
                                 log.error("search.onError exception:", xxc);
                             } finally {
@@ -219,8 +221,11 @@ public class Search {
                                 // NOTE: the requested URI is not even set if no request happened...
                                 // result.setRequestUrl(srureq.getRequestedURI().toString());
                                 log.debug("search.onCancelled: [{}] endpoint='{}' resource='{}'", id,
-                                        result.getResource().getEndpoint().getUrl(),
-                                        result.getResource().getHandle());
+                                        resource.getEndpoint().getUrl(), resource.getHandle());
+                                logstatsResult.trace(
+                                        "[{}] endpoint='{}' resource='{}' cancelled='' timeQueueMs={} timeExecMs={}",
+                                        id, resource.getEndpoint().getUrl(), resource.getHandle(),
+                                        stats.getQueueTime(), stats.getExecutionTime());
                             } catch (Throwable xc) {
                                 log.error("search.onCancelled exception:", xc);
                             } finally {
