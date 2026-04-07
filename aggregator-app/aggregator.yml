@@ -38,6 +38,7 @@ aggregatorParams:
 
   aaiConfig:
     enabled: ${SHIB_ENABLED:-false}
+    key: {}
 
   piwikConfig:
     enabled: ${PIWIK_ENABLED:-true}
