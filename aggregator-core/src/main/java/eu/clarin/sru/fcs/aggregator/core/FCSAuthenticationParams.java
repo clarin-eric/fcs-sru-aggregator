@@ -1,7 +1,7 @@
 package eu.clarin.sru.fcs.aggregator.core;
 
 public interface FCSAuthenticationParams {
-    boolean enableAAI();
+    boolean isAAIEnabled();
 
     String getServerUrl();
 

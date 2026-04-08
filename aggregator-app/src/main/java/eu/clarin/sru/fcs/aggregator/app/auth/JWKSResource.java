@@ -24,7 +24,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import eu.clarin.sru.client.auth.KeyReaderUtils;
 import eu.clarin.sru.fcs.aggregator.app.AggregatorApp;
-import eu.clarin.sru.fcs.aggregator.app.configuration.AAIConfig;
+import eu.clarin.sru.fcs.aggregator.app.configuration.AuthConfiguration;
 
 @Path("/.well-known")
 public class JWKSResource {
@@ -135,12 +135,12 @@ public class JWKSResource {
     @Produces({ MediaType.APPLICATION_JSON })
     @Path("jwks.json")
     public Response getJWKS() {
-        AAIConfig aaiConfig = AggregatorApp.getInstance().getParams().getAAIConfig();
-        if (aaiConfig == null || !aaiConfig.isAAIEnabled()) {
+        AuthConfiguration authConfig = AggregatorApp.getInstance().getConfiguration().getAuthConfiguration();
+        if (!authConfig.isEnabled()) {
             return Response.status(Status.NOT_FOUND).entity("No authentication support enabled at server!").build();
         }
 
-        final RSAPublicKey publicKey = loadPublicKey(aaiConfig);
+        final RSAPublicKey publicKey = loadPublicKey(authConfig);
         if (publicKey == null) {
             return Response.status(Status.INTERNAL_SERVER_ERROR).entity("Error loading key!").build();
         }
@@ -153,16 +153,16 @@ public class JWKSResource {
                 .build();
     }
 
-    private static RSAPublicKey loadPublicKey(AAIConfig aaiConfig) {
+    private static RSAPublicKey loadPublicKey(AuthConfiguration authConfig) {
         try {
             // try to load from PEM key file contents
-            final String publicKeyContent = aaiConfig.getKey().getPublicKey();
+            final String publicKeyContent = authConfig.getKeys().getPublicKey();
             if (publicKeyContent != null) {
                 return KeyReaderUtils.readPublicKey(publicKeyContent);
             }
 
             // otherwise try to load from file
-            final String publicKeyFilename = aaiConfig.getKey().getPublicKeyFile();
+            final String publicKeyFilename = authConfig.getKeys().getPublicKeyFile();
             if (publicKeyFilename != null) {
                 File publicKeyFile = new File(publicKeyFilename);
                 return KeyReaderUtils.readPublicKey(publicKeyFile);

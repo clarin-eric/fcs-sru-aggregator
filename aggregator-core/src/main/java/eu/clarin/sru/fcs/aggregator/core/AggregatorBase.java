@@ -1,11 +1,14 @@
 package eu.clarin.sru.fcs.aggregator.core;
 
 import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import javax.ws.rs.client.Client;
 
@@ -19,8 +22,8 @@ import eu.clarin.sru.client.fcs.ClarinFCSClientBuilder;
 import eu.clarin.sru.client.fcs.ClarinFCSEndpointDescriptionParser;
 import eu.clarin.sru.fcs.aggregator.client.MaxConcurrentRequestsCallback;
 import eu.clarin.sru.fcs.aggregator.client.ThrottledClient;
-import eu.clarin.sru.fcs.aggregator.scan.EndpointConfig;
 import eu.clarin.sru.fcs.aggregator.scan.EndpointFilter;
+import eu.clarin.sru.fcs.aggregator.scan.EndpointOverrideConfig;
 import eu.clarin.sru.fcs.aggregator.scan.Resource;
 import eu.clarin.sru.fcs.aggregator.scan.ScanCrawlTask;
 import eu.clarin.sru.fcs.aggregator.scan.ScanCrawlTask.ScanCrawlTaskCompletedCallback;
@@ -37,7 +40,7 @@ public abstract class AggregatorBase {
     public static SRURequestAuthenticator createSRURequestAuthenticator(FCSAuthenticationParams params) {
         final SRURequestAuthenticator requestAuthStrategy;
 
-        if (params.enableAAI()) {
+        if (params.isAAIEnabled()) {
             final ClarinFCSRequestAuthenticator.AuthenticationInfoProvider authInfoPovider = new ClarinFCSRequestAuthenticator.AuthenticationInfoProvider() {
                 @Override
                 public String getAudience(String endpointURI, Map<String, String> context) {
@@ -76,18 +79,14 @@ public abstract class AggregatorBase {
     }
 
     public static ThrottledClient createClient(SRUFCSClientParams params, SRURequestAuthenticator requestAuthStrategy) {
-        return createClient(params.getEndpointScanTimeout(),
-                params.getEndpointSearchTimeout(),
-                params.getMaxConcurrentScanRequestsPerEndpoint(),
-                params.getMaxConcurrentSearchRequestsPerEndpoint(),
-                params.getMaxConcurrentSearchRequestsPerSlowEndpoint(),
-                params.getSlowEndpoints(), requestAuthStrategy);
+        return createClient(params.getEndpointScanTimeout(), params.getEndpointSearchTimeout(),
+                params.getMaxConcurrentScanRequestsPerEndpoint(), params.getMaxConcurrentSearchRequestsPerEndpoint(),
+                params.getEndpointOverrides(), requestAuthStrategy);
     }
 
     public static ThrottledClient createClient(int endpointScanTimeout, int endpointSearchTimeout,
-            int maxConcurrentScanRequestsPerEndpoint,
-            int maxConcurrentSearchRequestsPerEndpoint, int maxConcurrentSearchRequestsPerSlowEndpoint,
-            List<URI> slowEndpoints, SRURequestAuthenticator requestAuthStrategy) {
+            int maxConcurrentScanRequestsPerEndpoint, int maxConcurrentSearchRequestsPerEndpoint,
+            List<EndpointOverrideConfig> endpointOverrides, SRURequestAuthenticator requestAuthStrategy) {
 
         final SRUThreadedClient sruScanClient = new ClarinFCSClientBuilder()
                 .setConnectTimeout(endpointScanTimeout)
@@ -109,6 +108,28 @@ public abstract class AggregatorBase {
                 .setRequestAuthenticator(requestAuthStrategy)
                 .buildThreadedClient();
 
+        final Map<URI, EndpointOverrideConfig> endpointUrl2OverrideLookup = (endpointOverrides != null)
+                ? endpointOverrides.stream()
+                        .filter(o -> {
+                            try {
+                                o.getUrl().toURI();
+                                return true;
+                            } catch (URISyntaxException e) {
+                                log.warn("Converting Endpoint URL to URI failed!? '{}'", o.getUrl());
+                                return false;
+                            }
+                        })
+                        .collect(Collectors.toMap(o -> {
+                            try {
+                                return o.getUrl().toURI();
+                            } catch (URISyntaxException e) {
+                                log.error("Unreachable! Conversion of URL to URI should not have failed here! '{}'",
+                                        o.getUrl());
+                            }
+                            return null;
+                        }, o -> o))
+                : Collections.emptyMap();
+
         final MaxConcurrentRequestsCallback maxScanConcurrentRequestsCallback = new MaxConcurrentRequestsCallback() {
             @Override
             public int getMaxConcurrentRequest(URI baseURI) {
@@ -119,9 +140,14 @@ public abstract class AggregatorBase {
         final MaxConcurrentRequestsCallback maxSearchConcurrentRequestsCallback = new MaxConcurrentRequestsCallback() {
             @Override
             public int getMaxConcurrentRequest(URI baseURI) {
-                return (slowEndpoints != null && slowEndpoints.contains(baseURI))
-                        ? maxConcurrentSearchRequestsPerSlowEndpoint
-                        : maxConcurrentSearchRequestsPerEndpoint;
+                EndpointOverrideConfig override = endpointUrl2OverrideLookup.get(baseURI);
+                if (override != null) {
+                    final int maxConcurrentRequests = override.getMaxConcurrentSearchRequests();
+                    if (maxConcurrentRequests > 0) {
+                        return maxConcurrentRequests;
+                    }
+                }
+                return maxConcurrentSearchRequestsPerEndpoint;
             }
         };
 
@@ -141,17 +167,15 @@ public abstract class AggregatorBase {
         return createScanCrawlTask(sruClient, jerseyClient,
                 params.getCenterRegistryUrl(),
                 params.getScanMaxDepth(),
-                params.getAdditionalCQLEndpoints(),
-                params.getAdditionalFCSEndpoints(),
+                params.getEndpointOverrides(),
                 filter, scanCrawlTaskCompletedCallback);
     }
 
     public static ScanCrawlTask createScanCrawlTask(ThrottledClient sruClient, Client jerseyClient,
-            String centerRegistryUrl, int scanMaxDepth, List<EndpointConfig> additionalCQLEndpoints,
-            List<EndpointConfig> additionalFCSEndpoints, EndpointFilter filter,
-            ScanCrawlTaskCompletedCallback scanCrawlTaskCompletedCallback) {
+            String centerRegistryUrl, int scanMaxDepth, List<EndpointOverrideConfig> endpointOverrides,
+            EndpointFilter filter, ScanCrawlTaskCompletedCallback scanCrawlTaskCompletedCallback) {
         final ScanCrawlTask task = new ScanCrawlTask(sruClient, jerseyClient, centerRegistryUrl, scanMaxDepth,
-                additionalCQLEndpoints, additionalFCSEndpoints, filter, scanCrawlTaskCompletedCallback);
+                endpointOverrides, filter, scanCrawlTaskCompletedCallback);
         return task;
     }
 
@@ -161,8 +185,7 @@ public abstract class AggregatorBase {
         scheduleScanCrawlTask(scheduler, sruClient, jerseyClient,
                 params.getCenterRegistryUrl(),
                 params.getScanMaxDepth(),
-                params.getAdditionalCQLEndpoints(),
-                params.getAdditionalFCSEndpoints(),
+                params.getEndpointOverrides(),
                 filter, scanCrawlTaskCompletedCallback,
                 params.getScanTaskInitialDelay(),
                 params.getScanTaskInterval(),
@@ -171,11 +194,11 @@ public abstract class AggregatorBase {
 
     public static void scheduleScanCrawlTask(ScheduledExecutorService scheduler, ThrottledClient sruClient,
             Client jerseyClient, String centerRegistryUrl, int scanMaxDepth,
-            List<EndpointConfig> additionalCQLEndpoints, List<EndpointConfig> additionalFCSEndpoints,
-            EndpointFilter filter, ScanCrawlTaskCompletedCallback scanCrawlTaskCompletedCallback,
-            long scanTaskInitialDelay, long scanTaskInterval, TimeUnit scanTaskTimeUnit) {
+            List<EndpointOverrideConfig> endpointOverrides, EndpointFilter filter,
+            ScanCrawlTaskCompletedCallback scanCrawlTaskCompletedCallback, long scanTaskInitialDelay,
+            long scanTaskInterval, TimeUnit scanTaskTimeUnit) {
         final ScanCrawlTask task = createScanCrawlTask(sruClient, jerseyClient, centerRegistryUrl, scanMaxDepth,
-                additionalCQLEndpoints, additionalFCSEndpoints, filter, scanCrawlTaskCompletedCallback);
+                endpointOverrides, filter, scanCrawlTaskCompletedCallback);
         if (scanTaskInterval > 0) {
             log.debug("Scheduling Scan scrawl at regular intervals: {} {} with initial delay of {}", scanTaskInterval,
                     scanTaskTimeUnit, scanTaskInitialDelay);

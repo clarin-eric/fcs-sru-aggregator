@@ -1,61 +1,70 @@
-aggregatorParams:
-  CENTER_REGISTRY_URL: https://centres.clarin.eu/
-  #additionalCQLEndpoints:
-    # - https://clarin.ids-mannheim.de/digibibsru-new
-    #- http://localhost:8080/korp-endpoint/sru
-    #- https://spraakbanken.gu.se/ws/fcs/2.0/endpoint/korp/sru
-    # sideloading endpoint with custom name (both CQL/FCS)
-    #- https://spraakbanken.gu.se/ws/fcs/2.0/endpoint/korp/sru  # single string -> URL, no name
-    #- url: https://spraakbanken.gu.se/ws/fcs/2.0/endpoint/korp/sru
-    #  name: Språkbanken
-    #  website: https://spraakbanken.gu.se/
-    #- name: Språkbanken 2
-    #  url: https://spraakbanken.gu.se/ws/fcs/2.0/endpoint/korp/sru
-    #- url: https://spraakbanken.gu.se/ws/fcs/2.0/endpoint/korp/sru  # same as simple string
-    #- name: abc  # --> error, URL required
+aggregator:
+  # dump configuration on startup
+  echoConfig: true
 
-  #additionalFCSEndpoints:
-    #- http://localhost:8080/korp-endpoint/sru
-    #- https://spraakbanken.gu.se/ws/fcs/2.0/endpoint/korp/sru
+  # endpoint discovery
+  scan:
+    # CLARIN centre registry
+    centreRegistryUrl: https://centres.clarin.eu/
 
-  AGGREGATOR_FILE_PATH: fcsAggregatorResources.json
-  AGGREGATOR_FILE_PATH_BACKUP: fcsAggregatorResources.backup.json
+    # discovery
+    maxScanDepth: 1 # recommended 3
+    scanTaskInitialDelay: 0
+    scanTaskInterval: 12
+    scanTaskIntervalTimeUnit: HOURS
 
-  SCAN_MAX_DEPTH: 1 # recommended 3
-  SCAN_TASK_INITIAL_DELAY: 0
-  SCAN_TASK_INTERVAL: 12
-  SCAN_TASK_TIME_UNIT: HOURS
-  SCAN_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT: 4  # @depth2: 1=361s; 2=225s; 4=207s
+    # requests
+    maxConcurrentRequests: 4 # @depth2: 1=361s; 2=225s; 4=207s
+    requestTimeoutMs: 60_000 # 1min
 
-  SEARCH_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT: 4
-  SEARCH_MAX_CONCURRENT_REQUESTS_PER_SLOW_ENDPOINT: 1
-  slowEndpoints:
-    - http://cqlservlet.mpi.nl/
+    # caching for faster startup (on restart tries to use cached resources until new discovery is done)
+    cachedResourcesFile: fcsAggregatorResources.json
+    cachedResourcesBackupFile: fcsAggregatorResources.backup.json
 
-  ENDPOINTS_SCAN_TIMEOUT_MS: 60000
-  ENDPOINTS_SEARCH_TIMEOUT_MS: 30000
-  EXECUTOR_SHUTDOWN_TIMEOUT_MS: 1000
+  # search requests
+  search:
+    # requests
+    maxConcurrentRequests: 4
+    requestTimeoutMs: 30_000 # 30sec
 
-  weblichtConfig:
-    url: https://weblicht.sfs.uni-tuebingen.de/weblicht/?input=
-    exportServerUrl: ${SERVER_URL:-https://contentsearch.clarin.eu/}rest/
-    acceptedTcfLanguages:
-      - en
-      - de
-      - nl
-      - fr
-      - it
-      - es
-      - pl
+    # search cache
+    maxAmountSearchCache: 1_000
+    maxAgeSearchCacheMs: 3600_000 # 60min
 
+  # engine shutdown
+  executorShutdownTimeoutMs: 1_000
+
+  # endpoint overrides (disabled, side-loading, metadata, request limit override)
+  endpointOverrides:
+    # slow endpoints
+    - url: http://cqlservlet.mpi.nl/
+      maxConcurrentSearchRequests: 1
+      enabled: false
+    
+    # disabled endpoints
+    # - url: http://clarin01.ims.uni-stuttgart.de/SRUCQIBridge
+    #   enabled: false
+
+    # new FCS 2.0 endpoints
+    # sideloading endpoint with custom name and website
+    # - url: https://spraakbanken.gu.se/ws/fcs/2.0/endpoint/korp/sru
+    #   name: Språkbanken
+    #   website: https://spraakbanken.gu.se/
+    # - url: http://localhost:8080/korp-endpoint/sru
+    
+    # old/legacy endpoints
+    # - url: https://clarin.ids-mannheim.de/digibibsru-new
+    #   isCQL: true
+
+  # pretty printing REST API responses
   prettyPrintJSON: true
 
-  aaiConfig:
+  # AAI/Shibboleth
+  auth:
     enabled: ${SHIB_ENABLED:-false}
-    shibWebappHost: ${SERVER_URL:-https://contentsearch.clarin.eu/}
-    shibLogin: ${SHIB_LI:-https://contentsearch.clarin.eu/Shibboleth.sso/Login}
-    shibLogout: ${SHIB_LO:-https://contentsearch.clarin.eu/Shibboleth.sso/Logout}
-    key:
+
+    # private (+public) keys for JWT exchange (auth info to endpoints)
+    keys:
       # Quote ENVVAR if you use something like this which creates whitespaces instead of linebreaks
       #   $ export PUBLIC_KEY=$(cat public-key.pem)
       # You can also create the key like this which creates (escaped) linebreaks "\n" strings
@@ -72,17 +81,34 @@ aggregatorParams:
         ...
         -----END PRIVATE KEY-----
 
-  piwikConfig:
+    # shibboleth integration
+    shibWebappHost: ${SERVER_URL:-https://contentsearch.clarin.eu/}
+    shibLogin: ${SHIB_LI:-https://contentsearch.clarin.eu/Shibboleth.sso/Login}
+    shibLogout: ${SHIB_LO:-https://contentsearch.clarin.eu/Shibboleth.sso/Logout}
+
+  # weblicht (disabled if null)
+  weblicht:
+    url: https://weblicht.sfs.uni-tuebingen.de/weblicht/?input=
+    exportServerUrl: ${SERVER_URL:-https://contentsearch.clarin.eu/}rest/
+    acceptedTcfLanguages: [ en, de, nl, fr, it, es, pl ]
+
+  # UI: piwik/matomo
+  matomo:
     enabled: ${PIWIK_ENABLED:-false}
+
     url: ${PIWIK_URL:-https://stats.clarin.eu/}
     siteID: ${PIWIK_SITEID:-20}
     setDomains: ${PIWIK_SETDOMAINS:-['*.contentsearch.clarin.eu']}
 
+  # UI
   searchResultLinkEnabled: ${SEARCH_RESULT_LINK_ENABLED:-true}
-
   openapiEnabled: ${SWAGGER_ENABLED:-true}
-  SERVER_URL: ${SERVER_URL:-https://contentsearch.clarin.eu/}
-  VALIDATOR_URL: ${VALIDATOR_URL:-https://www.clarin.eu/fcsvalidator/}
+  validatorUrl: ${VALIDATOR_URL:-https://www.clarin.eu/fcsvalidator/}
+
+  # ?
+  serverUrl: ${SERVER_URL:-https://contentsearch.clarin.eu/}
+
+# --------------------------------------------------------------------------
 
 # use the simple server factory, run on a single port
 server:

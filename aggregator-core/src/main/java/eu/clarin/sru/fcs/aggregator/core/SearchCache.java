@@ -70,14 +70,14 @@ public class SearchCache {
         numberOfSearches.incrementAndGet();
     }
 
-    public List<String> gc(int searchesSizeThreshold, long searchesAgeThreshold) {
+    public List<String> gc(int searchesSizeThreshold, long searchesAgeThresholdMs) {
         List<String> toBeRemoved = new ArrayList<>();
         if (searches.size() > searchesSizeThreshold) {
             long t0 = System.currentTimeMillis();
             for (Map.Entry<String, Search> e : searches.entrySet()) {
-                long dtmin = (t0 - e.getValue().getCreatedAt()) / 1000 / 60;
-                if (dtmin > searchesAgeThreshold) {
-                    log.info("removing search {}: {} minutes old", e.getKey(), dtmin);
+                long dtms = (t0 - e.getValue().getCreatedAt());
+                if (dtms > searchesAgeThresholdMs) {
+                    log.info("removing search {}: {} minutes old", e.getKey(), dtms / 1000 / 60);
                     toBeRemoved.add(e.getKey());
                 }
             }

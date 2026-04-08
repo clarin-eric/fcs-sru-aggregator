@@ -1,11 +1,10 @@
 package eu.clarin.sru.fcs.aggregator.app.configuration;
 
-import java.net.URI;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import javax.validation.Valid;
-import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
 import org.hibernate.validator.constraints.Range;
@@ -13,242 +12,257 @@ import org.hibernate.validator.constraints.Range;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import io.dropwizard.core.Configuration;
+import eu.clarin.sru.fcs.aggregator.core.AggregatorParams;
 
-public class AggregatorConfiguration extends Configuration {
+public class AggregatorConfiguration implements AggregatorParams {
 
-    public static class Params {
+    @Valid
+    @NotNull
+    @JsonProperty
+    private ScanConfiguration scan = new ScanConfiguration();
 
-        @JsonProperty
-        String CENTER_REGISTRY_URL;
-
-        @Valid
-        @JsonProperty
-        List<EndpointConfigImpl> additionalCQLEndpoints;
-
-        @Valid
-        @JsonProperty
-        List<EndpointConfigImpl> additionalFCSEndpoints;
-
-        @JsonProperty
-        List<URI> slowEndpoints;
-
-        @JsonProperty
-        @Range
-        int SCAN_MAX_DEPTH;
-
-        @JsonProperty
-        @Range
-        long SCAN_TASK_INITIAL_DELAY;
-
-        @Range
-        @JsonProperty
-        int SCAN_TASK_INTERVAL;
-
-        @NotEmpty
-        @JsonProperty
-        String SCAN_TASK_TIME_UNIT;
-
-        @JsonProperty
-        @Range
-        int SCAN_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT;
-
-        @JsonProperty
-        @Range
-        int SEARCH_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT;
-
-        @JsonProperty
-        @Range
-        int SEARCH_MAX_CONCURRENT_REQUESTS_PER_SLOW_ENDPOINT;
-
-        @JsonProperty
-        @Range
-        int ENDPOINTS_SCAN_TIMEOUT_MS;
-
-        @JsonProperty
-        @Range
-        int ENDPOINTS_SEARCH_TIMEOUT_MS;
-
-        @JsonProperty
-        @Range
-        long EXECUTOR_SHUTDOWN_TIMEOUT_MS;
-
-        // ------------------------------------------------------------------
-
-        @NotEmpty
-        @JsonProperty
-        String AGGREGATOR_FILE_PATH;
-
-        @NotEmpty
-        @JsonProperty
-        String AGGREGATOR_FILE_PATH_BACKUP;
-
-        @JsonProperty
-        boolean prettyPrintJSON;
-
-        // ------------------------------------------------------------------
-
-        @JsonProperty
-        String SERVER_URL;
-
-        @JsonProperty
-        String VALIDATOR_URL;
-
-        @JsonProperty
-        boolean searchResultLinkEnabled;
-
-        @JsonProperty
-        boolean openapiEnabled;
-
-        @Valid
-        @NotNull
-        @JsonProperty
-        WeblichtConfig weblichtConfig;
-
-        @Valid
-        @NotNull
-        @JsonProperty
-        PiwikConfig piwikConfig;
-
-        @Valid
-        @NotNull
-        @JsonProperty
-        AAIConfig aaiConfig;
-
-        // ------------------------------------------------------------------
-
-        @JsonIgnore
-        public TimeUnit getScanTaskTimeUnit() {
-            return TimeUnit.valueOf(SCAN_TASK_TIME_UNIT);
-        }
-
-        @JsonIgnore
-        public String getCENTER_REGISTRY_URL() {
-            return CENTER_REGISTRY_URL;
-        }
-
-        @JsonIgnore
-        public int getSCAN_MAX_DEPTH() {
-            return SCAN_MAX_DEPTH;
-        }
-
-        @JsonIgnore
-        public long getSCAN_TASK_INITIAL_DELAY() {
-            return SCAN_TASK_INITIAL_DELAY;
-        }
-
-        @JsonIgnore
-        public int getSCAN_TASK_INTERVAL() {
-            return SCAN_TASK_INTERVAL;
-        }
-
-        @JsonIgnore
-        public String getSCAN_TASK_TIME_UNIT() {
-            return SCAN_TASK_TIME_UNIT;
-        }
-
-        @JsonIgnore
-        public long getEXECUTOR_SHUTDOWN_TIMEOUT_MS() {
-            return EXECUTOR_SHUTDOWN_TIMEOUT_MS;
-        }
-
-        @JsonIgnore
-        public String getAGGREGATOR_FILE_PATH() {
-            return AGGREGATOR_FILE_PATH;
-        }
-
-        @JsonIgnore
-        public String getAGGREGATOR_FILE_PATH_BACKUP() {
-            return AGGREGATOR_FILE_PATH_BACKUP;
-        }
-
-        @JsonIgnore
-        public int getENDPOINTS_SCAN_TIMEOUT_MS() {
-            return ENDPOINTS_SCAN_TIMEOUT_MS;
-        }
-
-        @JsonIgnore
-        public int getENDPOINTS_SEARCH_TIMEOUT_MS() {
-            return ENDPOINTS_SEARCH_TIMEOUT_MS;
-        }
-
-        @JsonIgnore
-        public int getSCAN_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT() {
-            return SCAN_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT;
-        }
-
-        @JsonIgnore
-        public int getSEARCH_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT() {
-            return SEARCH_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT;
-        }
-
-        @JsonIgnore
-        public int getSEARCH_MAX_CONCURRENT_REQUESTS_PER_SLOW_ENDPOINT() {
-            return SEARCH_MAX_CONCURRENT_REQUESTS_PER_SLOW_ENDPOINT;
-        }
-
-        @JsonIgnore
-        public List<EndpointConfigImpl> getAdditionalCQLEndpoints() {
-            return additionalCQLEndpoints;
-        }
-
-        @JsonIgnore
-        public List<EndpointConfigImpl> getAdditionalFCSEndpoints() {
-            return additionalFCSEndpoints;
-        }
-
-        @JsonIgnore
-        public List<URI> getSlowEndpoints() {
-            return slowEndpoints;
-        }
-
-        @JsonIgnore
-        public boolean getPrettyPrintJSON() {
-            return prettyPrintJSON;
-        }
-
-        @JsonIgnore
-        public boolean getSearchResultLinkEnabled() {
-            return searchResultLinkEnabled;
-        }
-
-        @JsonIgnore
-        public boolean isOpenAPIEnabled() {
-            return openapiEnabled;
-        }
-
-        @JsonIgnore
-        public String getSERVER_URL() {
-            return SERVER_URL;
-        }
-
-        @JsonIgnore
-        public String getVALIDATOR_URL() {
-            return VALIDATOR_URL;
-        }
-
-        @JsonIgnore
-        public WeblichtConfig getWeblichtConfig() {
-            return weblichtConfig;
-        }
-
-        @JsonIgnore
-        public PiwikConfig getPiwikConfig() {
-            return piwikConfig;
-        }
-
-        @JsonIgnore
-        public AAIConfig getAAIConfig() {
-            return aaiConfig;
-        }
-    }
+    @Valid
+    @NotNull
+    @JsonProperty
+    private SearchConfiguration search = new SearchConfiguration();
 
     @Valid
     @JsonProperty
-    public Params aggregatorParams = new Params();
+    private WeblichtConfiguration weblicht;
+
+    @Valid
+    @NotNull
+    @JsonProperty
+    private MatomoConfiguration matomo = new MatomoConfiguration();
+
+    @Valid
+    @NotNull
+    @JsonProperty
+    private AuthConfiguration auth = new AuthConfiguration();
+
+    @Valid
+    @JsonProperty
+    private List<EndpointOverrideConfiguration> endpointOverrides;
+
+    @Range
+    @JsonProperty
+    private long executorShutdownTimeoutMs = 1_000;
+
+    @JsonProperty
+    private boolean prettyPrintJSON = false;
+
+    @JsonProperty
+    private boolean searchResultLinkEnabled = false;
+
+    @JsonProperty
+    private boolean openapiEnabled = false;
+
+    @NotNull
+    @JsonProperty
+    private String serverUrl;
+
+    @JsonProperty
+    private String validatorUrl;
+
+    @JsonProperty
+    private boolean echoConfig = false;
+
+    // ----------------------------------------------------------------------
+
+    @JsonProperty("scan")
+    public ScanConfiguration getScanConfiguration() {
+        return scan;
+    }
+
+    @JsonProperty("search")
+    public SearchConfiguration getSearchConfiguration() {
+        return search;
+    }
+
+    @JsonProperty("weblicht")
+    public WeblichtConfiguration getWeblichtConfiguration() {
+        return weblicht;
+    }
+
+    @JsonProperty("matomo")
+    public MatomoConfiguration getMatomoConfiguration() {
+        return matomo;
+    }
+
+    @JsonProperty("auth")
+    public AuthConfiguration getAuthConfiguration() {
+        return auth;
+    }
+
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    @JsonProperty("endpointOverrides")
+    @Override
+    public List getEndpointOverrides() {
+        if (endpointOverrides == null) {
+            return Collections.emptyList();
+        }
+        return endpointOverrides;
+    }
+
+    @JsonProperty("executorShutdownTimeoutMs")
+    public long getExecutorShutdownTimeoutMs() {
+        return executorShutdownTimeoutMs;
+    }
+
+    @JsonProperty("prettyPrintJSON")
+    public boolean isPrettyPrintJSON() {
+        return prettyPrintJSON;
+    }
+
+    @JsonProperty("searchResultLinkEnabled")
+    public boolean isSearchResultLinkEnabled() {
+        return searchResultLinkEnabled;
+    }
+
+    @JsonProperty("openapiEnabled")
+    public boolean isOpenapiEnabled() {
+        return openapiEnabled;
+    }
+
+    @JsonProperty("serverUrl")
+    public String getServerUrl() {
+        return serverUrl;
+    }
+
+    @JsonProperty("validatorUrl")
+    public String getValidatorUrl() {
+        return validatorUrl;
+    }
+
+    @JsonProperty("echoConfig")
+    public boolean isEchoConfig() {
+        return echoConfig;
+    }
+
+    // ----------------------------------------------------------------------
 
     @JsonIgnore
-    public Params getAggregatorParams() {
-        return aggregatorParams;
+    @Override
+    public long getExecutorShutdownTimeout() {
+        return getExecutorShutdownTimeoutMs();
     }
+
+    @JsonIgnore
+    @Override
+    public int getEndpointScanTimeout() {
+        return getScanConfiguration().getRequestTimeoutMs();
+    }
+
+    @JsonIgnore
+    @Override
+    public int getEndpointSearchTimeout() {
+        return getSearchConfiguration().getRequestTimeoutMs();
+    }
+
+    @JsonIgnore
+    @Override
+    public int getMaxConcurrentScanRequestsPerEndpoint() {
+        return getScanConfiguration().getMaxConcurrentRequests();
+    }
+
+    @JsonIgnore
+    @Override
+    public int getMaxConcurrentSearchRequestsPerEndpoint() {
+        return getSearchConfiguration().getMaxConcurrentRequests();
+    }
+
+    @JsonIgnore
+    @Override
+    public String getCenterRegistryUrl() {
+        return getScanConfiguration().getCentreRegistryUrl();
+    }
+
+    @JsonIgnore
+    @Override
+    public int getScanMaxDepth() {
+        return getScanConfiguration().getMaxScanDepth();
+    }
+
+    @JsonIgnore
+    @Override
+    public long getScanTaskInitialDelay() {
+        return getScanConfiguration().getScanTaskInitialDelay();
+    }
+
+    @JsonIgnore
+    @Override
+    public long getScanTaskInterval() {
+        return getScanConfiguration().getScanTaskInterval();
+    }
+
+    @JsonIgnore
+    @Override
+    public TimeUnit getScanTaskTimeUnit() {
+        return getScanConfiguration().getScanTaskIntervalTimeUnit();
+    }
+
+    @JsonIgnore
+    @Override
+    public boolean enableScanCrawlTask() {
+        return true;
+    }
+
+    @JsonIgnore
+    @Override
+    public int getSearchesSizeThreshold() {
+        return getSearchConfiguration().getMaxAmountSearchCache();
+    }
+
+    @JsonIgnore
+    @Override
+    public long getSearchesAgeThreshold() {
+        return getSearchConfiguration().getMaxAgeSearchCacheMs();
+    }
+
+    @JsonIgnore
+    @Override
+    public boolean isAAIEnabled() {
+        return getAuthConfiguration().isEnabled();
+    }
+
+    @JsonIgnore
+    @Override
+    public String getPublicKey() {
+        final AuthConfiguration authConfig = getAuthConfiguration();
+        if (authConfig.getKeys() == null) {
+            return null;
+        }
+        return authConfig.getKeys().getPublicKey();
+    }
+
+    @JsonIgnore
+    @Override
+    public String getPrivateKey() {
+        final AuthConfiguration authConfig = getAuthConfiguration();
+        if (authConfig.getKeys() == null) {
+            return null;
+        }
+        return authConfig.getKeys().getPrivateKey();
+    }
+
+    @JsonIgnore
+    @Override
+    public String getPublicKeyFile() {
+        final AuthConfiguration authConfig = getAuthConfiguration();
+        if (authConfig.getKeys() == null) {
+            return null;
+        }
+        return authConfig.getKeys().getPublicKeyFile();
+    }
+
+    @JsonIgnore
+    @Override
+    public String getPrivateKeyFile() {
+        final AuthConfiguration authConfig = getAuthConfiguration();
+        if (authConfig.getKeys() == null) {
+            return null;
+        }
+        return authConfig.getKeys().getPrivateKeyFile();
+    }
+
 }

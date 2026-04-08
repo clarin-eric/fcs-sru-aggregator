@@ -1,6 +1,6 @@
 package eu.clarin.sru.fcs.aggregator.core;
 
-import java.net.URI;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import eu.clarin.sru.client.SRUVersion;
 import eu.clarin.sru.fcs.aggregator.client.ThrottledClient;
 import eu.clarin.sru.fcs.aggregator.scan.Endpoint;
+import eu.clarin.sru.fcs.aggregator.scan.EndpointOverrideConfig;
 import eu.clarin.sru.fcs.aggregator.scan.FCSProtocolVersion;
 import eu.clarin.sru.fcs.aggregator.scan.Institution;
 import eu.clarin.sru.fcs.aggregator.scan.Resource;
@@ -46,13 +47,8 @@ public class AggregatorSearchOnceTest {
             }
 
             @Override
-            public int getMaxConcurrentSearchRequestsPerSlowEndpoint() {
-                return 1;
-            }
-
-            @Override
-            public List<URI> getSlowEndpoints() {
-                return null;
+            public List<EndpointOverrideConfig> getEndpointOverrides() {
+                return Collections.emptyList();
             }
         };
         final ThrottledClient sruClient = AggregatorBase.createClient(sruClientParams, null);

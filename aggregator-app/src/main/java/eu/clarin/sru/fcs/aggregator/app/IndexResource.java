@@ -19,8 +19,8 @@ import javax.ws.rs.core.SecurityContext;
 import org.slf4j.LoggerFactory;
 
 import eu.clarin.sru.fcs.aggregator.app.auth.AuthenticationInfo;
-import eu.clarin.sru.fcs.aggregator.app.configuration.PiwikConfig;
-import eu.clarin.sru.fcs.aggregator.app.configuration.AggregatorConfiguration.Params;
+import eu.clarin.sru.fcs.aggregator.app.configuration.AggregatorConfiguration;
+import eu.clarin.sru.fcs.aggregator.app.configuration.MatomoConfiguration;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.links.Link;
@@ -35,18 +35,20 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 public class IndexResource {
     private static final org.slf4j.Logger log = LoggerFactory.getLogger(IndexResource.class);
 
-    final PiwikConfig config;
+    final MatomoConfiguration config;
     final boolean searchResultLinkEnabled;
     final String validatorUrl;
     final boolean authEnabled;
+    final boolean weblichtEnabled;
 
     public IndexResource() {
-        Params params = AggregatorApp.getInstance().getParams();
+        final AggregatorConfiguration aggregatorConfig = AggregatorApp.getInstance().getConfiguration();
 
-        config = params.getPiwikConfig();
-        searchResultLinkEnabled = params.getSearchResultLinkEnabled();
-        validatorUrl = params.getVALIDATOR_URL();
-        authEnabled = params.getAAIConfig().isAAIEnabled();
+        config = aggregatorConfig.getMatomoConfiguration();
+        searchResultLinkEnabled = aggregatorConfig.isSearchResultLinkEnabled();
+        validatorUrl = aggregatorConfig.getValidatorUrl();
+        authEnabled = aggregatorConfig.getAuthConfiguration().isEnabled();
+        weblichtEnabled = aggregatorConfig.getWeblichtConfiguration() != null;
     }
 
     @GET
@@ -55,7 +57,7 @@ public class IndexResource {
     public IndexView getIndex(@Context final SecurityContext security) {
         final AuthenticationInfo authInfo = AuthenticationInfo.fromPrincipal(security.getUserPrincipal());
         final String username = authInfo.getDisplayName(); // TODO: what to show the user?
-        return new IndexView(config, searchResultLinkEnabled, validatorUrl, authEnabled, username);
+        return new IndexView(config, searchResultLinkEnabled, validatorUrl, authEnabled, username, weblichtEnabled);
     }
 
     @POST
@@ -95,6 +97,6 @@ public class IndexResource {
         final AuthenticationInfo authInfo = AuthenticationInfo.fromPrincipal(security.getUserPrincipal());
         final String username = authInfo.getDisplayName(); // TODO: what to show the user?
 
-        return new IndexView(config, searchResultLinkEnabled, validatorUrl, authEnabled, username);
+        return new IndexView(config, searchResultLinkEnabled, validatorUrl, authEnabled, username, weblichtEnabled);
     }
 }

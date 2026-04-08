@@ -7,6 +7,7 @@ import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -40,7 +41,7 @@ import eu.clarin.sru.client.SRUVersion;
 import eu.clarin.sru.fcs.aggregator.app.AggregatorApp;
 import eu.clarin.sru.fcs.aggregator.app.auth.AuthenticationInfo;
 import eu.clarin.sru.fcs.aggregator.app.configuration.AggregatorConfiguration;
-import eu.clarin.sru.fcs.aggregator.app.configuration.WeblichtConfig;
+import eu.clarin.sru.fcs.aggregator.app.configuration.WeblichtConfiguration;
 import eu.clarin.sru.fcs.aggregator.app.export.Exports;
 import eu.clarin.sru.fcs.aggregator.app.export.WeblichtExportCache;
 import eu.clarin.sru.fcs.aggregator.core.Aggregator;
@@ -180,7 +181,14 @@ public class RestService {
 
         data.resources = resources.getResourcesByConsortia(consortia);
         data.languages = LanguagesISO693.getInstance().getLanguageMap(resources.getLanguagesByConsortia(consortia));
-        data.weblichtLanguages = AggregatorApp.getInstance().getParams().getWeblichtConfig().getAcceptedTcfLanguages();
+
+        {
+            final WeblichtConfiguration weblichtConfig = AggregatorApp.getInstance().getConfiguration()
+                    .getWeblichtConfiguration();
+            data.weblichtLanguages = (weblichtConfig != null)
+                    ? weblichtConfig.getAcceptedTcfLanguages()
+                    : Collections.emptyList();
+        }
 
         if (query != null) {
             data.query = (String) query;
@@ -513,11 +521,17 @@ public class RestService {
             "weblicht" }, responses = {
                     @ApiResponse(description = "Redirect to Weblicht page with query parameters set to access TCF encoded search results."),
                     @ApiResponse(responseCode = "404", description = "Search job not found."),
-                    @ApiResponse(responseCode = "503", description = "Error while exporting to weblicht.") })
+                    @ApiResponse(responseCode = "503", description = "Error while exporting to weblicht OR weblicht not available.") })
     public Response sendSearchResultsToWeblicht(@PathParam("id") String searchId,
             @QueryParam("filterLanguage") String filterLanguage,
             @QueryParam("resourceId") String resourceId) throws Exception {
         // TODO: check if download of auth restricted resource?
+
+        WeblichtConfiguration weblicht = AggregatorApp.getInstance().getConfiguration().getWeblichtConfiguration();
+        if (weblicht == null) {
+            return Response.status(Response.Status.SERVICE_UNAVAILABLE).entity("Weblicht integration not configured")
+                    .build();
+        }
 
         Search search = AggregatorApp.getInstance().getSearchById(searchId);
         if (search == null) {
@@ -526,8 +540,6 @@ public class RestService {
         if (filterLanguage == null || filterLanguage.isEmpty()) {
             filterLanguage = null;
         }
-
-        WeblichtConfig weblicht = AggregatorApp.getInstance().getParams().getWeblichtConfig();
 
         String url = null;
         byte[] bytes = Exports.getExportTCF(search.getResults(resourceId), search.getSearchLanguage(), filterLanguage);
@@ -574,7 +586,8 @@ public class RestService {
         Map<String, Integer> endpointsWithNumRequests = computeNumberOfActiveRequestsPerEndpoint(otherActiveSearches);
         // log.debug("other searches = {}", endpointsWithNumRequests);
 
-        SearchJobStatistics info = SearchJobStatistics.fromSearch(search, searchStats, otherActiveSearches, endpointsWithNumRequests);
+        SearchJobStatistics info = SearchJobStatistics.fromSearch(search, searchStats, otherActiveSearches,
+                endpointsWithNumRequests);
 
         return Response.ok(info).build();
     }
@@ -731,21 +744,21 @@ public class RestService {
     }
 
     private EndpointStatistics buildStats(boolean isScan, String consortiaRaw) {
-        final AggregatorConfiguration.Params params = AggregatorApp.getInstance().getParams();
+        final AggregatorConfiguration config = AggregatorApp.getInstance().getConfiguration();
 
         if (isScan) {
             final Statistics scan = AggregatorApp.getInstance().getScanStatistics();
             return new EndpointStatistics(true,
                     filterInstitutionStatsByConsortiaMaybe(scan.getInstitutions(), consortiaRaw),
                     scan.getDate(),
-                    params.getENDPOINTS_SCAN_TIMEOUT_MS() / 1000.);
+                    config.getScanConfiguration().getRequestTimeoutMs() / 1000.);
 
         } else {
             final Statistics search = AggregatorApp.getInstance().getSearchStatistics();
             return new EndpointStatistics(false,
                     filterInstitutionStatsByConsortiaMaybe(search.getInstitutions(), consortiaRaw),
                     search.getDate(),
-                    params.getENDPOINTS_SEARCH_TIMEOUT_MS() / 1000.);
+                    config.getSearchConfiguration().getRequestTimeoutMs() / 1000.);
         }
     }
 

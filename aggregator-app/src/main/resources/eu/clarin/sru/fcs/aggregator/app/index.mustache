@@ -29,9 +29,11 @@
     // user authentication status
     window.MyAggregator.AUTH_ENABLED = {{authEnabled}};
     window.MyAggregator.AUTH_USERNAME = {{#username}}"{{.}}"{{/username}}{{^username}}null{{/username}};
+
+    window.MyAggregator.WEBLICHT_ENABLED = {{weblichtEnabled}};
     
     // matomo, set to null to disable
-    {{#piwikConfig}}
+    {{#matomoConfig}}
     {{#enabled}}
     window.MyAggregator.MATOMO_TRACKING_PARAMS = {
       srcUrl: "{{{url}}}" + "matomo.js",
@@ -48,7 +50,7 @@
     {{^enabled}}
     window.MyAggregator.MATOMO_TRACKING_PARAMS = null;
     {{/enabled}}
-    {{/piwikConfig}}
+    {{/matomoConfig}}
 
     // via REST API: /rest/init
     // window.MyAggregator.mode

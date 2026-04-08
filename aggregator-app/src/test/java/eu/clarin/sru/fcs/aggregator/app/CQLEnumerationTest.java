@@ -18,7 +18,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricFilter;
 
-import eu.clarin.sru.fcs.aggregator.app.configuration.AggregatorConfiguration;
+import eu.clarin.sru.fcs.aggregator.app.configuration.Configuration;
 import eu.clarin.sru.fcs.aggregator.app.util.ClientFactory;
 import eu.clarin.sru.fcs.aggregator.scan.Endpoint;
 import eu.clarin.sru.fcs.aggregator.scan.Institution;
@@ -40,7 +40,7 @@ public class CQLEnumerationTest {
     public static final String CENTER_REGISTRY_TESTING = "https://centres-staging.clarin.eu/";
 
     @RegisterExtension
-    public static final DropwizardAppExtension<AggregatorConfiguration> RULE = new DropwizardAppExtension<>(
+    public static final DropwizardAppExtension<Configuration> RULE = new DropwizardAppExtension<>(
             AggregatorApp.class, ResourceHelpers.resourceFilePath("aggregator_test.yml"));
     // TODO: needs a bit more work, while we create our Aggregator app to access the
     // dropwizard environment, the scan crawler starts and runs in the background

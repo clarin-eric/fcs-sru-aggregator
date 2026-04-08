@@ -1,6 +1,6 @@
 package eu.clarin.sru.fcs.aggregator.core;
 
-import java.net.URI;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -15,9 +15,9 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
 
 import eu.clarin.sru.fcs.aggregator.client.ThrottledClient;
-import eu.clarin.sru.fcs.aggregator.scan.EndpointConfig;
 import eu.clarin.sru.fcs.aggregator.scan.EndpointFilter;
 import eu.clarin.sru.fcs.aggregator.scan.EndpointFromConsortiaFilterAllow;
+import eu.clarin.sru.fcs.aggregator.scan.EndpointOverrideConfig;
 import eu.clarin.sru.fcs.aggregator.scan.Institution;
 import eu.clarin.sru.fcs.aggregator.scan.Resources;
 import eu.clarin.sru.fcs.aggregator.scan.ScanCrawlTask;
@@ -44,7 +44,7 @@ public class AggregatorScanOnceTest {
     @Test
     public void testGatherCLARINDFCSEndpointsFromCLARINCentreRegistry() {
         EndpointFilter filter = new EndpointFromConsortiaFilterAllow(true, "CLARIN-D");
-        List<Institution> institutions = ScanCrawlTask.retrieveInstitutions(jerseyClient, centreRegistryUrl, null, null,
+        List<Institution> institutions = ScanCrawlTask.retrieveInstitutions(jerseyClient, centreRegistryUrl, null,
                 filter);
         long numberOfEndpoints = institutions.stream().map(i -> i.getEndpoints()).flatMap(Set::stream).count();
         long numberOfConsortia = institutions.stream().map(i -> i.getConsortium()).distinct().count();
@@ -85,13 +85,8 @@ public class AggregatorScanOnceTest {
             }
 
             @Override
-            public int getMaxConcurrentSearchRequestsPerSlowEndpoint() {
-                return 1;
-            }
-
-            @Override
-            public List<URI> getSlowEndpoints() {
-                return null;
+            public List<EndpointOverrideConfig> getEndpointOverrides() {
+                return Collections.emptyList();
             }
         };
         final ThrottledClient sruClient = AggregatorBase.createClient(sruClientParams, null);
@@ -121,16 +116,6 @@ public class AggregatorScanOnceTest {
             }
 
             @Override
-            public List<EndpointConfig> getAdditionalCQLEndpoints() {
-                return null;
-            }
-
-            @Override
-            public List<EndpointConfig> getAdditionalFCSEndpoints() {
-                return null;
-            }
-
-            @Override
             public long getScanTaskInitialDelay() {
                 return 0;
             }
@@ -143,6 +128,11 @@ public class AggregatorScanOnceTest {
             @Override
             public TimeUnit getScanTaskTimeUnit() {
                 return TimeUnit.HOURS;
+            }
+
+            @Override
+            public List<EndpointOverrideConfig> getEndpointOverrides() {
+                return Collections.emptyList();
             }
         };
 

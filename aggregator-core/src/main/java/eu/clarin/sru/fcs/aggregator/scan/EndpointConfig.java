@@ -3,9 +3,9 @@ package eu.clarin.sru.fcs.aggregator.scan;
 import java.net.URL;
 
 public interface EndpointConfig {
-    public URL getUrl();
+    URL getUrl();
 
-    public String getName();
+    String getName();
 
-    public String getWebsite();
+    String getWebsite();
 }

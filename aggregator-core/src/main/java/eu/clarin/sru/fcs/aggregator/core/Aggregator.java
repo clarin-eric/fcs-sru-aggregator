@@ -153,8 +153,8 @@ public class Aggregator extends AggregatorBase {
         return gcSearches(params.getSearchesSizeThreshold(), params.getSearchesAgeThreshold());
     }
 
-    public List<String> gcSearches(int searchesSizeThreshold, int searchesAgeThreshold) {
-        return activeSearches.gc(searchesSizeThreshold, searchesAgeThreshold);
+    public List<String> gcSearches(int searchesSizeThreshold, long searchesAgeThresholdMs) {
+        return activeSearches.gc(searchesSizeThreshold, searchesAgeThresholdMs);
     }
 
 }

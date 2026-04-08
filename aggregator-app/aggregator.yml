@@ -1,56 +1,84 @@
-aggregatorParams:
-  CENTER_REGISTRY_URL: https://centres.clarin.eu/
-  # additionalCQLEndpoints:
-    # - https://clarin.ids-mannheim.de/digibibsru-new
-  # additionalFCSEndpoints:
+aggregator:
+  # dump configuration on startup
+  echoConfig: true
 
-  AGGREGATOR_FILE_PATH: /var/lib/aggregator/fcsAggregatorResources.json
-  AGGREGATOR_FILE_PATH_BACKUP: /var/lib/aggregator/fcsAggregatorResources.backup.json
+  # endpoint discovery
+  scan:
+    # CLARIN centre registry
+    centreRegistryUrl: https://centres.clarin.eu/
 
-  SCAN_MAX_DEPTH: 3 # recommended 3
-  SCAN_TASK_INITIAL_DELAY: 0
-  SCAN_TASK_INTERVAL: 12
-  SCAN_TASK_TIME_UNIT: HOURS
-  SCAN_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT: 4  # @depth2: 1=361s; 2=225s; 4=207s
+    # discovery
+    maxScanDepth: 3 # recommended 3
+    scanTaskInitialDelay: 0
+    scanTaskInterval: 12
+    scanTaskIntervalTimeUnit: HOURS
 
-  SEARCH_MAX_CONCURRENT_REQUESTS_PER_ENDPOINT: 4
-  SEARCH_MAX_CONCURRENT_REQUESTS_PER_SLOW_ENDPOINT: 1
-  slowEndpoints:
-    - http://cqlservlet.mpi.nl/
+    # requests
+    maxConcurrentRequests: 4  # @depth2: 1=361s; 2=225s; 4=207s
+    requestTimeoutMs: 600_000  # 10min
 
-  ENDPOINTS_SCAN_TIMEOUT_MS: 600000
-  ENDPOINTS_SEARCH_TIMEOUT_MS: 30000
-  EXECUTOR_SHUTDOWN_TIMEOUT_MS: 1000
+    # caching for faster startup (on restart tries to use cached resources until new discovery is done)
+    cachedResourcesFile: /var/lib/aggregator/fcsAggregatorResources.json
+    cachedResourcesBackupFile: /var/lib/aggregator/fcsAggregatorResources.backup.json
 
-  weblichtConfig:
-    url: https://weblicht.sfs.uni-tuebingen.de/weblicht/?input=
-    exportServerUrl: ${SERVER_URL:-https://contentsearch.clarin.eu/}rest/
-    acceptedTcfLanguages:
-      - en
-      - de
-      - nl
-      - fr
-      - it
-      - es
-      - pl
+  # search requests
+  search:
+    # requests
+    maxConcurrentRequests: 4
+    requestTimeoutMs: 30_000  # 30sec
 
+    # search cache
+    maxAmountSearchCache: 1_000
+    maxAgeSearchCacheMs: 3600_000  # 60min
+
+  # engine shutdown
+  executorShutdownTimeoutMs: 1_000
+
+  # endpoint overrides (disabled, side-loading, metadata, request limit override)
+  endpointOverrides:
+    - url: http://cqlservlet.mpi.nl/
+      maxConcurrentSearchRequests: 1
+    # - url: https://clarin.ids-mannheim.de/digibibsru-new
+    #   isCQL: true
+
+  # pretty printing REST API responses
   prettyPrintJSON: false
 
-  aaiConfig:
+  # AAI/Shibboleth
+  auth:
     enabled: ${SHIB_ENABLED:-false}
-    key: {}
 
-  piwikConfig:
+    keys:
+      publicKeyFile: /var/lib/aggregator/publ-jwt.pem
+      privateKeyFile: /var/lib/aggregator/priv-jwt.pem
+    
+    shibWebappHost: ${SERVER_URL:-https://contentsearch.clarin.eu/}
+    shibLogin: ${SHIB_LI:-https://contentsearch.clarin.eu/Shibboleth.sso/Login}
+    shibLogout: ${SHIB_LO:-https://contentsearch.clarin.eu/Shibboleth.sso/Logout}
+
+  # UI: weblicht (disabled if null)
+  weblicht:
+    url: https://weblicht.sfs.uni-tuebingen.de/weblicht/?input=
+    exportServerUrl: ${SERVER_URL:-https://contentsearch.clarin.eu/}rest/
+    acceptedTcfLanguages: [ en, de, nl, fr, it, es, pl ]
+
+  # UI: piwik/matomo
+  matomo:
     enabled: ${PIWIK_ENABLED:-true}
+
     url: ${PIWIK_URL:-https://stats.clarin.eu/}
     siteID: ${PIWIK_SITEID:-20}
     setDomains: ${PIWIK_SETDOMAINS:-['*.contentsearch.clarin.eu']}
 
+  # UI
   searchResultLinkEnabled: ${SEARCH_RESULT_LINK_ENABLED:-false}
+  validatorUrl: ${VALIDATOR_URL:-https://www.clarin.eu/fcsvalidator/}
 
+  # rest
   openapiEnabled: ${SWAGGER_ENABLED:-true}
-  SERVER_URL: ${SERVER_URL:-https://contentsearch.clarin.eu/}
-  VALIDATOR_URL: ${VALIDATOR_URL:-https://www.clarin.eu/fcsvalidator/}
+  serverUrl: ${SERVER_URL:-https://contentsearch.clarin.eu/}
+
+# --------------------------------------------------------------------------
 
 # use the simple server factory, run on a single port
 server:
