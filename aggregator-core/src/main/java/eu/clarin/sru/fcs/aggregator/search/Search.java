@@ -53,6 +53,7 @@ public class Search {
 
     private final String id = UniqueId.generateId();
     private final long createdAt = System.currentTimeMillis();
+    private long updatedAt = createdAt;
 
     private final List<Result> results = Collections.synchronizedList(new ArrayList<>());
 
@@ -151,6 +152,7 @@ public class Search {
         statistics.initEndpoint(resource.getEndpointInstitution(), resource.getEndpoint(),
                 searchClient.getMaxConcurrentRequests(true, resource.getEndpoint().getUrl()));
         result.setInProgress(true);
+        updatedAt = System.currentTimeMillis();
 
         try {
             statistics.incrementOperationsCount(resource.getEndpointInstitution(), resource.getEndpoint());
@@ -184,6 +186,7 @@ public class Search {
                                 log.error("search.onSuccess exception:", xc);
                             } finally {
                                 result.setDone();
+                                updatedAt = System.currentTimeMillis();
                                 statistics.decrementOperationsCount(resource.getEndpointInstitution(),
                                         resource.getEndpoint());
                             }
@@ -209,6 +212,7 @@ public class Search {
                                 log.error("search.onError exception:", xxc);
                             } finally {
                                 result.setDone();
+                                updatedAt = System.currentTimeMillis();
                                 statistics.decrementOperationsCount(resource.getEndpointInstitution(),
                                         resource.getEndpoint());
                             }
@@ -230,6 +234,7 @@ public class Search {
                                 log.error("search.onCancelled exception:", xc);
                             } finally {
                                 result.setCancelled();
+                                updatedAt = System.currentTimeMillis();
                                 statistics.decrementOperationsCount(resource.getEndpointInstitution(),
                                         resource.getEndpoint());
                             }
@@ -243,6 +248,8 @@ public class Search {
     }
 
     public boolean stopSearch() {
+        updatedAt = System.currentTimeMillis();
+
         // TODO: do we want to do a check beforehand to see if anything is even left to
         // cancel?
         synchronized (results) {
@@ -324,6 +331,10 @@ public class Search {
 
     public long getCreatedAt() {
         return createdAt;
+    }
+
+    public long getUpdatedAt() {
+        return updatedAt;
     }
 
     public String getQueryType() {

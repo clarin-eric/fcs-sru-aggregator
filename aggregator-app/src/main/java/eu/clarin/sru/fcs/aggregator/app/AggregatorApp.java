@@ -466,6 +466,10 @@ public class AggregatorApp extends Application<Configuration> {
         return aggregator.getSearchById(id);
     }
 
+    public Search getSearchById(String id, boolean touch) {
+        return aggregator.getSearchById(id, touch);
+    }
+
     public WeblichtExportCache getWeblichtExportCacheBySearchId(String searchId, boolean createIfNeeded) {
         WeblichtExportCache cache = activeWeblichtExports.get(searchId);
         if (cache == null && createIfNeeded) {

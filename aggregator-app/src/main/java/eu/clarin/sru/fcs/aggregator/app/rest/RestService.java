@@ -2,12 +2,14 @@ package eu.clarin.sru.fcs.aggregator.app.rest;
 
 import java.io.IOException;
 import java.net.URI;
+import java.nio.ByteBuffer;
 import java.security.Principal;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -15,6 +17,7 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.zip.CRC32;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
@@ -26,6 +29,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
@@ -106,9 +110,15 @@ public class RestService {
     @Operation(description = "Get all resources.", tags = { "web" }, responses = {
             @ApiResponse(description = "List of resource objects.", content = {
                     @Content(mediaType = MediaType.APPLICATION_JSON, array = @ArraySchema(schema = @Schema(implementation = Resource.class))) }) })
-    public Response getResources(
+    public Response getResources(@Context final HttpServletRequest request,
             @Parameter(description = "Comma-separated list of consortia to filter institutions/centres, endpoints and finally resources", required = false) @QueryParam(PARAM_CONSORTIA) String consortiaRaw)
             throws IOException {
+        final Date lastModified = AggregatorApp.getInstance().getScanStatistics().getDate();
+        final String etag = eTag(lastModified);
+        if (isCachedClientSide(request, lastModified, etag)) {
+            return Response.notModified().build();
+        }
+
         List<Resource> resources = AggregatorApp.getInstance().getResources().getResources();
 
         if (consortiaRaw != null && !consortiaRaw.trim().isEmpty()) {
@@ -116,7 +126,9 @@ public class RestService {
             resources = AggregatorApp.getInstance().getResources().getResourcesByConsortia(consortia);
         }
 
-        return Response.ok(resources).build();
+        return Response.ok(resources)
+                .lastModified(lastModified).tag(EntityTag.valueOf(etag))
+                .build();
     }
 
     @GET
@@ -124,9 +136,15 @@ public class RestService {
     @Path("languages")
     @Operation(description = "Get all languages (code --> name) from all resources.", tags = { "web" }, responses = {
             @ApiResponse(description = "Mapping of language ISO code to English name.", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = LanguageMap.class), examples = @ExampleObject(value = "{\n  \"deu\": \"German\",\n  \"eng\": \"English\"}"))) })
-    public Response getLanguages(
+    public Response getLanguages(@Context final HttpServletRequest request,
             @Parameter(description = "Comma-separated list of consortia to filter institutions/centres, endpoints and finally resources", required = false) @QueryParam(PARAM_CONSORTIA) String consortiaRaw)
             throws IOException {
+        final Date lastModified = AggregatorApp.getInstance().getScanStatistics().getDate();
+        final String etag = eTag(lastModified);
+        if (isCachedClientSide(request, lastModified, etag)) {
+            return Response.notModified().build();
+        }
+
         Set<String> codes = AggregatorApp.getInstance().getResources().getLanguages();
 
         if (consortiaRaw != null && !consortiaRaw.trim().isEmpty()) {
@@ -137,7 +155,9 @@ public class RestService {
         log.info("get language codes: {}", codes);
         Map<String, String> languages = LanguagesISO693.getInstance().getLanguageMap(codes);
 
-        return Response.ok(languages).build();
+        return Response.ok(languages)
+                .lastModified(lastModified).tag(EntityTag.valueOf(etag))
+                .build();
     }
 
     @GET
@@ -145,9 +165,17 @@ public class RestService {
     @Path("consortia")
     @Operation(description = "Get all consorita from all resources.", tags = { "web" }, responses = {
             @ApiResponse(description = "List of consortia names.", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ConsortiaList.class), examples = @ExampleObject(value = "[ null, \"CLARIN-D\", \"LINDAT/CLARIAH-CZ\" ]"))) })
-    public Response getConsortia() throws IOException {
+    public Response getConsortia(@Context final HttpServletRequest request) throws IOException {
+        final Date lastModified = AggregatorApp.getInstance().getScanStatistics().getDate();
+        final String etag = eTag(lastModified);
+        if (isCachedClientSide(request, lastModified, etag)) {
+            return Response.notModified().build();
+        }
+
         Set<String> consortia = AggregatorApp.getInstance().getResources().getConsortia();
-        return Response.ok(consortia).build();
+        return Response.ok(consortia)
+                .lastModified(lastModified).tag(EntityTag.valueOf(etag))
+                .build();
     }
 
     @SuppressWarnings({ "unchecked" })
@@ -161,6 +189,9 @@ public class RestService {
     public Response getInit(@Context final HttpServletRequest request,
             @Parameter(description = "Comma-separated list of consortia to filter institutions/centres, endpoints and finally resources", required = false) @QueryParam(PARAM_CONSORTIA) String consortiaRaw)
             throws IOException {
+        Date lastModified = AggregatorApp.getInstance().getScanStatistics().getDate();
+        String etag = eTag(lastModified);
+
         log.info("get initial data");
         final Resources resources = AggregatorApp.getInstance().getResources();
         final Object query = request.getSession().getAttribute(PARAM_QUERY);
@@ -204,7 +235,14 @@ public class RestService {
             request.getSession().setAttribute(PARAM_AGGREGATION_CONTEXT, null);
         }
 
-        return Response.ok(data).build();
+        // reset if there is session data
+        if (query != null || mode != null || contextString != null || consortiaRawSession != null) {
+            lastModified = null;
+            etag = null;
+        }
+        return Response.ok(data)
+                .lastModified(lastModified).tag((etag != null) ? EntityTag.valueOf(etag) : null)
+                .build();
     }
 
     // ----------------------------------------------------------------------
@@ -300,13 +338,19 @@ public class RestService {
             @ApiResponse(responseCode = "200", description = "Search result with (partial) responses and number of outstanding responses.", content = {
                     @Content(schema = @Schema(implementation = JsonSearch.class)) }),
             @ApiResponse(responseCode = "404", description = "Search job not found.") })
-    public Response getSearch(@PathParam("id") String searchId,
+    public Response getSearch(@Context final HttpServletRequest request, @PathParam("id") String searchId,
             @QueryParam("resourceId") String resourceId) throws Exception {
         // TODO: check if download of auth restricted resource?
 
-        Search search = AggregatorApp.getInstance().getSearchById(searchId);
+        Search search = AggregatorApp.getInstance().getSearchById(searchId, true);
         if (search == null) {
             return Response.status(Response.Status.NOT_FOUND).entity("Search job not found").build();
+        }
+
+        final Date lastModified = new Date(search.getUpdatedAt());
+        final String etag = eTag(lastModified);
+        if (isCachedClientSide(request, lastModified, etag)) {
+            return Response.notModified().build();
         }
 
         JsonSearch js = new JsonSearch(search.getResults(resourceId));
@@ -318,7 +362,9 @@ public class RestService {
                 js.cancelled++;
             }
         }
-        return Response.ok(js).build();
+        return Response.ok(js)
+                .lastModified(lastModified).tag(EntityTag.valueOf(etag))
+                .build();
     }
 
     @GET
@@ -328,13 +374,19 @@ public class RestService {
             @ApiResponse(responseCode = "200", description = "Search result with (partial) responses and number of outstanding responses.", content = {
                     @Content(schema = @Schema(implementation = JsonMetaOnlySearch.class)) }),
             @ApiResponse(responseCode = "404", description = "Search job not found.") })
-    public Response getSearchMetaOnly(@PathParam("id") String searchId,
+    public Response getSearchMetaOnly(@Context final HttpServletRequest request, @PathParam("id") String searchId,
             @QueryParam("resourceId") String resourceId) throws Exception {
         // TODO: check if download of auth restricted resource?
 
-        Search search = AggregatorApp.getInstance().getSearchById(searchId);
+        Search search = AggregatorApp.getInstance().getSearchById(searchId, true);
         if (search == null) {
             return Response.status(Response.Status.NOT_FOUND).entity("Search job not found").build();
+        }
+
+        final Date lastModified = new Date(search.getUpdatedAt());
+        final String etag = eTag(lastModified);
+        if (isCachedClientSide(request, lastModified, etag)) {
+            return Response.notModified().build();
         }
 
         JsonSearch js = new JsonSearch(search.getResults(resourceId));
@@ -348,7 +400,9 @@ public class RestService {
         }
         JsonMetaOnlySearch jmos = JsonMetaOnlySearch.fromJsonSearch(js);
 
-        return Response.ok(jmos).build();
+        return Response.ok(jmos)
+                .lastModified(lastModified).tag(EntityTag.valueOf(etag))
+                .build();
     }
 
     @POST
@@ -370,7 +424,7 @@ public class RestService {
         if (resourceId == null || resourceId.isEmpty()) {
             return Response.status(400).entity("'resourceId' parameter expected").build();
         }
-        Search search = AggregatorApp.getInstance().getSearchById(searchId);
+        Search search = AggregatorApp.getInstance().getSearchById(searchId, true);
         if (search == null) {
             return Response.status(Response.Status.NOT_FOUND).entity("Search job not found").build();
         }
@@ -407,7 +461,7 @@ public class RestService {
     public Response postSearchStop(@PathParam("id") String searchId,
             @Context final SecurityContext security) throws Exception {
         log.info("POST /search/{id}/stop, searchId: {}", searchId);
-        Search search = AggregatorApp.getInstance().getSearchById(searchId);
+        Search search = AggregatorApp.getInstance().getSearchById(searchId, true);
         if (search == null) {
             return Response.status(Response.Status.NOT_FOUND).entity("Search job not found").build();
         }
@@ -440,13 +494,13 @@ public class RestService {
             @ApiResponse(responseCode = "404", description = "Search job not found."),
             @ApiResponse(responseCode = "400", description = "format parameter must be one of: text, tcf, ods, excel, csv")
     })
-    public Response downloadSearchResults(@PathParam("id") String searchId,
+    public Response downloadSearchResults(@Context final HttpServletRequest request, @PathParam("id") String searchId,
             @QueryParam("resourceId") String resourceId,
             @QueryParam("filterLanguage") String filterLanguage,
             @QueryParam("format") String format) throws Exception {
         // TODO: check if download of auth restricted resource?
 
-        Search search = AggregatorApp.getInstance().getSearchById(searchId);
+        Search search = AggregatorApp.getInstance().getSearchById(searchId, true);
         if (search == null) {
             return Response.status(Response.Status.NOT_FOUND).entity("Search job not found").build();
         }
@@ -454,22 +508,29 @@ public class RestService {
             filterLanguage = null;
         }
 
+        List<Result> results = search.getResults(resourceId);
+
+        final Date lastModified = new Date(search.getUpdatedAt()); // TODO: extract last date from results list
+        final String etag = eTag(lastModified);
+        if (isCachedClientSide(request, lastModified, etag)) {
+            return Response.notModified().build();
+        }
+
         if (format == null || format.trim().isEmpty() || format.trim().equals("text")) {
-            String text = Exports.getExportText(search.getResults(resourceId), filterLanguage);
-            return download(text, MediaType.TEXT_PLAIN, search.getQuery() + ".txt");
+            String text = Exports.getExportText(results, filterLanguage);
+            return download(text, MediaType.TEXT_PLAIN, search.getQuery() + ".txt", lastModified, etag);
         } else if (format.equals("tcf")) {
-            byte[] bytes = Exports.getExportTCF(
-                    search.getResults(resourceId), search.getSearchLanguage(), filterLanguage);
-            return download(bytes, TCF_MEDIA_TYPE, search.getQuery() + ".xml");
+            byte[] bytes = Exports.getExportTCF(results, search.getSearchLanguage(), filterLanguage);
+            return download(bytes, TCF_MEDIA_TYPE, search.getQuery() + ".xml", lastModified, etag);
         } else if (format.equals("ods")) {
-            byte[] bytes = Exports.getExportODS(search.getResults(resourceId), filterLanguage);
-            return download(bytes, ODS_MEDIA_TYPE, search.getQuery() + ".ods");
+            byte[] bytes = Exports.getExportODS(results, filterLanguage);
+            return download(bytes, ODS_MEDIA_TYPE, search.getQuery() + ".ods", lastModified, etag);
         } else if (format.equals("excel")) {
-            byte[] bytes = Exports.getExportExcel(search.getResults(resourceId), filterLanguage);
-            return download(bytes, EXCEL_MEDIA_TYPE, search.getQuery() + ".xlsx");
+            byte[] bytes = Exports.getExportExcel(results, filterLanguage);
+            return download(bytes, EXCEL_MEDIA_TYPE, search.getQuery() + ".xlsx", lastModified, etag);
         } else if (format.equals("csv")) {
-            String csv = Exports.getExportCSV(search.getResults(resourceId), filterLanguage, ";");
-            return download(csv, MediaType.TEXT_PLAIN, search.getQuery() + ".csv");
+            String csv = Exports.getExportCSV(results, filterLanguage, ";");
+            return download(csv, MediaType.TEXT_PLAIN, search.getQuery() + ".csv", lastModified, etag);
         }
 
         return Response.status(Response.Status.BAD_REQUEST)
@@ -477,7 +538,7 @@ public class RestService {
                 .build();
     }
 
-    Response download(Object entity, String mediaType, String filesuffix) {
+    Response download(Object entity, String mediaType, String filesuffix, Date lastModified, String etag) {
         if (entity == null) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity("error while converting to the export format").build();
@@ -485,6 +546,7 @@ public class RestService {
         String filename = EXPORT_FILENAME_PREFIX + filesuffix;
         return Response.ok(entity, mediaType)
                 .header("Content-Disposition", "attachment; filename=\"" + filename + "\"")
+                .lastModified(lastModified).tag((etag != null) ? EntityTag.valueOf(etag) : null)
                 .build();
     }
 
@@ -502,16 +564,17 @@ public class RestService {
         // TODO: check if download of auth restricted resource? or is tis allowed
         // always?
 
-        WeblichtExportCache cache = AggregatorApp.getInstance().getWeblichtExportCacheBySearchId(searchId, false);
+        final WeblichtExportCache cache = AggregatorApp.getInstance().getWeblichtExportCacheBySearchId(searchId, false);
         if (cache == null) {
             return Response.status(Response.Status.NOT_FOUND).entity("Search job not found").build();
         }
-        byte[] bytes = cache.getWeblichtExport(exportId);
+        final byte[] bytes = cache.getWeblichtExport(exportId);
         if (bytes == null) {
             return Response.status(Response.Status.NOT_FOUND).entity("Weblicht export data not found").build();
         }
+        // final Date lastModified = new Date(cache.getWeblichtExportDate(exportId));
         return download(bytes, TCF_MEDIA_TYPE,
-                "export.{id}.{eid}.tcf".replace("{id}", searchId).replace("{eid}", exportId));
+                "export.{id}.{eid}.tcf".replace("{id}", searchId).replace("{eid}", exportId), null, null);
     }
 
     @GET
@@ -533,7 +596,7 @@ public class RestService {
                     .build();
         }
 
-        Search search = AggregatorApp.getInstance().getSearchById(searchId);
+        Search search = AggregatorApp.getInstance().getSearchById(searchId, true);
         if (search == null) {
             return Response.status(Response.Status.NOT_FOUND).entity("Search job not found").build();
         }
@@ -571,7 +634,7 @@ public class RestService {
             @ApiResponse(responseCode = "404", description = "Search job not found.")
     })
     public Response getSearchStatus(@PathParam("id") String searchId) {
-        Search search = AggregatorApp.getInstance().getSearchById(searchId);
+        Search search = AggregatorApp.getInstance().getSearchById(searchId, true); // TODO: no touch?
         if (search == null) {
             return Response.status(Response.Status.NOT_FOUND).entity("Search job not found").build();
         }
@@ -600,10 +663,11 @@ public class RestService {
     public Response getStatistics(
             @Parameter(description = "Comma-separated list of consortia to filter institutions/centres, endpoints and finally resources", required = false) @QueryParam(PARAM_CONSORTIA) String consortiaRaw)
             throws IOException {
-        ScanSearchStatistics info = new ScanSearchStatistics();
+        final ScanSearchStatistics info = new ScanSearchStatistics();
         info.scans = buildStats(true, consortiaRaw);
         info.searches = buildStats(false, consortiaRaw);
-        return Response.ok(info).build();
+        final Date lastModified = (info.searches.date.after(info.scans.date)) ? info.searches.date : info.scans.date;
+        return Response.ok(info).lastModified(lastModified).build();
     }
 
     @GET
@@ -625,15 +689,17 @@ public class RestService {
             @Parameter(description = "Comma-separated list of consortia to filter institutions/centres, endpoints and finally resources", required = false) @QueryParam(PARAM_CONSORTIA) String consortiaRaw)
             throws IOException {
 
+        // TODO: cache short-circuiting
+
         if ("search-stats".equals(type)) {
             Object info = buildSearchStats();
             return Response.ok(info).build();
         } else if ("last-scan".equals(type)) {
             EndpointStatistics info = buildStats(true, consortiaRaw);
-            return Response.ok(info).build();
+            return Response.ok(info).lastModified(info.date).build(); // TODO: etag
         } else if ("recent-searches".equals(type)) {
             EndpointStatistics info = buildStats(false, consortiaRaw);
-            return Response.ok(info).build();
+            return Response.ok(info).lastModified(info.date).build(); // TODO: etag
         }
 
         return Response.status(Response.Status.NOT_FOUND).entity("type of statistics not found").build();
@@ -818,5 +884,50 @@ public class RestService {
     }
 
     // ----------------------------------------------------------------------
+    // see DropWizard's AssetServlet
+
+    private static final String IF_MODIFIED_SINCE = "If-Modified-Since";
+    private static final String IF_NONE_MATCH = "If-None-Match";
+
+    // private boolean isCachedClientSide(HttpServletRequest req, Date lastModified)
+    // { return isCachedClientSide(req, lastModified, eTag(lastModified)); }
+
+    private boolean isCachedClientSide(HttpServletRequest req, Date lastModified, String eTag) {
+        return isCachedClientSide(req, (lastModified != null) ? lastModified.getTime() : null, eTag);
+    }
+
+    private boolean isCachedClientSide(HttpServletRequest req, Long lastModified, String eTag) {
+        // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-Modified-Since
+        // Indicates that with the presense of If-None-Match If-Modified-Since should be
+        // ignored.
+        String ifNoneMatchHeader = req.getHeader(IF_NONE_MATCH);
+        if (ifNoneMatchHeader != null && eTag != null) {
+            return eTag.equals(ifNoneMatchHeader);
+        } else if (lastModified != null) {
+            return req.getDateHeader(IF_MODIFIED_SINCE) >= lastModified;
+        } else {
+            return false;
+        }
+    }
+
+    private String eTag(Date lastModified) {
+        if (lastModified == null) {
+            return null;
+        }
+        return eTag(lastModified.getTime());
+    }
+
+    private String eTag(long lastModified) {
+        final ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
+        buffer.putLong(0, lastModified);
+        final byte[] bytes = buffer.array();
+        return '"' + hash(bytes) + '"';
+    }
+
+    private static String hash(byte[] resource) {
+        final CRC32 crc32 = new CRC32();
+        crc32.update(resource);
+        return Long.toHexString(crc32.getValue());
+    }
 
 }

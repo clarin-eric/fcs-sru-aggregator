@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import org.slf4j.LoggerFactory;
 
@@ -18,7 +19,7 @@ public class SearchCache {
     public final int DEFAULT_SEARCHES_SIZE_GC_THRESHOLD = 1000;
     public final int DEFAULT_SEARCHES_AGE_GC_THRESHOLD = 60; // minutes
 
-    private final Map<String, Search> searches = Collections.synchronizedMap(new HashMap<>());
+    private final Map<String, SearchCacheEntry> searches = Collections.synchronizedMap(new HashMap<>());
     private AtomicInteger numberOfSearches = new AtomicInteger(0);
 
     public SearchCache() {
@@ -32,8 +33,7 @@ public class SearchCache {
      * @return mapping of search id to search object
      */
     public Map<String, Search> getSearches() {
-        // TODO: make readonly?
-        return searches;
+        return searches.entrySet().stream().collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue().getSearch()));
     }
 
     public Map<String, Search> getSearches(Duration maxAge) {
@@ -51,10 +51,10 @@ public class SearchCache {
         Map<String, Search> searchesFiltered = new HashMap<>();
 
         long t0 = System.currentTimeMillis();
-        for (Map.Entry<String, Search> e : searches.entrySet()) {
-            long dtsec = (t0 - e.getValue().getCreatedAt()) / 1000L;
+        for (Map.Entry<String, SearchCacheEntry> e : searches.entrySet()) {
+            long dtsec = (t0 - e.getValue().getSearch().getCreatedAt()) / 1000L;
             if (dtsec <= maxAgeSeconds) {
-                searchesFiltered.put(e.getKey(), e.getValue());
+                searchesFiltered.put(e.getKey(), e.getValue().getSearch());
             }
         }
 
@@ -62,11 +62,19 @@ public class SearchCache {
     }
 
     public Search getSearchById(String searchId) {
-        return searches.get(searchId);
+        return getSearchById(searchId, true); // NOTE: by default touch
+    }
+
+    public Search getSearchById(String searchId, boolean touch) {
+        final SearchCacheEntry entry = searches.get(searchId);
+        if (touch) {
+            entry.touch();
+        }
+        return entry.getSearch();
     }
 
     public void addSearch(Search search) {
-        searches.put(search.getId(), search);
+        searches.put(search.getId(), new SearchCacheEntry(search));
         numberOfSearches.incrementAndGet();
     }
 
@@ -74,8 +82,8 @@ public class SearchCache {
         List<String> toBeRemoved = new ArrayList<>();
         if (searches.size() > searchesSizeThreshold) {
             long t0 = System.currentTimeMillis();
-            for (Map.Entry<String, Search> e : searches.entrySet()) {
-                long dtms = (t0 - e.getValue().getCreatedAt());
+            for (Map.Entry<String, SearchCacheEntry> e : searches.entrySet()) {
+                long dtms = (t0 - e.getValue().getSearch().getCreatedAt());
                 if (dtms > searchesAgeThresholdMs) {
                     log.info("removing search {}: {} minutes old", e.getKey(), dtms / 1000 / 60);
                     toBeRemoved.add(e.getKey());
@@ -127,8 +135,9 @@ public class SearchCache {
     public int getNumberOfSearches(long maxAgeSeconds, boolean onlyInProgress) {
         long t0 = System.currentTimeMillis();
         int numberOfSearches = 0;
-        for (Search search : searches.values()) {
-            long dtsec = (t0 - search.getCreatedAt()) / 1000L;
+        for (SearchCacheEntry entry : searches.values()) {
+            final Search search = entry.getSearch();
+            final long dtsec = (t0 - search.getCreatedAt()) / 1000L;
             if (dtsec <= maxAgeSeconds) {
                 // either all or in-progress
                 if (!onlyInProgress || (onlyInProgress && !search.isFinished())) {
@@ -137,6 +146,29 @@ public class SearchCache {
             }
         }
         return numberOfSearches;
+    }
+
+    // ----------------------------------------------------------------------
+
+    public static class SearchCacheEntry {
+        private final Search search;
+        private long lastTouchedAt = System.currentTimeMillis();
+
+        public SearchCacheEntry(final Search search) {
+            this.search = search;
+        }
+
+        public Search getSearch() {
+            return search;
+        }
+
+        public long getLastTouchedAt() {
+            return lastTouchedAt;
+        }
+
+        public void touch() {
+            lastTouchedAt = System.currentTimeMillis();
+        }
     }
 
 }

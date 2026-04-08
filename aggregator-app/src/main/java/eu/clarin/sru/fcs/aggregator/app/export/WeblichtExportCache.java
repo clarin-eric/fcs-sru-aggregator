@@ -27,6 +27,17 @@ public final class WeblichtExportCache {
         return null;
     }
 
+    public Long getWeblichtExportDate(String exportId) {
+        synchronized (exports) {
+            for (WeblichtExportCacheEntry export : exports) {
+                if (exportId.equals(export.getId())) {
+                    return export.getCreatedAt();
+                }
+            }
+        }
+        return null;
+    }
+
     public String addWeblichtExport(byte[] data) {
         synchronized (exports) {
             // check if data already exists in cache
@@ -54,6 +65,7 @@ public final class WeblichtExportCache {
     public static class WeblichtExportCacheEntry {
         private final String id;
         private final byte[] data;
+        private final long createdAt = System.currentTimeMillis();
 
         public WeblichtExportCacheEntry(byte[] data) {
             this.id = UniqueId.generateId();
@@ -67,5 +79,10 @@ public final class WeblichtExportCache {
         public byte[] getData() {
             return data;
         }
+
+        public long getCreatedAt() {
+            return createdAt;
+        }
     }
+
 }

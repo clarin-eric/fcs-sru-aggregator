@@ -116,6 +116,10 @@ public class Aggregator extends AggregatorBase {
         return activeSearches.getSearchById(id);
     }
 
+    public Search getSearchById(String id, boolean touch) {
+        return activeSearches.getSearchById(id, touch);
+    }
+
     public int getNumberOfSearches() {
         return activeSearches.getNumberOfSearches();
     }
