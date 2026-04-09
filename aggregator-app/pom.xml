@@ -244,6 +244,15 @@
                 </executions>
             </plugin>
 
+            <!-- no release deploy -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
+
             <!-- other build artifacts -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
