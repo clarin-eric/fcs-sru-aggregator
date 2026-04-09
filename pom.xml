@@ -21,6 +21,12 @@
         <url>https://www.clarin.eu</url>
     </organization>
 
+    <scm>
+        <connection>scm:git:https://github.com/clarin-eric/fcs-sru-aggregator</connection>
+        <developerConnection>scm:git:git@github.com:clarin-eric/fcs-sru-aggregator.git</developerConnection>
+        <url>https://github.com/clarin-eric/fcs-sru-aggregator</url>
+    </scm>
+
     <licenses>
         <license>
             <name>GNU General Public License Version 3 (GPLv3)</name>
