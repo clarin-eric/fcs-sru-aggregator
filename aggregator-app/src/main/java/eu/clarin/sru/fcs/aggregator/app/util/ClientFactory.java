@@ -21,15 +21,13 @@ import org.glassfish.jersey.client.ClientProperties;
 
 /**
  * Create {@link Client} instances that:
- * <p/>
  * <ul>
  * <li>Follow redirects.</li>
  * <li>Accept any SSL connection.</li>
  * </ul>
- * <p/>
  * We might reconsider the latter feature though ;).
  *
- * @author Daniël de Kok <me@danieldk.eu>
+ * @author Daniël de Kok <a href="mailto:me@danieldk.eu">me@danieldk.eu</a><br>
  *         Shamelessly copied from the weblicht Harvester by emanueldima
  */
 public class ClientFactory {
