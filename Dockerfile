@@ -4,7 +4,7 @@
 # - create minimal run image with default configuration
 
 # ---------------------------------------------------------------------------
-FROM node:22.19.0-trixie-slim AS web
+FROM node:22.22.2-trixie-slim AS web
 
 RUN set -ex; \
     apt-get update; \
@@ -38,7 +38,7 @@ COPY webui.env* /work/
 RUN ./scripts/update-webui.sh
 
 # ---------------------------------------------------------------------------
-FROM maven:3.9.11-eclipse-temurin-21-noble AS jar
+FROM maven:3.9.14-eclipse-temurin-25-noble AS jar
 
 WORKDIR /work
 
@@ -50,6 +50,8 @@ COPY pom.xml /work/
 COPY aggregator-core/pom.xml /work/aggregator-core/pom.xml
 COPY aggregator-app/pom.xml /work/aggregator-app/pom.xml
 
+# --mount=type=cache,target=/root/.m2
+# --mount=type=bind,source=aggregator-core/pom.xml,target=/work/aggregator-core/pom.xml
 RUN mvn -B dependency:resolve-plugins
 RUN mvn -B dependency:resolve
 #RUN mvn -q dependency:go-offline
@@ -65,7 +67,7 @@ COPY --from=web /work/aggregator-app/src/main/resources/assets/webapp /work/aggr
 RUN ./scripts/build.sh
 
 # ---------------------------------------------------------------------------
-FROM eclipse-temurin:21-jre-noble AS run
+FROM eclipse-temurin:25-jre-noble AS run
 
 WORKDIR /app
 

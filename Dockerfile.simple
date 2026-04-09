@@ -5,7 +5,7 @@
 # TODO: could re-use maven build artifacts and skip rebuild everything?
 
 # ---------------------------------------------------------------------------
-FROM maven:3.9.11-eclipse-temurin-21-noble AS jar
+FROM maven:3.9.14-eclipse-temurin-25-noble AS jar
 
 WORKDIR /work
 
@@ -25,7 +25,7 @@ COPY scripts/build.sh /work/scripts/build.sh
 RUN ./scripts/build.sh
 
 # ---------------------------------------------------------------------------
-FROM eclipse-temurin:21-jre-noble AS run
+FROM eclipse-temurin:25-jre-noble AS run
 
 WORKDIR /app
 
