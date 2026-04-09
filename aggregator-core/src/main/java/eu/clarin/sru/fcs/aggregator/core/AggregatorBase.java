@@ -62,7 +62,8 @@ public abstract class AggregatorBase {
                     .withAuthenticationInfoProvider(authInfoPovider);
 
             // TODO: change to Public|PrivateKey interfaces (should be more secure!)
-            if (params.getPublicKey() != null && params.getPrivateKey() != null) {
+            if (params.getPublicKey() != null && !params.getPublicKey().strip().isBlank()
+                    && params.getPrivateKey() != null && !params.getPrivateKey().strip().isBlank()) {
                 requestAuthStrategyBuilder = requestAuthStrategyBuilder
                         .withKeyPairContents(params.getPublicKey(), params.getPrivateKey());
             } else if (params.getPublicKeyFile() != null && params.getPrivateKeyFile() != null) {

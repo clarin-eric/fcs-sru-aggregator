@@ -33,7 +33,9 @@ public class JWKSResource {
     /**
      * JSON Web Key Set
      * 
-     * @see <a href="https://datatracker.ietf.org/doc/html/rfc7517#section-5">rfc7517 (section 5)</a>
+     * @see <a href=
+     *      "https://datatracker.ietf.org/doc/html/rfc7517#section-5">rfc7517
+     *      (section 5)</a>
      */
     public static class JWKS {
 
@@ -41,7 +43,9 @@ public class JWKSResource {
          * JSON Web Key
          * 
          * @see <a href="https://datatracker.ietf.org/doc/html/rfc7517">rfc7517</a>
-         * @see <a href="https://www.scottbrady91.com/jose/jwts-which-signing-algorithm-should-i-use">jwts which signing algorithm should i use</a>
+         * @see <a href=
+         *      "https://www.scottbrady91.com/jose/jwts-which-signing-algorithm-should-i-use">jwts
+         *      which signing algorithm should i use</a>
          */
         public static class JWK {
             @JsonProperty("kty")
@@ -98,7 +102,9 @@ public class JWKSResource {
              * 
              * @param value bytes to be base64url encoded.
              * @return base64 encoded bytes
-             * @see <a href="https://datatracker.ietf.org/doc/html/rfc7515#appendix-C">rfc7515 (appendix c)</a>
+             * @see <a href=
+             *      "https://datatracker.ietf.org/doc/html/rfc7515#appendix-C">rfc7515
+             *      (appendix c)</a>
              */
             private static String toB64(byte[] value) {
                 return Base64.getUrlEncoder().withoutPadding().encodeToString(value);
@@ -111,7 +117,9 @@ public class JWKSResource {
              *              encoded.
              * @return base64 encoded bytes of BigInteger value.
              * @see #toB64(byte[])
-             * @see <a href="https://stackoverflow.com/questions/4407779/biginteger-to-byte">StackOverflow: biginteger to byte</a>
+             * @see <a href=
+             *      "https://stackoverflow.com/questions/4407779/biginteger-to-byte">StackOverflow:
+             *      biginteger to byte</a>
              */
             private static String toB64(BigInteger value) {
                 byte[] bValue = value.toByteArray();
@@ -157,7 +165,7 @@ public class JWKSResource {
         try {
             // try to load from PEM key file contents
             final String publicKeyContent = authConfig.getKeys().getPublicKey();
-            if (publicKeyContent != null) {
+            if (publicKeyContent != null && !publicKeyContent.strip().isBlank()) {
                 return KeyReaderUtils.readPublicKey(publicKeyContent);
             }
 
