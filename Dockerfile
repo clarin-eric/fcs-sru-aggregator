@@ -35,6 +35,7 @@ COPY pom.xml /work/
 # "conditional" copy, will not fail if file does not exist
 COPY webui.env* /work/
 
+# --mount=type=cache,target=/work/aggregator-webui/node_modules
 RUN ./scripts/update-webui.sh
 
 # ---------------------------------------------------------------------------
@@ -53,7 +54,8 @@ COPY aggregator-app/pom.xml /work/aggregator-app/pom.xml
 # --mount=type=cache,target=/root/.m2
 # --mount=type=bind,source=aggregator-core/pom.xml,target=/work/aggregator-core/pom.xml
 RUN mvn -B dependency:resolve-plugins
-RUN mvn -B dependency:resolve
+RUN mvn -B -pl .,aggregator-core dependency:resolve
+#RUN mvn -B dependency:resolve
 #RUN mvn -q dependency:go-offline
 
 # copy source code
@@ -64,6 +66,7 @@ COPY scripts/build.sh /work/scripts/build.sh
 # copy webui artefacts
 COPY --from=web /work/aggregator-app/src/main/resources/assets/webapp /work/aggregator-app/src/main/resources/assets/webapp
 
+# --mount=type=cache,target=/root/.m2
 RUN ./scripts/build.sh
 
 # ---------------------------------------------------------------------------
