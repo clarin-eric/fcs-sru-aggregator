@@ -19,7 +19,11 @@ set -eu
 
 # prepare
 mvn dependency:resolve-plugins
-mvn dependency:resolve
 
-# build core + app
-mvn clean package
+# build core
+mvn -pl .,aggregator-core dependency:resolve
+mvn -pl .,aggregator-core clean package install
+
+# build app
+mvn -pl aggregator-app -am dependency:resolve
+mvn -pl aggregator-app clean package

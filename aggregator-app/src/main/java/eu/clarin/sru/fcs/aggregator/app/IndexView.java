@@ -1,6 +1,7 @@
 package eu.clarin.sru.fcs.aggregator.app;
 
 import eu.clarin.sru.fcs.aggregator.app.configuration.MatomoConfiguration;
+import eu.clarin.sru.fcs.aggregator.app.version.VersionInfo;
 import io.dropwizard.views.common.View;
 
 /**
@@ -15,6 +16,11 @@ public class IndexView extends View {
     final boolean authEnabled;
     final String username;
     final boolean weblichtEnabled;
+
+    final String serverVersion = VersionInfo.BUILD_VERSION;
+    final String serverGitCommit = VersionInfo.COMMIT_ID_ABBREV;
+    final String serverGitBranch = VersionInfo.BRANCH;
+    final String serverGitDate = VersionInfo.COMMIT_TIME;
 
     protected IndexView(MatomoConfiguration matomoConfig, boolean showSearchResultLink, String validatorUrl,
             boolean authEnabled, String username, boolean weblichtEnabled) {

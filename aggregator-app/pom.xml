@@ -216,6 +216,13 @@
                 <configuration>
                     <createDependencyReducedPom>true</createDependencyReducedPom>
                     <filters>
+                        <!-- <filter>
+                            <artifact>eu.clarin.sru.fcs:aggregator-app</artifact>
+                            <includes>
+                                <include>eu/clarin/sru/fcs/aggregator/app/version/VersionInfo.class</include>
+                                <include>**/*.class</include>
+                            </includes>
+                        </filter> -->
                         <filter>
                             <artifact>*:*</artifact>
                             <excludes>
@@ -240,6 +247,38 @@
                                 </transformer>
                             </transformers>
                         </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- git version build information -->
+            <plugin>
+                <groupId>io.github.git-commit-id</groupId>
+                <artifactId>git-commit-id-maven-plugin</artifactId>
+                <version>9.2.0</version>
+                <executions>
+                    <execution>
+                        <id>get-the-git-infos</id>
+                        <goals>
+                            <goal>revision</goal>
+                        </goals>
+                        <phase>initialize</phase>
+                    </execution>
+                </executions>
+                <configuration>
+                    <commitIdGenerationMode>full</commitIdGenerationMode>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>templating-maven-plugin</artifactId>
+                <version>3.1.0</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>filter-sources</goal>
+                        </goals>
+                        <phase>generate-sources</phase>
                     </execution>
                 </executions>
             </plugin>

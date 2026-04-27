@@ -48,6 +48,7 @@ import eu.clarin.sru.fcs.aggregator.app.configuration.AggregatorConfiguration;
 import eu.clarin.sru.fcs.aggregator.app.configuration.WeblichtConfiguration;
 import eu.clarin.sru.fcs.aggregator.app.export.Exports;
 import eu.clarin.sru.fcs.aggregator.app.export.WeblichtExportCache;
+import eu.clarin.sru.fcs.aggregator.app.version.VersionInfo;
 import eu.clarin.sru.fcs.aggregator.core.Aggregator;
 import eu.clarin.sru.fcs.aggregator.scan.FCSProtocolVersion;
 import eu.clarin.sru.fcs.aggregator.scan.FCSSearchCapabilities;
@@ -99,6 +100,31 @@ public class RestService {
 
     private static String toJson(Object o) throws JsonProcessingException {
         return ow.writeValueAsString(o);
+    }
+
+    // ----------------------------------------------------------------------
+    // application information
+
+    @GET
+    @Produces({ MediaType.APPLICATION_JSON })
+    @Path("version")
+    @Operation(description = "Get application version information", tags = { "web" }, responses = {
+            @ApiResponse(description = "Version information", content = {
+                    @Content(mediaType = MediaType.APPLICATION_JSON)
+            })
+    })
+    public Response getVersion() {
+        final HashMap<String, String> info = new HashMap<>() {
+            {
+                put("version", VersionInfo.BUILD_VERSION);
+                put("gitCommitId", VersionInfo.COMMIT_ID_ABBREV);
+                put("gitBranch", VersionInfo.BRANCH);
+                put("gitCommitDate", VersionInfo.COMMIT_TIME);
+                put("gitTag", ("".equals(VersionInfo.TAG) ? null : VersionInfo.TAG));
+                put("gitTagLast", VersionInfo.CLOSEST_TAG_NAME);
+            }
+        };
+        return Response.ok(info).build();
     }
 
     // ----------------------------------------------------------------------

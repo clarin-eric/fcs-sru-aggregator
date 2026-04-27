@@ -16,6 +16,12 @@
     window.MyAggregator.DEPLOY_PATH = "/";
     window.MyAggregator.API_URL = "/rest/";
 
+    // server version information
+    window.MyAggregator.SERVER_VERSION_STRING = "{{serverVersion}}";
+    window.MyAggregator.SERVER_VERSION_GIT_COMMIT = "{{serverGitCommit}}";
+    window.MyAggregator.SERVER_VERSION_GIT_BRANCH = "{{serverGitBranch}}";
+    window.MyAggregator.SERVER_VERSION_GIT_DATE = "{{serverGitDate}}";
+
     // UI (updatable)
     window.MyAggregator.VALIDATOR_URL = {{#validatorUrl}}"{{.}}"{{/validatorUrl}}{{^validatorUrl}}undefined{{/validatorUrl}};
     window.MyAggregator.SHOW_SEARCH_RESULT_LINK = {{showSearchResultLink}};
