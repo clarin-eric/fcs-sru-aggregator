@@ -2,15 +2,25 @@
 
 <ROOT>
     <shhaa>
+        <!-- https://github.com/clarin-eric/mpgaai/blob/master/modules/mpgaai-shhaa/src/site/apt/config.apt -->
 
+        <!-- information about the webapplication, esp. its official address (URL) from external -->
         <webapp>
+            <!-- official host name / domain of the web application -->
             <!-- shib host, DO NOT LEAVE A TRAILING SLASH! -->
             <host>https://contentsearch.clarin.eu</host>
         </webapp>
 
+        <!-- here goes any config concerning authentication and reference (URLs) to the utilized Shibbleth Service-Provider and AAI system -->
         <authentication>
+            <!-- configurations to tell the filter which http header aka Shibboleth-SP attributes to use for the different purposes -->
             <shibheader>
+                <!-- tell shhaa which attribute(s) is used to lookup the logged-in user(name)
+                     NOTE: one can configure multiple attribues here (each as own <username> tag):
+                     shhaa will check one after another, the first hit (found non-empty value) will be used. -->
                 <!-- shib attributes used to computed the username (first only) -->
+                <username>subject-id</username>
+
                 <username>oid-eppn</username>
                 <username>mace-eppn</username>
                 <username>eppn</username>
@@ -19,6 +29,8 @@
                 <username>mace-eduPersonPrincipalName</username>
                 <username>eduPersonPrincipalName</username>
 
+                <username>pairwise-id</username>
+
                 <username>oid-eduPersonTargetedID</username>
                 <username>mace-eduPersonTargetedID</username>
                 <username>eduPersonTargetedID</username>
@@ -26,33 +38,48 @@
                 <username>mail</username>
 
                 <!-- some usefull defaults, required -->
+                <!-- attribute (name) used to recognize and utilize as SSO/Shibboleth-SP session identifier -->
                 <session>Shib-Session-ID</session>
+                <!-- attribute (name) used to read in the actual authenticating Identiy Provider (entity-ID) -->
                 <idp>Shib-Identity-Provider</idp>
+                <!-- attribute (name) used to read in the login time(stamp) -->
                 <timestamp>Shib-Authentication-Instant</timestamp>
             </shibheader>
+
+            <!-- configurations for user- and session information if no SSO login/session is present -->
             <fallback>
                 <!-- fallback username when not logged in -->
                 <username>anonymous</username>
             </fallback>
+
             <!-- sign-in/log-out action -->
+            <!-- URL for Single Sign On to/on the (upstream) Service Provider this webapp lives under (is protected by) -->
             <sso action="lI">https://contentsearch.clarin.eu/Shibboleth.sso/Login</sso>
+            <!-- URL for Single Log Out from/on the (upstream) Service Provider this webapp lives under (is protected by) -->
             <slo action="lO">https://contentsearch.clarin.eu/Shibboleth.sso/Logout</slo>
         </authentication>
 
+        <!-- tells the filter how and from where to aggregate & compose the user-attributes -->
         <composition action="rF">
             <shibheader>
+                <!-- attribute(name) to look up in the httpd header and read in (whith name & value(s))
+                     note: you can specify multiple attributes here (each in an own tag) -->
                 <!-- shib attributes that should be populated for access -->
                 <attribute>displayName</attribute>
                 <attribute>commonName</attribute>
                 <attribute>cn</attribute>
 
                 <attribute>organizationName</attribute>
+                <attribute>affiliation</attribute>
 
                 <attribute>mail</attribute>
 
-                <username>oid-eppn</username>
-                <username>mace-eppn</username>
-                <username>eppn</username>
+                <attribute>subject-id</attribute>
+                <attribute>pairwise-id</attribute>
+
+                <attribute>oid-eppn</attribute>
+                <attribute>mace-eppn</attribute>
+                <attribute>eppn</attribute>
                 
                 <attribute>oid-eduPersonPrincipalName</attribute>
                 <attribute>mace-eduPersonPrincipalName</attribute>
@@ -64,20 +91,26 @@
             </shibheader>
         </composition>
 
+        <!-- the configuration of access-control for different "locations" (web-app paths), based on the fetched user attributes -->
         <authorization>
             <!-- when/where to trigger login (lI) action -->
             <location target="/login" methods="GET POST" />
         </authorization>
 
+        <!-- specifies the behavior of the shhaa-filter for the different use-cases, like shall it display a logged-in-info notification etc... -->
         <handler>
+            <!-- defines locations (your webapp paths) which shall be ignored = not handled by shhaa
+                 not handled means, no session checks (authentication), no access control (authorization), no Anonymous user/session provided -->
             <!-- what to ignore for AAI handling, skip processing -->
             <ignore>
-                <location target="/css/*" />
-                <location target="/img/*" />
-                <location target="/lib/*" />
-                <location target="/clarinservices/*" />
+                <!-- web UI assets -->
+                <location target="/r/*" />
+                <!-- JWKS, well known web paths -->
                 <location target="/.well-known/*" />
             </ignore>
+
+            <!-- set the provided subject and its credentials to "read-only" -->
+		    <readonly>true</readonly>
 
             <!-- url parameter name to recognize flags for actions shhaa shall perform -->
             <!-- <actionparam>shhaaDo</actionparam> -->
@@ -85,7 +118,17 @@
             <!-- configures the view-control targets -->
             <!--
             <pages>
+                if configured, shhaa will forward to this page if a initally/new SSO session is recognized;
+                this fwd is done only once, on the next request (e.g. brower reload) the original requested site is shown
                 <info action="dI">/protected/info.jsp</info>
+
+                this site is presented (if in fact configured here) when an prevously existing SSO session has suddenly gone <or changed>
+                e.g. due to a log-out event <or> a new (re-)login.
+                NOTE: a changed session is in fact recognized and also treated as expired,
+                even if the actual username has <not> changed (a repeated/re-login of the same user)
+                <expired action="dE">/pages/expired.jsp</expired>
+
+                is <always> (note the default) presented when the access control (authorization) evaluated negative
                 <denied action="dD">/pages/noaccess.jsp</denied>
             </pages>
             -->

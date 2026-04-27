@@ -61,12 +61,13 @@ public class UserCredentials {
     // - authentication > shibheader > username
 
     public String getEduPersonPrincipalName() {
-        return getFirstValue(userPrincipal, List.of("oid-edupersonprincipalname", "oid-eduPersonPrincipalName",
-                "mace-eduPersonPrincipalName", "eduPersonPrincipalName", "oid-eppn", "mace-eppn", "eppn"));
+        return getFirstValue(userPrincipal,
+                List.of("subject-id", "oid-edupersonprincipalname", "oid-eduPersonPrincipalName",
+                        "mace-eduPersonPrincipalName", "eduPersonPrincipalName", "oid-eppn", "mace-eppn", "eppn"));
     }
 
     public String getEduPersonTargetedID() {
-        return getFirstValue(userPrincipal, List.of("edupersontargetedid", "oid-eduPersonTargetedID",
+        return getFirstValue(userPrincipal, List.of("pairwise-id", "edupersontargetedid", "oid-eduPersonTargetedID",
                 "mace-eduPersonTargetedID", "eduPersonTargetedID"));
     }
 
