@@ -13,7 +13,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import eu.clarin.sru.fcs.aggregator.scan.EndpointOverrideConfig;
 
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-@JsonPropertyOrder({ "url", "name", "website", "enabled", "isCQL", "maxConcurrentSearchRequests" })
+@JsonPropertyOrder({ "url", "name", "website", "enabled", "overrideOnly", "isCQL", "maxConcurrentSearchRequests" })
 public class EndpointOverrideConfiguration implements EndpointOverrideConfig {
 
     @NotNull
@@ -28,6 +28,9 @@ public class EndpointOverrideConfiguration implements EndpointOverrideConfig {
 
     @JsonProperty
     private boolean enabled = true;
+
+    @JsonProperty
+    private boolean overrideOnly = true;
 
     @JsonProperty
     private boolean isCQL = false;
@@ -60,6 +63,12 @@ public class EndpointOverrideConfiguration implements EndpointOverrideConfig {
     @Override
     public boolean isEnabled() {
         return enabled;
+    }
+
+    @JsonProperty("overrideOnly")
+    @Override
+    public boolean isOverrideOnly() {
+        return overrideOnly;
     }
 
     @JsonProperty("isCQL")

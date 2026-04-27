@@ -38,8 +38,10 @@ aggregator:
   endpointOverrides:
     - url: http://cqlservlet.mpi.nl/
       maxConcurrentSearchRequests: 1
+      overrideOnly: true
     # - url: https://clarin.ids-mannheim.de/digibibsru-new
     #   isCQL: true
+    #   overrideOnly: false
 
   # pretty printing REST API responses
   prettyPrintJSON: false

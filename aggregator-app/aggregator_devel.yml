@@ -40,6 +40,7 @@ aggregator:
     - url: http://cqlservlet.mpi.nl/
       maxConcurrentSearchRequests: 1
       enabled: false
+      overrideOnly: true
     
     # disabled endpoints
     # - url: http://clarin01.ims.uni-stuttgart.de/SRUCQIBridge
@@ -50,11 +51,14 @@ aggregator:
     # - url: https://spraakbanken.gu.se/ws/fcs/2.0/endpoint/korp/sru
     #   name: Språkbanken
     #   website: https://spraakbanken.gu.se/
+    #   overrideOnly: false
     # - url: http://localhost:8080/korp-endpoint/sru
+    #   overrideOnly: false
     
     # old/legacy endpoints
     # - url: https://clarin.ids-mannheim.de/digibibsru-new
     #   isCQL: true
+    #   overrideOnly: false
 
   # pretty printing REST API responses
   prettyPrintJSON: true

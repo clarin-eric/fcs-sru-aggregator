@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import javax.ws.rs.client.Client;
@@ -74,8 +75,10 @@ public class ScanCrawlTask implements Runnable {
 
         if (endpointOverrides != null && !endpointOverrides.isEmpty()) {
             // Add sideloaded endpoints
+            // (that are enabled and not only configuration overrides)
             final Map<?, List<EndpointOverrideConfig>> groupedEndpoints = endpointOverrides.stream()
                     .filter(EndpointOverrideConfig::isEnabled)
+                    .filter(Predicate.not(EndpointOverrideConfig::isOverrideOnly))
                     .collect(Collectors.groupingBy(ep -> new ImmutablePair<>(ep.getName(), ep.getWebsite())));
             for (final List<EndpointOverrideConfig> endpoints : groupedEndpoints.values()) {
                 EndpointOverrideConfig firstEndpoint = endpoints.get(0);
