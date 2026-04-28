@@ -73,19 +73,21 @@ public class ScanCrawlTask implements Runnable {
             institutions = new ArrayList<>();
         }
 
+        // TODO: handle partial update of existing institutions (e.g., names in
+        // additional languages)
         if (endpointOverrides != null && !endpointOverrides.isEmpty()) {
             // Add sideloaded endpoints
             // (that are enabled and not only configuration overrides)
             final Map<?, List<EndpointOverrideConfig>> groupedEndpoints = endpointOverrides.stream()
                     .filter(EndpointOverrideConfig::isEnabled)
                     .filter(Predicate.not(EndpointOverrideConfig::isOverrideOnly))
-                    .collect(Collectors.groupingBy(ep -> new ImmutablePair<>(ep.getName(), ep.getWebsite())));
+                    .collect(Collectors.groupingBy(ep -> new ImmutablePair<>(ep.getPrimaryName(), ep.getWebsite())));
             for (final List<EndpointOverrideConfig> endpoints : groupedEndpoints.values()) {
                 EndpointOverrideConfig firstEndpoint = endpoints.get(0);
 
-                final String name = (firstEndpoint.getName() != null && !firstEndpoint.getName().isEmpty())
+                final Map<String, String> name = (firstEndpoint.getName() != null && !firstEndpoint.getName().isEmpty())
                         ? firstEndpoint.getName()
-                        : "Unknown Institution";
+                        : Map.of(Institution.DEFAULT_NAME_LANGUAGE, "Unknown Institution");
                 final String website = (firstEndpoint.getWebsite() != null && !firstEndpoint.getWebsite().isEmpty())
                         ? firstEndpoint.getWebsite()
                         : null;

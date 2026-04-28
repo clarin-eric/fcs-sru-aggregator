@@ -29,6 +29,8 @@ public class Resource {
     public static final String ROOT_HANDLE = "root";
     public static final Pattern HANDLE_WITH_SPECIAL_CHARS = Pattern.compile(".*[<>=/()\\s].*");
 
+    private static final String DEFAULT_LANGUAGE = "en";
+
     private Institution endpointInstitution;
     private Endpoint endpoint;
 
@@ -237,7 +239,7 @@ public class Resource {
     }
 
     public void setTitle(String title) {
-        this.title = Map.of("en", title);
+        this.title = Map.of(DEFAULT_LANGUAGE, title);
     }
 
     public Map<String, String> getDescription() {
@@ -249,7 +251,7 @@ public class Resource {
     }
 
     public void setDescription(String description) {
-        this.description = Map.of("en", description);
+        this.description = Map.of(DEFAULT_LANGUAGE, description);
     }
 
     public Map<String, String> getInstitution() {
@@ -261,7 +263,7 @@ public class Resource {
     }
 
     public void setInstitution(String institution) {
-        this.institution = Map.of("en", institution);
+        this.institution = Map.of(DEFAULT_LANGUAGE, institution);
     }
 
     @Override

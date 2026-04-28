@@ -267,11 +267,11 @@ public class Statistics {
     private EndpointStats getEndpointStats(Institution institution, Endpoint endpoint) {
         EndpointStats stats;
         synchronized (lock) {
-            if (!institutions.containsKey(institution.getName())) {
-                institutions.put(institution.getName(),
-                        Collections.synchronizedMap(new HashMap<String, EndpointStats>()));
+            final String institutionName = institution.getPrimaryName();
+            if (!institutions.containsKey(institutionName)) {
+                institutions.put(institutionName, Collections.synchronizedMap(new HashMap<String, EndpointStats>()));
             }
-            Map<String, EndpointStats> esmap = institutions.get(institution.getName());
+            Map<String, EndpointStats> esmap = institutions.get(institutionName);
             if (!esmap.containsKey(endpoint.getUrl())) {
                 final EndpointStats es = new EndpointStats();
                 es.version = endpoint.getProtocol();

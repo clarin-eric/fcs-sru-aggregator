@@ -880,7 +880,7 @@ public class RestService {
                                         // check to retrieve the correct resource
                                         .filter(res -> res.getHandle().equals(rr.handle)
                                                 && res.getEndpoint().getUrl().equals(e2.getKey())
-                                                && res.getEndpointInstitution().getName().equals(e.getKey()))
+                                                && res.getEndpointInstitution().getPrimaryName().equals(e.getKey()))
                                         // check if in resource -> institution in consortia
                                         .filter(res -> consortia.contains(res.getEndpointInstitution().getConsortium()))
                                         // if we find at least one that we are happy

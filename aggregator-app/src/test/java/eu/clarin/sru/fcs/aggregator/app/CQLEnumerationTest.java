@@ -78,7 +78,7 @@ public class CQLEnumerationTest {
             CenterRegistry centerRegistry = new CenterRegistry(jerseyClient, centerRegistryUrl);
             List<Institution> list = centerRegistry.retrieveInstitutionsWithFCSEndpoints();
             for (Institution institution : list) {
-                System.out.println("1: " + institution.getName() + ": ");
+                System.out.println("1: " + institution.getPrimaryName() + ": ");
                 for (Endpoint e : institution.getEndpoints()) {
                     System.out.println("1: \t -> " + e);
                 }

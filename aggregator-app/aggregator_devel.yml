@@ -49,7 +49,8 @@ aggregator:
     # new FCS 2.0 endpoints
     # sideloading endpoint with custom name and website
     # - url: https://spraakbanken.gu.se/ws/fcs/2.0/endpoint/korp/sru
-    #   name: Språkbanken
+    #   name:
+    #     en: Språkbanken
     #   website: https://spraakbanken.gu.se/
     #   overrideOnly: false
     # - url: http://localhost:8080/korp-endpoint/sru

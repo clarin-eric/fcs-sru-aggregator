@@ -79,7 +79,7 @@ public class ScanCrawler {
         for (Institution institution : institutions) {
             Iterable<Endpoint> endpoints = institution.getEndpoints();
             for (Endpoint endp : endpoints) {
-                log.info("inst/endpoint type: {} / {}", institution.getName(), endp.getProtocol());
+                log.info("inst/endpoint type: {} / {}", institution.getPrimaryName(), endp.getProtocol());
             }
         }
 

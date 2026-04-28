@@ -34,6 +34,8 @@ aggregatorParams.additionalCQLEndpoints → aggregator.endpointOverrides (with `
 aggregatorParams.additionalFCSEndpoints → aggregator.endpointOverrides
 aggregatorParams.slowEndpoints → aggregator.endpointOverrides (with `maxConcurrentSearchRequests: 1`)
 
+aggregatorParams.additionalFCSEndpoints.[0].name → aggregator.endpointOverrides.[0].name.[0]
+
 # executor
 aggregatorParams.EXECUTOR_SHUTDOWN_TIMEOUT_MS → aggregator.executorShutdownTimeoutMs
 

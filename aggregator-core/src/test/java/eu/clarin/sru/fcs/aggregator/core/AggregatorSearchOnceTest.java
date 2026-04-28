@@ -83,7 +83,7 @@ public class AggregatorSearchOnceTest {
         log.info("Number of results for '{}': {}", query, result.getNumberOfRecordsLoaded());
 
         // log.info("Statistics:{}",aggregator.getSearchStatistics().getInstitutions());
-        Statistics.EndpointStats epStats = stats.getInstitutions().get(institution.getName()).get(endpoint.getUrl());
+        Statistics.EndpointStats epStats = stats.getInstitutions().get(institution.getPrimaryName()).get(endpoint.getUrl());
         log.info("Statistics: {}", epStats);
     }
 

@@ -1,6 +1,7 @@
 package eu.clarin.sru.fcs.aggregator.app.configuration;
 
 import java.net.URL;
+import java.util.Map;
 
 import javax.validation.constraints.NotNull;
 
@@ -21,7 +22,7 @@ public class EndpointOverrideConfiguration implements EndpointOverrideConfig {
     private URL url;
 
     @JsonProperty
-    private String name;
+    private Map<String, String> name;
 
     @JsonProperty
     private String website;
@@ -29,6 +30,7 @@ public class EndpointOverrideConfiguration implements EndpointOverrideConfig {
     @JsonProperty
     private boolean enabled = true;
 
+    @JsonInclude(JsonInclude.Include.ALWAYS)
     @JsonProperty
     private boolean overrideOnly = true;
 
@@ -49,7 +51,7 @@ public class EndpointOverrideConfiguration implements EndpointOverrideConfig {
 
     @JsonProperty("name")
     @Override
-    public String getName() {
+    public Map<String, String> getName() {
         return name;
     }
 

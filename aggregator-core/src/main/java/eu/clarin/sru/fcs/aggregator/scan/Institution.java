@@ -1,6 +1,7 @@
 package eu.clarin.sru.fcs.aggregator.scan;
 
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -11,7 +12,9 @@ import java.util.Set;
  */
 public class Institution {
 
-    private String name;
+    public final static String DEFAULT_NAME_LANGUAGE = "en";
+
+    private Map<String, String> name;
     private String link;
     private String consortium;
     private Set<Endpoint> endpoints = new LinkedHashSet<>();
@@ -25,7 +28,15 @@ public class Institution {
         this(name, link, null, false);
     }
 
+    public Institution(Map<String, String> name, String link) {
+        this(name, link, null, false);
+    }
+
     public Institution(String name, String link, String consortium) {
+        this(name, link, consortium, false);
+    }
+
+    public Institution(Map<String, String> name, String link, String consortium) {
         this(name, link, consortium, false);
     }
 
@@ -33,7 +44,15 @@ public class Institution {
         this(name, link, null, sideloaded);
     }
 
+    public Institution(Map<String, String> name, String link, boolean sideloaded) {
+        this(name, link, null, sideloaded);
+    }
+
     public Institution(String name, String link, String consortium, boolean sideloaded) {
+        this(Map.of(DEFAULT_NAME_LANGUAGE, name), link, consortium, sideloaded);
+    }
+
+    public Institution(Map<String, String> name, String link, String consortium, boolean sideloaded) {
         this.name = name;
         this.link = link;
         this.consortium = consortium;
@@ -58,8 +77,27 @@ public class Institution {
         return endpointUrl;
     }
 
-    public String getName() {
+    public Map<String, String> getName() {
         return name;
+    }
+
+    public String getPrimaryName() {
+        if (name == null || name.isEmpty()) {
+            return null;
+        }
+
+        String nameEn = name.getOrDefault(DEFAULT_NAME_LANGUAGE, null);
+        if (nameEn != null && nameEn.length() > 0) {
+            return nameEn;
+        }
+
+        String firstLang = name.keySet().iterator().next();
+        String nameXx = name.getOrDefault(firstLang, null);
+        if (nameXx != null && nameXx.length() > 0) {
+            return nameXx;
+        }
+
+        return null;
     }
 
     public String getLink() {
@@ -80,17 +118,21 @@ public class Institution {
 
     @Override
     public String toString() {
-        if (name != null && name.length() > 0) {
-            return name;
-        } else {
-            return link;
+        String nameXx = getPrimaryName();
+        if (nameXx != null && nameXx.length() > 0) {
+            return nameXx;
         }
+        return link;
     }
 
     @Override
     public int hashCode() {
+        String nameXx = getPrimaryName();
+        if (nameXx == null) {
+            return 0;
+        }
         // https://primes.utm.edu/lists/small/1000.txt
-        return name.hashCode() * 2953;
+        return nameXx.hashCode() * 2953;
     }
 
     @Override
@@ -99,6 +141,9 @@ public class Institution {
             return false;
         }
         Institution i = (Institution) obj;
+        if (i.name == null) {
+            return this.name == null;
+        }
         return i.name.equals(name);
     }
 }

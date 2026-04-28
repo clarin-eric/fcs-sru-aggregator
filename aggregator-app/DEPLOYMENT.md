@@ -38,8 +38,10 @@ aggregator:
 
 # or with some metadata (custom name, website; order of attributes does not matter):
   - url: https://spraakbanken.gu.se/ws/fcs/2.0/endpoint/korp/sru
-    name: Språkbanken
-  - name: Språkbanken 2
+    name:
+      en: Språkbanken
+  - name:
+      en: Språkbanken 2
     url: https://spraakbanken.gu.se/ws/fcs/2.0/endpoint/korp/sru
 ```
 
