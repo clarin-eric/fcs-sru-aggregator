@@ -62,6 +62,8 @@ RUN mvn -B -pl .,aggregator-core dependency:resolve
 COPY aggregator-core/src /work/aggregator-core/src
 COPY aggregator-app/src /work/aggregator-app/src
 COPY scripts/build.sh /work/scripts/build.sh
+# NOTE: needs git directory to infer the application version info
+COPY .git /work/.git
 
 # copy webui artefacts
 COPY --from=web /work/aggregator-app/src/main/resources/assets/webapp /work/aggregator-app/src/main/resources/assets/webapp
