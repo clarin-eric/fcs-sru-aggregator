@@ -7,6 +7,7 @@ import java.io.InputStreamReader;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.slf4j.LoggerFactory;
@@ -15,6 +16,7 @@ import org.slf4j.LoggerFactory;
  * Utility class to convert between various language codes.
  *
  * @author Yana Panchenko
+ * @author Erik Körner
  */
 public class LanguagesISO693 {
     private static final org.slf4j.Logger log = LoggerFactory.getLogger(LanguagesISO693.class);
@@ -40,10 +42,13 @@ public class LanguagesISO693 {
         }
     }
 
-    private Map<String, Language> codeToLang = new HashMap<String, Language>();
-    private Map<String, Language> nameToLang = new HashMap<String, Language>();
+    private final Map<String, Language> codeToLang;
+    private final Map<String, Language> nameToLang;
 
     private LanguagesISO693() {
+        Map<String, Language> codeToLang = new HashMap<String, Language>();
+        Map<String, Language> nameToLang = new HashMap<String, Language>();
+
         InputStream is = LanguagesISO693.class.getResourceAsStream(LANGUAGES_FILE_PATH);
         try (BufferedReader br = new BufferedReader(new InputStreamReader(is, LANGUAGES_FILE_ENCODING))) {
             br.readLine(); // ignore first line (header)
@@ -72,6 +77,9 @@ public class LanguagesISO693 {
         } catch (IOException ex) {
             log.error("Initialization of languages code to name mapping failed.", ex);
         }
+
+        this.codeToLang = Collections.unmodifiableMap(codeToLang);
+        this.nameToLang = Collections.unmodifiableMap(nameToLang);
     }
 
     public static LanguagesISO693 getInstance() {
@@ -85,8 +93,27 @@ public class LanguagesISO693 {
         return Collections.unmodifiableMap(codeToLang);
     }
 
+    public Language languageForCode(String code) {
+        return codeToLang.get(code);
+    }
+
+    public Language languageForName(String name) {
+        return nameToLang.get(name);
+    }
+
     public boolean isCode(String code) {
         return codeToLang.containsKey(code);
+    }
+
+    public boolean isCode_3(String code639_3) {
+        if (code639_3 == null) {
+            return false;
+        }
+        Language lang = codeToLang.get(code639_3);
+        if (lang == null) {
+            return false;
+        }
+        return lang.code_3.equals(code639_3);
     }
 
     public String code_3ForCode(String code639_1) {
@@ -134,9 +161,14 @@ public class LanguagesISO693 {
     public Map<String, String> getLanguageMap(Collection<String> codes) {
         Map<String, String> languages = new HashMap<String, String>();
         for (final String code : codes) {
-            final String name = LanguagesISO693.getInstance().nameForCode(code);
+            final String name = nameForCode(code);
             languages.put(code, name);
         }
         return languages;
     }
+
+    public Map<String, String> getLanguageMap(String... codes) {
+        return getLanguageMap(List.of(codes));
+    }
+
 }
