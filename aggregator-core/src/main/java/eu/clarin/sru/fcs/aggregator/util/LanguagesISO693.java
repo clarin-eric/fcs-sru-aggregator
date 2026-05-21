@@ -19,7 +19,7 @@ import org.slf4j.LoggerFactory;
 public class LanguagesISO693 {
     private static final org.slf4j.Logger log = LoggerFactory.getLogger(LanguagesISO693.class);
 
-    public static final String LANGUAGES_FILE_PATH = "/lang/iso-639-3_20140320.tab";
+    public static final String LANGUAGES_FILE_PATH = "/lang/iso-639-3_20260521.tab";
     public static final String LANGUAGES_FILE_ENCODING = "UTF-8";
 
     private static LanguagesISO693 instance = null;
