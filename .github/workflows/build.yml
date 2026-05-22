@@ -67,7 +67,9 @@ jobs:
         path: aggregator-webui/dist
 
     - name: Prepare build environment
-      run: mvn -B dependency:resolve-plugins dependency:resolve
+      run: |
+        mvn -B dependency:resolve-plugins
+        mvn -B -pl .,aggregator-core dependency:resolve
 
     - name: Copy aggregator-webui build artifacts for embedding
       run: |
