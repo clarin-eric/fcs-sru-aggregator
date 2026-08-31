@@ -4,5 +4,7 @@ public interface AggregatorParams
         extends SRUFCSClientParams, ScanCrawlParams, ShutdownParams, SearchGCParams, FCSAuthenticationParams {
     // aggregates params interfaces
 
-    boolean enableScanCrawlTask();
+    default boolean enableScanCrawlTask() {
+        return true;
+    }
 }

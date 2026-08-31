@@ -1,7 +1,11 @@
 package eu.clarin.sru.fcs.aggregator.core;
 
 public interface SearchGCParams {
-    int getSearchesSizeThreshold();
+    default int getSearchesSizeThreshold() {
+        return 1_000; // 1k searches
+    }
 
-    long getSearchesAgeThreshold();
+    default long getSearchesAgeThreshold() {
+        return 3600_000; // 60min
+    }
 }

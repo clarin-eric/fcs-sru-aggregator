@@ -1,5 +1,7 @@
 package eu.clarin.sru.fcs.aggregator.core;
 
 public interface ShutdownParams {
-    long getExecutorShutdownTimeout();
+    default long getExecutorShutdownTimeout() {
+        return 1_000; // 1sec
+    }
 }

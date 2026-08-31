@@ -3,9 +3,15 @@ package eu.clarin.sru.fcs.aggregator.core;
 import java.util.concurrent.TimeUnit;
 
 public interface ScanCrawlSchedulerParams {
-    long getScanTaskInitialDelay();
+    default long getScanTaskInitialDelay() {
+        return 0; // no delay, see getScanTaskTimeUnit
+    }
 
-    long getScanTaskInterval();
+    default long getScanTaskInterval() {
+        return 12; // see getScanTaskTimeUnit
+    }
 
-    TimeUnit getScanTaskTimeUnit();
+    default TimeUnit getScanTaskTimeUnit() {
+        return TimeUnit.HOURS;
+    }
 }
