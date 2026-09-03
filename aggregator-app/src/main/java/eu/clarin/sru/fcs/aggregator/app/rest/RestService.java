@@ -319,7 +319,11 @@ public class RestService {
             List<Resource> tmp = new ArrayList<Resource>();
             for (Resource resource : resources) {
                 if (resource.getEndpoint().getProtocol().equals(FCSProtocolVersion.VERSION_2)
-                        && resource.getEndpoint().getSearchCapabilities().contains(FCSSearchCapabilities.LEX_SEARCH)) {
+                        && (resource.getEndpoint().getSearchCapabilities().contains(FCSSearchCapabilities.LEX_SEARCH)
+                                || resource.getEndpoint().getSearchCapabilities()
+                                        .contains(FCSSearchCapabilities.LEXICAL_SEARCH)
+                                || resource.getEndpoint().getSearchCapabilities()
+                                        .contains(FCSSearchCapabilities.LEXICAL_SEARCH_V1_0))) {
                     tmp.add(resource);
                 }
             }

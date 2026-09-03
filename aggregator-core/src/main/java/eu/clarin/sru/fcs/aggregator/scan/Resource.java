@@ -189,7 +189,9 @@ public class Resource {
                 if (availableDataView.getMimeType().equals(DataViewAdvanced.TYPE)) {
                     resolvedSearchCapabilities.add(FCSSearchCapabilities.ADVANCED_SEARCH);
                 } else if (availableDataView.getMimeType().equals(DataViewLex.TYPE)) {
-                    resolvedSearchCapabilities.add(FCSSearchCapabilities.LEX_SEARCH);
+                    resolvedSearchCapabilities.add(FCSSearchCapabilities.LEX_SEARCH); // TODO: to be removed
+                    resolvedSearchCapabilities.add(FCSSearchCapabilities.LEXICAL_SEARCH);
+                    // TODO: FCSSearchCapabilities.LEXICAL_SEARCH_V1_0 ?
                 }
             }
         }

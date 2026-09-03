@@ -41,7 +41,6 @@ from pprint import pprint
 from typing import Dict, List, Literal, Optional, Set, Tuple, TypedDict, TypeVar, Union
 from urllib.parse import SplitResult, urlsplit
 
-
 if hasattr(typing, "Required"):  # 3.11+
     NotRequired = typing.NotRequired
 else:
@@ -928,13 +927,22 @@ def build_search_infos(
 
             if last_explain:
                 explain_records: List[ExplainLogRecord] = grouped_records[last_explain]
-                wanted_capability = "BASIC_SEARCH"
+                wanted_capabilities = {"BASIC_SEARCH"}
                 if search_request["queryType"] == "lex":
-                    wanted_capability = "LEX_SEARCH"
+                    wanted_capabilities = {
+                        "LEX_SEARCH",
+                        "LEXICAL_SEARCH",
+                        "LEXICAL_SEARCH_V1_0",
+                    }
                 elif search_request["queryType"] == "fcs":
-                    wanted_capability = "ADVANCED_SEARCH"
+                    wanted_capabilities = {"ADVANCED_SEARCH"}
                 explain_records_for_capability = [
-                    r for r in explain_records if wanted_capability in r["capabilities"]
+                    r
+                    for r in explain_records
+                    if any(
+                        wanted_capability in r["capabilities"]
+                        for wanted_capability in wanted_capabilities
+                    )
                 ]
 
                 num_avail_resources = len(explain_records_for_capability)

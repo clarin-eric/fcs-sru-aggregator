@@ -142,6 +142,14 @@ public class ScanCrawler {
                                 if (desc.getCapabilities().contains(ClarinFCSConstants.CAPABILITY_LEX_SEARCH)) {
                                     endpoint.addSearchCapability(FCSSearchCapabilities.LEX_SEARCH);
                                 }
+                                if (desc.getCapabilities().contains(ClarinFCSConstants.CAPABILITY_LEXICAL_SEARCH_V1_0)) {
+                                    endpoint.addSearchCapability(FCSSearchCapabilities.LEXICAL_SEARCH);
+                                    endpoint.addSearchCapability(FCSSearchCapabilities.LEXICAL_SEARCH_V1_0);
+                                }
+                                if (desc.getCapabilities().contains(ClarinFCSConstants.CAPABILITY_LEXICAL_SEARCH_LATEST)) {
+                                    // TODO: what to do here?
+                                    endpoint.addSearchCapability(FCSSearchCapabilities.LEXICAL_SEARCH);
+                                }
 
                                 // check if auth requirements
                                 if (desc.getCapabilities()
