@@ -1,6 +1,23 @@
 # Changelog
 
-# [4.0.0] - 2025-11-xx
+# [4.1.0] - 2026-09-03
+
+- Changed:
+  - Set default values for configuration interfaces
+  - Include handling for new `LEXICAL_SEARCH` capability
+  - Update WebUI
+
+- Dependencies:
+  - Bump `eu.clarin.sru.fcs:fcs-simple-client` to `2.8.0` for new LexFCS 1.0 support
+  - Build and pin build dependencies
+
+# [4.0.1] - 2026-05-21
+
+- Changed:
+  - Updated ISO639-3 data
+  - Changed configuration defaults to empty strings for AAI keys for graceful handling of not provided environment variables
+
+# [4.0.0] - 2026-05-11
 
 - Added:
   - Support of AAI (authenticated search, authentication using Shibboleth)
@@ -16,6 +33,7 @@
     - `aggregator-app` as dropwizard server application with all the REST API interfaces etc.
     - `aggregator-webui` as git submodule to [fcs-sru-aggregator-ui](https://github.com/clarin-eric/fcs-sru-aggregator-ui/) frontend ReactJS SPA; commit dist files for easier build
     - Mode core aggregation functionality more reusable (e.g., retrieving endpoints from centre, creating SRU/FCS clients for searching/scanning, running searches)
+    - Changed aggregator configuration, see [`aggregator-app/CONFIG_MIGRATION.v4.md`](aggregator-app/CONFIG_MIGRATION.v4.md) for details
 
 - Dependencies:
   - Bump `org.slf4j` to `2.0.17`
@@ -293,6 +311,9 @@
 
 For older changes, see commit history at [https://github.com/clarin-eric/fcs-sru-aggregator/commits/master](https://github.com/clarin-eric/fcs-sru-aggregator/commits/master?after=7ea45464475b0df6d4d8e2b93970c803b13ffb54+0&branch=master&qualified_name=refs%2Fheads%2Fmaster)
 
+[4.1.0]: https://github.com/clarin-eric/fcs-sru-aggregator/releases/tag/4.1.0
+[4.0.1]: https://github.com/clarin-eric/fcs-sru-aggregator/releases/tag/4.0.1
+[4.0.0]: https://github.com/clarin-eric/fcs-sru-aggregator/releases/tag/4.0.0
 [3.13.0]: https://github.com/clarin-eric/fcs-sru-aggregator/releases/tag/3.13.0
 [3.12.0]: https://github.com/clarin-eric/fcs-sru-aggregator/releases/tag/3.12.0
 [3.11.0]: https://github.com/clarin-eric/fcs-sru-aggregator/releases/tag/3.11.0
