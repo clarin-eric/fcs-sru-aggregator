@@ -15,7 +15,7 @@ aggregator:
 
     # requests
     maxConcurrentRequests: 4  # @depth2: 1=361s; 2=225s; 4=207s
-    requestTimeoutMs: 600_000  # 10min
+    requestTimeoutMs: 60_000  # 1min
 
     # caching for faster startup (on restart tries to use cached resources until new discovery is done)
     cachedResourcesFile: /var/lib/aggregator/fcsAggregatorResources.json
