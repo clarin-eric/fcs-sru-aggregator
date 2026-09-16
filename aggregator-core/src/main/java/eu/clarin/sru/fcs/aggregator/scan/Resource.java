@@ -61,7 +61,8 @@ public class Resource {
     }
 
     public String getId() {
-        return endpoint.getUrl() + "#" + handle;
+        // return endpoint.getUrl() + "#" + handle;
+        return handle;
     }
 
     public void addResource(Resource resource) {

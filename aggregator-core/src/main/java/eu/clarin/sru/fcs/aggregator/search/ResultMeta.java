@@ -79,7 +79,8 @@ public class ResultMeta {
     }
 
     public String getId() {
-        return endpointUrl.get() + "#" + resourceHandle.get();
+        // return endpointUrl.get() + "#" + resourceHandle.get();
+        return resourceHandle.get();
     }
 
     public void setId(String id) { // dumb setter for JsonDeserialization
