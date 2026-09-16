@@ -69,7 +69,8 @@ echo "VITE_GIT_APP_INFO_DATE=${GIT_DATE}" >> ${FN_CUSTOMIZATION_ENV}
 pushd aggregator-webui
 
 # build webui
-npm install
+#npm install
+npm ci
 npm run build
 
 popd
