@@ -1,11 +1,16 @@
 # Changelog
 
-# [4.1.0] - 2026-09-03
+# [4.1.0] - 2026-10-16
 
 - Changed:
+  - **Breaking** (maybe for UI/API clients): change resource id to only consist of handle (without endpoint url prefix)
   - Set default values for configuration interfaces
   - Include handling for new `LEXICAL_SEARCH` capability
   - Update WebUI
+  - Use `npm ci` for webui building
+
+- Fixed:
+  - `aggregator.yml`: set `.scan.requestTimeoutMs` to `60_000` (1min)
 
 - Dependencies:
   - Bump `eu.clarin.sru.fcs:fcs-simple-client` to `2.8.0` for new LexFCS 1.0 support
