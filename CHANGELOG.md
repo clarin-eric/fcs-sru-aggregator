@@ -1,5 +1,19 @@
 # Changelog
 
+# [4.2.0] - 2026-11-13
+
+- Changed:
+  - Updated WebUI to `1.1.0`
+  - Simplify Github Actions CI script
+  - Disabled `org.owasp:dependency-check-maven` which requires API keys and has high rate-limiting, so often fails or takes forever
+
+- Dependencies:
+  - Bump `org.slf4j` to `2.0.20`
+  - Bump `org.junit:junit-bom` to `5.14.4`
+  - Bump `io.swagger.core.v3` to `2.2.55`
+  - Bump `org.apache.poi:poi-ooxml` to `6.0.0`
+  - Bump various maven plugins to most recent stable versions (Maven 3.6.3 compatibility)
+
 # [4.1.0] - 2026-10-16
 
 - Changed:
@@ -316,6 +330,7 @@
 
 For older changes, see commit history at [https://github.com/clarin-eric/fcs-sru-aggregator/commits/master](https://github.com/clarin-eric/fcs-sru-aggregator/commits/master?after=7ea45464475b0df6d4d8e2b93970c803b13ffb54+0&branch=master&qualified_name=refs%2Fheads%2Fmaster)
 
+[4.2.0]: https://github.com/clarin-eric/fcs-sru-aggregator/releases/tag/4.2.0
 [4.1.0]: https://github.com/clarin-eric/fcs-sru-aggregator/releases/tag/4.1.0
 [4.0.1]: https://github.com/clarin-eric/fcs-sru-aggregator/releases/tag/4.0.1
 [4.0.0]: https://github.com/clarin-eric/fcs-sru-aggregator/releases/tag/4.0.0
