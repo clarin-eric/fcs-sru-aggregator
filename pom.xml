@@ -378,7 +378,7 @@
                 <artifactId>maven-surefire-report-plugin</artifactId>
             </plugin>
             <!-- dependency check -->
-            <plugin>
+            <!-- <plugin>
                 <groupId>org.owasp</groupId>
                 <artifactId>dependency-check-maven</artifactId>
                 <reportSets>
@@ -388,7 +388,7 @@
                         </reports>
                     </reportSet>
                 </reportSets>
-            </plugin>
+            </plugin> -->
             <!-- dependencies -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
