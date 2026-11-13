@@ -1,5 +1,10 @@
 # Changelog
 
+# [4.2.1] - 2026-11-13
+
+- Fixed:
+  - Update WebUI to `1.1.1` (fix broken query builder, add banner in JS files)
+
 # [4.2.0] - 2026-11-13
 
 - Changed:
@@ -330,6 +335,7 @@
 
 For older changes, see commit history at [https://github.com/clarin-eric/fcs-sru-aggregator/commits/master](https://github.com/clarin-eric/fcs-sru-aggregator/commits/master?after=7ea45464475b0df6d4d8e2b93970c803b13ffb54+0&branch=master&qualified_name=refs%2Fheads%2Fmaster)
 
+[4.2.1]: https://github.com/clarin-eric/fcs-sru-aggregator/releases/tag/4.2.1
 [4.2.0]: https://github.com/clarin-eric/fcs-sru-aggregator/releases/tag/4.2.0
 [4.1.0]: https://github.com/clarin-eric/fcs-sru-aggregator/releases/tag/4.1.0
 [4.0.1]: https://github.com/clarin-eric/fcs-sru-aggregator/releases/tag/4.0.1
