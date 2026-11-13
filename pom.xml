@@ -46,13 +46,13 @@
         <fcs-simple-client.version>2.8.0</fcs-simple-client.version>
         <mpgaai.version>1.0.13</mpgaai.version>
 
-        <slf4j.version>2.0.17</slf4j.version>
-        <junit5.version>5.14.3</junit5.version>
+        <slf4j.version>2.0.20</slf4j.version>
+        <junit5.version>5.14.4</junit5.version>
 
         <jersey.version>2.47</jersey.version>
 
         <dropwizard.version>3.0.17</dropwizard.version>
-        <swagger.version>2.2.46</swagger.version>
+        <swagger.version>2.2.55</swagger.version>
         <commons-text.version>1.15.0</commons-text.version>
     </properties>
 
@@ -237,7 +237,7 @@
                 </plugin>
                 <plugin>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.15.0</version>
+                    <version>3.16.0</version>
                     <configuration>
                         <source>${maven.compiler.source}</source>
                         <target>${maven.compiler.target}</target>
@@ -251,11 +251,11 @@
                 </plugin>
                 <plugin>
                     <artifactId>maven-install-plugin</artifactId>
-                    <version>3.1.4</version>
+                    <version>3.2.0</version>
                 </plugin>
                 <plugin>
                     <artifactId>maven-deploy-plugin</artifactId>
-                    <version>3.1.4</version>
+                    <version>3.2.0</version>
                 </plugin>
                 <plugin>
                     <artifactId>maven-shade-plugin</artifactId>
@@ -265,7 +265,7 @@
                 <!-- testing -->
                 <plugin>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <version>3.5.6</version>
+                    <version>3.6.1</version>
                 </plugin>
 
                 <!-- project info -->
@@ -279,7 +279,7 @@
                 </plugin>
                 <plugin>
                     <artifactId>maven-surefire-report-plugin</artifactId>
-                    <version>3.5.6</version>
+                    <version>3.6.1</version>
                 </plugin>
 
                 <plugin>
@@ -290,13 +290,13 @@
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>versions-maven-plugin</artifactId>
-                    <version>2.21.0</version>
+                    <version>2.25.1</version>
                 </plugin>
 
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-enforcer-plugin</artifactId>
-                    <version>3.6.3</version>
+                    <version>3.7.0</version>
                     <!--
                     <executions>
                         <execution>
@@ -332,12 +332,12 @@
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>rpm-maven-plugin</artifactId>
-                    <version>2.3.0</version>
+                    <version>2.5.0</version>
                 </plugin>
                 <plugin>
                     <groupId>org.vafer</groupId>
                     <artifactId>jdeb</artifactId>
-                    <version>1.14</version>
+                    <version>1.15</version>
                 </plugin>
             </plugins>
         </pluginManagement>

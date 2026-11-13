@@ -149,7 +149,7 @@
         <dependency>
             <groupId>org.apache.poi</groupId>
             <artifactId>poi-ooxml</artifactId>
-            <version>5.5.1</version>
+            <version>6.0.0</version>
             <exclusions>
                 <exclusion>
                     <groupId>commons-codec</groupId>
@@ -255,7 +255,7 @@
             <plugin>
                 <groupId>io.github.git-commit-id</groupId>
                 <artifactId>git-commit-id-maven-plugin</artifactId>
-                <version>9.2.0</version>
+                <version>9.2.0</version> <!-- 10.0.0 requires maven 3.9.0 -->
                 <executions>
                     <execution>
                         <id>get-the-git-infos</id>
